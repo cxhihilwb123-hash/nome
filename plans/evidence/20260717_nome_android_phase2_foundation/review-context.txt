@@ -1,0 +1,23 @@
+Nome Android Phase 2 foundation — frozen review context
+Date: 2026-07-17 Asia/Shanghai
+
+Repository
+  branch: codex/nome-android-v656
+  HEAD: 59fce95d3cd08897b4ef742447b785cf2e56c7ce
+  exact tag: v6.5.6
+  merge-base HEAD v6.5.6: 59fce95d3cd08897b4ef742447b785cf2e56c7ce
+  origin fetch/push URL: https://github.com/simplex-chat/simplex-chat.git
+  remote mutation/pull/push: none
+
+Preservation
+  - current nonignored dirty tree preserved; no reset, clean, stash, or checkout overwrite
+  - Phase 1 SHA256SUMS rechecked: 48/48 OK
+  - Phase 2 SCREENSHOT_SHA256SUMS rechecked from repository root: 96/96 OK
+  - no Haskell/native core, Core.kt, database/protocol/message-state-machine,
+    Desktop, or iOS source path appears in the changed/untracked set
+
+Review digest scope
+  REVIEW_INPUT_SHA256SUMS expands and hashes the entire current nonignored dirty
+  file set, not only the new foundation files, plus the five frozen Android design
+  references used for comparison. It excludes only itself, review-rounds.md, and
+  the derived final SHA256SUMS attestation manifest.

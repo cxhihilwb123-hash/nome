@@ -2,6 +2,8 @@ package chat.simplex.common.helpers
 
 import android.net.*
 import android.util.Log
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.getSystemService
 import chat.simplex.common.model.ChatModel.controller
 import chat.simplex.common.model.UserNetworkInfo
@@ -13,6 +15,13 @@ import kotlinx.coroutines.delay
 
 class NetworkObserver {
   private var prevInfo: UserNetworkInfo? = null
+  private val _platformNetworkInfo = mutableStateOf<UserNetworkInfo?>(null)
+
+  /**
+   * The latest fact observed directly from Android connectivity, or null before the first
+   * observation. Unlike ChatModel's legacy default, null must not be interpreted as online.
+   */
+  val platformNetworkInfo: State<UserNetworkInfo?> = _platformNetworkInfo
 
   // When having both mobile and Wi-Fi networks enabled with Wi-Fi being active, then disabling Wi-Fi, network reports its offline (which is true)
   // but since it will be online after switching to mobile, there is no need to inform backend about such temporary change.
@@ -32,6 +41,7 @@ class NetworkObserver {
         online = true,
       )
       prevInfo = info
+      _platformNetworkInfo.value = null
       setNetworkInfo(info)
       return
     }
@@ -61,7 +71,10 @@ class NetworkObserver {
     )
     if (prevInfo != info) {
       prevInfo = info
+      _platformNetworkInfo.value = info
       setNetworkInfo(info)
+    } else {
+      _platformNetworkInfo.value = info
     }
   }
 
@@ -69,6 +82,7 @@ class NetworkObserver {
     Log.d(TAG, "Network changed: lost")
     val none = UserNetworkInfo(networkType = UserNetworkType.NONE, false)
     prevInfo = none
+    _platformNetworkInfo.value = none
     setNetworkInfo(none)
   }
 

@@ -1,0 +1,20 @@
+--------- beginning of main
+--------- beginning of system
+--------- beginning of crash
+07-17 01:19:41.403  4910  4910 E AndroidRuntime: FATAL EXCEPTION: main
+07-17 01:19:41.403  4910  4910 E AndroidRuntime: Process: chat.simplex.app.nome.dev, PID: 4910
+07-17 01:19:41.403  4910  4910 E AndroidRuntime: java.lang.UnsatisfiedLinkError: dlopen failed: cannot locate symbol "getentropy" referenced by "/data/app/chat.simplex.app.nome.dev-YruhuSePgCeWYtUVXe2h9g==/base.apk!/lib/arm64-v8a/libsimplex.so"...
+07-17 01:19:41.403  4910  4910 E AndroidRuntime: 	at java.lang.Runtime.loadLibrary0(Runtime.java:1016)
+07-17 01:19:41.403  4910  4910 E AndroidRuntime: 	at java.lang.System.loadLibrary(System.java:1657)
+07-17 01:19:41.403  4910  4910 E AndroidRuntime: 	at chat.simplex.common.platform.AppCommon_androidKt.initHaskell(AppCommon.android.kt:66)
+07-17 01:19:41.403  4910  4910 E AndroidRuntime: 	at chat.simplex.app.SimplexApp.onCreate(SimplexApp.kt:71)
+07-17 01:19:41.403  4910  4910 E AndroidRuntime: 	at android.app.Instrumentation.callApplicationOnCreate(Instrumentation.java:1118)
+07-17 01:19:41.403  4910  4910 E AndroidRuntime: 	at android.app.ActivityThread.handleBindApplication(ActivityThread.java:5791)
+07-17 01:19:41.403  4910  4910 E AndroidRuntime: 	at android.app.ActivityThread.-wrap1(Unknown Source:0)
+07-17 01:19:41.403  4910  4910 E AndroidRuntime: 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:1661)
+07-17 01:19:41.403  4910  4910 E AndroidRuntime: 	at android.os.Handler.dispatchMessage(Handler.java:105)
+07-17 01:19:41.403  4910  4910 E AndroidRuntime: 	at android.os.Looper.loop(Looper.java:164)
+07-17 01:19:41.403  4910  4910 E AndroidRuntime: 	at android.app.ActivityThread.main(ActivityThread.java:6541)
+07-17 01:19:41.403  4910  4910 E AndroidRuntime: 	at java.lang.reflect.Method.invoke(Native Method)
+07-17 01:19:41.403  4910  4910 E AndroidRuntime: 	at com.android.internal.os.Zygote$MethodAndArgsCaller.run(Zygote.java:240)
+07-17 01:19:41.403  4910  4910 E AndroidRuntime: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:767)

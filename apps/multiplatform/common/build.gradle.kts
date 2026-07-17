@@ -162,7 +162,7 @@ android {
   compileSdk = 35
   sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
   defaultConfig {
-    minSdk = 26
+    minSdk = 28
   }
   testOptions.targetSdk = 34
   lint.targetSdk = 34

@@ -11,6 +11,7 @@
 7. [Platform Theme](#7-platform-theme)
 8. [YAML Import/Export](#8-yaml-importexport)
 9. [Source Files](#9-source-files)
+10. [Nome Android Home Theme Boundary](#10-nome-android-home-theme-boundary)
 
 ## Executive Summary
 
@@ -42,7 +43,7 @@ A singleton `object` that manages theme state, persistence, and resolution.
 
 <a id="currentColors"></a>
 
-**`currentColors()`** ([line 57](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/ThemeManager.kt#L57)):
+[`currentColors()`](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/ThemeManager.kt#L57-L90):
 
 ```kotlin
 fun currentColors(
@@ -65,7 +66,7 @@ Returns `ActiveTheme(name, base, colors, appColors, wallpaper)`.
 
 ### Theme application
 
-**`applyTheme()`** ([line 105](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/ThemeManager.kt#L105)):
+[`applyTheme()`](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/ThemeManager.kt#L105-L113):
 
 Persists the theme name, recalculates `CurrentColors`, and updates Android system bar appearance:
 
@@ -81,13 +82,13 @@ fun applyTheme(theme: String) {
 }
 ```
 
-**`changeDarkTheme()`** ([line 115](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/ThemeManager.kt#L115)):
+[`changeDarkTheme()`](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/ThemeManager.kt#L115-L118):
 
 Sets the dark mode variant (DARK, SIMPLEX, or BLACK) and recalculates colors.
 
 ### Color and wallpaper modification
 
-**`saveAndApplyThemeColor()`** ([line 120](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/ThemeManager.kt#L120)):
+[`saveAndApplyThemeColor()`](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/ThemeManager.kt#L120-L130):
 
 Persists a single color change to the global theme overrides:
 1. Gets or creates `ThemeOverrides` for the current base theme.
@@ -95,41 +96,41 @@ Persists a single color change to the global theme overrides:
 3. Updates `currentThemeIds` mapping.
 4. Recalculates `CurrentColors`.
 
-**`applyThemeColor()`** ([line 132](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/ThemeManager.kt#L132)):
+[`applyThemeColor()`](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/ThemeManager.kt#L132-L134):
 
 In-memory-only color change (for per-chat/per-user theme editing before save).
 
-**`saveAndApplyWallpaper()`** ([line 136](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/ThemeManager.kt#L136)):
+[`saveAndApplyWallpaper()`](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/ThemeManager.kt#L136):
 
 Persists wallpaper type change. Finds or creates matching `ThemeOverrides` (matching by wallpaper type + theme name), updates the wallpaper, and persists.
 
 ### Reset
 
-**`resetAllThemeColors()` (global)** ([line 204](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/ThemeManager.kt#L204)):
+[`resetAllThemeColors()` (global)](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/ThemeManager.kt#L204-L211):
 
 Resets all custom colors in the current global theme override to defaults. Preserves wallpaper but clears its background and tint overrides.
 
-**`resetAllThemeColors()` (per-chat/per-user)** ([line 213](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/ThemeManager.kt#L213)):
+[`resetAllThemeColors()` (per-chat/per-user)](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/ThemeManager.kt#L213-L216):
 
 In-memory reset of a `ThemeModeOverride` state.
 
 ### Import/Export
 
-**`saveAndApplyThemeOverrides()`** ([line 188](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/ThemeManager.kt#L188)):
+[`saveAndApplyThemeOverrides()`](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/ThemeManager.kt#L188-L202):
 
 Imports a complete `ThemeOverrides` (from YAML). Handles wallpaper image import (base64 to file), replaces existing override for the same type, and applies.
 
-**`currentThemeOverridesForExport()`** ([line 92](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/ThemeManager.kt#L92)):
+[`currentThemeOverridesForExport()`](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/ThemeManager.kt#L92-L103):
 
 Exports the fully resolved current theme as a `ThemeOverrides` with all colors filled and wallpaper image embedded as base64.
 
 ### Utility
 
-**`colorFromReadableHex()`** ([line 224](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/ThemeManager.kt#L224)):
+[`colorFromReadableHex()`](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/ThemeManager.kt#L224-L225):
 
 Parses `#AARRGGBB` hex string to `Color`.
 
-**`toReadableHex()`** ([line 227](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/ThemeManager.kt#L227)):
+[`toReadableHex()`](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/ThemeManager.kt#L227-L240):
 
 Converts `Color` to `#AARRGGBB` hex string with intelligent alpha handling.
 
@@ -139,7 +140,7 @@ Converts `Color` to `#AARRGGBB` hex string with intelligent alpha handling.
 
 ## 3. Default Themes
 
-[`Theme.kt`](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L26):
+[`DefaultTheme`](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L26-L44):
 
 ```kotlin
 enum class DefaultTheme {
@@ -160,7 +161,7 @@ enum class DefaultTheme {
 
 `SYSTEM` is a virtual theme name that resolves to LIGHT or the configured dark variant at runtime.
 
-`DefaultThemeMode` ([line 46](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L46)): `LIGHT` or `DARK`, serialized as `"light"` / `"dark"`.
+[`DefaultThemeMode`](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L46-L49): `LIGHT` or `DARK`, serialized as `"light"` / `"dark"`.
 
 ---
 
@@ -168,9 +169,9 @@ enum class DefaultTheme {
 
 <a id="AppColors"></a>
 
-### AppColors (line 53)
+### AppColors
 
-[`Theme.kt` L53](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L53):
+[`AppColors`](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L53):
 
 ```kotlin
 @Stable
@@ -188,9 +189,9 @@ Mutable state properties (for efficient recomposition) representing chat-specifi
 
 <a id="AppWallpaper"></a>
 
-### AppWallpaper (line 106)
+### AppWallpaper
 
-[`Theme.kt` L106](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L106):
+[`AppWallpaper`](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L106):
 
 ```kotlin
 @Stable
@@ -205,7 +206,7 @@ Represents the active wallpaper state with optional background color, tint overl
 
 <a id="ThemeColor"></a>
 
-### ThemeColor (line 140)
+### ThemeColor
 
 Enum of all customizable color slots:
 
@@ -213,19 +214,21 @@ Enum of all customizable color slots:
 
 Each has a `fromColors()` method to extract the current value and a `text` property for UI display.
 
+**Location:** [`ThemeColor`](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L140)
+
 <a id="ThemeColors"></a>
 
-### ThemeColors (line 183)
+### ThemeColors
 
-[`Theme.kt` L183](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L183):
+[`ThemeColors`](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L183):
 
 Serializable data class with optional hex color strings for each slot. Uses `@SerialName` annotations for YAML compatibility (`accent` for `primary`, `accentVariant` for `primaryVariant`, `menus` for `surface`, etc.).
 
 <a id="ThemeWallpaper"></a>
 
-### ThemeWallpaper (line 224)
+### ThemeWallpaper
 
-[`Theme.kt` L224](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L224):
+[`ThemeWallpaper`](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L224):
 
 ```kotlin
 @Serializable
@@ -248,9 +251,9 @@ Key methods:
 
 <a id="ThemeOverrides"></a>
 
-### ThemeOverrides (line 304)
+### ThemeOverrides
 
-[`Theme.kt` L304](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L304):
+[`ThemeOverrides`](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L304):
 
 ```kotlin
 @Serializable
@@ -269,9 +272,9 @@ A complete theme override entry. Multiple can coexist (one per wallpaper type pe
 
 <a id="ThemeModeOverrides"></a>
 
-### ThemeModeOverrides (line 475)
+### ThemeModeOverrides
 
-[`Theme.kt` L475](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L475):
+[`ThemeModeOverrides`](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L475):
 
 ```kotlin
 @Serializable
@@ -285,9 +288,9 @@ Container for per-user or per-chat overrides, with separate light and dark mode 
 
 <a id="ThemeModeOverride"></a>
 
-### ThemeModeOverride (line 487)
+### ThemeModeOverride
 
-[`Theme.kt` L487](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L487):
+[`ThemeModeOverride`](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L487):
 
 ```kotlin
 @Serializable
@@ -306,7 +309,7 @@ A single mode's override with colors and wallpaper. Has `withUpdatedColor()` and
 
 Four built-in color palettes, each consisting of a Material `Colors` and an `AppColors`:
 
-### DarkColorPalette ([line 634](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L634))
+### [DarkColorPalette](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L635)
 
 | Property | Value | Notes |
 |---|---|---|
@@ -315,7 +318,7 @@ Four built-in color palettes, each consisting of a Material `Colors` and an `App
 | `sentMessage` | `#18262E` | Dark blue-gray |
 | `receivedMessage` | `#262627` | Neutral dark |
 
-### LightColorPalette ([line 656](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L656))
+### [LightColorPalette](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L657)
 
 | Property | Value | Notes |
 |---|---|---|
@@ -324,7 +327,7 @@ Four built-in color palettes, each consisting of a Material `Colors` and an `App
 | `sentMessage` | `#E9F7FF` | Light blue |
 | `receivedMessage` | `#F5F5F6` | Near-white |
 
-### SimplexColorPalette ([line 678](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L678))
+### [SimplexColorPalette](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L679)
 
 | Property | Value | Notes |
 |---|---|---|
@@ -334,7 +337,7 @@ Four built-in color palettes, each consisting of a Material `Colors` and an `App
 | `surface` | `#121C37` | Dark navy |
 | `title` | `#267BE5` | Blue |
 
-### BlackColorPalette ([line 701](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L701))
+### [BlackColorPalette](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L702)
 
 | Property | Value | Notes |
 |---|---|---|
@@ -350,7 +353,7 @@ Four built-in color palettes, each consisting of a Material `Colors` and an `App
 
 ## 6. SimpleXTheme Composable
 
-[`Theme.kt` line 773](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L773):
+[`SimpleXTheme()`](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L774-L823):
 
 ```kotlin
 @Composable
@@ -359,17 +362,17 @@ fun SimpleXTheme(darkTheme: Boolean? = null, content: @Composable () -> Unit)
 
 The root theme composable that wraps all app content:
 
-1. **System dark mode tracking** ([line 781](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L781)): Uses `snapshotFlow` on `isSystemInDarkTheme()` to call `reactOnDarkThemeChanges()` when the system theme changes. This triggers `ThemeManager.applyTheme(SYSTEM)` if the app is in system theme mode.
+1. **System dark mode tracking** ([`systemDark` collection](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L782-L789)): Uses `snapshotFlow` on `isSystemInDarkTheme()` to call `reactOnDarkThemeChanges()` when the system theme changes. This triggers `ThemeManager.applyTheme(SYSTEM)` if the app is in system theme mode.
 
-2. **User theme tracking** ([line 790](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L790)): Monitors `chatModel.currentUser.value?.uiThemes` and re-applies the theme when the active user changes.
+2. **User theme tracking** ([`CurrentColors` and user-theme collection](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L790-L797)): Monitors `chatModel.currentUser.value?.uiThemes` and re-applies the theme when the active user changes.
 
-3. **MaterialTheme wrapping** ([line 797](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L797)): Provides `theme.colors` to `MaterialTheme`, plus custom `CompositionLocal` providers:
+3. **MaterialTheme wrapping** ([`MaterialTheme` and locals](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L798-L822)): Provides `theme.colors` to `MaterialTheme`, plus custom `CompositionLocal` providers:
    - `LocalContentColor` -- set to `MaterialTheme.colors.onBackground`
    - `LocalAppColors` -- the `AppColors` instance (remembered and updated)
    - `LocalAppWallpaper` -- the `AppWallpaper` instance (remembered and updated)
    - `LocalDensity` -- scaled by `desktopDensityScaleMultiplier` and `fontSizeMultiplier`
 
-4. **`SimpleXThemeOverride`** ([line 825](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L825)): A variant that accepts an explicit `ActiveTheme` for per-chat theme previews and overlays.
+4. [`SimpleXThemeOverride`](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L826): A variant that accepts an explicit `ActiveTheme` for per-chat theme previews and overlays.
 
 ### CompositionLocal access
 
@@ -382,9 +385,9 @@ val MaterialTheme.wallpaper: AppWallpaper // via LocalAppWallpaper
 
 <a id="CurrentColors"></a>
 
-`CurrentColors` ([line 727](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L727)): A `MutableStateFlow<ActiveTheme>` that holds the current resolved theme. Updated by `ThemeManager.applyTheme()` and collected by `SimpleXTheme`.
+[`CurrentColors`](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L728): A `MutableStateFlow<ActiveTheme>` that holds the current resolved theme. Updated by `ThemeManager.applyTheme()` and collected by `SimpleXTheme`.
 
-`systemInDarkThemeCurrently` ([line 724](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L724)): Tracks the current system dark mode state.
+[`systemInDarkThemeCurrently`](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L725): Tracks the current system dark mode state.
 
 ---
 
@@ -419,7 +422,7 @@ Uses the [jSystemThemeDetector](https://github.com/Dansoftowner/jSystemThemeDete
 
 ### reactOnDarkThemeChanges
 
-[`Theme.kt` line 763](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L763):
+[`reactOnDarkThemeChanges()`](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt#L764-L770):
 
 ```kotlin
 fun reactOnDarkThemeChanges(isDark: Boolean) {
@@ -441,7 +444,7 @@ Theme overrides are persisted in `themes.yaml` (located in `preferencesDir`).
 
 ### readThemeOverrides
 
-[`Files.kt` line 125](../../common/src/commonMain/kotlin/chat/simplex/common/platform/Files.kt#L125):
+[`readThemeOverrides()`](../../common/src/commonMain/kotlin/chat/simplex/common/platform/Files.kt#L127-L149):
 
 ```kotlin
 fun readThemeOverrides(): List<ThemeOverrides>
@@ -455,7 +458,7 @@ fun readThemeOverrides(): List<ThemeOverrides>
 
 ### writeThemeOverrides
 
-[`Files.kt` line 151](../../common/src/commonMain/kotlin/chat/simplex/common/platform/Files.kt#L151):
+[`writeThemeOverrides()`](../../common/src/commonMain/kotlin/chat/simplex/common/platform/Files.kt#L153-L168):
 
 ```kotlin
 fun writeThemeOverrides(overrides: List<ThemeOverrides>): Boolean
@@ -492,7 +495,23 @@ Uses the [kaml](https://github.com/charleskorn/kaml) YAML library for serializat
 | File | Path | Lines | Description |
 |---|---|---|---|
 | `ThemeManager.kt` | [`common/src/commonMain/.../ui/theme/ThemeManager.kt`](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/ThemeManager.kt) | 241 | Theme resolution, persistence, color/wallpaper management |
-| `Theme.kt` | [`common/src/commonMain/.../ui/theme/Theme.kt`](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt) | 848 | Type definitions, color palettes, `SimpleXTheme` composable |
+| `Theme.kt` | [`common/src/commonMain/.../ui/theme/Theme.kt`](../../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt) | 849 | Type definitions, color palettes, `SimpleXTheme` composable |
 | `Theme.android.kt` | [`common/src/androidMain/.../ui/theme/Theme.android.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/theme/Theme.android.kt) | 6 | Android `isSystemInDarkTheme` |
 | `Theme.desktop.kt` | [`common/src/desktopMain/.../ui/theme/Theme.desktop.kt`](../../common/src/desktopMain/kotlin/chat/simplex/common/ui/theme/Theme.desktop.kt) | 25 | Desktop `isSystemInDarkTheme` via OsThemeDetector |
-| `Files.kt` | [`common/src/commonMain/.../platform/Files.kt`](../../common/src/commonMain/kotlin/chat/simplex/common/platform/Files.kt) | 191 | `readThemeOverrides()` (L125), `writeThemeOverrides()` (L151) |
+| `Files.kt` | [`common/src/commonMain/.../platform/Files.kt`](../../common/src/commonMain/kotlin/chat/simplex/common/platform/Files.kt) | 193 | `readThemeOverrides()`, `writeThemeOverrides()` |
+| `NomeTheme.kt` | [`common/src/androidMain/.../ui/nome/theme/NomeTheme.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/theme/NomeTheme.kt) | 130 | Android-only Nome tokens-to-Material 2 adapter |
+| `NomeHomeRoute.android.kt` | [`common/src/androidMain/.../ui/nome/home/NomeHomeRoute.android.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeRoute.android.kt) | — | Resolves current upstream light/dark mode and scopes Nome theme to P07/P08 |
+| `NomeProductionShell.kt` | [`android/src/main/.../nome/NomeProductionShell.kt`](../../android/src/main/java/chat/simplex/app/nome/NomeProductionShell.kt) | 23 | Synchronizes Android system-bar appearance with `CurrentColors` |
+| `NomeHomeScreenshotTest.kt` | [`android/src/androidTest/.../nome/home/NomeHomeScreenshotTest.kt`](../../android/src/androidTest/java/chat/simplex/app/nome/home/NomeHomeScreenshotTest.kt#L18-L177) | 177 | Defines the verified light/dark renderer capture matrix and TalkBack hold path |
+
+---
+
+## 10. Nome Android Home Theme Boundary
+
+The shared root remains wrapped by [`SimpleXTheme()`](../../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L48-L81); Batch 2 does not replace the global resolver, persistence cascade, per-user/per-chat overrides, wallpapers, or Desktop theme.
+
+At the Activity boundary, [`NomeProductionShell()`](../../android/src/main/java/chat/simplex/app/nome/NomeProductionShell.kt#L17-L23) observes `CurrentColors` and synchronizes light/dark system-bar icon appearance. In the ordinary Android home branch, the [Android route actual](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeRoute.android.kt#L101-L107) derives the Nome light/dark choice from the same resolved `CurrentColors` and nests [`NomeAndroidTheme()`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/theme/NomeTheme.kt#L82-L130) around P07/P08 only.
+
+This keeps a single upstream theme preference truth while allowing approved Nome semantic tokens on the production home. The nested adapter maps Nome colors, typography, and shapes into the existing Material 2 APIs; it does not write theme preferences, alter other routes, or migrate the app to Material 3.
+
+The current Batch 2 source must still be evidenced in `zh-CN/en × light/dark × 100%/200%` and compared to the approved P07/P08 references. The screenshot test defines 10 renderer states × 2 locales × 2 themes × 2 font scales = 80 planned API 35 captures. The presence of that matrix in source is not a claim that captures exist or that current device/screenshot/contrast/review gates have passed.

@@ -1,0 +1,75 @@
+Nome Android Phase 2 foundation — build/test verification
+Date: 2026-07-17 Asia/Shanghai
+Baseline HEAD: 59fce95d3cd08897b4ef742447b785cf2e56c7ce (exact tag v6.5.6)
+
+PRIMARY GRADLE GATE
+Command:
+  ./gradlew :android:testDebugUnitTest :android:lintDebug :android:assembleDebug :android:assembleDebugAndroidTest :android:processReleaseMainManifest
+Result:
+  BUILD SUCCESSFUL in 1m 49s
+
+UNIT REPORTS
+  reports/unit-NomeFoundationContractTest.xml
+    tests=1, failures=0, errors=0, skipped=0
+  reports/unit-ExampleUnitTest.xml
+    tests=1, failures=0, errors=0, skipped=0
+
+FINAL CONNECTED DEVICE GATE (API 35)
+Command:
+  ./gradlew :android:connectedDebugAndroidTest
+Result:
+  BUILD SUCCESSFUL in 1m 18s
+  reports/api35-connected-tests.xml
+  device=nome-v656-baseline-api35(AVD) - 15
+  tests=9, failures=0, errors=0, skipped=0
+
+Covered device contracts:
+  - package/minSdk contract;
+  - debug harness present and not exported;
+  - NomeButton 48dp + accessible name/role/state description;
+  - seven-state panel across English/Chinese and light/dark;
+  - state live-region policy;
+  - every state across English/Chinese and light/dark at 200% with localized state descriptions and >=48dp test actions;
+  - 200% primary action remains visible, enabled, clickable, and >=48dp;
+  - critical light/dark text/control contrast;
+  - representatives native screenshot suite.
+
+NATIVE SCREENSHOT SUITES (API 35)
+  representatives: OK, 20 files, instrumentation time 38.682s
+  states:          OK, 28 files, instrumentation time 83.605s
+  font200:         OK, 20 files, instrumentation time 38.219s
+  states200:       OK, 28 files, instrumentation time 81.357s
+  total:           96 PNG files; SCREENSHOT_SHA256SUMS verifies 96/96
+
+LINT
+  :android:lintDebug completed successfully.
+  reports/lint-results-debug.xml contains 45 warnings and no errors/fatal issues.
+  Most warnings are inherited dependency/API hygiene. The debug-only localized
+  Configuration call is reported as AppBundleLocaleChanges; it does not change
+  application locales or production bundle behavior.
+
+MINIMUM SDK / PACKAGE
+  android/build.gradle.kts: minSdk=28, targetSdk=35
+  common/build.gradle.kts:  minSdk=28
+  reports/AndroidManifest-debug-merged.xml:
+    package=chat.simplex.app.nome.dev, minSdk=28, targetSdk=35
+  reports/AndroidManifest-release-merged.xml:
+    package=chat.simplex.app, minSdk=28, targetSdk=35
+  reports/aapt-arm64-debug-badging.txt:
+    package=chat.simplex.app.nome.dev
+    versionName=6.5.6
+    sdkVersion='28'
+    targetSdkVersion='35'
+    native-code='arm64-v8a'
+
+DEBUG/RELEASE ISOLATION
+  Debug merged manifest contains:
+    chat.simplex.app.nome.harness.NomeFoundationActivity
+    android:exported="false"
+  Release merged manifest contains no NomeFoundationActivity or nome harness entry.
+  Compose UI test dependency is androidTest-only; tooling/Preview/test-manifest and
+  debug fixture icon support are debug-only. No production page host was added.
+
+BOUNDARY CHECK
+  No Haskell/native source, Core.kt, database/protocol/message-state-machine,
+  Desktop, or iOS source was changed by this foundation batch.

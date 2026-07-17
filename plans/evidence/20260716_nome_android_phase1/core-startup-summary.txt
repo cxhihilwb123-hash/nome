@@ -1,0 +1,20 @@
+Source: unchanged v6.5.6 debug build, isolated package chat.simplex.app.nome.dev
+Device: nome-v656-baseline-api35, Android API 35, arm64-v8a
+
+Cold launch:
+Status: ok
+LaunchState: COLD
+Activity: chat.simplex.app.nome.dev/chat.simplex.app.MainActivity
+TotalTime: 1738 ms
+WaitTime: 1740 ms
+
+Relevant process log lines:
+nativeloader: Load .../base.apk!/lib/arm64-v8a/libapp-lib.so ...: ok
+SIMPLEX: starting server
+SIMPLEX: started server
+SIMPLEX: started receiver
+SIMPLEX: starting receiver loop
+SIMPLEX: Network changed: UserNetworkInfo(networkType=WIFI, online=true)
+
+Observed outcome:
+The official onboarding created synthetic local user NomeBaselineQA and reached the empty connection screen. No FATAL EXCEPTION, AndroidRuntime crash, ANR, or native load failure was observed in the scoped process log.

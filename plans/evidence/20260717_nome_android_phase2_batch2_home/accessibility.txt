@@ -1,0 +1,54 @@
+Nome Android Phase 2 Batch 2 accessibility verification
+Date: 2026-07-17 (Asia/Shanghai)
+
+Automated PASS on API 28 and API 35:
+  - semantic names, roles, state descriptions and live-region transitions;
+  - preview privacy in visible and spoken text;
+  - 48dp minimum targets;
+  - all primary states visible at 200% font;
+  - pending-deletion, contact card, contact request, pending connection and stopped-core rows expose
+    no incorrect navigation action;
+  - 18/18 connected device tests on each API.
+
+Manual/interactive TalkBack gate PASS on the API 35 production route:
+  - TalkBack 15.0 was bound and enabled with the Default keymap and Alt modifier.
+  - The top resumed activity was
+    chat.simplex.app.nome.dev/chat.simplex.app.MainActivity.
+  - The AVD hardware keyboard was enabled temporarily so the headless emulator could deliver the
+    same Alt+Right key sequence as an external keyboard. Root ADB was used only to inject key events
+    through the AVD qwerty2 input device; the application ran under its normal package/process.
+  - The production route traversal reached, in order:
+      00 Nome
+      01 current identity: Batch2 (visible avatar B; semantic label "当前身份：Batch2")
+      02 首页
+      03 当前本地身份的会话
+      04 会话
+      05 Ask SimpleX Team (read-only)
+      06 SimpleX Status (read-only)
+      07 私密笔记 (open conversation)
+  - No debug badge or "非实时 CORE" label appears in the production semantic tree.
+  - The eight focus PNGs are non-empty and have eight distinct SHA-256 digests. TalkBack's focus
+    overlay masks non-focused content in some frames; the independent production UI tree maps each
+    focus rectangle to the labels and actions above.
+
+The device-only PrivacyProtectScreen preference was set to false solely so screencap could record
+the production TalkBack overlay. No source or product default changed. The final closure restores
+the preference to true and records that state beside this evidence. The 80 renderer screenshots are
+an independent harness output and do not contain TalkBack focus rectangles. No unarchived hold-test
+timing is claimed by this evidence set.
+
+Primary artifacts:
+  reports/accessibility/production-talkback/dumpsys-accessibility.txt
+  reports/accessibility/production-talkback/dumpsys-activity.txt
+  reports/accessibility/production-talkback/dumpsys-input.txt
+  reports/accessibility/production-talkback/getevent-hardware-keyboard.txt
+  reports/accessibility/production-talkback/talkback-package.txt
+  reports/accessibility/production-talkback/talkback-keymap-preferences.xml
+  reports/accessibility/production-talkback/ui-tree.xml
+  reports/accessibility/production-talkback/focus-sequence.txt
+  reports/accessibility/production-talkback/focus-sha256sums.txt
+  reports/accessibility/production-talkback/focus-00.png through focus-07.png
+
+Supplementary artifact boundary:
+  reports/accessibility/talkback-focus/ is the earlier debug-renderer traversal. It is retained as
+  supplementary renderer evidence only and is not counted as the production-route gate above.

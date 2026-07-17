@@ -373,7 +373,15 @@ fun StartPartOfScreen(userPickerState: MutableStateFlow<AnimatedViewState>) {
     val stopped = chatModel.chatRunning.value == false
     if (chatModel.sharedContent.value == null) {
       CompositionLocalProvider(LocalAppBarHandler provides rememberAppBarHandler()) {
-        ChatListView(chatModel, userPickerState, AppLock::setPerformLA, stopped)
+        ChatListNoticeEffect(chatModel)
+        PlatformHomeRoute(
+          chatModel = chatModel,
+          userPickerState = userPickerState,
+          setPerformLA = AppLock::setPerformLA,
+          stopped = stopped,
+        ) {
+          ChatListView(chatModel, userPickerState, AppLock::setPerformLA, stopped)
+        }
       }
     } else {
       // LALAL initial load of view doesn't show blur. Focusing text field shows it

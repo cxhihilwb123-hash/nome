@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="nome_fixture_activity_label">Nome foundation reference</string>
+  <string name="nome_fixture_debug_badge">DEBUG REFERENCE · %1$s · NOT LIVE CORE</string>
+  <string name="nome_fixture_debug_semantics">Debug visual reference for page %1$s. Content is deterministic and does not report live core, network, security, delivery, permission, or migration state.</string>
+  <string name="nome_fixture_brand_tagline">Private conversations, clear evidence</string>
+
+  <string name="nome_fixture_state_normal_title">Ready reference</string>
+  <string name="nome_fixture_state_normal_description">Foundation normal-state composition only. It does not assert a live core, network, permission, delivery, or migration result.</string>
+  <string name="nome_fixture_state_normal_semantics">Ready reference state</string>
+  <string name="nome_fixture_state_loading_title">Loading reference</string>
+  <string name="nome_fixture_state_loading_description">Indeterminate visual state only. No stage, percentage, timeout, or live core result is asserted.</string>
+  <string name="nome_fixture_state_loading_semantics">Loading reference state</string>
+  <string name="nome_fixture_state_empty_title">Empty reference</string>
+  <string name="nome_fixture_state_empty_description">Deterministic empty composition. It does not classify first use, filters, or core availability.</string>
+  <string name="nome_fixture_state_empty_semantics">Empty reference state</string>
+  <string name="nome_fixture_state_offline_title">Device-offline reference</string>
+  <string name="nome_fixture_state_offline_description">Device connectivity styling only. It does not imply relay, server, or private-routing health.</string>
+  <string name="nome_fixture_state_offline_semantics">Device-offline reference state</string>
+  <string name="nome_fixture_state_error_title">Retryable error reference</string>
+  <string name="nome_fixture_state_error_description">Presentation fixture only. No core failure, destructive boundary, or successful retry is asserted.</string>
+  <string name="nome_fixture_state_error_semantics">Retryable error reference state</string>
+  <string name="nome_fixture_state_permission_title">Permission reference</string>
+  <string name="nome_fixture_state_permission_description">Platform-permission styling only. No permission has been requested or re-read.</string>
+  <string name="nome_fixture_state_permission_semantics">Permission-required reference state</string>
+  <string name="nome_fixture_state_danger_title">Destructive-boundary reference</string>
+  <string name="nome_fixture_state_danger_description">Confirmation styling only. No command is submitted and no local or remote state changes.</string>
+  <string name="nome_fixture_state_danger_semantics">Destructive-boundary reference state</string>
+
+  <string name="nome_fixture_back">Back</string>
+  <string name="nome_fixture_more">More reference actions</string>
+  <string name="nome_fixture_profile">Open reference profile</string>
+  <string name="nome_fixture_add">Add reference item</string>
+  <string name="nome_fixture_microphone">Reference voice control</string>
+  <string name="nome_fixture_send">Reference send control</string>
+  <string name="nome_fixture_open_row">Open %1$s reference row</string>
+  <string name="nome_fixture_selected">Selected</string>
+  <string name="nome_fixture_not_selected">Not selected</string>
+
+  <string name="nome_fixture_p02_title">Unlock Nome</string>
+  <string name="nome_fixture_p02_subtitle">Choose a configured local recovery path</string>
+  <string name="nome_fixture_p02_identity_initial">N</string>
+  <string name="nome_fixture_p02_identity">Nome local identity</string>
+  <string name="nome_fixture_p02_identity_supporting">Deterministic identity label for this visual fixture</string>
+  <string name="nome_fixture_p02_unavailable_title">Biometric status unavailable</string>
+  <string name="nome_fixture_p02_unavailable_body">Unavailable never unlocks the app. Only a configured device credential or app passcode may continue.</string>
+  <string name="nome_fixture_p02_device_credential">Use device credential</string>
+  <string name="nome_fixture_p02_app_passcode">Use app passcode</string>
+  <string name="nome_fixture_p02_security_note">Reference controls are fail-closed and do not perform authentication.</string>
+
+  <string name="nome_fixture_p07_title">Chats</string>
+  <string name="nome_fixture_p07_search">Search loaded chats</string>
+  <string name="nome_fixture_p07_search_semantics">Open loaded-chat search reference</string>
+  <string name="nome_fixture_p07_section_recent">Recent visual samples</string>
+  <string name="nome_fixture_p07_contact_one">Alex · sample</string>
+  <string name="nome_fixture_p07_preview_one">Draft visual content; no delivery state</string>
+  <string name="nome_fixture_p07_time_one">09:41 sample</string>
+  <string name="nome_fixture_p07_contact_two">Design group · sample</string>
+  <string name="nome_fixture_p07_preview_two">Local list hierarchy reference</string>
+  <string name="nome_fixture_p07_time_two">Yesterday sample</string>
+  <string name="nome_fixture_p07_connection_section">Connection references</string>
+  <string name="nome_fixture_p07_new_contact">New contact</string>
+  <string name="nome_fixture_p07_new_contact_body">Start a local connection flow reference</string>
+  <string name="nome_fixture_p07_new_group">New group</string>
+  <string name="nome_fixture_p07_new_group_body">Open a group setup reference</string>
+  <string name="nome_fixture_p07_invitation">Invitation</string>
+  <string name="nome_fixture_p07_invitation_body">Generated, copied, shared, and connected remain distinct</string>
+  <string name="nome_fixture_nav_chats">Chats</string>
+  <string name="nome_fixture_nav_contacts">Contacts</string>
+  <string name="nome_fixture_nav_settings">Settings</string>
+
+  <string name="nome_fixture_p17_title">Alex · visual sample</string>
+  <string name="nome_fixture_p17_subtitle">Direct-chat composition reference</string>
+  <string name="nome_fixture_p17_security">Security and delivery indicators are intentionally unbound; this fixture reads no core events.</string>
+  <string name="nome_fixture_p17_date">Today · sample</string>
+  <string name="nome_fixture_p17_received">Received bubble visual sample</string>
+  <string name="nome_fixture_p17_sent">Sent bubble visual sample</string>
+  <string name="nome_fixture_p17_delivery_unknown">Delivery evidence: not bound</string>
+  <string name="nome_fixture_p17_file">sample-document.pdf</string>
+  <string name="nome_fixture_p17_file_meta">Fixture attachment · no transfer state</string>
+  <string name="nome_fixture_p17_voice">Voice row visual sample</string>
+  <string name="nome_fixture_p17_voice_meta">No playback or duration evidence</string>
+  <string name="nome_fixture_p17_composer">Message composer reference</string>
+  <string name="nome_fixture_p17_composer_semantics">Open message composer visual reference</string>
+
+  <string name="nome_fixture_p21_title">Public channel</string>
+  <string name="nome_fixture_p21_subtitle">Observer composition reference</string>
+  <string name="nome_fixture_p21_warning_title">Public-channel disclosure</string>
+  <string name="nome_fixture_p21_warning_body">Posts in this channel mode are not end-to-end encrypted. This fixed disclosure does not summarize other chats.</string>
+  <string name="nome_fixture_p21_post_one_title">Release note · sample</string>
+  <string name="nome_fixture_p21_post_one_body">Channel post hierarchy and spacing reference.</string>
+  <string name="nome_fixture_p21_post_two_title">Community update · sample</string>
+  <string name="nome_fixture_p21_post_two_body">Deterministic content; no server acknowledgement is implied.</string>
+  <string name="nome_fixture_p21_evidence_title">Network evidence</string>
+  <string name="nome_fixture_p21_evidence_body">Unknown. No device, server, relay, or global-health result is bound.</string>
+  <string name="nome_fixture_p21_observer">Observer only · posting controls unavailable</string>
+
+  <string name="nome_fixture_p23_title">Settings</string>
+  <string name="nome_fixture_p23_search">Search stable settings routes</string>
+  <string name="nome_fixture_p23_search_semantics">Open stable-route settings search reference</string>
+  <string name="nome_fixture_p23_identity_title">Nome local identity</string>
+  <string name="nome_fixture_p23_identity_body">Local identity reference; not an anonymous account</string>
+  <string name="nome_fixture_p23_section_account">Account and safety</string>
+  <string name="nome_fixture_p23_privacy">Privacy and security</string>
+  <string name="nome_fixture_p23_privacy_body">Local authentication unavailable reference</string>
+  <string name="nome_fixture_p23_notifications">Notifications</string>
+  <string name="nome_fixture_p23_notifications_body">No live platform permission is bound</string>
+  <string name="nome_fixture_p23_section_preferences">Preferences</string>
+  <string name="nome_fixture_p23_appearance">Appearance</string>
+  <string name="nome_fixture_p23_appearance_light">Light reference</string>
+  <string name="nome_fixture_p23_appearance_dark">Dark reference</string>
+  <string name="nome_fixture_p23_data">Data and storage</string>
+  <string name="nome_fixture_p23_data_body">No live usage or migration state is bound</string>
+  <string name="nome_fixture_p23_network">Network and servers</string>
+  <string name="nome_fixture_p23_network_body">Evidence level unknown; no health summary</string>
+</resources>

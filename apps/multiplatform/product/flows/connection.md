@@ -167,8 +167,9 @@ suspend fun apiRejectContactRequest(rh: Long?, contactReqId: Long): Contact?
 1. User selects "Reject" on the contact request.
 2. `CC.ApiRejectContact(contactReqId)` is sent to the core.
 3. The core responds with `CR.ContactRequestRejected`.
-4. The contact request is removed from the chat list.
-5. The connector's side eventually times out or receives an error.
+4. A successful response may carry `contact_ == null`; however, the current `apiRejectContactRequest(): Contact?` wrapper also returns null on failure, and the current UI removes the request in both cases.
+5. Nome must preserve the request unless a discriminated client result proves `CR.ContactRequestRejected`; this adapter requirement is GAP-13.
+6. After proven success, the connector's side eventually times out or receives an error.
 
 ---
 

@@ -1,0 +1,28 @@
+Nome Android Phase 2 Batch 2 release isolation verification
+Date: 2026-07-17 (Asia/Shanghai)
+
+Release APK:
+  apps/multiplatform/android/build/outputs/apk/release/android-arm64-v8a-release-unsigned.apk
+  SHA-256 db38f8a6867f07dc994d21c88232adbd4ea54ce8892e975f672dbf6314e6ee97
+  applicationId chat.simplex.app
+
+Debug APK:
+  apps/multiplatform/android/build/outputs/apk/debug/android-arm64-v8a-debug.apk
+  SHA-256 eed29f24306b8dd8066ff19bcbbe8fe065bbee49136044b757ccac49d7dfeda4
+  applicationId chat.simplex.app.nome.dev
+
+PASS:
+  - release manifest has no android:debuggable=true;
+  - release manifest has no NomeHomeEvidenceActivity or NomeFoundationActivity;
+  - release DEX defined-package scan has 0 debug-harness symbol hits;
+  - debug manifest is debuggable and contains both debug-only evidence Activities;
+  - both debug evidence Activities are non-exported;
+  - debug DEX defined-package scan has 55 matching harness symbols.
+
+Raw manifests:
+  reports/release-isolation/release-manifest.xml
+  reports/release-isolation/debug-manifest.xml
+
+The local apkanalyzer wrapper prints a harmless shell `integer expression expected` warning before
+successful output when its optional Java-version field is empty; manifest and DEX commands still
+returned the results above with Android Studio JBR and ANDROID_SDK_ROOT set.

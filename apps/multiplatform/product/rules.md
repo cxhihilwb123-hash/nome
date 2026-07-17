@@ -12,6 +12,7 @@ This document specifies invariants enforced by the Android and Desktop (Kotlin/C
 4. [File Transfer (RULE-14 through RULE-15)](#4-file-transfer)
 5. [Notification Delivery (RULE-16 through RULE-17)](#5-notification-delivery)
 6. [Call Integrity (RULE-18)](#6-call-integrity)
+7. [Nome Android Home Truth (RULE-19)](#7-nome-android-home-truth)
 
 ---
 
@@ -251,3 +252,23 @@ This document specifies invariants enforced by the Android and Desktop (Kotlin/C
 - `common/src/commonMain/kotlin/chat/simplex/common/views/call/WebRTC.kt`
 - Android: `android/src/main/java/chat/simplex/app/CallService.kt`, `android/src/main/java/chat/simplex/app/views/call/CallActivity.kt`
 - Desktop: `common/src/desktopMain/kotlin/chat/simplex/common/views/call/CallView.desktop.kt`
+
+---
+
+## 7. Nome Android Home Truth
+
+### RULE-19: Home-State Truth and Identity Isolation
+
+**Invariant:** The Nome Android P07/P08 home MUST bind loaded chat rows to the exact `(remoteHostId, userId)` generation that produced them. A user/host change, an in-flight generation mismatch, or an initial unknown load MUST hide old rows. The UI MUST NOT infer “true empty” from `chats.isEmpty()` alone.
+
+The following facts remain independent:
+
+1. **Content:** true empty requires a typed successful `CR.ApiChats` result applied to the current generation with zero rows. `NoCurrentUser` is first use; command/parse failure is unavailable; filtered no result requires a non-empty same-generation base plus an active existing filter.
+2. **Connectivity:** `null` before Android's first platform observation is unknown. Device offline requires an observed unvalidated/absent device network and MUST NOT be described as relay, server, global-service, or delivery failure.
+3. **Core:** starting/running/stopped is derived separately from `chatRunning`. Core stopped does not erase a same-generation cached list; rows remain visible but actions requiring the core are read-only.
+
+**Enforcement:** [`ChatListLoadGeneration`, `ChatListLoadState`, and `ChatListLoadResult`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L81-L106) encode provenance. [`beginChatListLoad` and `applyChatListLoadResult`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L264-L311) suppress stale attempts/generations and apply rows only when identity still matches. [`apiGetChatsResult`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1054-L1081) discriminates success, failure, and no-current-user while retaining the existing controller/command path. Android exposes a nullable first-observation fact through [`NetworkObserver.platformNetworkInfo`](../common/src/androidMain/kotlin/chat/simplex/common/helpers/NetworkObserver.kt#L16-L87). [`NomeHomeStateAdapter`](../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeStateAdapter.kt#L49-L121) derives the three axes without collapsing them.
+
+**Reachability boundary:** The unchanged root consumes no-current-user in onboarding before the home route, and the bounded home adds no active-filter producer. `FIRST_USE` and `FILTERED_NO_RESULT` therefore remain defensive renderer/test branches until a separately scoped route/filter interaction exists; the invariant above does not turn them into production-route evidence.
+
+**Batch 2 boundary:** The connected production slice projects name, timestamp, unread, and favorite facts and permits navigation only into already-ready, non-deleting direct/group/local conversations while the core is running. Visible and spoken message summaries remain gated by the existing `showChatPreviews` privacy preference. Favorite mutation, profile switching UI, connection/request mutation, search UI/aggregation, filter controls, composer/send, and archive/migration work are outside this rule's current implementation scope. Source connection and automated tests do not by themselves prove the remaining reachability, device, screenshot, accessibility, real-core, or review gates.

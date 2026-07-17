@@ -1,0 +1,77 @@
+Nome Android Phase 2 Batch 2 build verification
+Date: 2026-07-17 (Asia/Shanghai)
+
+STATUS: EXECUTION GATES PASS; FORMAL COMPLETION IS DETERMINED BY review-rounds.md AND FINAL SHA256SUMS
+
+Runtime:
+  Android Studio JBR OpenJDK 21.0.10
+  Gradle 8.12
+
+Final split clean-room reruns from apps/multiplatform:
+
+  ./gradlew --no-parallel --rerun-tasks \
+    :android:compileDebugKotlin \
+    :android:testDebugUnitTest \
+    :android:lintDebug \
+    :android:assembleDebug \
+    :android:assembleDebugAndroidTest
+
+  PASS: BUILD SUCCESSFUL in 1m 5s
+  128 actionable tasks: 127 executed, 1 up-to-date
+  Android unit JUnit XML: 17 tests, 0 failures, 0 errors, 0 skipped
+
+  ./gradlew --no-parallel --rerun-tasks \
+    :android:processReleaseMainManifest \
+    :android:assembleRelease
+
+  PASS: BUILD SUCCESSFUL in 48s
+  95 actionable tasks: 94 executed, 1 up-to-date
+
+  ./gradlew --no-parallel --rerun-tasks :common:desktopTest
+
+  PASS: BUILD SUCCESSFUL in 26s
+  13 actionable tasks: 12 executed, 1 up-to-date
+  Desktop JUnit XML: 12 tests, 0 failures, 0 errors, 0 skipped
+
+Device instrumentation:
+  API 28 arm64-v8a: PASS, 18 tests, 16.627s
+  API 35 arm64-v8a: PASS, 18 tests, 18.131s
+  API 35 screenshot harness: PASS, 1 test, 93.138s, 80 captures
+  API 35 explicit real-core stop/start gate: PASS, 1 test, 5.628s
+    argument: nomeCoreCycle=true
+    precondition: current user + running core + non-empty cached rows
+    assertion: exact three-chat ID sequence retained after stop and restart
+
+Final APK SHA-256:
+  debug arm64-v8a:
+    eed29f24306b8dd8066ff19bcbbe8fe065bbee49136044b757ccac49d7dfeda4
+  debug androidTest:
+    6941e0e38fbfdecfe99d390e4823f18bd91473324e13785fe4374ae9519fe9d0
+  release arm64-v8a unsigned:
+    db38f8a6867f07dc994d21c88232adbd4ea54ce8892e975f672dbf6314e6ee97
+  release armeabi-v7a unsigned:
+    06e2f4f081e2556814e0aaa1523867b4cffa9d5679588fe478db92672d7132b8
+
+Orchestration history retained, not rewritten as product failures:
+  1. One combined Android release + Desktop rerun selected the project's task-name-based Android
+     configuration path and omitted the Desktop NotoColorEmoji dependency; split Desktop execution
+     passed without a source change.
+  2. One combined debug + release rerun exceeded the Kotlin daemon 2 GiB heap while compiling both
+     variants concurrently; split --no-parallel debug and release reruns passed.
+  3. After the final Gradle process had already written BUILD SUCCESSFUL, its outer zsh capture
+     wrapper attempted to assign the reserved read-only variable `status`; the wrapper exited 1.
+     The Gradle log, APK timestamps/hashes and test XML were then checked directly. No task failed,
+     and the wrapper was not used as the gate result.
+
+Raw logs:
+  reports/build/gradle-debug-final.log
+  reports/build/gradle-release-final.log
+  reports/build/gradle-desktop-final.log
+  reports/build/gradle-final.log
+  reports/build/gradle-android-final.log
+  reports/core-cycle/instrumentation.txt
+  reports/core-cycle/core-stopped.xml
+  reports/core-cycle/core-restarted.xml
+
+Warnings visible in successful logs are existing compiler/deprecation or unresolved opt-in-marker
+warnings; lintDebug and release lint-vital completed successfully.

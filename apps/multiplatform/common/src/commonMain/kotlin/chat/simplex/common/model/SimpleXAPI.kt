@@ -63,6 +63,17 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Date
 
+internal suspend fun <T> runChatListOperationPreservingCancellation(
+  operation: suspend () -> T,
+  onFailure: (Exception) -> T,
+): T = try {
+  operation()
+} catch (e: CancellationException) {
+  throw e
+} catch (e: Exception) {
+  onFailure(e)
+}
+
 typealias ChatCtrl = Long
 
 // version range that supports establishing direct connection with a group member (xGrpDirectInvVRange in core)
@@ -581,9 +592,9 @@ object ChatController {
         }
         Log.d(TAG, "startChat: started")
       } else {
+        val attemptId = chatModel.beginChatListLoad(null, hideRows = true)
         withContext(Dispatchers.Main) {
-          val chats = apiGetChats(null)
-          chatModel.chatsContext.updateChats(chats)
+          chatModel.applyChatListLoadResult(apiGetChatsResult(null), attemptId)
         }
         Log.d(TAG, "startChat: running")
       }
@@ -634,6 +645,8 @@ object ChatController {
   suspend fun changeActiveUser(rhId: Long?, toUserId: Long, viewPwd: String?) {
     try {
       changeActiveUser_(rhId, toUserId, viewPwd)
+    } catch (e: CancellationException) {
+      throw e
     } catch (e: Exception) {
       Log.e(TAG, "Unable to set active user: ${e.stackTraceToString()}")
       AlertManager.shared.showAlertMsg(generalGetString(MR.strings.failed_to_active_user_title), e.stackTraceToString())
@@ -641,6 +654,7 @@ object ChatController {
   }
 
   suspend fun changeActiveUser_(rhId: Long?, toUserId: Long?, viewPwd: String?, keepingChatId: String? = null) {
+    chatModel.beginChatListLoad(rhId, hideRows = true)
     val prevActiveUser = chatModel.currentUser.value
     val currentUser = changingActiveUserMutex.withLock {
       (if (toUserId != null) apiSetActiveUser(rhId, toUserId, viewPwd) else apiGetActiveUser(rhId)).also {
@@ -661,15 +675,19 @@ object ChatController {
   }
 
   suspend fun getUserChatData(rhId: Long?, keepingChatId: String? = null) {
+    val attemptId = chatModel.beginChatListLoad(rhId, hideRows = true)
     val hasUser = chatModel.currentUser.value != null
     chatModel.userAddress.value = if (hasUser) apiGetUserAddress(rhId) else null
     chatModel.chatItemTTL.value = if (hasUser) getChatItemTTL(rhId) else ChatItemTTL.None
+    chatModel.activeChatTagFilter.value = null
     withContext(Dispatchers.Main) {
-      val chats = apiGetChats(rhId)
-      chatModel.chatsContext.updateChats(chats, keepingChatId = keepingChatId)
+      chatModel.applyChatListLoadResult(
+        apiGetChatsResult(rhId),
+        attemptId,
+        keepingChatId = keepingChatId,
+      )
     }
     chatModel.userTags.value = if (hasUser) apiGetChatTags(rhId) ?: emptyList() else emptyList()
-    chatModel.activeChatTagFilter.value = null
     chatModel.updateChatTags(rhId)
   }
 
@@ -1033,14 +1051,41 @@ object ChatController {
     throw Exception("failed to test storage encryption: ${r.responseType} ${r.details}")
   }
 
-  suspend fun apiGetChats(rh: Long?): List<Chat> {
-    val userId = kotlin.runCatching { currentUserId("apiGetChats") }.getOrElse { return emptyList() }
-    val r = sendCmd(rh, CC.ApiGetChats(userId))
-    if (r is API.Result && r.res is CR.ApiChats) return if (rh == null) r.res.chats else r.res.chats.map { it.copy(remoteHostId = rh) }
+  suspend fun apiGetChatsResult(rh: Long?): ChatListLoadResult {
+    val userId = try { currentUserId("apiGetChats") } catch (e: CancellationException) { throw e }
+      catch (_: Exception) { return ChatListLoadResult.NoCurrentUser(rh) }
+    val generation = ChatListLoadGeneration(rh, userId)
+    val r = runChatListOperationPreservingCancellation(
+      operation = { sendCmd(rh, CC.ApiGetChats(userId)) },
+      onFailure = { e ->
+        Log.e(TAG, "failed getting the list of chats: ${e.message}")
+        AlertManager.shared.showAlertMsg(generalGetString(MR.strings.failed_to_parse_chats_title), generalGetString(MR.strings.contact_developers))
+        null
+      },
+    ) ?: return ChatListLoadResult.Failure(generation)
+    if (r is API.Result && r.res is CR.ApiChats) {
+      if (r.res.user.userId != userId) {
+        Log.e(TAG, "failed getting the list of chats: response user does not match request")
+        AlertManager.shared.showAlertMsg(generalGetString(MR.strings.failed_to_parse_chats_title), generalGetString(MR.strings.contact_developers))
+        return ChatListLoadResult.Failure(generation)
+      }
+      val chats = if (rh == null) r.res.chats else r.res.chats.map { it.copy(remoteHostId = rh) }
+      return ChatListLoadResult.Success(
+        generation = generation,
+        chats = chats,
+      )
+    }
     Log.e(TAG, "failed getting the list of chats: ${r.responseType} ${r.details}")
     AlertManager.shared.showAlertMsg(generalGetString(MR.strings.failed_to_parse_chats_title), generalGetString(MR.strings.contact_developers))
-    return emptyList()
+    return ChatListLoadResult.Failure(generation)
   }
+
+  suspend fun apiGetChats(rh: Long?): List<Chat> =
+    when (val result = apiGetChatsResult(rh)) {
+      is ChatListLoadResult.Success -> result.chats
+      is ChatListLoadResult.Failure,
+      is ChatListLoadResult.NoCurrentUser -> emptyList()
+    }
 
   private suspend fun apiGetChatTags(rh: Long?): List<ChatTag>?{
     val userId = currentUserId("apiGetChatTags")
@@ -3494,6 +3539,7 @@ object ChatController {
 
   suspend fun switchUIRemoteHost(rhId: Long?) = showProgressIfNeeded {
     // TODO lock the switch so that two switches can't run concurrently?
+    chatModel.beginChatListLoad(rhId, hideRows = true)
     chatModel.chatId.value = null
     ModalManager.center.closeModals()
     ModalManager.end.closeModals()

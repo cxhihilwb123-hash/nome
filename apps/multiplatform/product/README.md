@@ -24,6 +24,14 @@ Key platform differences:
 - **Android** uses a 2-column layout (`AndroidScreen`): chat list slides to chat view. Background messaging is handled by `SimplexService` (foreground service) + `MessagesFetcherWorker` (WorkManager periodic fetch). Calls use a dedicated `CallService` + `CallActivity`.
 - **Desktop** uses a 3-column layout (`DesktopScreen`): chat list (start) | chat view (center) | detail panel (`ModalManager.end`). It includes `AppUpdater` for in-app update checking, `StoreWindowState` for window geometry persistence, and VLC-based video playback. Calls use browser-based WebRTC rendered inline.
 
+### Nome Android current production slice
+
+The verified Android-only design foundation is followed by a bounded Batch 2 source connection. [`MainActivity`](../android/src/main/java/chat/simplex/app/MainActivity.kt#L60-L65) installs a thin Activity/window [`NomeProductionShell`](../android/src/main/java/chat/simplex/app/nome/NomeProductionShell.kt#L9-L23) around the unchanged shared root. Inside that root, [`StartPartOfScreen`](../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L366-L393) preserves the original home notice effect and selects a narrow [`PlatformHomeRoute`](../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.kt#L8-L22): Android renders the Nome P07/P08 home, while Desktop delegates the official chat list unchanged. Root gates, authentication, calls, intents, overlays, navigation, safe areas, and back behavior are not duplicated.
+
+The home adapter consumes the existing `ChatModel`/controller. A typed [`ChatListLoadResult` and user/host generation](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L81-L106) distinguish same-generation `ApiChats` success, failure, and no current user; a successful empty result is the only source for “true empty.” Android's nullable [`platformNetworkInfo`](../common/src/androidMain/kotlin/chat/simplex/common/helpers/NetworkObserver.kt#L16-L87) keeps connectivity unknown until the first platform observation and never upgrades device connectivity into relay/global-health evidence.
+
+The current P07/P08 renderer is read-only except for navigation into already-ready, non-deleting direct/group/note conversations while the core is running. It projects existing name/time/unread/favorite facts, gates visible and spoken message summaries with the existing `showChatPreviews` preference, follows the official `CurrentColors` light/dark result, and keeps loading, true empty, unavailable, network unknown, device offline, and core stopped distinct. Its first-use and active-filter-no-result branches are defensive renderer/test contracts, not production-route claims: onboarding consumes no-user before home, and this bounded home has no filter producer. Favorite/profile/connection mutations, search, filter controls, new chat/settings controls, composer/send, locale marker, and archive/migration work are excluded. The authorized Batch 2 production-home slice has passed its execution gates. Formal frozen-review status is owned exclusively by `plans/evidence/20260717_nome_android_phase2_batch2_home/review-rounds.md`; this product document does not assert that outcome. This does not complete all P07/P08 product scope or any later page.
+
 ---
 
 ## Vision
@@ -372,8 +380,8 @@ Android has no equivalent to iOS NSE (Notification Service Extension). Instead, 
 - [concepts.md](concepts.md) -- Feature concept index with bidirectional code links
 - [glossary.md](glossary.md) -- Terminology definitions
 - [rules.md](rules.md) -- Business rules and constraints
-- [gaps.md](gaps.md) -- Known documentation gaps
-- Views: [chat-list](views/chat-list.md), [chat](views/chat.md), [new-chat](views/new-chat.md), [settings](views/settings.md), [call](views/call.md), [contact-info](views/contact-info.md), [group-info](views/group-info.md), [onboarding](views/onboarding.md), [user-profiles](views/user-profiles.md)
+- [gaps.md](gaps.md) -- Known product/technical gaps and required decisions
+- Views: [chat-list](views/chat-list.md), [chat](views/chat.md), [new-chat](views/new-chat.md), [settings](views/settings.md), [call](views/call.md), [contact-info](views/contact-info.md), [group-info](views/group-info.md), [onboarding](views/onboarding.md), [user-profiles](views/user-profiles.md), [Nome Android](views/nome-android.md) (foundation and authorized bounded P07/P08 production-home slice verified; first-use/filter production reachability deferred)
 - Flows: [messaging](flows/messaging.md), [calling](flows/calling.md), [onboarding](flows/onboarding.md), [group-lifecycle](flows/group-lifecycle.md), [connection](flows/connection.md), [file-transfer](flows/file-transfer.md)
 
 ### Spec Layer
@@ -383,7 +391,7 @@ Android has no equivalent to iOS NSE (Notification Service Extension). Instead, 
 - [spec/state.md](../spec/state.md) -- ChatModel, ChatsContext, Chat, AppPreferences
 - [spec/api.md](../spec/api.md) -- Command/response protocol (CC, CR, ChatError)
 - [spec/database.md](../spec/database.md) -- Migration, encryption, export/import
-- Client: [navigation](../spec/client/navigation.md), [chat-list](../spec/client/chat-list.md), [chat-view](../spec/client/chat-view.md), [compose](../spec/client/compose.md)
+- Client: [navigation](../spec/client/navigation.md), [chat-list](../spec/client/chat-list.md), [chat-view](../spec/client/chat-view.md), [compose](../spec/client/compose.md), [Nome Android UI](../spec/client/nome-android-ui.md) (authorized production shell and bounded P07/P08 production-home slice verified; later pages remain out of scope)
 - Services: [calls](../spec/services/calls.md), [theme](../spec/services/theme.md), [files](../spec/services/files.md), [notifications](../spec/services/notifications.md)
 
 ### Source Entry Points
@@ -393,4 +401,5 @@ Android has no equivalent to iOS NSE (Notification Service Extension). Instead, 
 - Kotlin API bridge: `common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt`
 - Kotlin FFI: `common/src/commonMain/kotlin/chat/simplex/common/platform/Core.kt`
 - Android entry: `android/src/main/java/chat/simplex/app/SimplexApp.kt`, `MainActivity.kt`
+- Nome Android host/home: `android/src/main/java/chat/simplex/app/nome/NomeProductionShell.kt`, `common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.kt`, `common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/{NomeHomeRoute.android.kt,NomeHomeStateAdapter.kt}`
 - Desktop entry: `desktop/src/jvmMain/kotlin/chat/simplex/desktop/Main.kt`

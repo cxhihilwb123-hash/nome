@@ -22,7 +22,7 @@ The Gradle project is structured as three modules:
 | `:android` | Android application entry point (`SimplexApp`, `MainActivity`) |
 | `:desktop` | Desktop application entry point (`Main.kt`, `showApp()`) |
 
-All meaningful application logic resides in `:common/commonMain`. Platform source sets (`androidMain`, `desktopMain`) provide `actual` implementations for `expect` declarations and host platform-specific integration code.
+Shared application truth and cross-platform behavior reside in `:common/commonMain`. Platform source sets (`androidMain`, `desktopMain`) provide `actual` implementations, host integration, and deliberately isolated platform-only code. In particular, the Phase 2 Nome design foundation is presentation-only Android code under `common/src/androidMain`; it does not create a second model, protocol, or core path.
 
 ---
 
@@ -31,7 +31,7 @@ All meaningful application logic resides in `:common/commonMain`. Platform sourc
 ```
 App Entry Points
 +-- Android: SimplexApp.onCreate -> initHaskell -> initMultiplatform -> initChatControllerOnStart
-|            MainActivity.onCreate -> setContent { AppScreen() }
+|            MainActivity.onCreate -> NomeProductionShell -> AppScreen()
 +-- Desktop: main() -> initHaskell -> runMigrations -> initApp -> showApp -> AppWindow -> AppScreen()
     |
     v
@@ -39,6 +39,9 @@ Common Module (commonMain)
 +-- ChatModel (Compose state singleton) <-> ChatController/SimpleXAPI (JNI bridge) <-> Haskell Core (chat_ctrl)
 +-- Views (Compose)
 |   +-- App.kt: AppScreen -> MainScreen
+|   +-- StartPartOfScreen -> PlatformHomeRoute
+|       +-- Android actual: Nome home route + Android-only presentation adapter
+|       +-- Desktop actual: delegates the existing ChatListView content unchanged
 |   +-- ChatListView -> ChatView -> ComposeView -> SendMsgView
 |   +-- ChatItemView (message rendering: text, image, video, voice, file, call, events)
 |   +-- Settings: SettingsView, UserProfileView, UserProfilesView
@@ -51,6 +54,7 @@ Common Module (commonMain)
 |   +-- Terminal: TerminalView
 +-- Models
 |   +-- ChatModel       -- global app state (Compose MutableState singleton)
+|   +-- ChatListLoadGeneration / State / Result -- typed, generation-scoped chat-list loading truth
 |   +-- ChatsContext     -- per-context chat list state (primary + optional secondary)
 |   +-- Chat             -- per-conversation state (chatInfo, chatItems, chatStats)
 |   +-- ChatController   -- API command dispatch, event receiver, preferences
@@ -92,6 +96,7 @@ Common Module (commonMain)
 | Chat List | [spec/client/chat-list.md](client/chat-list.md) | ChatListView, ChatPreviewView, filtering, search, tags |
 | Compose | [spec/client/compose.md](client/compose.md) | ComposeView, SendMsgView, ComposeState, attachments, mentions |
 | Navigation | [spec/client/navigation.md](client/navigation.md) | App screen routing, onboarding, settings, new chat flows |
+| Nome Android UI | [spec/client/nome-android-ui.md](client/nome-android-ui.md) | Android-only Phase 2 foundation and authorized Batch 2 production-home seam/state adapter, with execution evidence and explicit deferred platform boundaries |
 | Calls | [spec/services/calls.md](services/calls.md) | WebRTC call lifecycle, signaling, platform-specific call views |
 | Files | [spec/services/files.md](services/files.md) | File transfer (SMP inline / XFTP), CryptoFile encryption, platform file paths |
 | Notifications | [spec/services/notifications.md](services/notifications.md) | NtfManager, SimplexService, notification channels, background delivery |
@@ -104,34 +109,45 @@ Common Module (commonMain)
 | Category | Path | Topic |
 |---|---|---|
 | Overview | [product/README.md](../product/README.md) | Product overview, capability map, navigation map |
-| Concepts | [product/concepts.md](../product/concepts.md) | 30 product concepts (PC1-PC30) mapped to docs + source |
+| Concepts | [product/concepts.md](../product/concepts.md) | 32 product concepts (PC1-PC32) mapped to docs, exact source, or remaining planned boundary |
 | Glossary | [product/glossary.md](../product/glossary.md) | Domain term definitions (9 sections) |
 | Rules | [product/rules.md](../product/rules.md) | 18 business rules in 6 categories |
-| Gaps | [product/gaps.md](../product/gaps.md) | 7 known gaps with recommendations |
+| Gaps | [product/gaps.md](../product/gaps.md) | 18 numbered audit entries: 17 open gaps plus resolved historical GAP-06 |
 | Flows | [product/flows/](../product/flows/) | onboarding, messaging, connection, calling, file-transfer, group-lifecycle |
-| Views | [product/views/](../product/views/) | chat-list, chat, settings, onboarding, call, new-chat, contact-info, group-info, user-profiles |
+| Views | [product/views/](../product/views/) | chat-list, chat, settings, onboarding, call, new-chat, contact-info, group-info, user-profiles, and the Nome Android foundation/production home seam |
 
 ---
 
 ## Source Entry Points
 
-| Component | File | Key Symbol | Line |
-|---|---|---|---|
-| Android Application | [`SimplexApp.kt`](../android/src/main/java/chat/simplex/app/SimplexApp.kt#L41) | `class SimplexApp` | 41 |
-| Android Activity | [`MainActivity.kt`](../android/src/main/java/chat/simplex/app/MainActivity.kt#L27) | `class MainActivity` | 27 |
-| Desktop Entry | [`Main.kt`](../desktop/src/jvmMain/kotlin/chat/simplex/desktop/Main.kt#L21) | `fun main()` | 21 |
-| Desktop App Window | [`DesktopApp.kt`](../common/src/desktopMain/kotlin/chat/simplex/common/DesktopApp.kt#L33) | `fun showApp()` | 33 |
-| Desktop Init | [`AppCommon.desktop.kt`](../common/src/desktopMain/kotlin/chat/simplex/common/platform/AppCommon.desktop.kt#L21) | `fun initApp()` | 21 |
-| Common App Screen | [`App.kt`](../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L47) | `fun AppScreen()` | 47 |
-| JNI Bridge | [`Core.kt`](../common/src/commonMain/kotlin/chat/simplex/common/platform/Core.kt#L18) | `external fun initHS()` | 18 |
-| Chat Controller | [`SimpleXAPI.kt`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L493) | `object ChatController` | 493 |
-| Chat Model | [`ChatModel.kt`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L86) | `object ChatModel` | 86 |
-| App Preferences | [`SimpleXAPI.kt`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L94) | `class AppPreferences` | 94 |
-| Platform Interface | [`Platform.kt`](../common/src/commonMain/kotlin/chat/simplex/common/platform/Platform.kt#L15) | `interface PlatformInterface` | 15 |
-| Notification Manager | [`NtfManager.kt`](../common/src/commonMain/kotlin/chat/simplex/common/platform/NtfManager.kt#L19) | `abstract class NtfManager` | 19 |
-| Theme Manager | [`ThemeManager.kt`](../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/ThemeManager.kt#L18) | `object ThemeManager` | 18 |
-| Android Haskell Init | [`AppCommon.android.kt`](../common/src/androidMain/kotlin/chat/simplex/common/platform/AppCommon.android.kt#L33) | `fun initHaskell(packageName: String)` | 33 |
-| Common Migrations | [`AppCommon.kt`](../common/src/commonMain/kotlin/chat/simplex/common/platform/AppCommon.kt#L41) | `fun runMigrations()` | 41 |
-| Android Service | [`SimplexService.kt`](../android/src/main/java/chat/simplex/app/SimplexService.kt#L41) | `class SimplexService` | 41 |
-| Gradle Root | [`settings.gradle.kts`](../settings.gradle.kts#L22) | `include(":android", ":desktop", ":common")` | 22 |
-| Common Build | [`build.gradle.kts`](../common/build.gradle.kts#L14) | `kotlin { androidTarget(); jvm("desktop") }` | 14 |
+| Component | File | Key Symbol |
+|---|---|---|
+| Android Application | [`SimplexApp.kt`](../android/src/main/java/chat/simplex/app/SimplexApp.kt#L41) | `class SimplexApp` |
+| Android Activity | [`MainActivity.kt`](../android/src/main/java/chat/simplex/app/MainActivity.kt#L28) | `class MainActivity` |
+| Nome Production Shell | [`NomeProductionShell.kt`](../android/src/main/java/chat/simplex/app/nome/NomeProductionShell.kt#L17-L23) | `NomeProductionShell` |
+| Nome Android Theme | [`NomeTheme.kt`](../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/theme/NomeTheme.kt#L54-L130) | `NomeAndroidTheme`, `NomeTheme` |
+| Nome Android Components | [`NomeStatePanel.kt`](../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/components/NomeStatePanel.kt#L28-L175) | `NomeStatePanel`, `NomeStatePanelState` |
+| Nome Debug Harness | [`NomeFoundationActivity.kt`](../android/src/debug/java/chat/simplex/app/nome/harness/NomeFoundationActivity.kt#L23-L76) | `NomeFoundationActivity` (debug only, not exported) |
+| Shared Home Route | [`PlatformHomeRoute.kt`](../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.kt#L15-L22) | `expect fun PlatformHomeRoute` |
+| Nome Android Home Route | [`NomeHomeRoute.android.kt`](../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeRoute.android.kt#L63-L123) | Android `actual fun PlatformHomeRoute` |
+| Nome Home Truth Adapter | [`NomeHomeStateAdapter.kt`](../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeStateAdapter.kt#L29-L112) | `NomeHomeTruthInput`, `NomeHomeStateAdapter` |
+| Desktop Home Fallback | [`PlatformHomeRoute.desktop.kt`](../common/src/desktopMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.desktop.kt#L8-L17) | Desktop `actual fun PlatformHomeRoute` |
+| Desktop Entry | [`Main.kt`](../desktop/src/jvmMain/kotlin/chat/simplex/desktop/Main.kt#L22) | `fun main()` |
+| Desktop App Window | [`DesktopApp.kt`](../common/src/desktopMain/kotlin/chat/simplex/common/DesktopApp.kt#L34) | `fun showApp()` |
+| Desktop Init | [`AppCommon.desktop.kt`](../common/src/desktopMain/kotlin/chat/simplex/common/platform/AppCommon.desktop.kt#L21) | `fun initApp()` |
+| Common App Screen | [`App.kt`](../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L48) | `fun AppScreen()` |
+| JNI Bridge | [`Core.kt`](../common/src/commonMain/kotlin/chat/simplex/common/platform/Core.kt#L18) | `external fun initHS()` |
+| Chat Controller | [`SimpleXAPI.kt`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L510) | `object ChatController` |
+| Chat List Load Contract | [`ChatModel.kt`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L81-L106) | `ChatListLoadGeneration`, `ChatListLoadState`, `ChatListLoadResult` |
+| Chat Model | [`ChatModel.kt`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L137) | `object ChatModel` |
+| Chat List Result Application | [`ChatModel.kt`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L264-L311) | `beginChatListLoad`, `applyChatListLoadResult` |
+| App Preferences | [`SimpleXAPI.kt`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L102) | `class AppPreferences` |
+| Android Network Observation | [`NetworkObserver.kt`](../common/src/androidMain/kotlin/chat/simplex/common/helpers/NetworkObserver.kt#L16-L24) | `NetworkObserver.platformNetworkInfo` |
+| Platform Interface | [`Platform.kt`](../common/src/commonMain/kotlin/chat/simplex/common/platform/Platform.kt#L15) | `interface PlatformInterface` |
+| Notification Manager | [`NtfManager.kt`](../common/src/commonMain/kotlin/chat/simplex/common/platform/NtfManager.kt#L19) | `abstract class NtfManager` |
+| Theme Manager | [`ThemeManager.kt`](../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/ThemeManager.kt#L18) | `object ThemeManager` |
+| Android Haskell Init | [`AppCommon.android.kt`](../common/src/androidMain/kotlin/chat/simplex/common/platform/AppCommon.android.kt#L33) | `fun initHaskell(packageName: String)` |
+| Common Migrations | [`AppCommon.kt`](../common/src/commonMain/kotlin/chat/simplex/common/platform/AppCommon.kt#L41) | `fun runMigrations()` |
+| Android Service | [`SimplexService.kt`](../android/src/main/java/chat/simplex/app/SimplexService.kt#L41) | `class SimplexService` |
+| Gradle Root | [`settings.gradle.kts`](../settings.gradle.kts#L21) | `include(":android", ":desktop", ":common")` |
+| Common Build | [`build.gradle.kts`](../common/build.gradle.kts#L39) | `kotlin { androidTarget(); jvm("desktop") }` |

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nome_home_brand">Nome</string>
+    <string name="nome_home_title">Home</string>
+    <string name="nome_home_subtitle">Chats for the current local profile</string>
+    <string name="nome_home_current_profile">Current profile: %1$s</string>
+    <string name="nome_home_unknown_profile">Local profile</string>
+    <string name="nome_home_section_chats">Chats</string>
+
+    <string name="nome_home_loading_title">Syncing local chats</string>
+    <string name="nome_home_loading_body">Waiting for the current profile’s chat list.</string>
+    <string name="nome_home_loading_state">Chat list loading</string>
+    <string name="nome_home_first_use_title">Start your first conversation</string>
+    <string name="nome_home_first_use_body">Create a local profile, then add a contact or join a group from the existing connection flow.</string>
+    <string name="nome_home_first_use_state">First use</string>
+    <string name="nome_home_empty_title">No chats yet</string>
+    <string name="nome_home_empty_body">Chats will appear here after a contact or group connection succeeds.</string>
+    <string name="nome_home_empty_state">Chat list is empty</string>
+    <string name="nome_home_filtered_empty_title">No chats in this filter</string>
+    <string name="nome_home_filtered_empty_body">The loaded chat list is unchanged. No chats match the active filter.</string>
+    <string name="nome_home_filtered_empty_state">Active filter has no results</string>
+    <string name="nome_home_unavailable_title">Couldn’t verify the chat list</string>
+    <string name="nome_home_unavailable_body">The last request did not produce a usable chat-list result. This is not treated as an empty list.</string>
+    <string name="nome_home_unavailable_state">Chat list unavailable</string>
+
+    <string name="nome_home_network_unknown_title">Checking device connection</string>
+    <string name="nome_home_network_unknown_body">Android has not reported a validated device network yet.</string>
+    <string name="nome_home_network_unknown_state">Device network unknown</string>
+    <string name="nome_home_offline_title">Device offline</string>
+    <string name="nome_home_offline_body">Cached chats remain readable. This does not describe relay or service health.</string>
+    <string name="nome_home_offline_state">Device has no validated network</string>
+    <string name="nome_home_stopped_title">Chat core stopped</string>
+    <string name="nome_home_stopped_body">Cached chats remain readable, but opening or changing network-backed content is unavailable.</string>
+    <string name="nome_home_stopped_state">Chat core stopped</string>
+
+    <string name="nome_home_direct_chat">Direct conversation</string>
+    <string name="nome_home_group_chat">Group conversation</string>
+    <string name="nome_home_notes_chat">Local notes</string>
+    <string name="nome_home_contact_request">Contact request</string>
+    <string name="nome_home_connection_pending">Connection pending</string>
+    <string name="nome_home_invalid_chat">Unsupported chat data</string>
+    <string name="nome_home_open_chat">%1$s, %2$s, %3$s. Open chat</string>
+    <string name="nome_home_read_only_chat">%1$s, %2$s, %3$s. Read only</string>
+    <string name="nome_home_unread">Unread messages</string>
+    <string name="nome_home_unread_count">%1$d unread messages</string>
+    <string name="nome_home_unread_marker">%1$d</string>
+    <string name="nome_home_favorite">Favorite</string>
+    <string name="nome_home_skeleton_semantics">Chat list loading</string>
+</resources>

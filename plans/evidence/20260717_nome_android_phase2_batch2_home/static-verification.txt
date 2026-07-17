@@ -1,0 +1,85 @@
+Nome Android Phase 2 Batch 2 static verification
+Date: 2026-07-17 (Asia/Shanghai)
+
+PASS  git diff --check
+
+PASS  XML well-formedness via xmllint for production/debug localized resources and the debug
+      manifest.
+
+PASS  localized resource-name parity:
+      production values vs values-zh-rCN: empty diff
+      debug evidence values vs values-zh-rCN: empty diff
+
+PASS  platform seam cardinality:
+      1 common expect PlatformHomeRoute
+      1 Android actual PlatformHomeRoute
+      1 Desktop actual PlatformHomeRoute
+
+PASS  legacy list API call-site scan:
+      apiGetChats(...) remains only as its compatibility declaration. Authoritative refresh callers
+      use apiGetChatsResult plus attempt/generation-guarded application.
+
+PASS  tests from final JUnit XML:
+      Android unit 17/17
+      Desktop 12/12
+
+PASS  product/spec/CODE source-link bounds:
+      660 local #L references checked; 0 missing files or out-of-bounds anchors.
+
+PASS  spec/api.md symbol-to-line alignment:
+      156 named SimpleXAPI anchor occurrences checked against current function, object and class
+      declarations (142 table entries plus 14 inline/narrative links); 0 symbol/anchor mismatches.
+
+PASS  release isolation:
+      release applicationId chat.simplex.app; no debuggable attribute or debug harness Activity.
+      debug applicationId chat.simplex.app.nome.dev; debuggable and both non-exported debug
+      evidence Activities present. Release DEX harness-symbol hits 0; debug hits 55.
+
+PASS  screenshot manifest:
+      80 PNG files, 80 non-empty, all checksums OK, no duplicate content.
+      SCREENSHOT_SHA256SUMS SHA-256:
+      6e055bd763c1d38f1135ac837bf460b319277ef9881d46925a545f88dc80e079
+
+PASS  API 35 production-route TalkBack:
+      TalkBack 15.0 bound/enabled; default keymap with Alt modifier; top resumed activity was
+      chat.simplex.app.nome.dev/chat.simplex.app.MainActivity. The hardware-keyboard Alt+Right
+      traversal produced 8/8 non-empty, distinct focus PNGs for Nome, current identity, heading,
+      subtitle, section, two read-only real-core rows and the openable private-notes row. The
+      production UI tree contains no debug badge or non-real-core label. Post-capture restoration
+      proves TalkBack disabled, PrivacyProtectScreen=true and AVD hw.keyboard=no.
+
+PASS  immutable historical evidence:
+      Foundation SHA256SUMS 131/131
+      Foundation SCREENSHOT_SHA256SUMS 96/96
+      Phase 1 SHA256SUMS 48/48
+      20260717_03 handoff bundle 2/2
+
+EXPECTED  historical Foundation review-input payload after later authorized work:
+      213/223 still match. The unchanged historical manifest reports ten expected later-batch
+      source/document changes:
+        apps/multiplatform/CODE.md
+        apps/multiplatform/android/src/debug/AndroidManifest.xml
+        apps/multiplatform/product/README.md
+        apps/multiplatform/product/concepts.md
+        apps/multiplatform/product/gaps.md
+        apps/multiplatform/product/views/nome-android.md
+        apps/multiplatform/spec/README.md
+        apps/multiplatform/spec/client/nome-android-ui.md
+        apps/multiplatform/spec/impact.md
+        plans/20260716_03.md
+      The manifest file itself remains byte-identical at
+      65fe4b88a5a8b4c8c22120ff61dec3edc4f684701aee61a09fb7e4294f8d875e.
+      This is not evidence drift and is not misreported as 223/223 after Batch 2 source work.
+
+BOUNDARY  No Haskell/native core, Core.kt, database/archive format, protocol, command/event
+          contract, message state machine, or iOS source was changed. DatabaseView.kt contains
+          only an authorized chat-list refresh call-site change; it changes no DB format or
+          migration behavior.
+
+PASS  Git identity remained:
+      HEAD 59fce95d3cd08897b4ef742447b785cf2e56c7ce
+      exact tag v6.5.6
+      branch codex/nome-android-v656
+      origin https://github.com/simplex-chat/simplex-chat.git
+      staged 0
+      commit/push none

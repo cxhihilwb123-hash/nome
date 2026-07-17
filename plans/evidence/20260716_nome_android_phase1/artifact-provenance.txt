@@ -1,0 +1,42 @@
+Nome Android Phase 1 native artifact provenance
+Recorded: 2026-07-17 Asia/Shanghai
+Official source tag: v6.5.6
+Official source commit: 59fce95d3cd08897b4ef742447b785cf2e56c7ce
+Release page: https://github.com/simplex-chat/simplex-chat/releases/tag/v6.5.6
+
+Official arm64 APK
+URL: https://github.com/simplex-chat/simplex-chat/releases/download/v6.5.6/simplex-aarch64.apk
+Stable ignored copy: /Users/forkman03/project/nome/simplex-chat/apps/multiplatform/.nome-local/artifacts/v6.5.6/simplex-aarch64.apk
+SHA-256: 79ae9650905abf0de50f83d72ee2c8b159feb67e093a6fac30f578a66d0181b6
+Size: 84666465 bytes
+Signature output: /Users/forkman03/project/nome/simplex-chat/plans/evidence/20260716_nome_android_phase1/apksigner-official-simplex-aarch64.txt
+
+Official armv7 APK
+URL: https://github.com/simplex-chat/simplex-chat/releases/download/v6.5.6/simplex-armv7a.apk
+Stable ignored copy: /Users/forkman03/project/nome/simplex-chat/apps/multiplatform/.nome-local/artifacts/v6.5.6/simplex-armv7a.apk
+SHA-256: 7773857980b0b5baf5b146e2c2006e6d2e57da24cc317066c786cd518c69babe
+Size: 95901805 bytes
+Signature output: /Users/forkman03/project/nome/simplex-chat/plans/evidence/20260716_nome_android_phase1/apksigner-official-simplex-armv7a.txt
+
+Exact extracted destinations (ignored by Git)
+/Users/forkman03/project/nome/simplex-chat/apps/multiplatform/common/src/commonMain/cpp/android/libs/arm64-v8a/libsimplex.so
+SHA-256: 91d45817a444d2344877288561e218577239d9a80a504dfa27e8fec9fe64e309
+/Users/forkman03/project/nome/simplex-chat/apps/multiplatform/common/src/commonMain/cpp/android/libs/arm64-v8a/libsupport.so
+SHA-256: acbabf60244517ec227f84afdbb166c7f2d00e31274d229bbba70926ff240f36
+/Users/forkman03/project/nome/simplex-chat/apps/multiplatform/common/src/commonMain/cpp/android/libs/armeabi-v7a/libsimplex.so
+SHA-256: 281a7941f218d6c013e0482cdbb160b94906c2e1ef23665ae11af5bd4a2e1158
+/Users/forkman03/project/nome/simplex-chat/apps/multiplatform/common/src/commonMain/cpp/android/libs/armeabi-v7a/libsupport.so
+SHA-256: e8d3489fec86fb4074a23b711c9dfe61aacdab8bcf9755a33cb317d2beb20b57
+
+Built unchanged-source debug APKs
+/Users/forkman03/project/nome/simplex-chat/apps/multiplatform/android/build/outputs/apk/debug/android-arm64-v8a-debug.apk
+/Users/forkman03/project/nome/simplex-chat/apps/multiplatform/android/build/outputs/apk/debug/android-armeabi-v7a-debug.apk
+
+Verification boundary
+- APK Signature Scheme v2 and v3 verification passed for both official APKs.
+- Signer certificate SHA-256: 3c52c4fd3cad1c07c9b00a7080e358fab9fefcb8af5aec147765f16d0f21ad85.
+- Raw ELF headers, notes, SONAME, NEEDED, and RUNPATH output are saved in elf-*.txt.
+- The official ELFs contain no GNU build-id note; absence is recorded, not replaced with an inferred identifier.
+- Detached .asc files and the release signing public key are retained in the stable ignored artifact directory.
+- Detached PGP verification was not executed because gpg is not installed. No PGP PASS is claimed.
+- No latest URL, another checkout, locally rebuilt core, Haskell/native source change, or iOS artifact was used.

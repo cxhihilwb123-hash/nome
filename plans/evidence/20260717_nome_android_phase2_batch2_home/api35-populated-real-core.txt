@@ -1,0 +1,48 @@
+Nome Android Phase 2 Batch 2 API 35 populated real-core verification
+Date: 2026-07-17 (Asia/Shanghai)
+
+Device:
+  AVD nome-batch2-api35
+  Android API 35
+  ABI arm64-v8a
+  timezone Asia/Shanghai
+
+Installed debug APK SHA-256:
+  eed29f24306b8dd8066ff19bcbbe8fe065bbee49136044b757ccac49d7dfeda4
+
+PASS:
+  - cold production launch rendered current identity NomeBaselineQA;
+  - real rows included Ask SimpleX Team, SimpleX Status, and private notes;
+  - logcat records native server, receiver, and receiver-loop startup;
+  - airplane mode rendered the device-only offline panel with cached rows;
+  - returning online removed the panel without erasing rows;
+  - a 21-frame same-generation foreground refresh retained populated rows throughout;
+  - API 35 instrumentation passed 18/18 tests in 18.131s.
+  - a separate explicit real-core stop/start instrumentation gate passed 1/1 in 5.628s and retained
+    the exact three-chat ID sequence through both official transitions.
+
+Bounded evidence:
+  The production cold-start `UNKNOWN` interval completed before home composition and was not
+  captured as live-core UI. Unknown remains covered by unit, API 28/API 35 adapter-to-renderer
+  integration, and deterministic renderer screenshots. No live screenshot claim is made.
+
+Key artifacts:
+  reports/api35-real-core/getprop.txt
+  reports/api35-real-core/dumpsys-package.txt
+  reports/api35-real-core/cold-online-real-core-logcat.txt
+  reports/api35-real-core/cold-online-real-core.xml
+  reports/api35-real-core/cold-online-real-core.png
+  reports/api35-real-core/device-offline.xml
+  reports/api35-real-core/device-offline.png
+  reports/api35-real-core/network-cold-frames/
+  reports/api35-real-core/refresh-frames/
+  reports/api35-real-core/refresh-final.xml
+  reports/device-tests/api35-instrumentation.txt
+  reports/device-tests/api35-generation-compose.txt
+  reports/core-cycle/instrumentation.txt
+  reports/core-cycle/core-stopped-activity.txt
+  reports/core-cycle/core-stopped-logcat.txt
+  reports/core-cycle/core-stopped.xml
+  reports/core-cycle/core-restarted-activity.txt
+  reports/core-cycle/core-restarted-logcat.txt
+  reports/core-cycle/core-restarted.xml

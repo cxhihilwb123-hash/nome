@@ -787,9 +787,12 @@ private fun afterSetCiTTL(
     try {
       withContext(Dispatchers.Main) {
         // this is using current remote host on purpose - if it changes during update, it will load correct chats
-        val chats = m.controller.apiGetChats(m.remoteHostId())
-        chatModel.chatsContext.updateChats(chats)
+        val rhId = m.remoteHostId()
+        val attemptId = m.beginChatListLoad(rhId, hideRows = false)
+        m.applyChatListLoadResult(m.controller.apiGetChatsResult(rhId), attemptId)
       }
+    } catch (e: CancellationException) {
+      throw e
     } catch (e: Exception) {
       Log.e(TAG, "apiGetChats error: ${e.message}")
     }

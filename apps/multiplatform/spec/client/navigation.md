@@ -1,6 +1,6 @@
 # Navigation Specification
 
-Source: `common/src/commonMain/kotlin/chat/simplex/common/App.kt` (470 lines)
+Sources: `common/src/commonMain/kotlin/chat/simplex/common/App.kt`, `common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.kt`, and its Android/Desktop actuals
 
 ---
 
@@ -15,6 +15,7 @@ Source: `common/src/commonMain/kotlin/chat/simplex/common/App.kt` (470 lines)
 7. [Authentication Gate](#7-authentication-gate)
 8. [Onboarding Flow](#8-onboarding-flow)
 9. [Source Files](#9-source-files)
+10. [Nome Android Production Home Seam](#10-nome-android-production-home-seam)
 
 ---
 
@@ -27,10 +28,10 @@ SimpleX Chat navigation is a platform-adaptive system implemented in `App.kt`. T
 ## 1. Overview
 
 ```
-AppScreen (line 46)
+AppScreen
 +-- SimpleXTheme
     +-- Surface
-        +-- MainScreen (line 82)
+        +-- MainScreen
             |-- [Migration in progress]     -> DefaultProgressView
             |-- [Database opening]          -> DefaultProgressView
             |-- [Database error]            -> DatabaseErrorView
@@ -39,12 +40,14 @@ AppScreen (line 46)
             |-- [Onboarding complete]
             |   |-- [Android]
             |   |   +-- AndroidWrapInCallLayout
-            |   |       +-- AndroidScreen (line 293)
-            |   |           |-- StartPartOfScreen (ChatListView)
+            |   |       +-- AndroidScreen
+            |   |           |-- StartPartOfScreen
+            |   |           |   +-- PlatformHomeRoute (Android: Nome P07/P08)
             |   |           +-- ChatView (slide-in panel)
             |   +-- [Desktop]
-            |       +-- DesktopScreen (line 406)
-            |           |-- StartPartOfScreen + UserPicker (left column)
+            |       +-- DesktopScreen
+            |           |-- StartPartOfScreen
+            |           |   +-- PlatformHomeRoute (Desktop: existing ChatListView)
             |           |-- ModalManager.start (overlay on left)
             |           |-- CenterPartOfScreen / ChatView (center column)
             |           +-- ModalManager.end (right column)
@@ -59,7 +62,7 @@ AppScreen (line 46)
 
 ## 2. AppScreen Composable
 
-**Location:** [`App.kt#L47`](../../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L47)
+**Location:** [`AppScreen()`](../../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L48-L81)
 
 ```kotlin
 @Composable
@@ -79,7 +82,7 @@ fun AppScreen()
 
 ## 3. MainScreen
 
-**Location:** [`App.kt#L84`](../../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L84)
+**Location:** [`MainScreen()`](../../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L85-L291)
 
 ```kotlin
 @Composable
@@ -100,7 +103,7 @@ fun MainScreen()
 | 6 | `onboarding == OnboardingComplete` | Platform-specific main screen |
 | 7 | Other onboarding stages | `AnimatedContent` with stage-specific views |
 
-### Onboarding Complete Branch (line ~156)
+### Onboarding Complete Branch
 
 When onboarding is complete:
 
@@ -127,7 +130,7 @@ When onboarding is complete:
 
 ## 4. Android Layout
 
-**Location:** [`App.kt#L296`](../../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L296)
+**Location:** [`AndroidScreen()`](../../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L311-L364)
 
 ```kotlin
 @Composable
@@ -158,7 +161,7 @@ If the device has a display cutout on horizontal sides (detected via `WindowInse
 
 ### Call Layout Wrapper
 
-`AndroidWrapInCallLayout` (line ~279) adds a 40dp top padding when an active call is in progress (not in `WaitCapabilities` or `InvitationAccepted` state), with an `ActiveCallInteractiveArea` banner above.
+`AndroidWrapInCallLayout` adds a 40dp top padding when an active call is in progress (not in `WaitCapabilities` or `InvitationAccepted` state), with an `ActiveCallInteractiveArea` banner above.
 
 ---
 
@@ -166,7 +169,7 @@ If the device has a display cutout on horizontal sides (detected via `WindowInse
 
 ## 5. Desktop Layout
 
-**Location:** [`App.kt#L410`](../../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L410)
+**Location:** [`DesktopScreen()`](../../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L434-L471)
 
 ```kotlin
 @Composable
@@ -177,7 +180,7 @@ fun DesktopScreen(userPickerState: MutableStateFlow<AnimatedViewState>)
 
 | Column | Width | Content |
 |---|---|---|
-| **Left** | `DEFAULT_START_MODAL_WIDTH * fontSizeSqrtMultiplier` (fixed) | `StartPartOfScreen` (ChatListView) + `UserPicker` overlay |
+| **Left** | `DEFAULT_START_MODAL_WIDTH * fontSizeSqrtMultiplier` (fixed) | `StartPartOfScreen` platform home (Android Nome / Desktop `ChatListView`) + `UserPicker` overlay |
 | **Left overlay** | Same as left column | `ModalManager.start` modals + `SwitchingUsersView` |
 | **Center** | `min = DEFAULT_MIN_CENTER_MODAL_WIDTH`, `weight = 1f` (flexible) | `CenterPartOfScreen` (ChatView or "no selected chat" placeholder, or `ModalManager.center`) |
 | **Right** | `max = DEFAULT_END_MODAL_WIDTH * fontSizeSqrtMultiplier` (flexible, 0 when empty) | `ModalManager.end` (ChatInfoView, GroupChatInfoView, ChatItemInfoView, etc.) |
@@ -189,11 +192,11 @@ fun DesktopScreen(userPickerState: MutableStateFlow<AnimatedViewState>)
 
 ### Click-to-Dismiss Overlay
 
-When the UserPicker is visible or a start modal is open (but no center modal), a full-size clickable overlay covers the center+right area (line ~428). Clicking it closes start modals and hides the UserPicker.
+When the UserPicker is visible or a start modal is open (but no center modal), a full-size clickable overlay covers the center+right area. Clicking it closes start modals and hides the UserPicker.
 
 ### CenterPartOfScreen
 
-**Location:** [`App.kt#L373`](../../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L373)
+**Location:** [`CenterPartOfScreen()`](../../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L395-L425)
 
 - When `chatId` is null and no center modals: shows "No selected chat" placeholder.
 - When `chatId` is null and center modals open: shows `ModalManager.center`.
@@ -202,18 +205,18 @@ When the UserPicker is visible or a start modal is open (but no center modal), a
 
 ### StartPartOfScreen
 
-**Location:** [`App.kt#L352`](../../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L352)
+**Location:** [`StartPartOfScreen()`](../../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L366-L393)
 
 Routes between:
 - `SetDeliveryReceiptsView` (if `chatModel.setDeliveryReceipts` is true)
-- `ChatListView` (normal operation)
+- `PlatformHomeRoute` with the existing `ChatListView` supplied as `defaultContent` (normal operation)
 - `ShareListView` (when `chatModel.sharedContent` is non-null, i.e., forwarding)
 
 ---
 
 ## 6. ModalManager
 
-**Location:** `common/src/commonMain/kotlin/chat/simplex/common/views/helpers/ModalView.kt` (line 92)
+**Location:** [`ModalManager`](../../common/src/commonMain/kotlin/chat/simplex/common/views/helpers/ModalView.kt#L92)
 
 ```kotlin
 class ModalManager(private val placement: ModalPlacement?)
@@ -274,7 +277,7 @@ Each `ModalManager` maintains a stack of `ModalViewHolder` objects with:
 
 ## 7. Authentication Gate
 
-**Location:** [`AppLock.kt#L17`](../../common/src/commonMain/kotlin/chat/simplex/common/AppLock.kt#L17)
+**Location:** [`AppLock`](../../common/src/commonMain/kotlin/chat/simplex/common/AppLock.kt#L17)
 
 ```kotlin
 object AppLock {
@@ -294,7 +297,7 @@ object AppLock {
 
 ### Authentication Flow
 
-1. **MainScreen** checks `unauthorized` (derived: `userAuthorized.value != true`) at line ~135.
+1. **MainScreen** checks `unauthorized` (derived: `userAuthorized.value != true`).
 2. If unauthorized and not in an active call:
    - Launches `AppLock.runAuthenticate()` which triggers platform-specific biometric/passcode prompt.
    - On Android with system auth finishing during activity destruction, authentication is skipped.
@@ -303,7 +306,7 @@ object AppLock {
 
 ### Lock Delay
 
-The `laLockDelay` preference controls how long after backgrounding the app requires re-authentication. When `laLockDelay == 0`, screen rotation triggers a 3-second grace period (line ~270) to prevent unnecessary re-auth.
+The `laLockDelay` preference controls how long after backgrounding the app requires re-authentication. When `laLockDelay == 0`, screen rotation triggers a 3-second grace period to prevent unnecessary re-auth.
 
 ### Lock Modes
 
@@ -312,13 +315,13 @@ The `laLockDelay` preference controls how long after backgrounding the app requi
 
 ### First-Time Lock Notice
 
-`showLANotice` (line ~33 in `AppLock.kt`) prompts users to enable SimpleX Lock when they have more than 3 chats, have not yet been shown the notice, and have not enabled lock. On Android, it offers a choice between system auth and passcode.
+`showLANotice` prompts users to enable SimpleX Lock when they have more than 3 chats, have not yet been shown the notice, and have not enabled lock. On Android, it offers a choice between system auth and passcode.
 
 ---
 
 ## 8. Onboarding Flow
 
-**Location:** `common/src/commonMain/kotlin/chat/simplex/common/views/onboarding/OnboardingView.kt` (line 3)
+**Location:** [`OnboardingStage`](../../common/src/commonMain/kotlin/chat/simplex/common/views/onboarding/OnboardingView.kt#L3)
 
 ```kotlin
 enum class OnboardingStage {
@@ -370,10 +373,34 @@ The stage value is stored in `appPrefs.onboardingStage` and persisted across app
 | `views/onboarding/SetupDatabasePassphrase.kt` | Step 2.5: Database passphrase |
 | `views/onboarding/ChooseServerOperators.kt` | Step 3: Server operators and conditions |
 | `views/onboarding/SetNotificationsMode.kt` | Step 4: Notification setup |
-| `views/chatlist/ChatListView.kt` | Chat list (StartPartOfScreen content) |
+| `views/chatlist/PlatformHomeRoute.kt` + platform actual | StartPartOfScreen home selection; Android Nome renderer or Desktop `ChatListView` fallback |
+| `views/chatlist/PlatformHomeRoute.kt` | Narrow platform-selectable normal-home seam |
+| `androidMain/.../ui/nome/home/NomeHomeRoute.android.kt` | Android actual for the Nome P07/P08 home |
+| `desktopMain/.../views/chatlist/PlatformHomeRoute.desktop.kt` | Desktop actual that invokes existing content unchanged |
 | `views/chatlist/UserPicker.kt` | User switching panel |
 | `views/chat/ChatView.kt` | Chat view (CenterPartOfScreen content) |
 | `views/database/DatabaseErrorView.kt` | Database error recovery |
 | `views/SplashView.kt` | Splash / loading screen |
 | `views/call/CallView.kt` | In-call fullscreen view (ActiveCallView) |
 | `views/localauth/PasswordEntry.kt` | Column divider utility (contains VerticalDivider) |
+
+---
+
+## 10. Nome Android Production Home Seam
+
+[`StartPartOfScreen()`](../../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L366-L393) retains its existing branch ownership. Delivery-receipt setup still wins first, shared content still routes to `ShareListView`, and only the ordinary home branch runs the existing notice effect and calls [`PlatformHomeRoute()`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.kt#L16-L22). Therefore migration, database, onboarding, authentication, user-switching, call, privacy-alert, intent, modal, and share gates remain owned by the existing root.
+
+The `commonMain` seam is the smallest sharing change that can replace the real home route without duplicating `AppScreen`, `ChatModel`, modal ownership, or navigation state:
+
+| Source set | Implementation |
+|---|---|
+| `commonMain` | `expect fun PlatformHomeRoute(...)` plus the upstream `defaultContent` callback; no Nome rendering or state ownership |
+| `androidMain` | [Android actual](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeRoute.android.kt#L63-L123) derives and renders the Nome P07/P08 home, then preserves notification setup and `UserPicker` overlay |
+| `desktopMain` | [Desktop actual](../../common/src/desktopMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.desktop.kt#L9-L17) calls `defaultContent()` unchanged |
+| `desktopTest` | [`PlatformHomeRouteDesktopTest`](../../common/src/desktopTest/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRouteDesktopTest.kt#L14-L55) executes the Desktop actual and observes fallback-content invocation |
+
+At the Android Activity boundary, [`NomeProductionShell()`](../../android/src/main/java/chat/simplex/app/nome/NomeProductionShell.kt#L17-L23) wraps `AppScreen`; [`MainActivity.onCreate()`](../../android/src/main/java/chat/simplex/app/MainActivity.kt#L33-L68) still owns intent processing, secure-window behavior, edge-to-edge setup, and the shared root. The shell owns no route, back stack, model, core, or protocol fact.
+
+Batch 2 navigation is deliberately limited to opening an already-ready direct, group, or local chat through existing actions while the core is running. It adds no favorite/profile/connection mutation, search flow, composer/send flow, locale-marker route, new modal zone, new destination, or Desktop UI.
+
+The source/test links above describe the implemented split. They do not claim a current build, `desktopTest`, Android device run, screenshot comparison, real-core run, or review gate has passed.

@@ -1,0 +1,102 @@
+> Task :android:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :android:preBuild UP-TO-DATE
+> Task :android:preDebugBuild UP-TO-DATE
+> Task :android:generateDebugBuildConfig UP-TO-DATE
+> Task :common:preBuild UP-TO-DATE
+> Task :common:preDebugBuild UP-TO-DATE
+> Task :common:writeDebugAarMetadata UP-TO-DATE
+> Task :android:checkDebugAarMetadata UP-TO-DATE
+> Task :android:generateDebugResValues UP-TO-DATE
+> Task :common:adjustFormatting
+> Task :common:cleanSimplexAssets UP-TO-DATE
+> Task :common:generateMRcommonMain UP-TO-DATE
+> Task :common:generateMRandroidMain UP-TO-DATE
+> Task :common:generateDebugResValues UP-TO-DATE
+> Task :common:generateDebugResources UP-TO-DATE
+> Task :common:packageDebugResources UP-TO-DATE
+> Task :android:mapDebugSourceSetPaths UP-TO-DATE
+> Task :android:generateDebugResources UP-TO-DATE
+> Task :android:mergeDebugResources UP-TO-DATE
+> Task :android:packageDebugResources UP-TO-DATE
+> Task :android:parseDebugLocalResources UP-TO-DATE
+> Task :android:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :android:extractDeepLinksDebug UP-TO-DATE
+> Task :common:extractDeepLinksDebug UP-TO-DATE
+> Task :common:processDebugManifest UP-TO-DATE
+> Task :android:processDebugMainManifest UP-TO-DATE
+> Task :android:processDebugManifest UP-TO-DATE
+> Task :android:processDebugManifestForPackage UP-TO-DATE
+> Task :common:compileDebugLibraryResources UP-TO-DATE
+> Task :common:parseDebugLocalResources UP-TO-DATE
+> Task :common:generateDebugRFile UP-TO-DATE
+> Task :android:processDebugResources UP-TO-DATE
+> Task :common:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :common:convertXmlValueResourcesForAndroidMain NO-SOURCE
+> Task :common:copyNonXmlValueResourcesForAndroidMain NO-SOURCE
+> Task :common:prepareComposeResourcesTaskForAndroidMain NO-SOURCE
+> Task :common:generateResourceAccessorsForAndroidMain SKIPPED
+> Task :common:convertXmlValueResourcesForCommonMain NO-SOURCE
+> Task :common:copyNonXmlValueResourcesForCommonMain NO-SOURCE
+> Task :common:prepareComposeResourcesTaskForCommonMain NO-SOURCE
+> Task :common:generateResourceAccessorsForCommonMain SKIPPED
+> Task :common:generateActualResourceCollectorsForAndroidMain SKIPPED
+> Task :common:generateAndroidDebugNonAndroidBuildConfig SKIPPED
+> Task :common:generateAndroidMainNonAndroidBuildConfig SKIPPED
+> Task :common:generateComposeResClass SKIPPED
+> Task :common:generateExpectResourceCollectorsForCommonMain SKIPPED
+> Task :common:generateMRdesktopMain UP-TO-DATE
+> Task :common:generateNonAndroidBuildConfig UP-TO-DATE
+> Task :common:convertXmlValueResourcesForAndroidDebug NO-SOURCE
+> Task :common:copyNonXmlValueResourcesForAndroidDebug NO-SOURCE
+> Task :common:prepareComposeResourcesTaskForAndroidDebug NO-SOURCE
+> Task :common:generateResourceAccessorsForAndroidDebug SKIPPED
+> Task :common:compileDebugKotlinAndroid UP-TO-DATE
+> Task :common:javaPreCompileDebug UP-TO-DATE
+> Task :common:compileDebugJavaWithJavac NO-SOURCE
+> Task :common:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :android:compileDebugKotlin UP-TO-DATE
+> Task :android:javaPreCompileDebug UP-TO-DATE
+> Task :android:compileDebugJavaWithJavac UP-TO-DATE
+> Task :android:mergeDebugShaders UP-TO-DATE
+> Task :android:compileDebugShaders NO-SOURCE
+> Task :android:generateDebugAssets UP-TO-DATE
+> Task :common:mergeDebugShaders UP-TO-DATE
+> Task :common:compileDebugShaders NO-SOURCE
+> Task :common:copyDebugComposeResourcesToAndroidAssets UP-TO-DATE
+> Task :common:debugAssetsCopyForAGP NO-SOURCE
+> Task :common:generateDebugAssets UP-TO-DATE
+> Task :common:packageDebugAssets UP-TO-DATE
+> Task :android:mergeDebugAssets UP-TO-DATE
+> Task :android:compressDebugAssets UP-TO-DATE
+> Task :android:processDebugJavaRes UP-TO-DATE
+> Task :common:processDebugJavaRes UP-TO-DATE
+> Task :android:mergeDebugJavaResource UP-TO-DATE
+> Task :android:checkDebugDuplicateClasses UP-TO-DATE
+> Task :android:desugarDebugFileDependencies UP-TO-DATE
+> Task :android:mergeExtDexDebug UP-TO-DATE
+> Task :common:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :android:mergeLibDexDebug UP-TO-DATE
+> Task :android:dexBuilderDebug UP-TO-DATE
+> Task :android:mergeProjectDexDebug UP-TO-DATE
+> Task :android:configureCMakeDebug[arm64-v8a]
+> Task :android:buildCMakeDebug[arm64-v8a]
+> Task :android:configureCMakeDebug[armeabi-v7a]
+> Task :android:buildCMakeDebug[armeabi-v7a]
+> Task :android:mergeDebugJniLibFolders UP-TO-DATE
+> Task :common:mergeDebugJniLibFolders UP-TO-DATE
+> Task :common:mergeDebugNativeLibs NO-SOURCE
+> Task :common:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :android:mergeDebugNativeLibs UP-TO-DATE
+> Task :android:stripDebugDebugSymbols UP-TO-DATE
+> Task :android:validateSigningDebug UP-TO-DATE
+> Task :android:writeDebugAppMetadata UP-TO-DATE
+> Task :android:writeDebugSigningConfigVersions UP-TO-DATE
+> Task :android:packageDebug UP-TO-DATE
+> Task :android:createDebugApkListingFileRedirect UP-TO-DATE
+
+> Task :android:installDebug
+Installing APK 'android-arm64-v8a-debug.apk' on 'nome-v656-baseline-api35(AVD) - 15' for :android:debug
+Installed on 1 device.
+
+BUILD SUCCESSFUL in 6s
+66 actionable tasks: 6 executed, 60 up-to-date

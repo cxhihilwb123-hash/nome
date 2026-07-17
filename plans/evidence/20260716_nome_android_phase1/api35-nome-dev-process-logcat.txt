@@ -1,0 +1,69 @@
+--------- beginning of main
+07-17 01:16:08.380  6146  6146 I ex.app.nome.dev: Late-enabling -Xcheck:jni
+07-17 01:16:08.456  6146  6146 I ex.app.nome.dev: Using CollectorTypeCMC GC.
+07-17 01:16:08.476  6146  6146 D nativeloader: Load libframework-connectivity-tiramisu-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity-t.jar: ok
+07-17 01:16:08.559  6146  6146 D ApplicationLoaders: Returning zygote-cached class loader: /system_ext/framework/androidx.window.extensions.jar
+07-17 01:16:08.560  6146  6146 D ApplicationLoaders: Returning zygote-cached class loader: /system_ext/framework/androidx.window.sidecar.jar
+07-17 01:16:08.561  6146  6146 W ziparchive: Unable to open '/data/app/~~3g-fjxxbXg9jo6-iNRWSfQ==/chat.simplex.app.nome.dev-xoj4zPCYiBxV-unboU538Q==/base.dm': No such file or directory
+07-17 01:16:08.561  6146  6146 W ziparchive: Unable to open '/data/app/~~3g-fjxxbXg9jo6-iNRWSfQ==/chat.simplex.app.nome.dev-xoj4zPCYiBxV-unboU538Q==/base.dm': No such file or directory
+07-17 01:16:09.322  6146  6146 D nativeloader: Configuring clns-7 for other apk /data/app/~~3g-fjxxbXg9jo6-iNRWSfQ==/chat.simplex.app.nome.dev-xoj4zPCYiBxV-unboU538Q==/base.apk. target_sdk_version=35, uses_libraries=, library_path=/data/app/~~3g-fjxxbXg9jo6-iNRWSfQ==/chat.simplex.app.nome.dev-xoj4zPCYiBxV-unboU538Q==/lib/arm64:/data/app/~~3g-fjxxbXg9jo6-iNRWSfQ==/chat.simplex.app.nome.dev-xoj4zPCYiBxV-unboU538Q==/base.apk!/lib/arm64-v8a, permitted_path=/data:/mnt/expand:/data/user/0/chat.simplex.app.nome.dev
+07-17 01:16:09.324  6146  6146 D CompatChangeReporter: Compat change id reported: 202956589; UID 10207; state: ENABLED
+07-17 01:16:09.330  6146  6146 V GraphicsEnvironment: Currently set values for:
+07-17 01:16:09.330  6146  6146 V GraphicsEnvironment:   angle_gl_driver_selection_pkgs=[]
+07-17 01:16:09.330  6146  6146 V GraphicsEnvironment:   angle_gl_driver_selection_values=[]
+07-17 01:16:09.331  6146  6146 V GraphicsEnvironment: Global.Settings values are invalid: number of packages: 0, number of values: 0
+07-17 01:16:09.331  6146  6146 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+07-17 01:16:09.383  6146  6146 D CompatChangeReporter: Compat change id reported: 279646685; UID 10207; state: ENABLED
+07-17 01:16:09.386  6146  6146 D WM-WrkMgrInitializer: Initializing WorkManager with default configuration.
+07-17 01:16:09.397  6146  6146 D WM-PackageManagerHelper: Skipping component enablement for androidx.work.impl.background.systemjob.SystemJobService
+07-17 01:16:09.397  6146  6146 D WM-Schedulers: Created SystemJobScheduler and enabled SystemJobService
+07-17 01:16:09.408  6146  6165 D SIMPLEX : starting server
+07-17 01:16:09.408  6146  6165 D SIMPLEX : started server
+07-17 01:16:09.526  6146  6146 D nativeloader: Load /data/app/~~3g-fjxxbXg9jo6-iNRWSfQ==/chat.simplex.app.nome.dev-xoj4zPCYiBxV-unboU538Q==/base.apk!/lib/arm64-v8a/libapp-lib.so using ns clns-7 from class loader (caller=/data/app/~~3g-fjxxbXg9jo6-iNRWSfQ==/chat.simplex.app.nome.dev-xoj4zPCYiBxV-unboU538Q==/base.apk!classes6.dex): ok
+07-17 01:16:09.529  6146  6165 D SIMPLEX : started receiver
+07-17 01:16:09.529  6146  6165 D SIMPLEX : starting receiver loop
+--------- beginning of system
+07-17 01:16:09.601  6146  6146 W Looper  : Loop again would have the queued messages be executed before this one completed.
+07-17 01:16:09.654  6146  6146 D CompatChangeReporter: Compat change id reported: 309578419; UID 10207; state: ENABLED
+07-17 01:16:09.706  6146  6146 W HWUI    : Unknown dataspace 0
+07-17 01:16:09.954  6146  6151 I ex.app.nome.dev: Compiler allocated 5250KB to compile void android.view.ViewRootImpl.performTraversals()
+07-17 01:16:10.022  6146  6173 I EGL_emulation: Opening libGLESv1_CM_emulation.so
+07-17 01:16:10.022  6146  6173 I EGL_emulation: Opening libGLESv2_emulation.so
+07-17 01:16:10.029  6146  6173 W HWUI    : Failed to choose config with EGL_SWAP_BEHAVIOR_PRESERVED, retrying without...
+07-17 01:16:10.029  6146  6173 W HWUI    : Failed to initialize 101010-2 format, error = EGL_SUCCESS
+07-17 01:16:10.074  6146  6173 I Gralloc4: mapper 4.x is not supported
+07-17 01:16:10.175  6146  6162 D SIMPLEX : Network changed: UserNetworkInfo(networkType=WIFI, online=true)
+07-17 01:16:10.814  6146  6165 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 0 name position
+07-17 01:16:10.817  6146  6165 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 1 name color
+07-17 01:16:10.824  6146  6165 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 0 name position
+07-17 01:16:10.824  6146  6165 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 1 name color
+07-17 01:16:10.824  6146  6165 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 2 name localCoord
+07-17 01:16:10.827  6146  6165 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 0 name position
+07-17 01:16:10.827  6146  6165 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 1 name localCoord
+07-17 01:16:10.832  6146  6165 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 0 name a_vertex
+07-17 01:16:10.834  6146  6165 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 0 name position
+07-17 01:16:10.834  6146  6165 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 1 name localCoord
+07-17 01:16:10.838  6146  6165 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 0 name position
+07-17 01:16:10.838  6146  6165 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 1 name localCoord
+07-17 01:16:10.848  6146  6165 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 0 name inPosition
+07-17 01:16:10.848  6146  6165 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 1 name inColor
+07-17 01:16:10.848  6146  6165 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 2 name inTextureCoords
+07-17 01:16:10.850  6146  6165 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 0 name position
+07-17 01:16:10.850  6146  6165 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 1 name localCoord
+07-17 01:16:10.851  6146  6165 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 0 name position
+07-17 01:16:10.851  6146  6165 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 1 name color
+07-17 01:16:10.851  6146  6165 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 2 name localCoord
+07-17 01:16:10.853  6146  6165 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 0 name inPosition
+07-17 01:16:10.853  6146  6165 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 1 name inColor
+07-17 01:16:10.853  6146  6165 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 2 name inCircleEdge
+07-17 01:16:10.945  6146  6146 W SIMPLEX : Notifications are disabled and nobody will ask to enable them
+07-17 01:16:10.952  6146  6165 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 0 name position
+07-17 01:16:10.952  6146  6165 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 1 name color
+07-17 01:16:10.952  6146  6165 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 2 name localCoord
+07-17 01:16:10.956  6146  6165 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 0 name position
+07-17 01:16:10.956  6146  6165 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 1 name color
+07-17 01:16:10.956  6146  6165 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 2 name localCoord
+07-17 01:16:10.959  6146  6165 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 0 name position
+07-17 01:16:10.959  6146  6165 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 1 name color
+07-17 01:16:15.001  6146  6195 D ProfileInstaller: Installing profile for chat.simplex.app.nome.dev
+07-17 01:16:30.783  6146  6173 D EGL_emulation: app_time_stats: avg=4134.51ms min=24.65ms max=19792.58ms count=5

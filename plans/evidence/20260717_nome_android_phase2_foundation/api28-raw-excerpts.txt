@@ -1,0 +1,66 @@
+Nome Android Phase 2 foundation — API 28 raw execution excerpts
+Captured: 2026-07-17 Asia/Shanghai
+Source: exact command/output records retained in the current Codex execution transcript;
+        indentation and repeated absolute workspace prefixes are normalized here
+
+AVD launch
+  $ /Users/forkman03/Library/Android/sdk/emulator/emulator \
+      -avd nome-api28-arm64 -port 5556 -no-window -no-audio -no-boot-anim \
+      -wipe-data -no-snapshot -no-snapshot-save
+
+  INFO | Android emulator version 36.6.11.0 (build_id 15507667) (CL:N/A)
+  INFO | Found systemPath /Users/forkman03/Library/Android/sdk/system-images/android-28/google_apis/arm64-v8a/
+  INFO | Ok: Disk space requirements to run avd: `nome-api28-arm64` are met
+  INFO | qemu.avd_name=nome-api28-arm64
+  USER_INFO | Emulator is performing a full startup. This may take upto two minutes, or more.
+
+Boot completion
+  $ adb -s emulator-5556 shell getprop sys.boot_completed
+  1
+
+Install
+  $ adb -s emulator-5556 install -r -t \
+      apps/multiplatform/android/build/outputs/apk/debug/android-arm64-v8a-debug.apk
+  Performing Streamed Install
+  Success
+
+Stopped launch
+  $ adb -s emulator-5556 shell am start -W -S \
+      -n chat.simplex.app.nome.dev/chat.simplex.app.MainActivity
+  Stopping: chat.simplex.app.nome.dev
+  Starting: Intent { cmp=chat.simplex.app.nome.dev/chat.simplex.app.MainActivity }
+  Status: ok
+  Activity: chat.simplex.app.nome.dev/chat.simplex.app.MainActivity
+  ThisTime: 1849
+  TotalTime: 1849
+  WaitTime: 1913
+  Complete
+
+Process
+  $ adb -s emulator-5556 shell pidof chat.simplex.app.nome.dev
+  5256
+
+Filtered core/crash Logcat
+  $ adb -s emulator-5556 logcat -d -v threadtime -s 'SIMPLEX:*' 'AndroidRuntime:E'
+  --------- beginning of main
+  --------- beginning of system
+  07-17 08:43:49.879  5256  5276 D SIMPLEX : starting server
+  07-17 08:43:49.880  5256  5276 D SIMPLEX : started server
+  07-17 08:43:49.904  5256  5276 D SIMPLEX : started receiver
+  07-17 08:43:49.904  5256  5276 D SIMPLEX : starting receiver loop
+  07-17 08:43:52.613  5256  5273 D SIMPLEX : Network changed: UserNetworkInfo(networkType=WIFI, online=true)
+
+Resumed activity
+  mResumedActivity: ActivityRecord{c09f5b1 u0 chat.simplex.app.nome.dev/chat.simplex.app.MainActivity t6}
+  ResumedActivity: ActivityRecord{c09f5b1 u0 chat.simplex.app.nome.dev/chat.simplex.app.MainActivity t6}
+
+Evidence limits
+  - The retained transcript does not include the completed output from the grouped
+    post-boot SDK/ABI/pm-path command. API 28 and arm64 are evidenced by the exact
+    wiped AVD invocation and its system-image path, not by a separately retained
+    getprop result.
+  - No API 28 UIAutomator tree was retained.
+  - am start did not print a LaunchState field. The clean/stopped boundary is the
+    -wipe-data/-no-snapshot AVD, fresh install, and am start -S sequence.
+  - The filtered buffer contains no AndroidRuntime:E record, but this is not an
+    unfiltered full-device Logcat claim.

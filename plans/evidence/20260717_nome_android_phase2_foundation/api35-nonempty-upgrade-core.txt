@@ -1,0 +1,57 @@
+Nome Android Phase 2 foundation — API 35 non-empty same-package upgrade/core smoke
+Date: 2026-07-17 Asia/Shanghai
+Device: isolated arm64 API 35 AVD restored from the retained non-empty v6.5.6 snapshot
+Package: chat.simplex.app.nome.dev
+
+Pre-upgrade checkpoint
+  files_chat.db:  1,265,664 bytes; non-empty
+    SHA-256: 32ce389c0c47e7b013ccc21a97557017962c6e2ccd6cf63ab74eb2a9db293819
+  files_agent.db:   430,080 bytes; non-empty
+    SHA-256: 1d3771857049e2d6fca68012665e7448c70762f709db140e8370eaa91c843526
+  preferences:        1,161 bytes; non-empty
+    SHA-256: 902dc3ad7d8448b4f117c41359ef645b938c3d0fd599ff96a8527202ee94a937
+
+Upgrade
+  adb install -r <minSdk 28 arm64 debug APK>
+  Result: Success
+  Package data was not cleared.
+
+Immediate post-install checkpoint
+  - files_chat.db SHA-256:
+      32ce389c0c47e7b013ccc21a97557017962c6e2ccd6cf63ab74eb2a9db293819
+    (matched pre-upgrade)
+  - preferences SHA-256:
+      902dc3ad7d8448b4f117c41359ef645b938c3d0fd599ff96a8527202ee94a937
+    (matched pre-upgrade)
+  - files_agent.db SHA-256:
+      bc731a3bbc47a412efd6578fbad8fdc020698e4f099384450b19a8d2601252a7
+    (changed after installation/runtime activity). This file is
+    expected to be runtime-mutable and is deliberately not claimed byte-identical.
+
+Cold launch
+  Status: ok
+  LaunchState: COLD
+  TotalTime: 1652ms
+  Process observed: pid 6662
+
+Real official core/UI evidence
+  07-17 08:47:21.471 6662 6681 D SIMPLEX : starting server
+  07-17 08:47:21.471 6662 6681 D SIMPLEX : started server
+  07-17 08:47:21.572 6662 6681 D SIMPLEX : started receiver
+  07-17 08:47:21.572 6662 6681 D SIMPLEX : starting receiver loop
+  07-17 08:47:22.378 6662 6678 D SIMPLEX : Network changed: UserNetworkInfo(networkType=WIFI, online=true)
+  - pre/post UI trees retained the same Chinese connection-flow values, including:
+      和某人交谈
+      让某人和你连接
+  - non-empty data files remained present after launch
+
+Verdict
+  PASS for the foundation same-package upgrade smoke: the non-empty chat database
+  and preferences were byte-identical at the immediate post-install checkpoint,
+  all three files remained non-zero after launch, and the unchanged v6.5.6 core
+  cold-started. This is not a post-launch byte-identity claim for any file, not a
+  claim that every agent-runtime byte is stable, and not a substitute for deeper
+  identity/chat/attachment/settings assertions in later production batches.
+
+Retained normalized execution excerpts, exact pre/post values, and their explicit limits:
+  api35-raw-excerpts.txt

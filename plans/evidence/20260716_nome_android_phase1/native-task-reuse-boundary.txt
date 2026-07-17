@@ -1,0 +1,22 @@
+Nome Android Phase 1 native task reuse boundary
+Recorded: 2026-07-17 Asia/Shanghai
+
+Authoritative Gradle log:
+plans/evidence/20260716_nome_android_phase1/gradle-android-rerun.log
+mtime: 2026-07-17 01:38:11 +0800
+
+Executed Gradle task lines:
+790: > Task :android:configureCMakeDebug[arm64-v8a]
+794: > Task :android:buildCMakeDebug[arm64-v8a]
+795: > Task :android:configureCMakeDebug[armeabi-v7a]
+796: > Task :android:buildCMakeDebug[armeabi-v7a]
+
+Ninja logs after that run:
+apps/multiplatform/android/.cxx/Debug/j5jh3v4l/arm64-v8a/.ninja_log
+mtime: 2026-07-17 00:14:09 +0800
+
+apps/multiplatform/android/.cxx/Debug/j5jh3v4l/armeabi-v7a/.ninja_log
+mtime: 2026-07-17 00:14:10 +0800
+
+Interpretation boundary:
+Both ABI CMake Gradle tasks executed, but the Ninja logs predate the 01:38 Gradle rerun. The rerun therefore does not evidence a fresh native-object compilation; current native objects were reused. Android unit tests, lint, packaging, and assemble still completed successfully as recorded in the Gradle log.

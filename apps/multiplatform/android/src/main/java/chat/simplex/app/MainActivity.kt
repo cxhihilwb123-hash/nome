@@ -12,6 +12,7 @@ import androidx.compose.ui.platform.ClipboardManager
 import androidx.fragment.app.FragmentActivity
 import chat.simplex.app.model.NtfManager
 import chat.simplex.app.model.NtfManager.getUserIdFromIntent
+import chat.simplex.app.nome.NomeProductionShell
 import chat.simplex.common.*
 import chat.simplex.common.helpers.*
 import chat.simplex.common.model.*
@@ -58,7 +59,9 @@ class MainActivity: FragmentActivity() {
     }
     enableEdgeToEdge()
     setContent {
-      AppScreen()
+      NomeProductionShell {
+        AppScreen()
+      }
     }
     SimplexApp.context.schedulePeriodicServiceRestartWorker()
     SimplexApp.context.schedulePeriodicWakeUp()

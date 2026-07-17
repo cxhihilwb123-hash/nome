@@ -36,134 +36,153 @@ State mutations originate from two sources:
 1. **User actions**: Compose UI handlers call `api*()` suspend functions on `ChatController`, which send commands to the Haskell core, receive responses, and update `ChatModel`.
 2. **Core events**: The receiver coroutine (`startReceiver`) calls `processReceivedMsg()`, which updates `ChatModel` fields on `Dispatchers.Main`.
 
+Chat-list loading additionally uses a typed generation contract in the same singleton. The contract distinguishes a real empty result from failure, no-current-user, and stale results without adding a second model, core bridge, or protocol.
+
 ---
 
 <a id="ChatModel"></a>
 
 ## 2. ChatModel
 
-Defined at [`ChatModel.kt line 86`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L86) as `@Stable object ChatModel`.
+Defined as [`@Stable object ChatModel`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L135-L137).
 
 ### Controller Reference
 
-| Field | Type | Line | Purpose |
-|---|---|---|---|
-| [`controller`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L87) | `ChatController` | 87 | Reference to the `ChatController` singleton |
+| Field | Type | Purpose |
+|---|---|---|
+| [`controller`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L138) | `ChatController` | Reference to the `ChatController` singleton |
 
 ### User State
 
-| Field | Type | Line | Purpose |
-|---|---|---|---|
-| [`currentUser`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L89) | `MutableState<User?>` | 89 | Currently active user profile |
-| [`users`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L90) | `SnapshotStateList<UserInfo>` | 90 | All user profiles (multi-account) |
-| [`localUserCreated`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L91) | `MutableState<Boolean?>` | 91 | Whether a local user has been created (null = unknown during init) |
-| [`setDeliveryReceipts`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L88) | `MutableState<Boolean>` | 88 | Trigger for delivery receipts setup dialog |
-| [`switchingUsersAndHosts`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L100) | `MutableState<Boolean>` | 100 | True while switching active user/remote host |
-| [`changingActiveUserMutex`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L193) | `Mutex` | 193 | Prevents concurrent user switches |
+| Field | Type | Purpose |
+|---|---|---|
+| [`currentUser`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L140) | `MutableState<User?>` | Currently active user profile |
+| [`users`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L141) | `SnapshotStateList<UserInfo>` | All user profiles (multi-account) |
+| [`localUserCreated`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L142) | `MutableState<Boolean?>` | Whether a local user has been created (null = unknown during init) |
+| [`setDeliveryReceipts`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L139) | `MutableState<Boolean>` | Trigger for delivery receipts setup dialog |
+| [`switchingUsersAndHosts`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L151) | `MutableState<Boolean>` | True while switching active user/remote host |
+| [`changingActiveUserMutex`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L249) | `Mutex` | Prevents concurrent user switches |
 
 ### Chat Runtime State
 
-| Field | Type | Line | Purpose |
-|---|---|---|---|
-| [`chatRunning`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L92) | `MutableState<Boolean?>` | 92 | `null` = initializing, `true` = running, `false` = stopped |
-| [`chatDbChanged`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L93) | `MutableState<Boolean>` | 93 | Database was changed externally (needs restart) |
-| [`chatDbEncrypted`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L94) | `MutableState<Boolean?>` | 94 | Whether database is encrypted |
-| [`chatDbStatus`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L95) | `MutableState<DBMigrationResult?>` | 95 | Result of database migration attempt |
-| [`ctrlInitInProgress`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L96) | `MutableState<Boolean>` | 96 | Controller initialization in progress |
-| [`dbMigrationInProgress`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L97) | `MutableState<Boolean>` | 97 | Database migration in progress |
-| [`incompleteInitializedDbRemoved`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L98) | `MutableState<Boolean>` | 98 | Tracks if incomplete DB files were removed (prevents infinite retry) |
+| Field | Type | Purpose |
+|---|---|---|
+| [`chatRunning`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L143) | `MutableState<Boolean?>` | `null` = initializing, `true` = running, `false` = stopped |
+| [`chatDbChanged`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L144) | `MutableState<Boolean>` | Database was changed externally (needs restart) |
+| [`chatDbEncrypted`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L145) | `MutableState<Boolean?>` | Whether database is encrypted |
+| [`chatDbStatus`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L146) | `MutableState<DBMigrationResult?>` | Result of database migration attempt |
+| [`ctrlInitInProgress`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L147) | `MutableState<Boolean>` | Controller initialization in progress |
+| [`dbMigrationInProgress`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L148) | `MutableState<Boolean>` | Database migration in progress |
+| [`incompleteInitializedDbRemoved`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L149) | `MutableState<Boolean>` | Tracks if incomplete DB files were removed (prevents infinite retry) |
 
 ### Current Chat State
 
-| Field | Type | Line | Purpose |
-|---|---|---|---|
-| [`chatId`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L103) | `MutableState<String?>` | 103 | ID of the currently open chat (null = chat list shown) |
-| [`chatAgentConnId`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L104) | `MutableState<String?>` | 104 | Agent connection ID for current chat |
-| [`chatSubStatus`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L105) | `MutableState<SubscriptionStatus?>` | 105 | Subscription status for current chat |
-| [`openAroundItemId`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L106) | `MutableState<Long?>` | 106 | Item ID to scroll to when opening chat |
-| [`chatsContext`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L107) | `ChatsContext` | 107 | Primary chat context (see [ChatsContext](#3-chatscontext)) |
-| [`secondaryChatsContext`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L108) | `MutableState<ChatsContext?>` | 108 | Optional secondary context for dual-pane views |
-| [`chats`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L110) | `State<List<Chat>>` | 110 | Derived from `chatsContext.chats` |
-| [`deletedChats`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L112) | `MutableState<List<Pair<Long?, String>>>` | 112 | Recently deleted chats (rhId, chatId) |
+| Field | Type | Purpose |
+|---|---|---|
+| [`chatId`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L154) | `MutableState<String?>` | ID of the currently open chat (null = chat list shown) |
+| [`chatAgentConnId`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L155) | `MutableState<String?>` | Agent connection ID for current chat |
+| [`chatSubStatus`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L156) | `MutableState<SubscriptionStatus?>` | Subscription status for current chat |
+| [`openAroundItemId`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L157) | `MutableState<Long?>` | Item ID to scroll to when opening chat |
+| [`chatsContext`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L158) | `ChatsContext` | Primary chat context (see [ChatsContext](#3-chatscontext)) |
+| [`secondaryChatsContext`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L159) | `MutableState<ChatsContext?>` | Optional secondary context for dual-pane views |
+| [`chats`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L161) | `State<List<Chat>>` | Derived from `chatsContext.chats` |
+| [`deletedChats`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L164) | `MutableState<List<Pair<Long?, String>>>` | Recently deleted chats (rhId, chatId) |
+
+### Chat List Load Contract
+
+The shared [`ChatListLoadGeneration`, `ChatListLoadState`, and `ChatListLoadResult`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L81-L106) types make chat-list truth explicit:
+
+- A generation is the `(remoteHostId, userId)` identity for one authoritative list.
+- `Loading(generation, hideRows)` records an in-flight request and whether old rows may remain visible.
+- `Loaded(generation)` proves that the current generation has been applied.
+- `Unavailable(generation)` records a failed current-generation load without turning it into an empty list.
+- `NoCurrentUser(remoteHostId)` is separate from both failure and a successful empty list.
+- Results are correspondingly typed as `Success(generation, chats)`, `Failure(generation)`, or `NoCurrentUser(remoteHostId)`.
+
+[`beginChatListLoad` and `applyChatListLoadResult`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L264-L311) enforce the application contract. A success or failure is accepted only when its attempt ID is current and its generation still matches the active user and remote host; stale completions return `false` and do not mutate truth. On success, `ChatsContext.updateChats` runs **before** `Loaded` is published. A matching failure publishes `Unavailable` but retains the last chat rows. `NoCurrentUser` clears rows only if there is still no current user on the same host, and clears them before publishing the state.
+
+[`apiGetChatsResult`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1054-L1081) is the typed producer. It rejects an `ApiChats` response whose user does not match the requested generation. The compatibility [`apiGetChats`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1083-L1088) still folds non-success outcomes to an empty list for legacy callers, so code that needs authoritative loading truth must use the typed function and the application contract above. This wraps the existing `CC.ApiGetChats` / `CR.ApiChats` path; it does not change native core or wire protocol.
+
+The Android Nome [`NomeHomeStateAdapter`](../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeStateAdapter.kt#L29-L112) is a pure presentation derivation over this shared state. It does not cache a second chat list or own navigation. Its network input comes from [`NetworkObserver.platformNetworkInfo`](../common/src/androidMain/kotlin/chat/simplex/common/helpers/NetworkObserver.kt#L16-L24), whose `null` value means Android has not made its first observation; the adapter renders that as `UNKNOWN`, not online. Its first-use and filtered-no-result outputs are defensive renderer contracts in the current route graph because onboarding consumes no-user and the bounded home has no filter producer. Desktop does not consume this Android-only presentation adapter and keeps its existing home content fallback.
 
 ### Group Members
 
-| Field | Type | Line | Purpose |
-|---|---|---|---|
-| [`groupMembers`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L113) | `MutableState<List<GroupMember>>` | 113 | Members of currently viewed group |
-| [`groupMembersIndexes`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L114) | `MutableState<Map<Long, Int>>` | 114 | Index lookup by `groupMemberId` |
-| [`membersLoaded`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L115) | `MutableState<Boolean>` | 115 | Whether group members have been loaded |
+| Field | Type | Purpose |
+|---|---|---|
+| [`groupMembers`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L166) | `MutableState<List<GroupMember>>` | Members of currently viewed group |
+| [`groupMembersIndexes`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L167) | `MutableState<Map<Long, Int>>` | Index lookup by `groupMemberId` |
+| [`membersLoaded`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L168) | `MutableState<Boolean>` | Whether group members have been loaded |
 
 ### Chat Tags and Filters
 
-| Field | Type | Line | Purpose |
-|---|---|---|---|
-| [`userTags`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L118) | `MutableState<List<ChatTag>>` | 118 | User-defined chat tags |
-| [`activeChatTagFilter`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L119) | `MutableState<ActiveFilter?>` | 119 | Currently active filter in chat list |
-| [`presetTags`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L120) | `SnapshotStateMap<PresetTagKind, Int>` | 120 | Counts for preset tag categories (favorites, groups, contacts, etc.) |
-| [`unreadTags`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L121) | `SnapshotStateMap<Long, Int>` | 121 | Unread counts per user-defined tag |
+| Field | Type | Purpose |
+|---|---|---|
+| [`userTags`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L174) | `MutableState<List<ChatTag>>` | User-defined chat tags |
+| [`activeChatTagFilter`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L175) | `MutableState<ActiveFilter?>` | Currently active filter in chat list |
+| [`presetTags`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L176) | `SnapshotStateMap<PresetTagKind, Int>` | Counts for preset tag categories (favorites, groups, contacts, etc.) |
+| [`unreadTags`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L177) | `SnapshotStateMap<Long, Int>` | Unread counts per user-defined tag |
 
 ### Terminal and Developer
 
-| Field | Type | Line | Purpose |
-|---|---|---|---|
-| [`terminalsVisible`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L125) | `Set<Boolean>` | 125 | Tracks which terminal views are visible (default vs floating) |
-| [`terminalItems`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L126) | `MutableState<List<TerminalItem>>` | 126 | Command/response log for developer terminal |
+| Field | Type | Purpose |
+|---|---|---|
+| [`terminalsVisible`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L181) | `Set<Boolean>` | Tracks which terminal views are visible (default vs floating) |
+| [`terminalItems`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L182) | `MutableState<List<TerminalItem>>` | Command/response log for developer terminal |
 
 ### Calls (WebRTC)
 
-| Field | Type | Line | Purpose |
-|---|---|---|---|
-| [`callManager`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L161) | `CallManager` | 161 | WebRTC call lifecycle manager |
-| [`callInvitations`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L162) | `SnapshotStateMap<String, RcvCallInvitation>` | 162 | Pending incoming call invitations keyed by chatId |
-| [`activeCallInvitation`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L163) | `MutableState<RcvCallInvitation?>` | 163 | Currently displayed incoming call invitation |
-| [`activeCall`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L164) | `MutableState<Call?>` | 164 | Currently active call |
-| [`activeCallViewIsVisible`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L165) | `MutableState<Boolean>` | 165 | Whether call UI is showing |
-| [`activeCallViewIsCollapsed`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L166) | `MutableState<Boolean>` | 166 | Whether call UI is in PiP/collapsed mode |
-| [`callCommand`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L167) | `SnapshotStateList<WCallCommand>` | 167 | Pending WebRTC commands |
-| [`showCallView`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L168) | `MutableState<Boolean>` | 168 | Call view visibility toggle |
-| [`switchingCall`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L169) | `MutableState<Boolean>` | 169 | True during call switching |
+| Field | Type | Purpose |
+|---|---|---|
+| [`callManager`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L217) | `CallManager` | WebRTC call lifecycle manager |
+| [`callInvitations`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L218) | `SnapshotStateMap<String, RcvCallInvitation>` | Pending incoming call invitations keyed by chatId |
+| [`activeCallInvitation`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L219) | `MutableState<RcvCallInvitation?>` | Currently displayed incoming call invitation |
+| [`activeCall`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L220) | `MutableState<Call?>` | Currently active call |
+| [`activeCallViewIsVisible`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L221) | `MutableState<Boolean>` | Whether call UI is showing |
+| [`activeCallViewIsCollapsed`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L222) | `MutableState<Boolean>` | Whether call UI is in PiP/collapsed mode |
+| [`callCommand`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L223) | `SnapshotStateList<WCallCommand>` | Pending WebRTC commands |
+| [`showCallView`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L224) | `MutableState<Boolean>` | Call view visibility toggle |
+| [`switchingCall`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L225) | `MutableState<Boolean>` | True during call switching |
 
 ### Compose Draft and Sharing
 
-| Field | Type | Line | Purpose |
-|---|---|---|---|
-| [`draft`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L176) | `MutableState<ComposeState?>` | 176 | Saved compose draft for current chat |
-| [`draftChatId`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L177) | `MutableState<String?>` | 177 | Chat ID the draft belongs to |
-| [`sharedContent`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L180) | `MutableState<SharedContent?>` | 180 | Content received via share intent or internal forwarding |
+| Field | Type | Purpose |
+|---|---|---|
+| [`draft`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L232) | `MutableState<ComposeState?>` | Saved compose draft for current chat |
+| [`draftChatId`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L233) | `MutableState<String?>` | Chat ID the draft belongs to |
+| [`sharedContent`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L236) | `MutableState<SharedContent?>` | Content received via share intent or internal forwarding |
 
 ### Remote Hosts
 
-| Field | Type | Line | Purpose |
-|---|---|---|---|
-| [`remoteHosts`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L199) | `SnapshotStateList<RemoteHostInfo>` | 199 | Connected remote hosts (for desktop-mobile pairing) |
-| [`currentRemoteHost`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L200) | `MutableState<RemoteHostInfo?>` | 200 | Currently selected remote host |
-| [`remoteHostPairing`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L203) | `MutableState<Pair<RemoteHostInfo?, RemoteHostSessionState>?>` | 203 | Remote host pairing state |
-| [`remoteCtrlSession`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L204) | `MutableState<RemoteCtrlSession?>` | 204 | Remote controller session |
+| Field | Type | Purpose |
+|---|---|---|
+| [`remoteHosts`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L255) | `SnapshotStateList<RemoteHostInfo>` | Connected remote hosts (for desktop-mobile pairing) |
+| [`currentRemoteHost`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L256) | `MutableState<RemoteHostInfo?>` | Currently selected remote host |
+| [`remoteHostPairing`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L259) | `MutableState<Pair<RemoteHostInfo?, RemoteHostSessionState>?>` | Remote host pairing state |
+| [`remoteCtrlSession`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L260) | `MutableState<RemoteCtrlSession?>` | Remote controller session |
 
 ### Miscellaneous UI State
 
-| Field | Type | Line | Purpose |
-|---|---|---|---|
-| [`userAddress`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L127) | `MutableState<UserContactLinkRec?>` | 127 | User's public contact address |
-| [`chatItemTTL`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L128) | `MutableState<ChatItemTTL>` | 128 | Chat item time-to-live setting |
-| [`clearOverlays`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L131) | `MutableState<Boolean>` | 131 | Signal to close all overlays/modals |
-| [`appOpenUrl`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L137) | `MutableState<Pair<Long?, String>?>` | 137 | URL opened via deep link (rhId, uri) |
-| [`appOpenUrlConnecting`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L138) | `MutableState<Boolean>` | 138 | Whether a deep link connection is in progress |
-| [`newChatSheetVisible`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L141) | `MutableState<Boolean>` | 141 | Whether new chat bottom sheet is visible |
-| [`fullscreenGalleryVisible`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L144) | `MutableState<Boolean>` | 144 | Fullscreen gallery mode |
-| [`notificationPreviewMode`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L147) | `MutableState<NotificationPreviewMode>` | 147 | Notification content preview level |
-| [`showAuthScreen`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L156) | `MutableState<Boolean>` | 156 | Whether to show authentication screen |
-| [`showChatPreviews`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L158) | `MutableState<Boolean>` | 158 | Whether to show chat preview text in list |
-| [`clipboardHasText`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L185) | `MutableState<Boolean>` | 185 | System clipboard has text content |
-| [`networkInfo`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L186) | `MutableState<UserNetworkInfo>` | 186 | Network type and online status |
-| [`conditions`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L188) | `MutableState<ServerOperatorConditionsDetail>` | 188 | Server operator terms/conditions |
-| [`updatingProgress`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L190) | `MutableState<Float?>` | 190 | Progress indicator for app updates |
-| [`simplexLinkMode`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L183) | `MutableState<SimplexLinkMode>` | 183 | How SimpleX links are displayed |
-| [`migrationState`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L174) | `MutableState<MigrationToState?>` | 174 | Database migration to new device state |
-| [`showingInvitation`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L172) | `MutableState<ShowingInvitation?>` | 172 | Currently displayed invitation |
-| [`desktopOnboardingRandomPassword`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L134) | `MutableState<Boolean>` | 134 | Desktop: user skipped password setup |
-| [`filesToDelete`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L182) | `MutableSet<File>` | 182 | Temporary files pending cleanup |
+| Field | Type | Purpose |
+|---|---|---|
+| [`userAddress`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L183) | `MutableState<UserContactLinkRec?>` | User's public contact address |
+| [`chatItemTTL`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L184) | `MutableState<ChatItemTTL>` | Chat item time-to-live setting |
+| [`clearOverlays`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L187) | `MutableState<Boolean>` | Signal to close all overlays/modals |
+| [`appOpenUrl`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L193) | `MutableState<Pair<Long?, String>?>` | URL opened via deep link (rhId, uri) |
+| [`appOpenUrlConnecting`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L194) | `MutableState<Boolean>` | Whether a deep link connection is in progress |
+| [`newChatSheetVisible`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L197) | `MutableState<Boolean>` | Whether new chat bottom sheet is visible |
+| [`fullscreenGalleryVisible`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L200) | `MutableState<Boolean>` | Fullscreen gallery mode |
+| [`notificationPreviewMode`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L203) | `MutableState<NotificationPreviewMode>` | Notification content preview level |
+| [`showAuthScreen`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L212) | `MutableState<Boolean>` | Whether to show authentication screen |
+| [`showChatPreviews`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L214) | `MutableState<Boolean>` | Whether to show chat preview text in list |
+| [`clipboardHasText`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L241) | `MutableState<Boolean>` | System clipboard has text content |
+| [`networkInfo`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L242) | `MutableState<UserNetworkInfo>` | Last network fact acknowledged by the core path; Android's direct first-observation state is separate |
+| [`conditions`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L244) | `MutableState<ServerOperatorConditionsDetail>` | Server operator terms/conditions |
+| [`updatingProgress`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L246) | `MutableState<Float?>` | Progress indicator for app updates |
+| [`simplexLinkMode`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L239) | `MutableState<SimplexLinkMode>` | How SimpleX links are displayed |
+| [`migrationState`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L230) | `MutableState<MigrationToState?>` | Database migration to new device state |
+| [`showingInvitation`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L228) | `MutableState<ShowingInvitation?>` | Currently displayed invitation |
+| [`desktopOnboardingRandomPassword`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L190) | `MutableState<Boolean>` | Desktop: user skipped password setup |
+| [`filesToDelete`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L238) | `MutableSet<File>` | Temporary files pending cleanup |
 
 ---
 
@@ -171,34 +190,32 @@ Defined at [`ChatModel.kt line 86`](../common/src/commonMain/kotlin/chat/simplex
 
 ## 3. ChatsContext
 
-Defined as inner class at [`ChatModel.kt line 339`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L339):
+Defined as the inner [`ChatsContext`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L438):
 
 ```kotlin
 class ChatsContext(val secondaryContextFilter: SecondaryContextFilter?)
 ```
 
-`ChatsContext` holds the chat list and current chat items for a given context. The `ChatModel` maintains a **primary** context (`chatsContext` at line 107) and an optional **secondary** context (`secondaryChatsContext` at line 108).
-
-The secondary context is used for:
+`ChatsContext` holds the chat list and current chat items for a given context. The `ChatModel` maintains a **primary** context (`chatsContext`) and an optional **secondary** context (`secondaryChatsContext`). The secondary context is used for:
 - **Group support chat scope** (`SecondaryContextFilter.GroupChatScopeContext`) -- viewing member support threads alongside the main group chat
 - **Message content tag filtering** (`SecondaryContextFilter.MsgContentTagContext`) -- filtering messages by content type
 
 ### Fields
 
-| Field | Type | Line | Purpose |
-|---|---|---|---|
-| [`secondaryContextFilter`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L339) | `SecondaryContextFilter?` | 339 | Filter type: null = primary, GroupChatScope or MsgContentTag |
-| [`chats`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L340) | `MutableState<SnapshotStateList<Chat>>` | 340 | List of all chats in this context |
-| [`chatItems`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L345) | `MutableState<SnapshotStateList<ChatItem>>` | 345 | Items for the currently open chat in this context |
-| [`chatState`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L347) | `ActiveChatState` | 347 | Tracks unread counts, splits, scroll state |
+| Field | Type | Purpose |
+|---|---|---|
+| [`secondaryContextFilter`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L438) | `SecondaryContextFilter?` | Filter type: null = primary, GroupChatScope or MsgContentTag |
+| [`chats`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L439) | `MutableState<SnapshotStateList<Chat>>` | List of all chats in this context |
+| [`chatItems`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L444) | `MutableState<SnapshotStateList<ChatItem>>` | Items for the currently open chat in this context |
+| [`chatState`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L446) | `ActiveChatState` | Tracks unread counts, splits, scroll state |
 
 ### Derived Properties
 
-| Property | Line | Purpose |
-|---|---|---|
-| [`contentTag`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L353) | 353 | `MsgContentTag?` -- content filter tag if context is MsgContentTag |
-| [`groupScopeInfo`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L360) | 360 | `GroupChatScopeInfo?` -- group scope if context is GroupChatScope |
-| [`isUserSupportChat`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L367) | 367 | True when viewing own support chat (no specific member) |
+| Property | Purpose |
+|---|---|
+| [`contentTag`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L452) | `MsgContentTag?` -- content filter tag if context is MsgContentTag |
+| [`groupScopeInfo`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L459) | `GroupChatScopeInfo?` -- group scope if context is GroupChatScope |
+| [`isUserSupportChat`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L466) | True when viewing own support chat (no specific member) |
 
 ### Key Operations
 
@@ -209,7 +226,7 @@ The secondary context is used for:
 
 ### ActiveChatState
 
-Defined at [`ChatItemsMerger.kt line 196`](../common/src/commonMain/kotlin/chat/simplex/common/views/chat/ChatItemsMerger.kt#L196):
+Defined as [`ActiveChatState`](../common/src/commonMain/kotlin/chat/simplex/common/views/chat/ChatItemsMerger.kt#L196):
 
 ```kotlin
 data class ActiveChatState(
@@ -239,7 +256,7 @@ This tracks the scroll position and unread item accounting for the lazy-loaded c
 
 ## 4. Chat
 
-Defined at [`ChatModel.kt line 1328`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L1328):
+Defined as [`Chat`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L1437-L1444):
 
 ```kotlin
 @Serializable @Stable
@@ -264,7 +281,7 @@ data class Chat(
 
 ### ChatStats
 
-Defined at [`ChatModel.kt line 1370`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L1370):
+Defined as [`ChatStats`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L1479-L1489):
 
 ```kotlin
 data class ChatStats(
@@ -278,18 +295,18 @@ data class ChatStats(
 
 ### Derived Properties
 
-| Property | Line | Purpose |
+| Property | Source | Purpose |
 |---|---|---|
-| `id` | 1349 | Chat ID derived from `chatInfo.id` |
-| `unreadTag` | 1343 | Whether chat counts as "unread" for tag filtering (considers notification settings) |
-| `supportUnreadCount` | 1351 | Unread count in support/moderation context |
-| `nextSendGrpInv` | 1337 | Whether next message should send group invitation |
+| `id` | [`Chat.id`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L1460) | Chat ID derived from `chatInfo.id` |
+| `unreadTag` | [`Chat.unreadTag`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L1454) | Whether chat counts as "unread" for tag filtering (considers notification settings) |
+| `supportUnreadCount` | [`Chat.supportUnreadCount`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L1462) | Unread count in support/moderation context |
+| `nextSendGrpInv` | [`Chat.nextSendGrpInv`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L1448) | Whether next message should send group invitation |
 
 <a id="ChatInfo"></a>
 
 ### ChatInfo Variants
 
-`ChatInfo` is a sealed class at [`ChatModel.kt line 1391`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L1391):
+[`ChatInfo`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L1500-L1502) is a sealed class:
 
 | Variant | SerialName | Key Data |
 |---|---|---|
@@ -302,7 +319,7 @@ data class ChatStats(
 
 ### RelayStatus (Channels)
 
-`RelayStatus` is an `enum class` at [`ChatModel.kt line 2288`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L2288) modelling a relay's lifecycle for a channel on the owner's side. Serialized as a lowercase string via `@SerialName`.
+[`RelayStatus`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L2454) is an `enum class` modelling a relay's lifecycle for a channel on the owner's side. Serialized as a lowercase string via `@SerialName`.
 
 | Case | SerialName | Meaning |
 |---|---|---|
@@ -322,11 +339,11 @@ The `text` extension on the enum returns the localized status string (resource k
 
 ## 5. AppPreferences
 
-Defined at [`SimpleXAPI.kt line 94`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L94) as `class AppPreferences`.
+Defined as [`class AppPreferences`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L102).
 
 Uses the `multiplatform-settings` library (`com.russhwolf.settings.Settings`) for cross-platform key-value storage (Android `SharedPreferences` / Desktop `java.util.prefs.Preferences`).
 
-The `AppPreferences` instance is created lazily in `ChatController` at [`SimpleXAPI.kt line 496`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L496):
+The `AppPreferences` instance is created lazily as [`ChatController.appPrefs`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L513):
 ```kotlin
 val appPrefs: AppPreferences by lazy { AppPreferences() }
 ```
@@ -494,8 +511,10 @@ Factory methods: `mkBoolPreference`, `mkIntPreference`, `mkLongPreference`, `mkF
 
 | File | Path | Key Contents |
 |---|---|---|
-| ChatModel.kt | [`common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt) | `ChatModel` singleton (line 86), `ChatsContext` (line 339), `Chat` (line 1328), `ChatInfo` (line 1391), `ChatStats` (line 1370), helper methods |
-| SimpleXAPI.kt | [`common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt) | `AppPreferences` (line 94), `ChatController` (line 493), `startReceiver` (line 660), `sendCmd` (line 804), `recvMsg` (line 829), `processReceivedMsg` (line 2568) |
-| ChatItemsMerger.kt | [`common/src/commonMain/kotlin/chat/simplex/common/views/chat/ChatItemsMerger.kt`](../common/src/commonMain/kotlin/chat/simplex/common/views/chat/ChatItemsMerger.kt) | `ActiveChatState` (line 196), chat item merge/diff logic |
-| Core.kt | [`common/src/commonMain/kotlin/chat/simplex/common/platform/Core.kt`](../common/src/commonMain/kotlin/chat/simplex/common/platform/Core.kt) | `initChatController` (line 62), state initialization flow |
-| App.kt | [`common/src/commonMain/kotlin/chat/simplex/common/App.kt`](../common/src/commonMain/kotlin/chat/simplex/common/App.kt) | `AppScreen` (line 47), `MainScreen` (line 84), top-level UI state reads |
+| ChatModel.kt | [`common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt) | `ChatModel`, typed chat-list load contract, `ChatsContext`, `Chat`, `ChatInfo`, `ChatStats`, helper methods |
+| SimpleXAPI.kt | [`common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt) | `AppPreferences`, `ChatController`, typed chat-list producer, receiver and command bridge |
+| ChatItemsMerger.kt | [`common/src/commonMain/kotlin/chat/simplex/common/views/chat/ChatItemsMerger.kt`](../common/src/commonMain/kotlin/chat/simplex/common/views/chat/ChatItemsMerger.kt) | `ActiveChatState`, chat item merge/diff logic |
+| Core.kt | [`common/src/commonMain/kotlin/chat/simplex/common/platform/Core.kt`](../common/src/commonMain/kotlin/chat/simplex/common/platform/Core.kt) | `initChatController`, state initialization flow |
+| App.kt | [`common/src/commonMain/kotlin/chat/simplex/common/App.kt`](../common/src/commonMain/kotlin/chat/simplex/common/App.kt) | `AppScreen`, `MainScreen`, top-level UI state reads |
+| NomeHomeStateAdapter.kt | [`common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeStateAdapter.kt`](../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeStateAdapter.kt) | Android-only pure presentation-state derivation |
+| NetworkObserver.kt | [`common/src/androidMain/kotlin/chat/simplex/common/helpers/NetworkObserver.kt`](../common/src/androidMain/kotlin/chat/simplex/common/helpers/NetworkObserver.kt) | Direct Android network observation with explicit unknown-before-first-observation state |

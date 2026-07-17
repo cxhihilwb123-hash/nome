@@ -1,0 +1,31 @@
+Device: dedicated AVD nome-v656-min-api26
+System image: system-images;android-26;google_apis;arm64-v8a (revision 3)
+ABI: arm64-v8a
+
+Local unchanged-source debug APK:
+- package chat.simplex.app.nome.dev
+- install succeeded
+- cold start timed out
+- fatal root cause:
+  java.lang.UnsatisfiedLinkError: dlopen failed: cannot locate symbol "getentropy"
+  referenced by lib/arm64-v8a/libsimplex.so
+
+Official signed release APK cross-check:
+- file simplex-aarch64.apk from the official v6.5.6 release
+- SHA-256 79ae9650905abf0de50f83d72ee2c8b159feb67e093a6fac30f578a66d0181b6
+- package chat.simplex.app
+- install succeeded
+- cold start reproduced the same fatal error:
+  java.lang.UnsatisfiedLinkError: dlopen failed: cannot locate symbol "getentropy"
+  referenced by lib/arm64/libsimplex.so
+
+Toolchain fact:
+- NDK 23.1.7779620 sysroot header sys/random.h declares getentropy with __INTRODUCED_IN(28).
+- Therefore the official v6.5.6 arm64 native artifact cannot load on Android API 26 as packaged.
+- Both official v6.5.6 libsimplex.so files contain a getentropy reference, so switching to the release armv7 artifact is not accepted as a proven fix.
+
+Classification:
+- Native artifact / declared-minimum compatibility failure.
+- Not caused by the Nome UI (none exists yet).
+- Not caused by the local Android wrapper build; the official signed APK reproduces it.
+- No Haskell/native source was changed.

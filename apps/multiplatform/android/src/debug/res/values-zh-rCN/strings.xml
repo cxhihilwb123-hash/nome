@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="nome_fixture_activity_label">Nome 设计基础参考</string>
+  <string name="nome_fixture_debug_badge">调试参考 · %1$s · 非实时 CORE</string>
+  <string name="nome_fixture_debug_semantics">页面 %1$s 的调试视觉参考。内容固定，不表示实时 core、网络、安全、送达、权限或迁移状态。</string>
+  <string name="nome_fixture_brand_tagline">私密沟通，证据清晰</string>
+
+  <string name="nome_fixture_state_normal_title">就绪状态参考</string>
+  <string name="nome_fixture_state_normal_description">仅展示设计基础的正常状态构图，不声称实时 core、网络、权限、送达或迁移结果。</string>
+  <string name="nome_fixture_state_normal_semantics">就绪参考状态</string>
+  <string name="nome_fixture_state_loading_title">加载状态参考</string>
+  <string name="nome_fixture_state_loading_description">仅展示不定进度视觉，不声称阶段、百分比、超时或实时 core 结果。</string>
+  <string name="nome_fixture_state_loading_semantics">加载参考状态</string>
+  <string name="nome_fixture_state_empty_title">空状态参考</string>
+  <string name="nome_fixture_state_empty_description">固定的空态构图，不判断首次使用、筛选结果或 core 可用性。</string>
+  <string name="nome_fixture_state_empty_semantics">空态参考状态</string>
+  <string name="nome_fixture_state_offline_title">设备离线参考</string>
+  <string name="nome_fixture_state_offline_description">仅展示设备连通性视觉，不代表中继、服务器或私密路由健康。</string>
+  <string name="nome_fixture_state_offline_semantics">设备离线参考状态</string>
+  <string name="nome_fixture_state_error_title">可重试错误参考</string>
+  <string name="nome_fixture_state_error_description">仅为展示夹具，不声称 core 失败、跨过破坏性边界或重试成功。</string>
+  <string name="nome_fixture_state_error_semantics">可重试错误参考状态</string>
+  <string name="nome_fixture_state_permission_title">权限状态参考</string>
+  <string name="nome_fixture_state_permission_description">仅展示平台权限视觉，未请求权限，也未重新读取平台事实。</string>
+  <string name="nome_fixture_state_permission_semantics">需要权限参考状态</string>
+  <string name="nome_fixture_state_danger_title">破坏性边界参考</string>
+  <string name="nome_fixture_state_danger_description">仅展示确认视觉，不提交命令，也不改变本地或远端状态。</string>
+  <string name="nome_fixture_state_danger_semantics">破坏性边界参考状态</string>
+
+  <string name="nome_fixture_back">返回</string>
+  <string name="nome_fixture_more">更多参考操作</string>
+  <string name="nome_fixture_profile">打开参考资料</string>
+  <string name="nome_fixture_add">添加参考项目</string>
+  <string name="nome_fixture_microphone">参考语音控件</string>
+  <string name="nome_fixture_send">参考发送控件</string>
+  <string name="nome_fixture_open_row">打开%1$s参考行</string>
+  <string name="nome_fixture_selected">已选中</string>
+  <string name="nome_fixture_not_selected">未选中</string>
+
+  <string name="nome_fixture_p02_title">解锁 Nome</string>
+  <string name="nome_fixture_p02_subtitle">选择已配置的本地恢复路径</string>
+  <string name="nome_fixture_p02_identity_initial">N</string>
+  <string name="nome_fixture_p02_identity">Nome 本地身份</string>
+  <string name="nome_fixture_p02_identity_supporting">此视觉夹具使用的固定身份标签</string>
+  <string name="nome_fixture_p02_unavailable_title">生物识别状态不可用</string>
+  <string name="nome_fixture_p02_unavailable_body">“不可用”绝不解锁应用。只能通过已配置的设备凭据或应用口令继续。</string>
+  <string name="nome_fixture_p02_device_credential">使用设备凭据</string>
+  <string name="nome_fixture_p02_app_passcode">使用应用口令</string>
+  <string name="nome_fixture_p02_security_note">参考控件按失败关闭展示，不会执行身份验证。</string>
+
+  <string name="nome_fixture_p07_title">聊天</string>
+  <string name="nome_fixture_p07_search">搜索已加载聊天</string>
+  <string name="nome_fixture_p07_search_semantics">打开已加载聊天搜索参考</string>
+  <string name="nome_fixture_p07_section_recent">最近视觉样例</string>
+  <string name="nome_fixture_p07_contact_one">Alex · 样例</string>
+  <string name="nome_fixture_p07_preview_one">草稿视觉内容；无送达状态</string>
+  <string name="nome_fixture_p07_time_one">09:41 样例</string>
+  <string name="nome_fixture_p07_contact_two">设计群组 · 样例</string>
+  <string name="nome_fixture_p07_preview_two">本地列表层级参考</string>
+  <string name="nome_fixture_p07_time_two">昨天 · 样例</string>
+  <string name="nome_fixture_p07_connection_section">连接入口参考</string>
+  <string name="nome_fixture_p07_new_contact">新联系人</string>
+  <string name="nome_fixture_p07_new_contact_body">打开本地连接流程参考</string>
+  <string name="nome_fixture_p07_new_group">新群组</string>
+  <string name="nome_fixture_p07_new_group_body">打开群组设置参考</string>
+  <string name="nome_fixture_p07_invitation">邀请</string>
+  <string name="nome_fixture_p07_invitation_body">生成、复制、分享和已连接保持分离</string>
+  <string name="nome_fixture_nav_chats">聊天</string>
+  <string name="nome_fixture_nav_contacts">联系人</string>
+  <string name="nome_fixture_nav_settings">设置</string>
+
+  <string name="nome_fixture_p17_title">Alex · 视觉样例</string>
+  <string name="nome_fixture_p17_subtitle">直接聊天构图参考</string>
+  <string name="nome_fixture_p17_security">安全与送达指示器刻意未绑定；此夹具不读取 core 事件。</string>
+  <string name="nome_fixture_p17_date">今天 · 样例</string>
+  <string name="nome_fixture_p17_received">接收气泡视觉样例</string>
+  <string name="nome_fixture_p17_sent">发送气泡视觉样例</string>
+  <string name="nome_fixture_p17_delivery_unknown">送达证据：未绑定</string>
+  <string name="nome_fixture_p17_file">sample-document.pdf</string>
+  <string name="nome_fixture_p17_file_meta">夹具附件 · 无传输状态</string>
+  <string name="nome_fixture_p17_voice">语音行视觉样例</string>
+  <string name="nome_fixture_p17_voice_meta">无播放或时长证据</string>
+  <string name="nome_fixture_p17_composer">消息输入框参考</string>
+  <string name="nome_fixture_p17_composer_semantics">打开消息输入框视觉参考</string>
+
+  <string name="nome_fixture_p21_title">公开频道</string>
+  <string name="nome_fixture_p21_subtitle">仅观察构图参考</string>
+  <string name="nome_fixture_p21_warning_title">公开频道提示</string>
+  <string name="nome_fixture_p21_warning_body">此频道模式中的帖子不受端到端加密保护。该固定提示不汇总其他聊天。</string>
+  <string name="nome_fixture_p21_post_one_title">发布说明 · 样例</string>
+  <string name="nome_fixture_p21_post_one_body">频道帖子层级和间距参考。</string>
+  <string name="nome_fixture_p21_post_two_title">社区动态 · 样例</string>
+  <string name="nome_fixture_p21_post_two_body">内容固定，不代表服务器已确认。</string>
+  <string name="nome_fixture_p21_evidence_title">网络证据</string>
+  <string name="nome_fixture_p21_evidence_body">未知。未绑定设备、服务器、中继或全局健康结果。</string>
+  <string name="nome_fixture_p21_observer">仅观察 · 发帖控件不可用</string>
+
+  <string name="nome_fixture_p23_title">设置</string>
+  <string name="nome_fixture_p23_search">搜索稳定设置路由</string>
+  <string name="nome_fixture_p23_search_semantics">打开稳定路由设置搜索参考</string>
+  <string name="nome_fixture_p23_identity_title">Nome 本地身份</string>
+  <string name="nome_fixture_p23_identity_body">本地身份参考；不是匿名账户</string>
+  <string name="nome_fixture_p23_section_account">账户与安全</string>
+  <string name="nome_fixture_p23_privacy">隐私与安全</string>
+  <string name="nome_fixture_p23_privacy_body">本地身份验证不可用参考</string>
+  <string name="nome_fixture_p23_notifications">通知</string>
+  <string name="nome_fixture_p23_notifications_body">未绑定实时平台权限</string>
+  <string name="nome_fixture_p23_section_preferences">偏好设置</string>
+  <string name="nome_fixture_p23_appearance">外观</string>
+  <string name="nome_fixture_p23_appearance_light">明亮参考</string>
+  <string name="nome_fixture_p23_appearance_dark">暗色参考</string>
+  <string name="nome_fixture_p23_data">数据与存储</string>
+  <string name="nome_fixture_p23_data_body">未绑定实时用量或迁移状态</string>
+  <string name="nome_fixture_p23_network">网络与服务器</string>
+  <string name="nome_fixture_p23_network_body">证据级别未知；不汇总健康状态</string>
+</resources>

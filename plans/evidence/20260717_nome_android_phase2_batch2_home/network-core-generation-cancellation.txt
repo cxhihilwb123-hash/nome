@@ -1,0 +1,47 @@
+Nome Android Phase 2 Batch 2 network/core/generation/cancellation verification
+Date: 2026-07-17 (Asia/Shanghai)
+
+PASS  Connectivity truth
+  API 28 and API 35 airplane-mode runs show DeviceOffline with cached rows and device-only copy.
+  Online recovery removes the device panel. No relay/server/global-health conclusion is drawn.
+  Unknown is covered by unit tests, deterministic screenshots and API 28/API 35 adapter-to-renderer
+  integration; the live cold-start interval was not long enough for a production screenshot.
+
+PASS  Core stop/start
+  A targeted API 35 instrumentation gate ran only with `nomeCoreCycle=true` and passed 1/1 in
+  5.628s. It waited for a real current user, running core and three non-empty cached rows, invoked
+  `stopChatAsync(ChatModel)`, asserted `chatRunning == false`, and retained the exact chat-ID
+  sequence. The stopped UI tree shows the stopped banner, cached Ask SimpleX Team, SimpleX Status
+  and private-notes rows, and all three rows as non-clickable/read-only. It then invoked the
+  official `ChatModel.controller.startChat(user)` path, asserted `chatRunning == true`, and retained
+  the same exact chat-ID sequence. The restarted UI tree restores the eligible private-notes open
+  action while non-ready direct rows remain read-only. Automated Compose tests separately cover
+  stopped-row semantics and 48dp behavior.
+
+  Frozen raw proof:
+    reports/core-cycle/install-test.txt
+    reports/core-cycle/instrumentation.txt
+    reports/core-cycle/core-stopped-activity.txt
+    reports/core-cycle/core-stopped-logcat.txt
+    reports/core-cycle/core-stopped.xml
+    reports/core-cycle/core-restarted-activity.txt
+    reports/core-cycle/core-restarted-logcat.txt
+    reports/core-cycle/core-restarted.xml
+
+  No blank platform screencap is retained. Visual core-stopped coverage is in the 80-image
+  deterministic renderer set; this real-core gate is proved by its assertions, foreground-Activity
+  dumps, UI trees and raw logcat rather than presenting a blank capture as evidence.
+
+PASS  Generation and refresh
+  Same-generation refresh keeps cached rows visible (`hideRows=false`), verified in unit tests,
+  API 28/API 35 adapter-to-renderer integration, and the API 35 21-frame refresh sequence.
+  User/host generation mismatch hides old rows and rejects stale results, verified by unit and
+  device integration tests.
+
+PASS  Cancellation
+  `CancellationException` propagates through the typed chat-list refresh path and is not converted
+  to unavailable. Android unit and Desktop cancellation tests pass.
+
+Limits:
+  This batch does not add a profile-switch control or a new filter producer. It verifies the
+  generation guard exercised by controlled inputs, not an out-of-scope new switching UI.

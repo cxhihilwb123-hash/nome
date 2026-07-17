@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="nome_home_evidence_activity_label">Nome home evidence</string>
+  <string name="nome_home_evidence_badge">DEBUG PRODUCTION RENDERER · %1$s · NOT LIVE CORE</string>
+  <string name="nome_home_evidence_profile">Preview profile</string>
+</resources>

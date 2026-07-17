@@ -1,0 +1,39 @@
+Nome Android Phase 2 Batch 2 API 35 same-package upgrade verification
+Date: 2026-07-17 (Asia/Shanghai)
+
+Package: chat.simplex.app.nome.dev
+Version: 6.5.6 / versionCode 358
+
+Baseline installed APK SHA-256:
+  85a64abbeb417aaa9c2f17e541db4dcf3bb372251c7726f7a5304039845e35a8
+
+Current debug APK SHA-256:
+  eed29f24306b8dd8066ff19bcbbe8fe065bbee49136044b757ccac49d7dfeda4
+
+PASS:
+  - current APK installed over the same package without clearing data;
+  - firstInstallTime remained 2026-07-17 00:23:24 and lastUpdateTime advanced;
+  - baseline minSdk/targetSdk 26/35 became current 28/35 as authorized;
+  - selected files were byte-identical before and after overlay install;
+  - cold launch completed in 949ms and native server/receiver/loop started;
+  - identity NomeBaselineQA and the non-empty three-row production P07 remained visible.
+
+Exact selected checkpoints, hash and size:
+  files_chat.db
+    32ce389c0c47e7b013ccc21a97557017962c6e2ccd6cf63ab74eb2a9db293819 1265664
+  files_agent.db
+    47f7f0094b18910c9910d3af22b450a28986e6cb0f5c444a9998646fa76753ac 430080
+  shared_prefs/chat.simplex.app.SIMPLEX_APP_PREFS.xml
+    902dc3ad7d8448b4f117c41359ef645b938c3d0fd599ff96a8527202ee94a937 1161
+  files/profileInstalled
+    e3699bfb79756519af992ddb882ce8bcfba6b25abaec0f74614d7ec19935dd75 24
+  shared_prefs/themes.yaml
+    44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a 2
+
+The byte-identical claim is limited to these five captured paths. It is not a whole-data-directory
+or uninspected-database claim.
+
+Current real-core screenshot SHA-256:
+  939c97a781480096d42e3af4f2e3fabeb1c37725a3b1fef11a40f75e4a7bdaee
+
+Artifacts: reports/upgrade/

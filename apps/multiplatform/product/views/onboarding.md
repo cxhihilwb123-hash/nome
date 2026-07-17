@@ -123,7 +123,9 @@ Shown after onboarding or when triggered from Settings:
 | Updated conditions | Notice about updated server operator conditions (if applicable) |
 | Close button | Dismisses the view |
 
-Triggered in `ChatListView` via `shouldShowWhatsNew()` with a 1-second delay.
+`StartPartOfScreen` runs `ChatListNoticeEffect` above the platform home seam; that effect calls
+`shouldShowWhatsNew()` and preserves the existing 1-second delay for both Android and Desktop
+home content.
 
 ## Source Files
 

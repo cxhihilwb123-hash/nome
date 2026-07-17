@@ -1,0 +1,1 @@
+    25: 00000000     0 NOTYPE  GLOBAL DEFAULT   UND getentropy

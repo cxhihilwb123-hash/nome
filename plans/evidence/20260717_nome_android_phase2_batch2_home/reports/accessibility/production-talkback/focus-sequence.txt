@@ -1,0 +1,33 @@
+Nome Android Phase 2 Batch 2 production-route TalkBack focus sequence
+Date: 2026-07-17 (Asia/Shanghai)
+Device: API 35 AVD nome-api35-arm64
+Package/activity: chat.simplex.app.nome.dev/chat.simplex.app.MainActivity
+TalkBack: com.google.android.marvin.talkback TalkBackService, version 15.0
+Keymap: default_keymap
+Modifier: trigger_modifier_alt
+
+Environment method:
+  The AVD normally has hw.keyboard=no. It was changed temporarily to hw.keyboard=yes and the same
+  AVD was restarted, producing the qwerty2 KEYBOARD | DPAD input device recorded in
+  getevent-hardware-keyboard.txt and dumpsys-input.txt. Because the emulator is headless, root ADB
+  injected Linux KEY_LEFTALT + KEY_RIGHT events into that hardware-keyboard device. This affects
+  only test input delivery; the production app remained the normal .nome.dev package and
+  MainActivity, with no debug harness route or renderer badge.
+
+Ordered production traversal:
+  focus-00.png  Nome
+  focus-01.png  current identity: Batch2 (avatar B; semantic content-desc 当前身份：Batch2)
+  focus-02.png  首页
+  focus-03.png  当前本地身份的会话
+  focus-04.png  会话
+  focus-05.png  Ask SimpleX Team，私聊，17:06。只读
+  focus-06.png  SimpleX Status，私聊，17:06。只读
+  focus-07.png  私密笔记，本地笔记，17:06。打开会话
+
+Truth boundary:
+  - Ask SimpleX Team and SimpleX Status remain non-clickable/read-only in ui-tree.xml.
+  - 私密笔记 is the only clickable production row in this captured real-core state.
+  - No debug badge or 非实时 CORE string exists in ui-tree.xml.
+  - PrivacyProtectScreen=false was a device-only capture setting; preference-state-restored.txt
+    records the required restoration to true after capture.
+  - focus-sha256sums.txt proves eight distinct non-empty focus PNGs.

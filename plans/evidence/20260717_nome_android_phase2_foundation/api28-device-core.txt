@@ -1,0 +1,38 @@
+Nome Android Phase 2 foundation — API 28 real-core smoke
+Date: 2026-07-17 Asia/Shanghai
+Device: fresh/wiped arm64 AVD, SDK 28
+Package: chat.simplex.app.nome.dev
+APK contract: versionName 6.5.6, minSdk 28, targetSdk 35
+
+Precondition
+  - AVD launched with -wipe-data, -no-snapshot, and -no-snapshot-save
+  - retained emulator output resolves android-28/google_apis/arm64-v8a
+  - no API 26 compatibility claim
+
+Install
+  adb install <arm64 debug APK>
+  Result: Success
+
+Cold launch
+  adb shell am start -W -S ...
+  Status: ok
+  ThisTime: 1849ms
+  TotalTime: 1849ms
+  Process observed: pid 5256
+
+Real official core evidence
+  07-17 08:43:49.879 5256 5276 D SIMPLEX : starting server
+  07-17 08:43:49.880 5256 5276 D SIMPLEX : started server
+  07-17 08:43:49.904 5256 5276 D SIMPLEX : started receiver
+  07-17 08:43:49.904 5256 5276 D SIMPLEX : starting receiver loop
+  07-17 08:43:52.613 5256 5273 D SIMPLEX : Network changed: UserNetworkInfo(networkType=WIFI, online=true)
+  - native startup did not raise UnsatisfiedLinkError
+  - no process crash observed during the smoke window
+
+Verdict
+  PASS for the frozen minSdk 28 launch boundary. This proves that the unchanged
+  official v6.5.6 core loads on the declared minimum. It does not imply support
+  for API 26–27 and does not prove any production Nome page behavior.
+
+Retained normalized execution excerpts and their explicit capture limits:
+  api28-raw-excerpts.txt

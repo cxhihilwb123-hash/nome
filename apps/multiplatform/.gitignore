@@ -17,6 +17,7 @@ android/release
 common/build
 desktop/build
 release
+/.nome-local/
 
 # Generated SimpleX assets
 common/src/commonMain/resources/assets/simplex/

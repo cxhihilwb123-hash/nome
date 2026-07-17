@@ -163,7 +163,8 @@ enum class OnboardingStage {
 ### 3.8 OnboardingComplete
 
 1. `appPrefs.onboardingStage` is set to `OnboardingComplete`.
-2. The chat list view (`ChatListView`) is shown.
+2. The shared home selection (`PlatformHomeRoute`) is shown: Android uses the bounded Nome home,
+   while Desktop invokes the official `ChatListView` fallback.
 3. On Android, `SimplexService.showBackgroundServiceNoticeIfNeeded()` may show additional setup prompts.
 4. On Android with `NotificationsMode.SERVICE`, `SimplexService.start()` is called.
 
@@ -181,8 +182,10 @@ After the user is created and onboarding progresses, `ChatController.startChat(u
    - `apiStartChat()` starts the core's message processing.
    - `startReceiver()` begins the message receive loop.
    - `setLocalDeviceName` sets the device name for remote access.
-5. `apiGetChats` loads the chat list.
-6. `chatModel.chatsContext.updateChats(chats)` populates the UI.
+5. `beginChatListLoad` records the current user/host generation, then
+   `apiGetChatsResult` loads a typed success/failure/no-user result.
+6. `applyChatListLoadResult` updates the UI only if that result still matches the current
+   generation.
 7. User address and chat item TTL are loaded.
 8. `appPrefs.chatLastStart` is updated.
 9. `ChatModel.chatRunning` is set to `true`.

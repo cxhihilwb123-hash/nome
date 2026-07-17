@@ -1,0 +1,37 @@
+Nome Android Phase 2 Batch 2 API 28 real-core verification
+Date: 2026-07-17 (Asia/Shanghai)
+
+Device:
+  AVD nome-batch2-api28
+  Android 9 / API 28
+  ABI arm64-v8a
+
+Installed debug APK SHA-256:
+  eed29f24306b8dd8066ff19bcbbe8fe065bbee49136044b757ccac49d7dfeda4
+
+PASS:
+  - cold launch completed on the unchanged v6.5.6 native core;
+  - logcat records "started server", "started receiver", and "starting receiver loop";
+  - production home rendered a real local identity and non-empty rows including Ask SimpleX Team,
+    SimpleX Status, and Private notes;
+  - airplane mode produced the device-only offline panel while cached rows remained visible;
+  - instrumentation passed 18/18 tests in 16.627s.
+
+Capture note:
+  API 28 adb screencap returned an empty stream on this emulator, so the two saved PNGs were taken
+  through the emulator console framebuffer. Their UI trees and logcat are paired in reports/api28/.
+
+Key artifacts:
+  reports/api28/getprop.txt
+  reports/api28/dumpsys-package.txt
+  reports/api28/cold-launch.txt
+  reports/api28/real-core-online-logcat.txt
+  reports/api28/real-core-online.xml
+  reports/api28/real-core-online.png
+  reports/api28/device-offline.xml
+  reports/api28/device-offline.png
+  reports/api28/instrumentation.txt
+
+Real-core screenshot SHA-256:
+  online  2761ea90552d5bdb3feee4cc151d399126d5891af34e59b98dbfea1e5464941c
+  offline d2463deaf565b7fe11e96661a79d6e5a340a8568d86302e81f2fecc981ab5514

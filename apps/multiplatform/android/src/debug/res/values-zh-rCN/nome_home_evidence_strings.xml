@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="nome_home_evidence_activity_label">Nome 首页证据</string>
+  <string name="nome_home_evidence_badge">调试生产渲染器 · %1$s · 非实时 CORE</string>
+  <string name="nome_home_evidence_profile">预览身份</string>
+</resources>

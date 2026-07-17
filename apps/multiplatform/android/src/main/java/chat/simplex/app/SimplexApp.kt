@@ -94,21 +94,32 @@ class SimplexApp: Application(), LifecycleEventObserver {
           isAppOnForeground = true
           if (chatModel.chatRunning.value == true) {
             withContext(Dispatchers.Main) {
-              kotlin.runCatching {
+              try {
                 val currentUserId = chatModel.currentUser.value?.userId
-                val chats = ArrayList(chatController.apiGetChats(chatModel.remoteHostId()))
+                val rhId = chatModel.remoteHostId()
+                val attemptId = chatModel.beginChatListLoad(rhId, hideRows = false)
+                val result = chatController.apiGetChatsResult(rhId)
                 /** Active user can be changed in background while [ChatController.apiGetChats] is executing */
                 if (chatModel.currentUser.value?.userId == currentUserId) {
-                  val currentChatId = chatModel.chatId.value
-                  val oldStats = if (currentChatId != null) chatModel.getChat(currentChatId)?.chatStats else null
-                  if (oldStats != null) {
-                    val indexOfCurrentChat = chats.indexOfFirst { it.id == currentChatId }
-                    /** Pass old chatStats because unreadCounter can be changed already while [ChatController.apiGetChats] is executing */
-                    if (indexOfCurrentChat >= 0) chats[indexOfCurrentChat] = chats[indexOfCurrentChat].copy(chatStats = oldStats)
+                  if (result is ChatListLoadResult.Success) {
+                    val chats = ArrayList(result.chats)
+                    val currentChatId = chatModel.chatId.value
+                    val oldStats = if (currentChatId != null) chatModel.getChat(currentChatId)?.chatStats else null
+                    if (oldStats != null) {
+                      val indexOfCurrentChat = chats.indexOfFirst { it.id == currentChatId }
+                      /** Pass old chatStats because unreadCounter can be changed already while [ChatController.apiGetChats] is executing */
+                      if (indexOfCurrentChat >= 0) chats[indexOfCurrentChat] = chats[indexOfCurrentChat].copy(chatStats = oldStats)
+                    }
+                    chatModel.applyChatListLoadResult(result.copy(chats = chats), attemptId)
+                  } else {
+                    chatModel.applyChatListLoadResult(result, attemptId)
                   }
-                  chatModel.chatsContext.updateChats(chats)
                 }
-              }.onFailure { Log.e(TAG, it.stackTraceToString()) }
+              } catch (e: CancellationException) {
+                throw e
+              } catch (e: Throwable) {
+                Log.e(TAG, e.stackTraceToString())
+              }
             }
           }
         }

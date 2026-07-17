@@ -1,0 +1,131 @@
+Nome Android Phase 2 foundation — API 35 non-empty upgrade raw execution excerpts
+Captured: 2026-07-17 Asia/Shanghai
+Source: exact command/output records retained in the current Codex execution transcript;
+        indentation and repeated absolute workspace prefixes are normalized here
+
+Retained snapshot launch
+  $ ANDROID_AVD_HOME=apps/multiplatform/.nome-local/api35-avd \
+      /Users/forkman03/Library/Android/sdk/emulator/emulator \
+      -avd nome-v656-baseline-api35 -port 5554 -no-window -no-audio \
+      -no-boot-anim -snapshot nome-v656-nonempty-baseline \
+      -no-snapshot-save -read-only
+
+  INFO | Android emulator version 36.6.11.0 (build_id 15507667) (CL:N/A)
+  INFO | Found systemPath /Users/forkman03/Library/Android/sdk/system-images/android-35/google_apis/arm64-v8a/
+  INFO | Ok: Disk space requirements to run avd: `nome-v656-baseline-api35` are met
+  INFO | androidboot.qemu.avd_name=nome-v656-baseline-api35
+
+Boot/device identity
+  $ adb -s emulator-5554 shell getprop sys.boot_completed
+  1
+
+  $ adb -s emulator-5554 shell getprop ro.build.version.sdk
+  35
+
+  $ adb -s emulator-5554 shell pm path chat.simplex.app.nome.dev
+  package:/data/app/~~3g-fjxxbXg9jo6-iNRWSfQ==/chat.simplex.app.nome.dev-xoj4zPCYiBxV-unboU538Q==/base.apk
+
+Pre-upgrade sizes
+  $ adb -s emulator-5554 shell run-as chat.simplex.app.nome.dev \
+      ls -ln files_chat.db files_agent.db shared_prefs/chat.simplex.app.SIMPLEX_APP_PREFS.xml
+  -rw------- 1 10207 10207  430080 2026-07-17 08:45 files_agent.db
+  -rw------- 1 10207 10207 1265664 2026-07-17 01:16 files_chat.db
+  -rw-rw---- 1 10207 10207    1161 2026-07-17 01:16 shared_prefs/chat.simplex.app.SIMPLEX_APP_PREFS.xml
+
+Pre-upgrade SHA-256
+  $ adb -s emulator-5554 shell run-as chat.simplex.app.nome.dev \
+      sha256sum files_chat.db files_agent.db shared_prefs/chat.simplex.app.SIMPLEX_APP_PREFS.xml
+  32ce389c0c47e7b013ccc21a97557017962c6e2ccd6cf63ab74eb2a9db293819  files_chat.db
+  1d3771857049e2d6fca68012665e7448c70762f709db140e8370eaa91c843526  files_agent.db
+  902dc3ad7d8448b4f117c41359ef645b938c3d0fd599ff96a8527202ee94a937  shared_prefs/chat.simplex.app.SIMPLEX_APP_PREFS.xml
+
+Pre-upgrade UI tree values
+  content-desc="返回"
+  text="返回"
+  text="和某人交谈"
+  text="让某人和你连接"
+  text="通过链接或二维码连接"
+  content-desc="资料图片占位符"
+  content-desc="开始新聊天"
+
+Same-package replacement install
+  $ adb -s emulator-5554 install -r -t \
+      apps/multiplatform/android/build/outputs/apk/debug/android-arm64-v8a-debug.apk
+  Performing Streamed Install
+  Success
+
+Immediate post-install SHA-256 before explicit cold launch
+  $ adb -s emulator-5554 shell run-as chat.simplex.app.nome.dev \
+      sha256sum files_chat.db files_agent.db shared_prefs/chat.simplex.app.SIMPLEX_APP_PREFS.xml
+  32ce389c0c47e7b013ccc21a97557017962c6e2ccd6cf63ab74eb2a9db293819  files_chat.db
+  bc731a3bbc47a412efd6578fbad8fdc020698e4f099384450b19a8d2601252a7  files_agent.db
+  902dc3ad7d8448b4f117c41359ef645b938c3d0fd599ff96a8527202ee94a937  shared_prefs/chat.simplex.app.SIMPLEX_APP_PREFS.xml
+
+Cold launch
+  $ adb -s emulator-5554 shell am start -W -S \
+      -n chat.simplex.app.nome.dev/chat.simplex.app.MainActivity
+  Stopping: chat.simplex.app.nome.dev
+  Starting: Intent { cmp=chat.simplex.app.nome.dev/chat.simplex.app.MainActivity }
+  Status: ok
+  LaunchState: COLD
+  Activity: chat.simplex.app.nome.dev/chat.simplex.app.MainActivity
+  TotalTime: 1652
+  WaitTime: 1654
+  Complete
+
+Process
+  $ adb -s emulator-5554 shell pidof chat.simplex.app.nome.dev
+  6662
+
+Filtered core/crash Logcat
+  $ adb -s emulator-5554 logcat -d -v threadtime -s 'SIMPLEX:*' 'AndroidRuntime:E'
+  --------- beginning of main
+  07-17 08:47:21.471  6662  6681 D SIMPLEX : starting server
+  07-17 08:47:21.471  6662  6681 D SIMPLEX : started server
+  07-17 08:47:21.572  6662  6681 D SIMPLEX : started receiver
+  07-17 08:47:21.572  6662  6681 D SIMPLEX : starting receiver loop
+  07-17 08:47:22.378  6662  6678 D SIMPLEX : Network changed: UserNetworkInfo(networkType=WIFI, online=true)
+  07-17 08:47:23.163  6662  6662 W SIMPLEX : Notifications are disabled and nobody will ask to enable them
+
+Post-launch sizes
+  $ adb -s emulator-5554 shell run-as chat.simplex.app.nome.dev \
+      ls -ln files_chat.db files_agent.db shared_prefs/chat.simplex.app.SIMPLEX_APP_PREFS.xml
+  -rw------- 1 10207 10207  430080 2026-07-17 08:47 files_agent.db
+  -rw------- 1 10207 10207 1265664 2026-07-17 08:47 files_chat.db
+  -rw-rw---- 1 10207 10207    1161 2026-07-17 08:47 shared_prefs/chat.simplex.app.SIMPLEX_APP_PREFS.xml
+
+Post-upgrade UI tree command and values
+  $ adb -s emulator-5554 shell uiautomator dump /sdcard/nome-postupgrade.xml
+  UI hierchary dumped to: /sdcard/nome-postupgrade.xml
+
+  content-desc="返回"
+  text="返回"
+  text="和某人交谈"
+  text="让某人和你连接"
+  text="通过链接或二维码连接"
+  content-desc="资料图片占位符"
+  content-desc="开始新聊天"
+
+Later retained-device identity corroboration
+  $ adb devices -l
+  List of devices attached
+  emulator-5554 device product:sdk_gphone64_arm64 model:sdk_gphone64_arm64 device:emu64a transport_id:5
+
+  $ adb -s emulator-5554 shell getprop ro.build.version.sdk
+  35
+
+  $ adb -s emulator-5554 emu avd name
+  nome-v656-baseline-api35
+  OK
+
+Evidence limits
+  - The immediate install checkpoint proves byte identity only for files_chat.db
+    and preferences. files_agent.db changed from 1d377... to bc731... and is not
+    claimed byte-identical.
+  - Cold launch was followed by size/mtime collection, not another SHA-256 pass.
+    No post-launch byte-identity claim is made.
+  - The UI trees preserve the listed connection-flow values but contain no named
+    identity, chat row, message, or attachment. Non-empty means the three listed
+    files and exact immediate checkpoint; it is not a deep content-integrity claim.
+  - The filtered buffer contains no AndroidRuntime:E record, but this is not an
+    unfiltered full-device Logcat claim.

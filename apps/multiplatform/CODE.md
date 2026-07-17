@@ -183,18 +183,18 @@ When modifying platform abstractions, you MUST update both `actual` implementati
 
 ```
 common/src/
-├── commonMain/kotlin/chat/simplex/common/    -- Shared code (195 files)
+├── commonMain/kotlin/chat/simplex/common/    -- Shared code (207 files)
 │   ├── model/          -- ChatModel, SimpleXAPI, CryptoFile
 │   ├── platform/       -- expect/actual platform abstractions
 │   ├── ui/theme/       -- Theme system (ThemeManager, colors, types)
 │   └── views/          -- Compose UI (chat, chatlist, call, settings, etc.)
-├── androidMain/kotlin/chat/simplex/common/   -- Android actuals (55 files)
+├── androidMain/kotlin/chat/simplex/common/   -- Android-specific sources (67 files)
 │   ├── platform/       -- actual implementations
 │   └── views/          -- Android-specific view variants
-├── desktopMain/kotlin/chat/simplex/common/   -- Desktop actuals (56 files)
+├── desktopMain/kotlin/chat/simplex/common/   -- Desktop actuals (59 files)
 │   ├── platform/       -- actual implementations
 │   └── views/          -- Desktop-specific view variants
-android/src/main/java/chat/simplex/app/       -- Android app (8 files)
+android/src/main/java/chat/simplex/app/       -- Android app (9 files)
 desktop/src/jvmMain/kotlin/chat/simplex/desktop/ -- Desktop app (1 file)
 ```
 
@@ -216,14 +216,47 @@ desktop/src/jvmMain/kotlin/chat/simplex/desktop/ -- Desktop app (1 file)
 
 ## Document Map
 
+### PC32 Nome Android cross-cutting scope (authoritative reverse index)
+
+The ordinary Document Map rows below continue to route each source to its **primary** spec and product documents. The PC32 reverse index in `spec/impact.md` is authoritative for the frozen Android-only foundation, the Phase 2 Batch 2 production home implementation, and the larger transitive scope later pages must preserve. A transitive path is a review/validation dependency, not a prediction that every file will change. The exact Batch 2 split is a narrow `commonMain` platform seam, an Android Nome actual, and a Desktop actual that delegates the existing content unchanged.
+
+Path aliases are relative to `apps/multiplatform/`: `CM` = `common/src/commonMain/kotlin/chat/simplex/common`, `AM` = `common/src/androidMain/kotlin/chat/simplex/common`, `MR` = `common/src/commonMain/resources/MR`, and `APP` = `android/src/main`. Every row also routes to the approved Nome documents: `spec/client/nome-android-ui.md` and `product/views/nome-android.md`.
+
+| PC32 surface | Existing transitive source locations | Additional primary documentation route |
+|--------------|--------------------------------------|----------------------------------------|
+| App / root lifecycle | `CM/App.kt`; `CM/platform/AppCommon.kt`; `AM/platform/AppCommon.android.kt`; `APP/java/chat/simplex/app/{MainActivity.kt,SimplexApp.kt,nome/NomeProductionShell.kt}` | `spec/architecture.md`; `spec/client/navigation.md`; `product/flows/onboarding.md`; `product/views/chat-list.md` |
+| ChatModel / SimpleXAPI / core bridge | `CM/model/ChatModel.kt`; `CM/model/SimpleXAPI.kt`; `CM/platform/Core.kt` | `spec/state.md`; `spec/api.md`; `spec/architecture.md`; `product/concepts.md` |
+| AppLock / local authentication | `CM/AppLock.kt`; `CM/views/localauth/**`; `AM/views/helpers/LocalAuthentication.android.kt`; `AM/views/usersettings/PrivacySettings.android.kt` | `spec/architecture.md`; `spec/client/navigation.md`; `product/views/settings.md` |
+| Database / migration | `CM/views/database/**`; `CM/views/migration/**`; `CM/views/onboarding/SetupDatabasePassphrase.kt`; `AM/views/database/**` | `spec/database.md`; `product/flows/onboarding.md`; `product/views/settings.md` |
+| Theme | `CM/ui/theme/**`; `AM/ui/theme/**`; `CM/views/usersettings/Appearance.kt`; `AM/views/usersettings/Appearance.android.kt` | `spec/services/theme.md`; `product/views/settings.md` |
+| Locale / bilingual resources | `MR/**/strings.xml`; `CM/platform/Resources.kt`; `CM/platform/UI.kt`; `AM/helpers/Locale.kt`; `AM/platform/Resources.android.kt`; `AM/platform/UI.android.kt` | `spec/architecture.md`; all affected product view copy |
+| Onboarding | `CM/views/onboarding/**`; `AM/views/onboarding/**` | `spec/client/navigation.md`; `product/views/onboarding.md`; `product/flows/onboarding.md` |
+| Chat list | `CM/views/chatlist/**`; `AM/views/chatlist/**`; `AM/ui/nome/home/**`; `common/src/desktopMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.desktop.kt` | `spec/client/chat-list.md`; `spec/client/navigation.md`; `product/views/chat-list.md` |
+| New chat / ConnectPlan | `CM/views/newchat/**`; `AM/views/newchat/**` | `spec/client/navigation.md`; `product/views/new-chat.md`; `product/flows/connection.md` |
+| Chat / items / compose | `CM/views/chat/*.kt`; `CM/views/chat/item/**`; `AM/views/chat/*.kt`; `AM/views/chat/item/**` | `spec/client/chat-view.md`; `spec/client/compose.md`; `product/views/chat.md`; `product/flows/messaging.md` |
+| Contacts | `CM/views/contacts/**`; `CM/views/chat/{ChatInfoView.kt,VerifyCodeView.kt,ScanCodeView.kt}` | `spec/client/chat-view.md`; `product/views/contact-info.md`; `product/flows/connection.md` |
+| Groups / channels | `CM/views/chat/group/**`; `CM/views/newchat/{AddGroupView.kt,AddChannelView.kt}` | `spec/client/chat-view.md`; `product/views/group-info.md`; `product/flows/group-lifecycle.md` |
+| Users / settings / network | `CM/views/chatlist/UserPicker.kt`; `AM/views/chatlist/UserPicker.android.kt`; `CM/views/usersettings/**`; `AM/views/usersettings/**` | `spec/client/navigation.md`; `spec/architecture.md`; `product/views/user-profiles.md`; `product/views/settings.md` |
+| Calls | `CM/views/call/**`; `AM/views/call/**`; `APP/java/chat/simplex/app/views/call/CallActivity.kt` | `spec/services/calls.md`; `product/views/call.md`; `product/flows/calling.md` |
+| Files / media / share | `CM/model/CryptoFile.kt`; `CM/platform/{Files.kt,Images.kt,RecAndPlay.kt,Share.kt,VideoPlayer.kt}`; matching `AM/platform/*.android.kt` actuals | `spec/services/files.md`; `product/flows/file-transfer.md`; `product/views/chat.md` |
+| Notifications / background | `CM/platform/{Notifications.kt,NtfManager.kt,SimplexService.kt}`; matching Android actuals; `APP/java/chat/simplex/app/model/NtfManager.android.kt`; `APP/java/chat/simplex/app/{SimplexService.kt,MessagesFetcherWorker.kt}` | `spec/services/notifications.md`; `product/flows/messaging.md` |
+| Remote desktop | `CM/views/remote/**` | `spec/architecture.md`; `product/views/settings.md` |
+| MainActivity / intents | `APP/AndroidManifest.xml`; `APP/java/chat/simplex/app/{MainActivity.kt,SimplexApp.kt}`; `APP/java/chat/simplex/app/views/helpers/Util.kt` | `spec/architecture.md`; affected navigation/connection/messaging flows |
+| Permissions | `APP/AndroidManifest.xml`; `common/src/androidMain/AndroidManifest.xml`; `AM/helpers/Permissions.kt`; Android QR-scanner and notification-onboarding actuals | `spec/client/navigation.md`; `spec/services/notifications.md`; affected onboarding/new-chat/call views |
+| Android services / workers | `APP/java/chat/simplex/app/{SimplexService.kt,CallService.kt,MessagesFetcherWorker.kt}`; `APP/AndroidManifest.xml` | `spec/services/notifications.md`; `spec/services/calls.md`; `product/flows/messaging.md`; `product/flows/calling.md` |
+
+`Core.kt`, Haskell/native core, and iOS remain read-only verification scope for PC32. Phase 2 Batch 2 authorizes only the recorded Kotlin typed-result wrapper in `SimpleXAPI.kt` around the existing command, plus the narrow Desktop seam actual/test described below; it does not authorize a new API owner, protocol/native change, Desktop Nome UI, or Desktop behavior change. Each PC32 batch must still satisfy bilingual and light/dark coverage, complete reachable-state coverage, accessibility, real-core validation, native screenshot comparison, and two consecutive zero-issue reviews.
+
+Phase 2 Batch 2 is the one explicit exception to the default Android-only placement rule: `StartPartOfScreen` needs a platform-selectable home at the existing shared route selection point. `common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.kt` declares only the seam; it owns no Nome UI, navigation, model, or protocol state. Android implements the Nome P07/P08 home in `common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/`, while `common/src/desktopMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.desktop.kt` invokes `defaultContent` unchanged. The fallback contract is covered by `common/src/desktopTest/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRouteDesktopTest.kt`.
+
 ### Shared Sources (commonMain)
 
 | Source Location | Spec Document | Product Document |
 |----------------|---------------|-----------------|
-| common/.../common/App.kt | spec/architecture.md | product/views/chat-list.md |
+| common/.../common/App.kt | spec/architecture.md, spec/client/navigation.md, spec/client/nome-android-ui.md | product/views/chat-list.md, product/views/nome-android.md |
 | common/.../common/AppLock.kt | spec/architecture.md | product/views/settings.md |
-| common/.../common/model/ChatModel.kt | spec/state.md | product/concepts.md |
-| common/.../common/model/SimpleXAPI.kt | spec/api.md, spec/architecture.md | product/concepts.md |
+| common/.../common/model/ChatModel.kt | spec/state.md, spec/client/chat-list.md, spec/client/nome-android-ui.md | product/concepts.md, product/views/chat-list.md, product/views/nome-android.md |
+| common/.../common/model/SimpleXAPI.kt | spec/api.md, spec/architecture.md, spec/client/chat-list.md, spec/client/nome-android-ui.md | product/concepts.md, product/views/chat-list.md, product/views/nome-android.md |
 | common/.../common/model/CryptoFile.kt | spec/services/files.md | product/flows/file-transfer.md |
 | common/.../common/platform/Core.kt | spec/architecture.md | product/concepts.md |
 | common/.../common/platform/AppCommon.kt | spec/architecture.md | product/flows/onboarding.md |
@@ -236,10 +269,11 @@ desktop/src/jvmMain/kotlin/chat/simplex/desktop/ -- Desktop app (1 file)
 | common/.../common/platform/RecAndPlay.kt | spec/services/files.md | product/views/chat.md |
 | common/.../common/platform/UI.kt | spec/architecture.md | product/views/chat.md |
 | common/.../common/platform/Platform.kt | spec/architecture.md | product/concepts.md |
-| common/.../common/ui/theme/ThemeManager.kt | spec/services/theme.md | product/views/settings.md |
-| common/.../common/ui/theme/Theme.kt | spec/services/theme.md | product/views/settings.md |
-| common/.../common/ui/theme/Color.kt | spec/services/theme.md | product/views/settings.md |
-| common/.../common/views/chatlist/ChatListView.kt | spec/client/chat-list.md | product/views/chat-list.md |
+| common/.../common/ui/theme/ThemeManager.kt | spec/services/theme.md, spec/client/nome-android-ui.md | product/views/settings.md, product/views/nome-android.md |
+| common/.../common/ui/theme/Theme.kt | spec/services/theme.md, spec/client/nome-android-ui.md | product/views/settings.md, product/views/nome-android.md |
+| common/.../common/ui/theme/Color.kt | spec/services/theme.md, spec/client/nome-android-ui.md | product/views/settings.md, product/views/nome-android.md |
+| common/.../common/views/chatlist/ChatListView.kt | spec/client/chat-list.md, spec/client/nome-android-ui.md | product/views/chat-list.md, product/views/nome-android.md |
+| common/.../common/views/chatlist/PlatformHomeRoute.kt | spec/client/navigation.md, spec/client/chat-list.md, spec/client/nome-android-ui.md | product/views/chat-list.md, product/views/nome-android.md |
 | common/.../common/views/chatlist/ChatListNavLinkView.kt | spec/client/chat-list.md | product/views/chat-list.md |
 | common/.../common/views/chatlist/ChatPreviewView.kt | spec/client/chat-list.md | product/views/chat-list.md |
 | common/.../common/views/chatlist/UserPicker.kt | spec/client/chat-list.md | product/views/chat-list.md |
@@ -253,14 +287,14 @@ desktop/src/jvmMain/kotlin/chat/simplex/desktop/ -- Desktop app (1 file)
 | common/.../common/views/call/CallView.kt | spec/services/calls.md | product/views/call.md |
 | common/.../common/views/call/IncomingCallAlertView.kt | spec/services/calls.md | product/views/call.md |
 | common/.../common/views/call/WebRTC.kt | spec/services/calls.md | product/flows/calling.md |
-| common/.../common/views/newchat/NewChatView.kt | spec/client/navigation.md | product/views/new-chat.md |
+| common/.../common/views/newchat/NewChatView.kt | spec/client/navigation.md, spec/client/nome-android-ui.md | product/views/new-chat.md, product/views/nome-android.md |
 | common/.../common/views/newchat/AddGroupView.kt | spec/client/navigation.md | product/views/new-chat.md |
-| common/.../common/views/usersettings/SettingsView.kt | spec/client/navigation.md | product/views/settings.md |
+| common/.../common/views/usersettings/SettingsView.kt | spec/client/navigation.md, spec/client/nome-android-ui.md | product/views/settings.md, product/views/nome-android.md |
 | common/.../common/views/usersettings/Appearance.kt | spec/services/theme.md | product/views/settings.md |
 | common/.../common/views/usersettings/PrivacySettings.kt | spec/client/navigation.md | product/views/settings.md |
 | common/.../common/views/usersettings/networkAndServers/ | spec/architecture.md | product/views/settings.md |
 | common/.../common/views/usersettings/UserProfilesView.kt | spec/client/navigation.md | product/views/user-profiles.md |
-| common/.../common/views/onboarding/ | spec/client/navigation.md | product/views/onboarding.md |
+| common/.../common/views/onboarding/ | spec/client/navigation.md, spec/client/nome-android-ui.md | product/views/onboarding.md, product/views/nome-android.md |
 | common/.../common/views/localauth/ | spec/architecture.md | product/views/settings.md |
 | common/.../common/views/database/ | spec/database.md | product/views/settings.md |
 | common/.../common/views/migration/ | spec/database.md | product/flows/onboarding.md |
@@ -272,13 +306,35 @@ desktop/src/jvmMain/kotlin/chat/simplex/desktop/ -- Desktop app (1 file)
 
 | Source Location | Spec Document | Product Document |
 |----------------|---------------|-----------------|
-| android/.../app/SimplexApp.kt | spec/architecture.md | product/flows/onboarding.md |
-| android/.../app/MainActivity.kt | spec/architecture.md | product/views/chat-list.md |
+| android/.../app/SimplexApp.kt | spec/architecture.md, spec/client/chat-list.md, spec/client/nome-android-ui.md | product/flows/onboarding.md, product/views/chat-list.md, product/views/nome-android.md |
+| android/.../app/MainActivity.kt | spec/architecture.md, spec/client/nome-android-ui.md | product/views/chat-list.md, product/views/nome-android.md |
+| android/.../app/nome/NomeProductionShell.kt | spec/client/navigation.md, spec/client/nome-android-ui.md, spec/services/theme.md | product/views/chat-list.md, product/views/nome-android.md |
 | android/.../app/SimplexService.kt | spec/services/notifications.md | product/flows/messaging.md |
 | android/.../app/CallService.kt | spec/services/calls.md | product/flows/calling.md |
 | android/.../app/MessagesFetcherWorker.kt | spec/services/notifications.md | product/flows/messaging.md |
 | android/.../app/model/NtfManager.android.kt | spec/services/notifications.md | product/flows/messaging.md |
 | android/.../app/views/call/CallActivity.kt | spec/services/calls.md | product/views/call.md |
+| common/src/androidMain/kotlin/chat/simplex/common/ui/nome/tokens/*.kt | spec/client/nome-android-ui.md | product/views/nome-android.md |
+| common/src/androidMain/kotlin/chat/simplex/common/ui/nome/theme/NomeTheme.kt | spec/client/nome-android-ui.md, spec/services/theme.md | product/views/nome-android.md, product/views/settings.md |
+| common/src/androidMain/kotlin/chat/simplex/common/ui/nome/components/*.kt | spec/client/nome-android-ui.md | product/views/nome-android.md |
+| common/src/androidMain/kotlin/chat/simplex/common/ui/nome/accessibility/*.kt | spec/client/nome-android-ui.md | product/views/nome-android.md |
+| common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeStateAdapter.kt | spec/client/chat-list.md, spec/client/nome-android-ui.md | product/views/chat-list.md, product/views/nome-android.md |
+| common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeRoute.android.kt | spec/client/navigation.md, spec/client/chat-list.md, spec/client/nome-android-ui.md, spec/services/theme.md | product/views/chat-list.md, product/views/nome-android.md |
+| common/src/androidMain/kotlin/chat/simplex/common/helpers/NetworkObserver.kt | spec/client/chat-list.md, spec/client/nome-android-ui.md | product/views/chat-list.md, product/views/nome-android.md |
+| common/src/androidMain/res/values/nome_home_strings.xml | spec/client/chat-list.md, spec/client/nome-android-ui.md | product/views/chat-list.md, product/views/nome-android.md |
+| common/src/androidMain/res/values-zh-rCN/nome_home_strings.xml | spec/client/chat-list.md, spec/client/nome-android-ui.md | product/views/chat-list.md, product/views/nome-android.md |
+| android/src/debug/AndroidManifest.xml | spec/client/nome-android-ui.md | product/views/nome-android.md |
+| android/src/debug/java/chat/simplex/app/nome/** | spec/client/nome-android-ui.md | product/views/nome-android.md |
+| android/src/debug/res/values*/strings.xml | spec/client/nome-android-ui.md | product/views/nome-android.md |
+| android/src/test/java/chat/simplex/app/nome/** | spec/client/nome-android-ui.md | product/views/nome-android.md |
+| android/src/androidTest/java/chat/simplex/app/nome/** | spec/client/nome-android-ui.md | product/views/nome-android.md |
+| android/src/debug/java/chat/simplex/app/nome/home/NomeHomeEvidenceActivity.kt | spec/client/chat-list.md, spec/client/nome-android-ui.md | product/views/chat-list.md, product/views/nome-android.md |
+| android/src/debug/res/values*/nome_home_evidence_strings.xml | spec/client/nome-android-ui.md | product/views/nome-android.md |
+| android/src/test/java/chat/simplex/app/nome/home/NomeHomeStateAdapterTest.kt | spec/client/chat-list.md, spec/client/nome-android-ui.md | product/views/chat-list.md, product/views/nome-android.md |
+| android/src/androidTest/java/chat/simplex/app/nome/home/NomeHomeComposeTest.kt | spec/client/chat-list.md, spec/client/nome-android-ui.md | product/views/chat-list.md, product/views/nome-android.md |
+| android/src/androidTest/java/chat/simplex/app/nome/home/NomeHomePackagingTest.kt | spec/client/nome-android-ui.md | product/views/nome-android.md |
+| android/src/androidTest/java/chat/simplex/app/nome/home/NomeHomeScreenshotTest.kt | spec/client/chat-list.md, spec/client/nome-android-ui.md, spec/services/theme.md | product/views/chat-list.md, product/views/nome-android.md |
+| android/src/androidTest/java/chat/simplex/app/nome/home/NomeHomeCoreCycleTest.kt | spec/client/chat-list.md, spec/client/nome-android-ui.md | product/views/chat-list.md, product/views/nome-android.md |
 
 ### Desktop-Specific Sources
 
@@ -289,6 +345,8 @@ desktop/src/jvmMain/kotlin/chat/simplex/desktop/ -- Desktop app (1 file)
 | common/.../common/StoreWindowState.kt (desktopMain) | spec/architecture.md | product/views/settings.md |
 | common/.../common/model/NtfManager.desktop.kt (desktopMain) | spec/services/notifications.md | product/flows/messaging.md |
 | common/.../common/views/helpers/AppUpdater.kt (desktopMain) | spec/architecture.md | product/views/settings.md |
+| common/src/desktopMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.desktop.kt | spec/client/navigation.md, spec/client/chat-list.md, spec/client/nome-android-ui.md | product/views/chat-list.md, product/views/nome-android.md |
+| common/src/desktopTest/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRouteDesktopTest.kt | spec/client/navigation.md, spec/client/chat-list.md, spec/client/nome-android-ui.md | product/views/chat-list.md, product/views/nome-android.md |
 
 ### Haskell Core Sources (at `../../src/Simplex/Chat/` relative to `apps/multiplatform/`)
 

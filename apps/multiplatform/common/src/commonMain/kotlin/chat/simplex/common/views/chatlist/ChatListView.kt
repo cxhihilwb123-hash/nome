@@ -174,9 +174,7 @@ private fun ToolbarSegment(
 
 // Spec: spec/client/chat-list.md#ChatListView
 @Composable
-fun ChatListView(chatModel: ChatModel, userPickerState: MutableStateFlow<AnimatedViewState>, setPerformLA: (Boolean) -> Unit, stopped: Boolean) {
-  val oneHandUI = remember { appPrefs.oneHandUI.state }
-
+internal fun ChatListNoticeEffect(chatModel: ChatModel) {
   LaunchedEffect(Unit) {
     val showWhatsNew = shouldShowWhatsNew(chatModel)
     val showUpdatedConditions = chatModel.conditions.value.conditionsAction?.shouldShowNotice ?: false
@@ -185,6 +183,12 @@ fun ChatListView(chatModel: ChatModel, userPickerState: MutableStateFlow<Animate
       ModalManager.center.showCustomModal { close -> WhatsNewView(close = close, updatedConditions = showUpdatedConditions) }
     }
   }
+}
+
+// Spec: spec/client/chat-list.md#ChatListView
+@Composable
+fun ChatListView(chatModel: ChatModel, userPickerState: MutableStateFlow<AnimatedViewState>, setPerformLA: (Boolean) -> Unit, stopped: Boolean) {
+  val oneHandUI = remember { appPrefs.oneHandUI.state }
 
   if (appPlatform.isDesktop) {
     KeyChangeEffect(chatModel.chatId.value) {

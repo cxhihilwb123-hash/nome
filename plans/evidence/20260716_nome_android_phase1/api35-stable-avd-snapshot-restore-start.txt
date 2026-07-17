@@ -1,0 +1,8 @@
+Starting: Intent { cmp=chat.simplex.app.nome.dev/chat.simplex.app.MainActivity_default }
+Warning: Activity not started, intent has been delivered to currently running top-most instance.
+Status: ok
+LaunchState: UNKNOWN (0)
+Activity: chat.simplex.app.nome.dev/chat.simplex.app.MainActivity
+TotalTime: 0
+WaitTime: 5
+Complete

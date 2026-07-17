@@ -1,0 +1,7 @@
+Starting: Intent { cmp=chat.simplex.app.nome.dev/chat.simplex.app.MainActivity }
+Status: ok
+Activity: chat.simplex.app.nome.dev/chat.simplex.app.MainActivity
+ThisTime: 385
+TotalTime: 18168
+WaitTime: 389
+Complete

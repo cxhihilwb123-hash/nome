@@ -4,21 +4,72 @@
 
 ## Purpose
 
-Main screen of the SimpleX Chat Android and Desktop apps. Displays all conversations sorted by last activity, serves as the navigation root, and provides access to user profiles, settings, and new chat creation.
+Main screen of the SimpleX Chat Android and Desktop apps. Displays all conversations sorted by last activity and serves as the navigation root. Desktop continues to use the complete official shared chat list described below. Nome Android currently connects a deliberately bounded P07/P08 production slice at the same root route; that slice does not yet expose the full profile/settings/new-chat/search/mutation surface.
 
 ## Route / Navigation
 
 - **Entry point**: App launch (root view), or back-navigation from any chat
-- **Presented by**: `ChatListView` composable as the default view when `chatModel.chatId == null`
-- **Navigation**: `ChatListNavLinkView` handles click routing to `ChatView` for each chat type
-- **UserPicker**: Triggered by tapping the user avatar in the toolbar; presents `UserPicker` as a custom sheet (Android: bottom sheet overlay; Desktop: sidebar panel)
+- **Presented by**: `PlatformHomeRoute` when `chatModel.chatId == null`; Android uses the bounded Nome renderer and Desktop invokes `ChatListView` as `defaultContent`
+- **Navigation**: Android Nome uses the existing ready-chat helpers with core/deletion guards; Desktop `ChatListNavLinkView` retains the complete upstream routing
+- **UserPicker**: the overlay remains composed on Android but this bounded renderer adds no profile-switch trigger; Desktop retains the upstream avatar/sidebar behavior
 
 ## Platform Layout
 
 | Platform | Layout |
 |---|---|
-| Android | Single-column list; toolbar at top or bottom (one-hand UI); FAB for new chat |
+| Android | Bounded Nome single-column P07/P08 header/status/list; no upstream toolbar, filter, settings, or new-chat control in this batch |
 | Desktop | 3-column layout: chat list (left), chat view (center), info/detail panel (right via `ModalManager.end`) |
+
+## Nome Android P07/P08 Production Slice
+
+> **Status:** The authorized Batch 2 production-home slice passed build, API 28/API 35 device and real-core, same-package upgrade, screenshot, accessibility, and release-isolation execution gates. Formal frozen-review status is owned exclusively by the batch evidence root's `review-rounds.md`; this product view does not assert that outcome. First use is still consumed by the unchanged onboarding gate and the bounded Android home still has no active-filter producer, so those two renderer branches are not claimed as production-reachable. This section does not mark all P07/P08 product scope complete.
+
+### Host and route split
+
+| Layer | Responsibility |
+|---|---|
+| Android Activity host | [`MainActivity`](../../android/src/main/java/chat/simplex/app/MainActivity.kt#L60-L65) wraps the existing `AppScreen` in the thin [`NomeProductionShell`](../../android/src/main/java/chat/simplex/app/nome/NomeProductionShell.kt#L9-L23). The shell synchronizes window appearance; it does not own root state, navigation, authentication, calls, intents, overlays, safe areas, or back dispatch. |
+| Shared route seam | [`StartPartOfScreen`](../../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L366-L393) keeps delivery-receipt and share-intent branches intact, runs the original WhatsNew/updated-conditions notice effect above the seam, and delegates only the existing home selection to [`PlatformHomeRoute`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.kt#L8-L22). The declaration contains no Nome UI or duplicate model/controller. |
+| Android actual | [`NomeHomeRoute.android.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeRoute.android.kt#L63-L123) applies the Nome theme inside the selected home route and consumes the existing `ChatModel`, user picker state, navigation helpers, and notification addition. |
+| Desktop actual | [`PlatformHomeRoute.desktop.kt`](../../common/src/desktopMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.desktop.kt#L8-L17) invokes `defaultContent()` unchanged, so the official Desktop chat list remains the fallback. |
+
+The common seam exists only because an app-module overlay cannot safely replace a home route owned inside the shared root. Nome presentation remains in `androidMain`; the shared change is the narrow platform selection contract plus typed load provenance needed by every caller of the existing chat-list load.
+
+### Same-generation list truth
+
+[`ChatListLoadGeneration`, `ChatListLoadState`, and `ChatListLoadResult`](../../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L81-L106) distinguish initial/loading, same-generation loaded, unavailable, and no-current-user outcomes. [`apiGetChatsResult`](../../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1054-L1081) wraps the existing `CC.ApiGetChats` / `CR.ApiChats` path and returns a typed result instead of collapsing command failure and a successful empty result into the same list. [`applyChatListLoadResult`](../../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L264-L311) updates rows only while `(remoteHostId, userId)` still matches.
+
+The Android [`NomeHomeStateAdapter`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeStateAdapter.kt#L49-L121) derives three independent axes:
+
+| Axis | States | Required truth |
+|---|---|---|
+| Content | Loading, first use, true empty, filtered no result, populated, unavailable | The adapter keeps all six facts distinct. True empty requires a typed same-generation success with zero base rows and failure is unavailable. First use and filtered no result remain defensive renderer contracts only: the production root consumes no-user in onboarding, and this home exposes no filter producer. |
+| Connectivity | Unknown, online, device offline | [`NetworkObserver.platformNetworkInfo`](../../common/src/androidMain/kotlin/chat/simplex/common/helpers/NetworkObserver.kt#L16-L87) is `null` before Android's first platform observation. Online requires a validated observed network; offline describes only device connectivity. |
+| Core | Starting, running, stopped | `chatRunning` is independent of content and connectivity. Stopped may coexist with same-generation cached rows, but actions requiring the core are disabled. |
+
+Any user/remote-host switch, generation mismatch, or loading state that requires row suppression renders loading and exposes no stale rows. The legacy optimistic `ChatModel.networkInfo = OTHER/online=true` default is not accepted as platform-observed online evidence.
+
+### Included P07/P08 behavior
+
+- P07 projects the existing core order and displays chat name, latest summary, timestamp, unread count, and favorite state without mutating those facts. The visible and spoken latest-message summary follows the existing `showChatPreviews` privacy preference; when disabled, Nome exposes only the chat type.
+- Ready direct, group, and note-folder rows may open through the existing navigation helpers only while the core is running.
+- Contact-request, pending-connection, invalid, not-ready, pending-deletion, and core-stopped rows are presented without a chat-open or home-row mutation action.
+- Production-reachable P08 source paths render skeleton loading, true empty, typed unavailable, network unknown, device offline, and core stopped. The first-use and active-filter-no-result renderer branches remain defensive/test-only until a separately scoped production route or filter producer exists.
+- Same-generation cached rows may remain visible with an unavailable or stopped state. Unavailable stays explicit but does not itself disable existing chat-open navigation; stopped does.
+- Nome light/dark selection and the Activity system bars observe the existing `CurrentColors` result, including an explicit in-app theme that differs from the system theme.
+
+### Explicit Batch 2 exclusions
+
+- favorite toggle or any other chat-list mutation;
+- profile-switching UI (the generation guard is included; the switch control is not);
+- accept/reject/delete/retry mutation for connection or request rows;
+- search field, pasted-link handling, global search, or search no-result derivation;
+- tag/filter controls or clear-filter action (therefore the defensive filtered-no-result branch has no fresh-production producer in this batch);
+- new-chat/FAB, settings routing, composer/send, locale marker, and archive/migration work.
+
+## Official Shared Fallback Surface
+
+The remaining sections describe the complete official `ChatListView` surface. They continue to apply to the Desktop fallback and serve as capability inventory for later Nome Android batches; controls explicitly excluded above are not currently reachable from the bounded Nome P07/P08 home.
 
 ## Page Sections
 
@@ -134,3 +185,6 @@ Each chat type provides specific dropdown menu items:
 | `ChatPreviewView.kt` | `views/chatlist/ChatPreviewView.kt` |
 | `UserPicker.kt` | `views/chatlist/UserPicker.kt` |
 | `TagListView.kt` | `views/chatlist/TagListView.kt` |
+| `PlatformHomeRoute.kt` | `common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.kt` |
+| `NomeHomeRoute.android.kt` | `common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeRoute.android.kt` |
+| `NomeHomeStateAdapter.kt` | `common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeStateAdapter.kt` |

@@ -1,0 +1,10 @@
+32ce389c0c47e7b013ccc21a97557017962c6e2ccd6cf63ab74eb2a9db293819  files_chat.db
+47f7f0094b18910c9910d3af22b450a28986e6cb0f5c444a9998646fa76753ac  files_agent.db
+902dc3ad7d8448b4f117c41359ef645b938c3d0fd599ff96a8527202ee94a937  shared_prefs/chat.simplex.app.SIMPLEX_APP_PREFS.xml
+e3699bfb79756519af992ddb882ce8bcfba6b25abaec0f74614d7ec19935dd75  files/profileInstalled
+44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a  shared_prefs/themes.yaml
+1265664:files_chat.db
+430080:files_agent.db
+1161:shared_prefs/chat.simplex.app.SIMPLEX_APP_PREFS.xml
+24:files/profileInstalled
+2:shared_prefs/themes.yaml

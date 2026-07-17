@@ -1,0 +1,360 @@
+--------- beginning of main
+07-17 16:41:30.351   564   862 W BestClock: java.time.DateTimeException: Missing network time fix
+07-17 16:41:30.351   564   862 W BestClock: java.time.DateTimeException: Missing network time fix
+07-17 16:41:30.351   564   862 W BestClock: java.time.DateTimeException: Missing network time fix
+07-17 16:41:30.351   564   862 W BestClock: java.time.DateTimeException: Missing network time fix
+07-17 16:41:30.352   564   862 W BestClock: java.time.DateTimeException: Missing network time fix
+--------- beginning of system
+07-17 16:41:30.386   564  2339 I ActivityManager: Force stopping chat.simplex.app.nome.dev appid=10207 user=0: from pid 6604
+07-17 16:41:30.386   564  2339 W ProcessStats: Tracking association SourceState{40aa30d com.google.android.googlequicksearchbox:search/10143 BTop #6688} whose proc state 2 is better than process ProcessState{ad0841 com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/10143 pkg=com.google.android.googlequicksearchbox} proc state 14 (23 skipped)
+07-17 16:41:30.387   564   895 I AppWidgetServiceImpl: Received broadcast: android.intent.action.PACKAGE_RESTARTED on user 0
+07-17 16:41:30.387   564   895 I AppWidgetServiceImpl: Updating package stopped masked state for uid 10207 package chat.simplex.app.nome.dev isStopped true
+07-17 16:41:30.388  1129  1129 D CarrierSvcBindHelper: onHandleForceStop: [chat.simplex.app.nome.dev]
+07-17 16:41:30.389  1129  1129 D CarrierSvcBindHelper: No carrier app for: 0
+07-17 16:41:30.404   564  2339 W ActivityTaskManager: callingPackage for (uid=2000, pid=6609) has no WPC
+07-17 16:41:30.404   564  2339 W OptProp : Cannot read opt property android.window.PROPERTY_COMPAT_ALLOW_USER_ASPECT_RATIO_OVERRIDE
+07-17 16:41:30.404   564  2339 W OptProp : Cannot read opt property android.window.PROPERTY_COMPAT_ALLOW_USER_ASPECT_RATIO_FULLSCREEN_OVERRIDE
+07-17 16:41:30.404   564  2339 W OptProp : Cannot read opt property android.window.PROPERTY_COMPAT_ALLOW_ORIENTATION_OVERRIDE
+07-17 16:41:30.405   564  2339 V GrammaticalInflectionUtils: AttributionSource: AttributionSource { uid = 10207, packageName = null, attributionTag = null, token = android.os.Binder@1a89d7, deviceId = 0, next = null } does not have READ_SYSTEM_GRAMMATICAL_GENDER permission.
+07-17 16:41:30.405   564  2339 W OptProp : Cannot read opt property android.window.PROPERTY_COMPAT_ALLOW_RESIZEABLE_ACTIVITY_OVERRIDES
+07-17 16:41:30.405   564  2339 W OptProp : Cannot read opt property android.window.PROPERTY_COMPAT_ALLOW_MIN_ASPECT_RATIO_OVERRIDE
+07-17 16:41:30.406   564  2339 V SplashScreenExceptionList: SplashScreen checking exception for package chat.simplex.app.nome.dev (target sdk:35) -> false
+07-17 16:41:30.407   947  1020 V WindowManagerShell: Transition requested (#40): android.os.BinderProxy@d689f8e TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=13 displayId=0 isRunning=true baseIntent=Intent { flg=0x10000000 cmp=chat.simplex.app.nome.dev/chat.simplex.app.MainActivity } baseActivity=ComponentInfo{chat.simplex.app.nome.dev/chat.simplex.app.MainActivity} topActivity=ComponentInfo{chat.simplex.app.nome.dev/chat.simplex.app.MainActivity} origActivity=null realActivity=ComponentInfo{chat.simplex.app.nome.dev/chat.simplex.app.MainActivity} numActivities=1 lastActiveTime=3568262 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{android.window.IWindowContainerToken$Stub$Proxy@bfd63af} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 128 - 0, 0) topActivityInfo=ActivityInfo{79cf3bc chat.simplex.app.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isSleeping=false locusId=null displayAreaFeatureId=1 isTopActivityTransparent=false appCompatTaskInfo=AppCompatTaskInfo { topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= falseisLetterboxEducationEnabled= true isLetterboxDoubleTapEnabled= false topActivityEligibleForUserAspectRatioButton= false topActivityBoundsLetterboxed= false isFromLetterboxDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=1080 topActivityLetterboxHeight=2400 isUserFullscreenOverrideEnabled=false isSystemFullscreenOverrideEnabled=false cameraCompatTaskInfo=CameraCompatTaskInfo { cameraCompatControlState=hidden freeformCameraCompatMode=inactive}}}, pipTask = null, remoteTransition = null, displayChange = null, flags = 0, debugId = 40 }
+07-17 16:41:30.407   564  2339 I ActivityTaskManager: START u0 {flg=0x10000000 xflg=0x1 cmp=chat.simplex.app.nome.dev/chat.simplex.app.MainActivity} with LAUNCH_SINGLE_TASK from uid 2000 (BAL_ALLOW_PERMISSION) result code=0
+07-17 16:41:30.408   564  1066 D CompatChangeReporter: Compat change id reported: 309578419; UID 10207; state: ENABLED
+07-17 16:41:30.408   564   588 V GrammaticalInflectionUtils: AttributionSource: AttributionSource { uid = 10207, packageName = null, attributionTag = null, token = android.os.Binder@1a89d7, deviceId = 0, next = null } does not have READ_SYSTEM_GRAMMATICAL_GENDER permission.
+07-17 16:41:30.408  1199  1199 W SplitSelectStateCtor: Missing session instanceIds
+07-17 16:41:30.408  1199  1199 D StatsLog: LAUNCHER_SPLIT_SELECTION_EXIT_INTERRUPTED
+07-17 16:41:30.409   947  1020 D WindowManagerShell: setLauncherKeepClearAreaHeight: visible=false, height=527
+07-17 16:41:30.410  1199  1199 I TopTaskTracker: onTaskMovedToFront: (moved taskInfo to front) taskId=13, baseIntent=Intent { flg=0x10000000 cmp=chat.simplex.app.nome.dev/chat.simplex.app.MainActivity }
+07-17 16:41:30.411   947  1080 D SplashScreenView: Build android.window.SplashScreenView{df5fe54 V.E...... ......ID 0,0-0,0}
+07-17 16:41:30.411   947  1080 D SplashScreenView: Icon: view: android.widget.ImageView{e3311fd V.ED..... ......I. 0,0-0,0 #1020504 android:id/splashscreen_icon_view} drawable: com.android.wm.shell.startingsurface.SplashscreenIconDrawableFactory$ImmobileIconDrawable@1e7eef2 size: 504
+07-17 16:41:30.411   947  1080 D SplashScreenView: Branding: view: android.view.View{bbaa943 G.ED..... ......I. 0,0-0,0 #1020503 android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+07-17 16:41:30.412   564   895 I AppWidgetServiceImpl: Received broadcast: android.intent.action.PACKAGE_UNSTOPPED on user 0
+07-17 16:41:30.412   564   895 I AppWidgetServiceImpl: Updating package stopped masked state for uid 10207 package chat.simplex.app.nome.dev isStopped false
+07-17 16:41:30.414   368   368 D Zygote  : Forked child process 6612
+07-17 16:41:30.414   564   596 I ActivityManager: Start proc 6612:chat.simplex.app.nome.dev/u0a207 for next-top-activity {chat.simplex.app.nome.dev/chat.simplex.app.MainActivity}
+07-17 16:41:30.414  1535  1932 I AssistantForeground: (REDACTED) Get launcher package: %s
+07-17 16:41:30.416  6612  6612 I ex.app.nome.dev: Late-enabling -Xcheck:jni
+07-17 16:41:30.417   431   431 I BpBinder: onLastStrongRef automatically unlinking death recipients: 
+07-17 16:41:30.432  6612  6612 I ex.app.nome.dev: Using CollectorTypeCMC GC.
+07-17 16:41:30.432   564  1066 D CoreBackPreview: Window{32627c6 u0 Splash Screen chat.simplex.app.nome.dev}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@19c699e, mPriority=0, mIsAnimationCallback=false}
+07-17 16:41:30.433   367   426 I netd    : tetherGetStats() -> {[]} <0.22ms>
+07-17 16:41:30.438  6612  6612 D nativeloader: Load libframework-connectivity-tiramisu-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity-t.jar: ok
+07-17 16:41:30.439   434   464 I adbd    : jdwp connection from 6612
+07-17 16:41:30.469  1199  1636 D EGL_emulation: app_time_stats: avg=1586.89ms min=8.31ms max=11781.92ms count=8
+07-17 16:41:30.471  6612  6612 D ApplicationLoaders: Returning zygote-cached class loader: /system_ext/framework/androidx.window.extensions.jar
+07-17 16:41:30.471  6612  6612 D ApplicationLoaders: Returning zygote-cached class loader: /system_ext/framework/androidx.window.sidecar.jar
+07-17 16:41:30.476   564   585 V WindowManager: Sent Transition (#40) createdAt=07-17 16:41:30.405 via request=TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=13 displayId=0 isRunning=true baseIntent=Intent { flg=0x10000000 cmp=chat.simplex.app.nome.dev/chat.simplex.app.MainActivity } baseActivity=ComponentInfo{chat.simplex.app.nome.dev/chat.simplex.app.MainActivity} topActivity=ComponentInfo{chat.simplex.app.nome.dev/chat.simplex.app.MainActivity} origActivity=null realActivity=ComponentInfo{chat.simplex.app.nome.dev/chat.simplex.app.MainActivity} numActivities=1 lastActiveTime=3568262 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{RemoteToken{402319b Task{258e18f #13 type=standard A=10207:chat.simplex.app.nome.dev}}} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 128 - 0, 0) topActivityInfo=ActivityInfo{4afad11 chat.simplex.app.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isSleeping=false locusId=null displayAreaFeatureId=1 isTopActivityTransparent=false appCompatTaskInfo=AppCompatTaskInfo { topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= falseisLetterboxEducationEnabled= true isLetterboxDoubleTapEnabled= false topActivityEligibleForUserAspectRatioButton= false topActivityBoundsLetterboxed= false isFromLetterboxDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=1080 topActivityLetterboxHeight=2400 isUserFullscreenOverrideEnabled=false isSystemFullscreenOverrideEnabled=false cameraCompatTaskInfo=CameraCompatTaskInfo { cameraCompatControlState=hidden freeformCameraCompatMode=inactive}}}, pipTask = null, remoteTransition = null, displayChange = null, flags = 0, debugId = 40 }
+07-17 16:41:30.476   564   585 V WindowManager:     startWCT=WindowContainerTransaction { changes = {} hops = [] errorCallbackToken=null taskFragmentOrganizer=null }
+07-17 16:41:30.476   564   585 V WindowManager:     info={id=40 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[
+07-17 16:41:30.476   564   585 V WindowManager:         {WCT{RemoteToken{402319b Task{258e18f #13 type=standard A=10207:chat.simplex.app.nome.dev}}} m=OPEN f=NONE leash=Surface(name=Task=13)/@0xa50dc95 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0 taskParent=-1},
+07-17 16:41:30.476   564   585 V WindowManager:         {WCT{RemoteToken{ae0aa1a Task{cf95ca #1 type=home}}} m=TO_BACK f=SHOW_WALLPAPER leash=Surface(name=Task=1)/@0x4993000 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0 taskParent=-1}
+07-17 16:41:30.476   564   585 V WindowManager:     ]}
+07-17 16:41:30.476   947  1087 V WindowManagerShell: onTransitionReady(transaction=2422361556441)
+07-17 16:41:30.477   947  1020 V WindowManagerShell: onTransitionReady (#40) android.os.BinderProxy@d689f8e: {id=40 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{WCT{android.window.IWindowContainerToken$Stub$Proxy@5bfa484} m=OPEN f=NONE leash=Surface(name=Task=13)/@0x2e32d8 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0 taskParent=-1},{WCT{android.window.IWindowContainerToken$Stub$Proxy@8d1746d} m=TO_BACK f=SHOW_WALLPAPER leash=Surface(name=Task=1)/@0x239a631 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0 taskParent=-1}]}
+07-17 16:41:30.477  6612  6612 W ziparchive: Unable to open '/data/app/~~-jSbxFXCkQSQFiW3l5tXFg==/chat.simplex.app.nome.dev-lnyIrFVBcHOUOtC3X6_tKg==/base.dm': No such file or directory
+07-17 16:41:30.477  6612  6612 W ziparchive: Unable to open '/data/app/~~-jSbxFXCkQSQFiW3l5tXFg==/chat.simplex.app.nome.dev-lnyIrFVBcHOUOtC3X6_tKg==/base.dm': No such file or directory
+07-17 16:41:30.478   947  1020 V WindowManagerShell: Playing animation for (#40) android.os.BinderProxy@d689f8e@0
+07-17 16:41:30.478   947  1020 V WindowManagerShell:  try handler com.android.wm.shell.transition.DefaultMixedHandler@5c27f7
+07-17 16:41:30.478   947  1020 V WindowManagerShell:  try handler com.android.wm.shell.keyguard.KeyguardTransitionHandler@b747664
+07-17 16:41:30.478   947  1020 V WindowManagerShell:  try handler com.android.wm.shell.pip.PipTransition@20110cd
+07-17 16:41:30.478   947  1020 V WindowManagerShell:  try handler com.android.wm.shell.activityembedding.ActivityEmbeddingController@920cd82
+07-17 16:41:30.478   947  1020 V WindowManagerShell:  try handler com.android.wm.shell.recents.RecentsTransitionHandler@6214c93
+07-17 16:41:30.478   947  1020 V ShellRecents: RecentsTransitionHandler.startAnimation: no controller found
+07-17 16:41:30.478   947  1020 V WindowManagerShell:  try handler com.android.wm.shell.splitscreen.StageCoordinator@e3494d0
+07-17 16:41:30.478   947  1020 V WindowManagerShell:  try handler com.android.wm.shell.transition.RemoteTransitionHandler@a9aecc9
+07-17 16:41:30.478   947  1020 V WindowManagerShell: Transition doesn't have explicit remote, search filters for match for {id=40 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{WCT{android.window.IWindowContainerToken$Stub$Proxy@5bfa484} m=OPEN f=NONE leash=Surface(name=Task=13)/@0x2e32d8 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0 taskParent=-1},{WCT{android.window.IWindowContainerToken$Stub$Proxy@8d1746d} m=TO_BACK f=SHOW_WALLPAPER leash=Surface(name=Task=1)/@0x239a631 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0 taskParent=-1}]}
+07-17 16:41:30.478   947  1020 V WindowManagerShell:  Checking filter Pair{{types=[] flags=0x0] notFlags=0x0 checks=[{atype=undefined independent=true modes=[OPEN,TO_FRONT] flags=IN_TASK_WITH_EMBEDDED_ACTIVITY mustBeTask=false order=ANY topActivity=ComponentInfo{com.google.android.apps.nexuslauncher/com.google.android.apps.nexuslauncher.NexusLauncherActivity} launchCookie=null},{atype=undefined independent=true modes=[CLOSE,TO_BACK] flags=IN_TASK_WITH_EMBEDDED_ACTIVITY mustBeTask=false order=ANY topActivity=null launchCookie=null}]} RemoteTransition { remoteTransition = android.window.IRemoteTransition$Stub$Proxy@f758a51, appThread = android.app.IApplicationThread$Stub$Proxy@d6c2b6, debugName = OverlaySwipeBack }}
+07-17 16:41:30.478   947  1020 V WindowManagerShell:  Checking filter Pair{{types=[] flags=0x0] notFlags=0x0 checks=[{atype=dream independent=true modes=[OPEN,TO_FRONT] flags=NONE mustBeTask=false order=ANY topActivity=null launchCookie=null},{atype=home independent=true modes=[CLOSE,TO_BACK] flags=NONE mustBeTask=false order=ANY topActivity=null launchCookie=null}]} RemoteTransition { remoteTransition = android.window.IRemoteTransition$Stub$Proxy@9888bb7, appThread = android.app.IApplicationThread$Stub$Proxy@3f6f24, debugName = LauncherToDream }}
+07-17 16:41:30.478   947  1020 V WindowManagerShell:  Checking filter Pair{{types=[] flags=0x0] notFlags=0x100 checks=[{atype=home independent=true modes=[OPEN,TO_FRONT] flags=NONE mustBeTask=false order=TOP topActivity=ComponentInfo{com.google.android.apps.nexuslauncher/com.google.android.apps.nexuslauncher.NexusLauncherActivity} launchCookie=null},{atype=standard independent=true modes=[CLOSE,TO_BACK] flags=NONE mustBeTask=false order=ANY topActivity=null launchCookie=null}]} RemoteTransition { remoteTransition = android.window.IRemoteTransition$Stub$Proxy@8b77a8d, appThread = android.app.IApplicationThread$Stub$Proxy@3845442, debugName = QuickstepLaunchHome }}
+07-17 16:41:30.478   947  1020 V WindowManagerShell:  Delegate animation for (#40) to null
+07-17 16:41:30.478   947  1020 V WindowManagerShell:  try handler com.android.wm.shell.transition.DefaultTransitionHandler@4923fce
+07-17 16:41:30.478   947  1020 V WindowManagerShell: start default transition animation, info = {id=40 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{WCT{android.window.IWindowContainerToken$Stub$Proxy@5bfa484} m=OPEN f=NONE leash=Surface(name=Task=13)/@0x2e32d8 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0 taskParent=-1},{WCT{android.window.IWindowContainerToken$Stub$Proxy@8d1746d} m=TO_BACK f=SHOW_WALLPAPER leash=Surface(name=Task=1)/@0x239a631 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0 taskParent=-1}]}
+07-17 16:41:30.478   947  1020 V WindowManagerShell: loadAnimation: anim=android.view.animation.AnimationSet@bf5f8a2 animAttr=0x13 type=OPEN isEntrance=false
+07-17 16:41:30.478   947  1020 V WindowManagerShell: loadAnimation: anim=android.view.animation.AnimationSet@8c86933 animAttr=0x12 type=OPEN isEntrance=true
+07-17 16:41:30.478   564  1917 W UserManagerService: Requested status bar icon for non-badged user 0
+07-17 16:41:30.482   947  1020 V WindowManagerShell:  animated by com.android.wm.shell.transition.DefaultTransitionHandler@4923fce
+07-17 16:41:30.572  1199  1636 D EGL_emulation: app_time_stats: avg=6146.20ms min=55.95ms max=12236.45ms count=2
+07-17 16:41:30.771   947  1020 V WindowManagerShell: Transition animation finished (aborted=false), notifying core (#40) android.os.BinderProxy@d689f8e@0
+07-17 16:41:30.771   564   585 V WindowManager: Finish Transition (#40): created at 07-17 16:41:30.405 collect-started=0.015ms request-sent=1.844ms started=2.247ms ready=69.614ms sent=70.282ms finished=365.778ms
+07-17 16:41:30.772   947  1020 V WindowManagerShell: Track 0 became idle
+07-17 16:41:30.772   947  1020 V WindowManagerShell: All active transition animations finished
+07-17 16:41:30.772   564  1917 W UserManagerService: Requested status bar icon for non-badged user 0
+07-17 16:41:30.773   564  1066 W UserManagerService: Requested status bar icon for non-badged user 0
+07-17 16:41:30.785  1199  1199 D VRI[NexusLauncherActivity]: visibilityChanged oldVisibility=true newVisibility=false
+07-17 16:41:30.793  6612  6612 D nativeloader: Configuring clns-7 for other apk /data/app/~~-jSbxFXCkQSQFiW3l5tXFg==/chat.simplex.app.nome.dev-lnyIrFVBcHOUOtC3X6_tKg==/base.apk. target_sdk_version=35, uses_libraries=, library_path=/data/app/~~-jSbxFXCkQSQFiW3l5tXFg==/chat.simplex.app.nome.dev-lnyIrFVBcHOUOtC3X6_tKg==/lib/arm64:/data/app/~~-jSbxFXCkQSQFiW3l5tXFg==/chat.simplex.app.nome.dev-lnyIrFVBcHOUOtC3X6_tKg==/base.apk!/lib/arm64-v8a, permitted_path=/data:/mnt/expand:/data/user/0/chat.simplex.app.nome.dev
+07-17 16:41:30.795  1199  1199 D NexusLauncherModelDelegate: notifySmartspaceEvent: SmartspaceTargetEvent{mSmartspaceTarget=null, mSmartspaceActionId='null', mEventType=7}
+07-17 16:41:30.796  6612  6612 D CompatChangeReporter: Compat change id reported: 202956589; UID 10207; state: ENABLED
+07-17 16:41:30.806  6612  6612 V GraphicsEnvironment: Currently set values for:
+07-17 16:41:30.807  6612  6612 V GraphicsEnvironment:   angle_gl_driver_selection_pkgs=[]
+07-17 16:41:30.807  6612  6612 V GraphicsEnvironment:   angle_gl_driver_selection_values=[]
+07-17 16:41:30.807  6612  6612 V GraphicsEnvironment: Global.Settings values are invalid: number of packages: 0, number of values: 0
+07-17 16:41:30.807  6612  6612 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+07-17 16:41:30.901  6612  6612 D CompatChangeReporter: Compat change id reported: 279646685; UID 10207; state: ENABLED
+07-17 16:41:30.909  6612  6612 D WM-WrkMgrInitializer: Initializing WorkManager with default configuration.
+07-17 16:41:30.929  6612  6612 D WM-PackageManagerHelper: Skipping component enablement for androidx.work.impl.background.systemjob.SystemJobService
+07-17 16:41:30.929  6612  6612 D WM-Schedulers: Created SystemJobScheduler and enabled SystemJobService
+07-17 16:41:30.942  6612  6629 D SIMPLEX : starting server
+07-17 16:41:30.943  6612  6629 D SIMPLEX : started server
+07-17 16:41:30.994  6612  6612 D nativeloader: Load /data/app/~~-jSbxFXCkQSQFiW3l5tXFg==/chat.simplex.app.nome.dev-lnyIrFVBcHOUOtC3X6_tKg==/base.apk!/lib/arm64-v8a/libapp-lib.so using ns clns-7 from class loader (caller=/data/app/~~-jSbxFXCkQSQFiW3l5tXFg==/chat.simplex.app.nome.dev-lnyIrFVBcHOUOtC3X6_tKg==/base.apk!classes6.dex): ok
+07-17 16:41:30.996  6612  6629 D SIMPLEX : started receiver
+07-17 16:41:30.996  6612  6629 D SIMPLEX : starting receiver loop
+07-17 16:41:31.049   564  1066 W OptProp : Cannot read opt property android.window.PROPERTY_COMPAT_ENABLE_FAKE_FOCUS
+07-17 16:41:31.049   564  1066 D CompatChangeReporter: Compat change id reported: 324203798; UID 10207; state: ENABLED
+07-17 16:41:31.051  6612  6612 W Looper  : Loop again would have the queued messages be executed before this one completed.
+07-17 16:41:31.066   564  1066 V GrammaticalInflectionUtils: AttributionSource: AttributionSource { uid = 10207, packageName = null, attributionTag = null, token = android.os.Binder@1a89d7, deviceId = 0, next = null } does not have READ_SYSTEM_GRAMMATICAL_GENDER permission.
+07-17 16:41:31.066   564  1066 V GrammaticalInflectionUtils: AttributionSource: AttributionSource { uid = 10207, packageName = null, attributionTag = null, token = android.os.Binder@1a89d7, deviceId = 0, next = null } does not have READ_SYSTEM_GRAMMATICAL_GENDER permission.
+07-17 16:41:31.073  6612  6612 D CompatChangeReporter: Compat change id reported: 309578419; UID 10207; state: ENABLED
+07-17 16:41:31.110  6612  6612 W HWUI    : Unknown dataspace 0
+07-17 16:41:31.275   564  1066 D CoreBackPreview: Window{ee48d03 u0 chat.simplex.app.nome.dev/chat.simplex.app.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@1ac08ac, mPriority=0, mIsAnimationCallback=false}
+07-17 16:41:31.281  6612  6637 I EGL_emulation: Opening libGLESv1_CM_emulation.so
+07-17 16:41:31.282  6612  6637 I EGL_emulation: Opening libGLESv2_emulation.so
+07-17 16:41:31.294  6612  6637 W HWUI    : Failed to choose config with EGL_SWAP_BEHAVIOR_PRESERVED, retrying without...
+07-17 16:41:31.294  6612  6637 W HWUI    : Failed to initialize 101010-2 format, error = EGL_SUCCESS
+07-17 16:41:31.300  6612  6616 I ex.app.nome.dev: Compiler allocated 5250KB to compile void android.view.ViewRootImpl.performTraversals()
+--------- beginning of kernel
+07-17 16:41:31.319   156   156 I servicemanager: Caller(pid=6612,uid=10207,sid=u:r:untrusted_app:s0:c207,c256,c512,c768) Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest. No alternative instances declared in VINTF.
+07-17 16:41:31.317   157   157 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+07-17 16:41:31.317  6612  6637 I Gralloc4: mapper 4.x is not supported
+07-17 16:41:31.354   564   585 W ziparchive: Unable to open '/data/app/~~-jSbxFXCkQSQFiW3l5tXFg==/chat.simplex.app.nome.dev-lnyIrFVBcHOUOtC3X6_tKg==/base.dm': No such file or directory
+07-17 16:41:31.357   564   585 I ActivityTaskManager: Displayed chat.simplex.app.nome.dev/chat.simplex.app.MainActivity for user 0: +949ms
+07-17 16:41:31.357   564  2339 V GrammaticalInflectionUtils: AttributionSource: AttributionSource { uid = 10207, packageName = null, attributionTag = null, token = android.os.Binder@1a89d7, deviceId = 0, next = null } does not have READ_SYSTEM_GRAMMATICAL_GENDER permission.
+07-17 16:41:31.357   564  2339 V GrammaticalInflectionUtils: AttributionSource: AttributionSource { uid = 10207, packageName = null, attributionTag = null, token = android.os.Binder@1a89d7, deviceId = 0, next = null } does not have READ_SYSTEM_GRAMMATICAL_GENDER permission.
+07-17 16:41:31.367  1199  1199 D BaseDepthController: setSurface:
+07-17 16:41:31.367  1199  1199 D BaseDepthController: 	mWaitingOnSurfaceValidity: false
+07-17 16:41:31.367  1199  1199 D BaseDepthController: 	mSurface: null
+07-17 16:41:31.367  1199  1199 D BaseDepthController: mSurface is null and mCurrentBlur is: 0
+07-17 16:41:31.367  1199  1199 D StateManager: goToState - fromState: Normal, toState: Normal, partial trace:
+07-17 16:41:31.367  1199  1199 D StateManager: 	at com.android.launcher3.statemanager.StateManager.moveToRestState(go/retraceme 31f9979659277bb965985aff1272c33e3c3c9e755b77166d20a2465454178f2c:4)
+07-17 16:41:31.367  1199  1199 D StateManager: 	at com.android.launcher3.statemanager.StateManager.moveToRestState(go/retraceme 31f9979659277bb965985aff1272c33e3c3c9e755b77166d20a2465454178f2c:1)
+07-17 16:41:31.367  1199  1199 D StateManager: 	at com.android.launcher3.statemanager.StatefulActivity.onStop(go/retraceme 31f9979659277bb965985aff1272c33e3c3c9e755b77166d20a2465454178f2c:34)
+07-17 16:41:31.367  1199  1199 D StatsLog: LAUNCHER_ONSTOP
+07-17 16:41:31.367   564  1917 I AppWidgetServiceImpl: setAppWidgetHidden() 0
+07-17 16:41:31.368  1199  1199 D StatsLog: LAUNCHER_GOOGLE_SEARCH_RESTORE_LIST_SIZE_AFTER_ACTIVITY_RESTART
+07-17 16:41:31.368  1199  2017 D OneSearchSuggestProvider: Shut down the binder channel
+07-17 16:41:31.368  1199  2445 I IPCThreadState: oneway function results for code 2 on binder at 0xb400007e0b2c6860 will be dropped but finished with status UNKNOWN_TRANSACTION
+07-17 16:41:31.431   564   683 I ImeTracker: chat.simplex.app.nome.dev:c91a198d: onRequestHide at ORIGIN_SERVER reason HIDE_UNSPECIFIED_WINDOW fromUser false
+07-17 16:41:31.431   564   683 I ImeTracker: chat.simplex.app.nome.dev:c91a198d: onCancelled at PHASE_SERVER_SHOULD_HIDE
+07-17 16:41:31.432  1380  1380 I GoogleInputMethodService: GoogleInputMethodService.onFinishInput():3157 
+07-17 16:41:31.433  1380  1380 I GoogleInputMethodService: GoogleInputMethodService.updateDeviceLockedStatus():2248 repeatCheckTimes = 0, locked = false
+07-17 16:41:31.433  1380  1380 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1986 onStartInput(EditorInfo{EditorInfo{packageName=chat.simplex.app.nome.dev, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
+07-17 16:41:31.439  1380  1380 I GoogleInputMethodService: GoogleInputMethodService.updateDeviceLockedStatus():2248 repeatCheckTimes = 1, locked = false
+07-17 16:41:31.439  1380  1380 I AndroidIME: InputBundleManager.loadActiveInputBundleId():450 loadActiveInputBundleId: und-Latn-x-password, password
+07-17 16:41:31.439   564  1290 W PackageConfigPersister: App-specific configuration not found for packageName: chat.simplex.app.nome.dev and userId: 0
+07-17 16:41:31.453   367   426 I netd    : tetherGetStats() -> {[]} <0.18ms>
+07-17 16:41:31.538  6612  6626 D SIMPLEX : Network changed: UserNetworkInfo(networkType=WIFI, online=true)
+07-17 16:41:31.540   564  1290 D ConnectivityService: requestNetwork for uid/pid:10207/6612 activeRequest: null callbackRequest: 183 [NetworkRequest [ REQUEST id=184, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED&NOT_BANDWIDTH_CONSTRAINED Uid: 10207 RequestorUid: 10207 RequestorPkg: chat.simplex.app.nome.dev UnderlyingNetworks: Null] ]] callback flags: 0 order: 2147483647 isUidTracked: false
+07-17 16:41:31.540   564   869 D ConnectivityService: NetReassign [184 : null → 100] [c 0] [a 0] [i 0]
+07-17 16:41:31.540   564   862 D OemPaidWifiNetworkFactory: got request NetworkRequest [ REQUEST id=184, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED&NOT_BANDWIDTH_CONSTRAINED Uid: 10207 RequestorUid: 10207 RequestorPkg: chat.simplex.app.nome.dev UnderlyingNetworks: Null] ]
+07-17 16:41:31.540   564   862 D MultiInternetWifiNetworkFactory: got request NetworkRequest [ REQUEST id=184, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED&NOT_BANDWIDTH_CONSTRAINED Uid: 10207 RequestorUid: 10207 RequestorPkg: chat.simplex.app.nome.dev UnderlyingNetworks: Null] ]
+07-17 16:41:31.540   564   862 D WifiNetworkFactory: got request NetworkRequest [ REQUEST id=184, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED&NOT_BANDWIDTH_CONSTRAINED Uid: 10207 RequestorUid: 10207 RequestorPkg: chat.simplex.app.nome.dev UnderlyingNetworks: Null] ]
+07-17 16:41:31.540   564   862 D UntrustedWifiNetworkFactory: got request NetworkRequest [ REQUEST id=184, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED&NOT_BANDWIDTH_CONSTRAINED Uid: 10207 RequestorUid: 10207 RequestorPkg: chat.simplex.app.nome.dev UnderlyingNetworks: Null] ]
+07-17 16:41:31.741  6612  6612 D CompatChangeReporter: Compat change id reported: 270674727; UID 10207; state: ENABLED
+07-17 16:41:31.771   947  1064 W WindowOnBackDispatcher: sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda11@954969f
+07-17 16:41:31.771   564  1917 W InputManager-JNI: Input channel object '32627c6 Splash Screen chat.simplex.app.nome.dev (client)' was disposed without first being removed with the input manager!
+07-17 16:41:31.771   564  1290 D CoreBackPreview: Window{32627c6 u0 Splash Screen chat.simplex.app.nome.dev EXITING}: Setting back callback null
+07-17 16:41:31.923  1272  1802 I FontLog : Received query Noto Color Emoji Compat, URI content://com.google.android.gms.fonts [CONTEXT service_id=132 ]
+07-17 16:41:31.923  1272  1802 I FontLog : Query [emojicompat-emoji-font] resolved to {Noto Color Emoji Compat, wdth 100.0, wght 400, ital 0.0, bestEffort false} [CONTEXT service_id=132 ]
+07-17 16:41:31.924  1272  1802 I FontLog : Fetch {Noto Color Emoji Compat, wdth 100.0, wght 400, ital 0.0, bestEffort false} end status Status{statusCode=SUCCESS, resolution=null} [CONTEXT service_id=132 ]
+07-17 16:41:31.925  1272  1802 I FontLog : Pulling font file for id = 17, cache size = 5 [CONTEXT service_id=132 ]
+07-17 16:41:31.926  1272  1802 I FontLog : Pulling font file for id = 17, cache size = 5 [CONTEXT service_id=132 ]
+07-17 16:41:31.945  6612  6629 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 0 name position
+07-17 16:41:31.945  6612  6629 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 1 name color
+07-17 16:41:31.945  6612  6629 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 2 name localCoord
+07-17 16:41:31.947  6612  6629 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 0 name radii_selector
+07-17 16:41:31.947  6612  6629 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 1 name corner_and_radius_outsets
+07-17 16:41:31.947  6612  6629 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 2 name aa_bloat_and_coverage
+07-17 16:41:31.947  6612  6629 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 3 name radii_x
+07-17 16:41:31.947  6612  6629 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 4 name radii_y
+07-17 16:41:31.947  6612  6629 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 5 name skew
+07-17 16:41:31.947  6612  6629 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 6 name translate_and_localrotate
+07-17 16:41:31.947  6612  6629 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 7 name color
+07-17 16:41:31.949  6612  6629 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 0 name inPosition
+07-17 16:41:31.949  6612  6629 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 1 name inColor
+07-17 16:41:31.949  6612  6629 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 2 name inTextureCoords
+07-17 16:41:31.950  6612  6629 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 0 name position
+07-17 16:41:31.950  6612  6629 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 1 name color
+07-17 16:41:31.962  6612  6629 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 0 name inPosition
+07-17 16:41:31.962  6612  6629 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 1 name inColor
+07-17 16:41:31.962  6612  6629 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 2 name inCircleEdge
+07-17 16:41:31.964  6612  6629 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 0 name inPosition
+07-17 16:41:31.965  6612  6629 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 1 name inColor
+07-17 16:41:31.965  6612  6629 W SIMPLEX : (stdout/stderr) s_glBindAttribLocation: bind attrib 2 name inCircleEdge
+07-17 16:41:32.029  1725  1725 I wpa_supplicant: wlan0: CTRL-EVENT-BEACON-LOSS 
+07-17 16:41:32.099  6612  6612 W SIMPLEX : Notifications are disabled and nobody will ask to enable them
+07-17 16:41:32.937   564   595 I ActivityManager: Waited long enough for: ServiceRecord{d8b4cab u0 com.google.android.gms/.statementservice.OperationService c:com.google.android.gms}
+07-17 16:41:33.305   564  1290 W BatteryExternalStatsWorker: error reading Bluetooth stats: 11
+07-17 16:41:33.306   564  1917 D CompatChangeReporter: Compat change id reported: 297989574; UID 1000; state: ENABLED
+07-17 16:41:33.309   564  1290 D TelephonyManager: requestModemActivityInfo: Sending result to app: ModemActivityInfo{ mTimestamp=3571163 mSleepTimeMs=0 mIdleTimeMs=3571152 mActivityStatsTechSpecificInfo=[{mRat=UNKNOWN,mFrequencyRange=UNKNOWN,mTxTimeMs[]=[0, 0, 0, 0, 0],mRxTimeMs=0}]}
+07-17 16:41:33.331   367   426 I netd    : tetherGetStats() -> {[]} <0.66ms>
+07-17 16:41:33.356   564   862 W BestClock: java.time.DateTimeException: Missing network time fix
+07-17 16:41:33.357   564   862 W BestClock: java.time.DateTimeException: Missing network time fix
+07-17 16:41:33.358   564   862 W BestClock: java.time.DateTimeException: Missing network time fix
+07-17 16:41:33.358   564   862 W BestClock: java.time.DateTimeException: Missing network time fix
+07-17 16:41:33.358   564   862 W BestClock: java.time.DateTimeException: Missing network time fix
+07-17 16:41:33.364  1272  1802 I ChimeraSrvcProxy: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl
+07-17 16:41:33.364  1272  1802 W .gms.persistent: Large reply transaction of 1056768 bytes, interface descriptor , code 1
+07-17 16:41:33.367  3605  3774 I BugleRcsEngine: handleMessage processing message:[NOTIFY_UPTIME_IGNORE_STATE_CHANGED] with [non-null]:RcsEngineImpl reference [CONTEXT log_prefix="RcsEngineImpl[DUAL_REG]:[9bccdac8-e544]>Handler" thread_id=72 ]
+07-17 16:41:33.367  3605  3649 I BugleRcsEngine: Connected state: [1], networkType: [WIFI] [CONTEXT thread_id=60 ]
+07-17 16:41:33.374  3605  3774 I BugleRcsEngine: No RCS Configuration was found in Bugle for simID: redacted-pii:sim_id[chars:20,last3:897] [CONTEXT log_prefix="ProvisioningEngineDataRetriever" thread_id=72 ]
+07-17 16:41:33.716  1529  1529 D BoundBrokerSvc: onUnbind: Intent { act=com.google.android.gms.feedback.internal.IFeedbackService dat=chimera-action:/... cmp=com.google.android.gms/.chimera.GmsBoundBrokerService }
+07-17 16:41:33.719  1272  1272 D BoundBrokerSvc: onUnbind: Intent { act=com.google.android.gms.icing.LIGHTWEIGHT_INDEX_SERVICE dat=chimera-action:/... cmp=com.google.android.gms/.chimera.PersistentApiService }
+07-17 16:41:34.926   564  2844 E TaskPersister: File error accessing recents directory (directory doesn't exist?).
+07-17 16:41:35.095   367   426 I netd    : tetherGetStats() -> {[]} <0.66ms>
+07-17 16:41:36.373   564   862 W BestClock: java.time.DateTimeException: Missing network time fix
+07-17 16:41:36.374   564   862 W BestClock: java.time.DateTimeException: Missing network time fix
+07-17 16:41:36.374   564   862 W BestClock: java.time.DateTimeException: Missing network time fix
+07-17 16:41:36.375   564   862 W BestClock: java.time.DateTimeException: Missing network time fix
+07-17 16:41:36.375   564   862 W BestClock: java.time.DateTimeException: Missing network time fix
+07-17 16:41:36.513  6612  6658 D ProfileInstaller: Installing profile for chat.simplex.app.nome.dev
+07-17 16:41:37.971   367   426 I netd    : tetherGetStats() -> {[]} <0.73ms>
+07-17 16:41:38.118   564   663 D ActivityManager: freezing 951 com.google.android.permissioncontroller
+07-17 16:41:38.120   564   869 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+07-17 16:41:38.120   564   869 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+07-17 16:41:38.120   564   869 D InetDiagMessage: Destroyed live tcp sockets for uids={10187} in 1ms
+07-17 16:41:39.379   564   862 W BestClock: java.time.DateTimeException: Missing network time fix
+07-17 16:41:39.380   564   862 W BestClock: java.time.DateTimeException: Missing network time fix
+07-17 16:41:39.380   564   862 W BestClock: java.time.DateTimeException: Missing network time fix
+07-17 16:41:39.381   564   862 W BestClock: java.time.DateTimeException: Missing network time fix
+07-17 16:41:39.381   564   862 W BestClock: java.time.DateTimeException: Missing network time fix
+07-17 16:41:39.522  6661  6661 W BpBinder: Linking to death on android.gui.ISurfaceComposer but there are no threads (yet?) listening to incoming transactions. See ProcessState::startThreadPool and ProcessState::setThreadPoolMaxThreadCount. Generally you should setup the binder threadpool before other initialization steps.
+07-17 16:41:39.522  6661  6661 W ProcessState: Extra binder thread started, but 0 threads requested. Do not use *startThreadPool when zero threads are requested.
+07-17 16:41:39.530   157   157 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+07-17 16:41:39.530  6661  6662 I Gralloc4: mapper 4.x is not supported
+07-17 16:41:39.533   156   156 I servicemanager: Caller(pid=6661,uid=2000,sid=u:r:shell:s0) Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest. No alternative instances declared in VINTF.
+07-17 16:41:39.656  6663  6663 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+07-17 16:41:39.664  6663  6663 I AndroidRuntime: Using default boot image
+07-17 16:41:39.664  6663  6663 I AndroidRuntime: Leaving lock profiling enabled
+07-17 16:41:39.665  6663  6663 I app_process: Core platform API reporting enabled, enforcing=false
+07-17 16:41:39.665  6663  6663 I app_process: Using CollectorTypeCMC GC.
+07-17 16:41:39.708  6663  6663 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+07-17 16:41:39.717  6663  6663 D nativeloader: Load libicu_jni.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+07-17 16:41:39.717  6663  6663 D app_process: u_setTimeZoneFilesDirectory("/apex/com.android.tzdata/etc/tz/versioned/8/icu") succeeded. 
+07-17 16:41:39.717  6663  6663 D app_process: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt75l.dat
+07-17 16:41:39.720  6663  6663 D nativeloader: Load libjavacore.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+07-17 16:41:39.721  6663  6663 D nativeloader: Load libopenjdk.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+07-17 16:41:39.724  6663  6663 W app_process: ClassLoaderContext shared library size mismatch. Expected=2, found=0 (PCL[]{PCL[/system/framework/android.test.base.jar*724373495]#PCL[/system/framework/android.test.mock.jar*1452759902]} | PCL[])
+07-17 16:41:39.725  6663  6663 W app_process: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[]{PCL[/system/framework/android.test.runner.jar*2496447986]#PCL[/system/framework/android.test.base.jar*724373495]} | PCL[/system/framework/android.test.runner.jar*2496447986])
+07-17 16:41:39.734  6663  6663 D nativeloader: Load libframework-connectivity-tiramisu-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity-t.jar: ok
+07-17 16:41:39.734  6663  6663 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+07-17 16:41:39.736  6663  6663 D UiAutomationConnection: Created on user UserHandle{0}
+07-17 16:41:39.736  6663  6663 I UiAutomation: Initialized for user 0 on display 0
+07-17 16:41:39.736  6663  6663 W UiAutomation: Created with deprecatead constructor, assumes DEFAULT_DISPLAY
+07-17 16:41:39.736   564  2204 D AccessibilityManagerService: changeCurrentUserForTestAutomationIfNeededLocked(0): ignoring because device doesn't support visible background users
+07-17 16:41:39.736   564  2204 I UiAutomationManager: Registering UiTestAutomationService (id=com.android.server.accessibility/UiAutomation, flags=0x0) when called by user 0
+07-17 16:41:39.737   564  2204 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+07-17 16:41:39.737  1504  1513 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+07-17 16:41:39.738  1504  1651 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+07-17 16:41:39.738  1504  1651 I AiAiEcho: EchoTargets: 
+07-17 16:41:39.738  1504  1651 I AiAiEcho: Filtered by AiAi flag check: 
+07-17 16:41:39.738  1504  1651 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+07-17 16:41:39.738  1504  1651 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+07-17 16:41:39.738   564   564 W IPCThreadState: Sending oneway calls to frozen process.
+07-17 16:41:39.738  1504  1651 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+07-17 16:41:39.738  1504  1651 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+07-17 16:41:39.738  1504  1651 I AiAiEcho: EchoTargets: 
+07-17 16:41:39.738  1504  1651 I AiAiEcho: Filtered by AiAi flag check: 
+07-17 16:41:39.738  1504  1651 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+07-17 16:41:39.738  1504  1651 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+07-17 16:41:39.738  1504  1651 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+07-17 16:41:39.738  6663  6676 V UiAutomation: Init UiAutomation@cfb3ca[id=13, displayId=0, flags=0]
+07-17 16:41:39.738  1504  1651 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface home with targets# 0 (types=[])
+07-17 16:41:39.738  1504  1651 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+07-17 16:41:39.738  1199  1199 D SsBaseTemplateCard: No text view can be set up
+07-17 16:41:39.738   947   947 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+07-17 16:41:39.738  1199  1199 D SsBaseTemplateCard: Passed-in item info is null
+07-17 16:41:39.738  1199  1199 D SsBaseTemplateCard: Passed-in item info is null
+07-17 16:41:39.738  1199  1199 D SsBaseTemplateCard: Passed-in item info is null
+07-17 16:41:39.738  1199  1199 I SsBaseTemplateCard: Secondary card pane is null
+07-17 16:41:39.739   564   564 W IPCThreadState: Sending oneway calls to frozen process.
+07-17 16:41:39.739   564  2204 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+07-17 16:41:39.739  1504  1513 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+07-17 16:41:39.739  1504  1651 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+07-17 16:41:39.739  1504  1651 I AiAiEcho: EchoTargets: 
+07-17 16:41:39.739  1504  1651 I AiAiEcho: Filtered by AiAi flag check: 
+07-17 16:41:39.739  1504  1651 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+07-17 16:41:39.739  1504  1651 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+07-17 16:41:39.739  1504  1651 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+07-17 16:41:39.739  1504  1651 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+07-17 16:41:39.739  1504  1651 I AiAiEcho: EchoTargets: 
+07-17 16:41:39.739  1504  1651 I AiAiEcho: Filtered by AiAi flag check: 
+07-17 16:41:39.739  1504  1651 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+07-17 16:41:39.739  1504  1651 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+07-17 16:41:39.739  1504  1651 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+07-17 16:41:39.739  1504  1651 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface home with targets# 0 (types=[])
+07-17 16:41:39.739   564   564 W IPCThreadState: Sending oneway calls to frozen process.
+07-17 16:41:39.739  1504  1651 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+07-17 16:41:39.741  1589  1836 I A       : NGA enabled in interactor.
+07-17 16:41:39.743  1589  1836 I A       : NGA enabled in interactor.
+07-17 16:41:39.743   564   564 W IPCThreadState: Sending oneway calls to frozen process.
+07-17 16:41:39.743   564   564 W IPCThreadState: Sending oneway calls to frozen process.
+07-17 16:41:39.744   564   564 D BatterySaverPolicy: accessibility changed to true, updating policy.
+07-17 16:41:39.745   947   947 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+07-17 16:41:39.751  1199  1199 D SsBaseTemplateCard: No text view can be set up
+07-17 16:41:39.751  1199  1199 D SsBaseTemplateCard: Passed-in item info is null
+07-17 16:41:39.751  1199  1199 D SsBaseTemplateCard: Passed-in item info is null
+07-17 16:41:39.751  1199  1199 D SsBaseTemplateCard: Passed-in item info is null
+07-17 16:41:39.751  1199  1199 I SsBaseTemplateCard: Secondary card pane is null
+07-17 16:41:39.966  1725  1725 I wpa_supplicant: wlan0: CTRL-EVENT-BEACON-LOSS 
+07-17 16:41:40.258  1529  1537 W gle.android.gms: ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~-jSbxFXCkQSQFiW3l5tXFg==/chat.simplex.app.nome.dev-lnyIrFVBcHOUOtC3X6_tKg==/base.apk' with 1 weak references
+07-17 16:41:40.259  1529  1537 W gle.android.gms: ApkAssets: Deleting an ApkAssets object '<empty> and /system_ext/priv-app/SettingsGoogle/SettingsGoogle.apk' with 1 weak references
+07-17 16:41:40.259  1529  1537 W gle.android.gms: ApkAssets: Deleting an ApkAssets object '/product/overlay/SettingsGoogle__sdk_gphone64_arm64__auto_generated_rro_product.apk' with 1 weak references
+07-17 16:41:40.757  1516  1819 W MediaProvider: isAppCloneUserPair for user 0: false
+07-17 16:41:40.780  1272  6244 I NetworkScheduler.Stats: Task com.google.android.gms/com.google.android.gms.ipa.base.IpaGcmTaskService started execution. cause:9 exec_start_elapsed_seconds: 3578 [CONTEXT service_id=218 ]
+07-17 16:41:40.782  1272  6425 I NetworkScheduler.Stats: Task com.google.android.gms/com.google.android.gms.ipa.base.IpaGcmTaskService finished executing. cause:9 result: 1 elapsed_millis: 5 uptime_millis: 5 exec_start_elapsed_seconds: 3578 [CONTEXT service_id=218 ]
+07-17 16:41:40.786  6612  6637 D EGL_emulation: app_time_stats: avg=1883.02ms min=9.20ms max=8687.14ms count=5
+07-17 16:41:40.801  1529  1529 D BoundBrokerSvc: onBind: Intent { act=com.google.android.gms.threadnetwork.service.firstparty.BorderRouterSyncBoundService.ACTION_TASK_READY dat=chimera-action:/... cmp=com.google.android.gms/.chimera.GmsInternalBoundBrokerService }
+07-17 16:41:40.801  1529  1529 D BoundBrokerSvc: Loading bound service for intent: Intent { act=com.google.android.gms.threadnetwork.service.firstparty.BorderRouterSyncBoundService.ACTION_TASK_READY dat=chimera-action:/... cmp=com.google.android.gms/.chimera.GmsInternalBoundBrokerService }
+07-17 16:41:40.811  1272  6244 I NetworkScheduler.Stats: Task com.google.android.gms/com.google.android.gms.auth.account.be.accountstate.GcmTaskService started execution. cause:5 exec_start_elapsed_seconds: 3578 [CONTEXT service_id=218 ]
+07-17 16:41:40.812  1272  6244 I NetworkScheduler.Stats: Task com.google.android.gms/com.google.android.gms.threadnetwork.service.firstparty.BorderRouterSyncBoundService started execution. cause:5 exec_start_elapsed_seconds: 3578 [CONTEXT service_id=218 ]
+07-17 16:41:40.815  1529  6573 I ThreadBrSyncService: Border Router sync service run task [CONTEXT service_id=305 ]
+07-17 16:41:40.821  1272  1272 D BoundBrokerSvc: onBind: Intent { act=com.google.android.gms.mdns.service.START dat=chimera-action:/... cmp=com.google.android.gms/.chimera.PersistentApiService }
+07-17 16:41:40.821  1272  1272 D BoundBrokerSvc: Loading bound service for intent: Intent { act=com.google.android.gms.mdns.service.START dat=chimera-action:/... cmp=com.google.android.gms/.chimera.PersistentApiService }
+07-17 16:41:40.825  1529  6573 I ThreadBrSynchronizer: Start syncing 1P Border Routers [CONTEXT service_id=305 ]
+07-17 16:41:40.825  6663  6663 W AccessibilityNodeInfoDumper: Fetch time: 74ms
+07-17 16:41:40.826   564  1917 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+07-17 16:41:40.826   564  1917 D AccessibilityManagerService: restoreCurrentUserForTestAutomationIfNeededLocked(): ignoring because device doesn't support visible background users
+07-17 16:41:40.826   564   564 W IPCThreadState: Sending oneway calls to frozen process.
+07-17 16:41:40.826   564   564 W IPCThreadState: Sending oneway calls to frozen process.
+07-17 16:41:40.827   564   564 W IPCThreadState: Sending oneway calls to frozen process.
+07-17 16:41:40.827   564   564 D BatterySaverPolicy: accessibility changed to false, updating policy.
+07-17 16:41:40.827  6663  6663 D AndroidRuntime: Shutting down VM
+07-17 16:41:40.828   564   869 D ConnectivityService: NetReassign [no changes] [c 0] [a 2] [i 0]
+07-17 16:41:40.829  1504  1513 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+07-17 16:41:40.829  1504  1651 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+07-17 16:41:40.829  1504  1651 I AiAiEcho: EchoTargets: 
+07-17 16:41:40.829  1504  1651 I AiAiEcho: Filtered by AiAi flag check: 
+07-17 16:41:40.829  1504  1651 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+07-17 16:41:40.829  1504  1651 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+07-17 16:41:40.829  1504  1651 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+07-17 16:41:40.829  1504  1651 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+07-17 16:41:40.829  1504  1651 I AiAiEcho: EchoTargets: 
+07-17 16:41:40.829  1504  1651 I AiAiEcho: Filtered by AiAi flag check: 
+07-17 16:41:40.829  1504  1651 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+07-17 16:41:40.829  1504  1651 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+07-17 16:41:40.829  1504  1651 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+07-17 16:41:40.830  1504  1651 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface home with targets# 0 (types=[])
+07-17 16:41:40.830  1589  1798 I A       : NGA enabled in interactor.
+07-17 16:41:40.830  1589  1798 I A       : NGA enabled in interactor.
+07-17 16:41:40.830  1504  1651 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+07-17 16:41:40.830  1272  6425 I NetworkScheduler.Stats: Task com.google.android.gms/com.google.android.gms.auth.account.be.accountstate.GcmTaskService finished executing. cause:5 result: 1 elapsed_millis: 23 uptime_millis: 23 exec_start_elapsed_seconds: 3578 [CONTEXT service_id=218 ]
+07-17 16:41:40.831  1199  1199 D SsBaseTemplateCard: No text view can be set up
+07-17 16:41:40.831  1199  1199 D SsBaseTemplateCard: Passed-in item info is null
+07-17 16:41:40.831  1199  1199 D SsBaseTemplateCard: Passed-in item info is null
+07-17 16:41:40.831  1199  1199 D SsBaseTemplateCard: Passed-in item info is null
+07-17 16:41:40.831  1199  1199 I SsBaseTemplateCard: Secondary card pane is null
+07-17 16:41:40.831   947   947 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+07-17 16:41:40.832  1529  6569 I BorderAgentScannerImpl: Started mDNS service browser [CONTEXT service_id=305 ]
+07-17 16:41:40.833  1272  6679 D TrafficStats: tagSocket(259) with statsTag=0x30000900, statsUid=-1
+07-17 16:41:40.835   564  1066 I WifiService: acquireMulticastLock uid=10144 tag=mdns-cast
+07-17 16:41:40.837  1063  1780 D IpClient.wlan0: set max DTIM multiplier to 1
+07-17 16:41:40.838  1529  1529 I BorderAgentScannerImpl: Sent Border Agent mDNS service query (transactionId = 1) [CONTEXT service_id=305 ]
+07-17 16:41:40.841   564   862 E WifiStaIfaceAidlImpl: setDtimMultiplier failed with service-specific exception: android.os.ServiceSpecificException:  (code 4)
+07-17 16:41:41.054   185  6636 I keystore2: system/security/keystore2/watchdog/src/lib.rs:319 - Watchdog thread idle -> terminating. Have a great day.
+07-17 16:41:41.446   564   663 D ActivityManager: freezing 1589 com.google.android.googlequicksearchbox:search
+07-17 16:41:41.447   564   663 D ActivityManager: freezing 2675 com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0
+07-17 16:41:41.522   564   869 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+07-17 16:41:41.522   564   869 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+07-17 16:41:41.522   564   869 D InetDiagMessage: Destroyed live tcp sockets for uids={99000} in 1ms
+07-17 16:41:41.688   170   170 I logd    : logdr: UID=2000 GID=2000 PID=6687 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns

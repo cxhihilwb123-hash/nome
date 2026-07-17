@@ -1,0 +1,301 @@
+--------- beginning of main
+07-17 16:06:31.648  1628  1694 I GnssLocationProvider: WakeLock acquired by sendMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@d8cf20a)
+07-17 16:06:31.648  1628  1642 I GnssLocationProvider: WakeLock released by handleMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@d8cf20a)
+--------- beginning of system
+07-17 16:06:32.291  1628  1628 V SettingsProvider: Notifying for 0: content://settings/system/radio.data.stall.recovery.action
+07-17 16:06:32.291  1628  4069 I system_server: The ClassLoaderContext is a special shared library.
+07-17 16:06:32.311  1628  4069 I chatty  : uid=1000 system_server identical 8 lines
+07-17 16:06:32.312  1628  4069 I system_server: The ClassLoaderContext is a special shared library.
+07-17 16:06:32.313  2425  2425 I BgTaskExecutorImpl: Starting EXCLUSIVE background task PeriodicTaskSyncTask.
+07-17 16:06:32.314  1628  4069 I system_server: The ClassLoaderContext is a special shared library.
+07-17 16:06:32.332  1628  4069 I chatty  : uid=1000 system_server identical 15 lines
+07-17 16:06:32.335  1628  4069 I system_server: The ClassLoaderContext is a special shared library.
+07-17 16:06:32.336  2152  4072 I ChimeraConfigurator: Starting update, reason: 4 urgentFeatures: vision.ocr:-1
+07-17 16:06:32.336  1628  4069 I system_server: The ClassLoaderContext is a special shared library.
+07-17 16:06:32.337  1628  4069 I system_server: The ClassLoaderContext is a special shared library.
+07-17 16:06:32.339  1628  4069 I PackageManager.DexOptimizer: Running dexopt (dexoptNeeded=1) on: /data/app/chat.simplex.app.nome.dev.test-rPTW49r67tY0Rtb_DCaW3w==/base.apk pkg=chat.simplex.app.nome.dev.test isa=arm64 dexoptFlags=boot_complete,debuggable,public,enable_hidden_api_checks targetFilter=extract oatDir=/data/app/chat.simplex.app.nome.dev.test-rPTW49r67tY0Rtb_DCaW3w==/oat classLoaderContext=PCL[/system/framework/android.test.mock.jar:/system/framework/android.test.runner.jar]
+07-17 16:06:32.339  1491  1744 V installed: DexInv: --- BEGIN '/data/app/chat.simplex.app.nome.dev.test-rPTW49r67tY0Rtb_DCaW3w==/base.apk' ---
+07-17 16:06:32.350  2152  4072 I GmsDebugLogger: [73] 1801
+07-17 16:06:32.350  2152  4072 I GmsDebugLogger: [30] [VisionOcr.optional:214515100400]
+07-17 16:06:32.354  2152  4072 W ChimeraConfigService: Retry attempt was throttled. [CONTEXT service_id=264 ]
+07-17 16:06:32.354  2152  4072 I GmsDebugLogger: [83] 1 [vision.ocr]
+07-17 16:06:32.355  2152  4070 W Vision  : Request for optional module download of ocr failed. Request again.
+07-17 16:06:32.361  2152  4070 I Vision  : Schedule retrying download ocr at 85019 with backoff 80 seconds
+07-17 16:06:32.360  4073  4073 I dex2oat : /system/bin/dex2oat --input-vdex-fd=-1 --output-vdex-fd=9 --compiler-filter=extract --debuggable --classpath-dir=/data/app/chat.simplex.app.nome.dev.test-rPTW49r67tY0Rtb_DCaW3w== --class-loader-context=PCL[/system/framework/android.test.mock.jar:/system/framework/android.test.runner.jar] --generate-mini-debug-info --compact-dex-level=none --compilation-reason=boot
+07-17 16:06:32.368  2425  2425 I BgTaskExecutorImpl: Starting PERIODIC background task upload_hotword_settings.
+07-17 16:06:32.374  2425  2425 W SearchService: Abort, client detached.
+07-17 16:06:32.389  4073  4073 I dex2oat : Explicit concurrent copying GC freed 14(14KB) AllocSpace objects, 0(0B) LOS objects, 99% free, 1488B/1537KB, paused 11us total 683us
+07-17 16:06:32.390  4073  4073 I dex2oat : Explicit concurrent copying GC freed 14(14KB) AllocSpace objects, 0(0B) LOS objects, 99% free, 2640B/1538KB, paused 7us total 615us
+07-17 16:06:32.390  2425  2521 I cr_CronetLibraryLoader: Cronet version: 67.0.3396.11, arch: aarch64
+07-17 16:06:32.391  4073  4073 I dex2oat : Explicit concurrent copying GC freed 14(14KB) AllocSpace objects, 0(0B) LOS objects, 99% free, 3KB/1539KB, paused 7us total 657us
+07-17 16:06:32.392  4073  4073 I dex2oat : Explicit concurrent copying GC freed 14(14KB) AllocSpace objects, 0(0B) LOS objects, 99% free, 4KB/1540KB, paused 7us total 665us
+07-17 16:06:32.393  4073  4073 I dex2oat : Explicit concurrent copying GC freed 14(14KB) AllocSpace objects, 0(0B) LOS objects, 99% free, 5KB/1541KB, paused 6us total 580us
+07-17 16:06:32.393  4073  4073 I dex2oat : Explicit concurrent copying GC freed 14(14KB) AllocSpace objects, 0(0B) LOS objects, 99% free, 7KB/1543KB, paused 6us total 561us
+07-17 16:06:32.397  4073  4073 I dex2oat : dex2oat took 39.949ms (21.077ms cpu) (threads: 4) arena alloc=0B (0B) java alloc=7KB (7248B) native alloc=835KB (855224B) free=5MB (5436232B)
+07-17 16:06:32.398  1491  1744 V installed: DexInv: --- END '/data/app/chat.simplex.app.nome.dev.test-rPTW49r67tY0Rtb_DCaW3w==/base.apk' (success) ---
+07-17 16:06:32.399  1628  4069 I system_server: The ClassLoaderContext is a special shared library.
+07-17 16:06:32.447  1628  4069 I chatty  : uid=1000 system_server identical 59 lines
+07-17 16:06:32.447  1628  4069 I system_server: The ClassLoaderContext is a special shared library.
+07-17 16:06:32.448  1628  4069 I PackageManager.DexOptimizer: Running dexopt (dexoptNeeded=1) on: /data/app/chat.simplex.app.nome.dev-QOfWo3DGLli8d8_YEqyVkQ==/base.apk pkg=chat.simplex.app.nome.dev isa=arm64 dexoptFlags=boot_complete,debuggable,public,enable_hidden_api_checks targetFilter=extract oatDir=/data/app/chat.simplex.app.nome.dev-QOfWo3DGLli8d8_YEqyVkQ==/oat classLoaderContext=PCL[]
+07-17 16:06:32.448  1491  1744 V installed: DexInv: --- BEGIN '/data/app/chat.simplex.app.nome.dev-QOfWo3DGLli8d8_YEqyVkQ==/base.apk' ---
+07-17 16:06:32.452  4107  4107 I dex2oat : /system/bin/dex2oat --input-vdex-fd=-1 --output-vdex-fd=9 --compiler-filter=extract --debuggable --classpath-dir=/data/app/chat.simplex.app.nome.dev-QOfWo3DGLli8d8_YEqyVkQ== --class-loader-context=PCL[] --generate-mini-debug-info --compact-dex-level=none --compilation-reason=boot
+07-17 16:06:32.651  1628  1694 I GnssLocationProvider: WakeLock acquired by sendMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@34cc409)
+07-17 16:06:32.651  1628  1642 I GnssLocationProvider: WakeLock released by handleMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@34cc409)
+07-17 16:06:33.035  4107  4107 I dex2oat : Large app, accepted running with swap.
+07-17 16:06:33.064  4107  4107 I dex2oat : Explicit concurrent copying GC freed 34(11KB) AllocSpace objects, 0(0B) LOS objects, 99% free, 4KB/1540KB, paused 11us total 653us
+07-17 16:06:33.066  4107  4107 I dex2oat : Explicit concurrent copying GC freed 34(12KB) AllocSpace objects, 0(0B) LOS objects, 99% free, 7KB/1543KB, paused 6us total 617us
+07-17 16:06:33.067  4107  4107 I dex2oat : Explicit concurrent copying GC freed 34(12KB) AllocSpace objects, 0(0B) LOS objects, 99% free, 11KB/1547KB, paused 6us total 630us
+07-17 16:06:33.067  4107  4107 I dex2oat : Explicit concurrent copying GC freed 34(12KB) AllocSpace objects, 0(0B) LOS objects, 99% free, 15KB/1551KB, paused 6us total 631us
+07-17 16:06:33.068  4107  4107 I dex2oat : Explicit concurrent copying GC freed 34(12KB) AllocSpace objects, 0(0B) LOS objects, 98% free, 19KB/1555KB, paused 6us total 602us
+07-17 16:06:33.069  4107  4107 I dex2oat : Explicit concurrent copying GC freed 34(12KB) AllocSpace objects, 0(0B) LOS objects, 98% free, 22KB/1558KB, paused 6us total 622us
+07-17 16:06:33.070  4107  4107 I dex2oat : Explicit concurrent copying GC freed 34(12KB) AllocSpace objects, 0(0B) LOS objects, 98% free, 26KB/1562KB, paused 6us total 589us
+07-17 16:06:33.071  4107  4107 I dex2oat : Explicit concurrent copying GC freed 34(12KB) AllocSpace objects, 0(0B) LOS objects, 98% free, 30KB/1566KB, paused 6us total 575us
+07-17 16:06:33.072  4107  4107 I dex2oat : Explicit concurrent copying GC freed 34(12KB) AllocSpace objects, 0(0B) LOS objects, 97% free, 34KB/1570KB, paused 6us total 623us
+07-17 16:06:33.073  4107  4107 I dex2oat : Explicit concurrent copying GC freed 34(12KB) AllocSpace objects, 0(0B) LOS objects, 97% free, 37KB/1573KB, paused 6us total 590us
+07-17 16:06:33.074  4107  4107 I dex2oat : Explicit concurrent copying GC freed 34(12KB) AllocSpace objects, 0(0B) LOS objects, 97% free, 41KB/1577KB, paused 6us total 572us
+07-17 16:06:33.075  4107  4107 I dex2oat : Explicit concurrent copying GC freed 34(12KB) AllocSpace objects, 0(0B) LOS objects, 97% free, 45KB/1581KB, paused 5us total 557us
+07-17 16:06:33.076  4107  4107 I dex2oat : Explicit concurrent copying GC freed 34(12KB) AllocSpace objects, 0(0B) LOS objects, 96% free, 48KB/1584KB, paused 6us total 649us
+07-17 16:06:33.077  4107  4107 I dex2oat : Explicit concurrent copying GC freed 34(12KB) AllocSpace objects, 0(0B) LOS objects, 96% free, 52KB/1588KB, paused 6us total 584us
+07-17 16:06:33.077  4107  4107 I dex2oat : Explicit concurrent copying GC freed 34(12KB) AllocSpace objects, 0(0B) LOS objects, 96% free, 56KB/1592KB, paused 6us total 619us
+07-17 16:06:33.078  4107  4107 I dex2oat : Explicit concurrent copying GC freed 34(12KB) AllocSpace objects, 0(0B) LOS objects, 96% free, 60KB/1596KB, paused 6us total 600us
+07-17 16:06:33.079  4107  4107 I dex2oat : Explicit concurrent copying GC freed 34(12KB) AllocSpace objects, 0(0B) LOS objects, 96% free, 63KB/1599KB, paused 5us total 562us
+07-17 16:06:33.080  4107  4107 I dex2oat : Explicit concurrent copying GC freed 34(12KB) AllocSpace objects, 0(0B) LOS objects, 95% free, 67KB/1603KB, paused 5us total 639us
+07-17 16:06:33.081  4107  4107 I dex2oat : Explicit concurrent copying GC freed 34(12KB) AllocSpace objects, 0(0B) LOS objects, 95% free, 71KB/1607KB, paused 5us total 583us
+07-17 16:06:33.082  4107  4107 I dex2oat : Explicit concurrent copying GC freed 34(12KB) AllocSpace objects, 0(0B) LOS objects, 95% free, 75KB/1611KB, paused 8us total 644us
+07-17 16:06:33.083  4107  4107 I dex2oat : Explicit concurrent copying GC freed 34(12KB) AllocSpace objects, 0(0B) LOS objects, 95% free, 78KB/1614KB, paused 5us total 567us
+07-17 16:06:33.084  4107  4107 I dex2oat : Explicit concurrent copying GC freed 34(12KB) AllocSpace objects, 0(0B) LOS objects, 94% free, 82KB/1618KB, paused 5us total 569us
+07-17 16:06:33.085  4107  4107 I dex2oat : Explicit concurrent copying GC freed 34(12KB) AllocSpace objects, 0(0B) LOS objects, 94% free, 86KB/1622KB, paused 6us total 628us
+07-17 16:06:33.086  4107  4107 I dex2oat : Explicit concurrent copying GC freed 34(12KB) AllocSpace objects, 0(0B) LOS objects, 94% free, 90KB/1626KB, paused 6us total 647us
+07-17 16:06:33.087  4107  4107 I dex2oat : Explicit concurrent copying GC freed 34(12KB) AllocSpace objects, 0(0B) LOS objects, 94% free, 93KB/1629KB, paused 5us total 629us
+07-17 16:06:33.087  4107  4107 I dex2oat : Explicit concurrent copying GC freed 34(12KB) AllocSpace objects, 0(0B) LOS objects, 94% free, 97KB/1633KB, paused 6us total 606us
+07-17 16:06:33.088  4107  4107 I dex2oat : Explicit concurrent copying GC freed 34(12KB) AllocSpace objects, 0(0B) LOS objects, 93% free, 101KB/1637KB, paused 5us total 587us
+07-17 16:06:33.089  4107  4107 I dex2oat : Explicit concurrent copying GC freed 34(12KB) AllocSpace objects, 0(0B) LOS objects, 93% free, 105KB/1641KB, paused 6us total 629us
+07-17 16:06:33.096  4107  4107 I dex2oat : dex2oat took 644.780ms (593.899ms cpu) (threads: 4) arena alloc=0B (0B) java alloc=105KB (107632B) native alloc=1406KB (1440392B) free=12MB (13239672B) swap=16MB (16777216B)
+07-17 16:06:33.098  1491  1744 V installed: DexInv: --- END '/data/app/chat.simplex.app.nome.dev-QOfWo3DGLli8d8_YEqyVkQ==/base.apk' (success) ---
+07-17 16:06:33.100  1628  4069 I system_server: The ClassLoaderContext is a special shared library.
+07-17 16:06:33.100  1628  4069 I chatty  : uid=1000 system_server identical 1 line
+07-17 16:06:33.102  1628  4069 I system_server: The ClassLoaderContext is a special shared library.
+07-17 16:06:33.102  1628  4069 I BackgroundDexOptService: Pinning optimized code {chat.simplex.app.nome.dev.test, chat.simplex.app.nome.dev}
+07-17 16:06:33.661  1628  1694 I GnssLocationProvider: WakeLock acquired by sendMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@bf7e82f)
+07-17 16:06:33.661  1628  1642 I GnssLocationProvider: WakeLock released by handleMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@bf7e82f)
+07-17 16:06:34.133  2017  2365 W Settings: Setting airplane_mode_on has moved from android.provider.Settings.System to android.provider.Settings.Global, returning read-only value.
+07-17 16:06:34.133  1628  1628 V SettingsProvider: Notifying for 0: content://settings/global/airplane_mode_on
+07-17 16:06:34.133  1628  1730 D WifiController: airplane mode toggled - and airplane mode is off.  return handled
+07-17 16:06:34.134  2017  2678 W Settings: Setting airplane_mode_on has moved from android.provider.Settings.System to android.provider.Settings.Global, returning read-only value.
+07-17 16:06:34.217  4197  4197 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+07-17 16:06:34.235  4197  4197 I app_process: The ClassLoaderContext is a special shared library.
+07-17 16:06:34.242  4197  4197 D AndroidRuntime: Calling main entry com.android.commands.svc.Svc
+07-17 16:06:34.243  1628  2934 D WifiService: setWifiEnabled: true pid=4197, uid=2000, package=com.android.shell
+07-17 16:06:34.243  1628  2934 I WifiService: setWifiEnabled package=com.android.shell uid=2000 enable=true
+07-17 16:06:34.243  4197  4197 D AndroidRuntime: Shutting down VM
+07-17 16:06:34.278  1628  2934 I ActivityManager: Force stopping chat.simplex.app.nome.dev appid=10088 user=0: from pid 4210
+07-17 16:06:34.280  1835  1835 D CarrierSvcBindHelper: No carrier app for: 0
+07-17 16:06:34.302  1628  2934 I ActivityManager: START u0 {flg=0x10000000 cmp=chat.simplex.app.nome.dev/chat.simplex.app.MainActivity} from uid 2000
+07-17 16:06:34.308  4220  4220 I ex.app.nome.de: Late-enabling -Xcheck:jni
+07-17 16:06:34.311  1486  1665 E SurfaceFlinger: ro.sf.lcd_density must be defined as a build property
+07-17 16:06:34.311  1486  1665 D PermissionCache: checking android.permission.READ_FRAME_BUFFER for uid=2000 => granted (73 us)
+07-17 16:06:34.311  1386  1435 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 9592832
+07-17 16:06:34.317  1628  1645 I ActivityManager: Start proc 4220:chat.simplex.app.nome.dev/u0a88 for activity chat.simplex.app.nome.dev/chat.simplex.app.MainActivity
+07-17 16:06:34.340  4215  4215 D HostConnection: createUnique: call
+07-17 16:06:34.340  4215  4215 D HostConnection: HostConnection::get() New Host Connection established 0x76c9241640, tid 4215
+07-17 16:06:34.341  4215  4215 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_sync_buffer_data ANDROID_EMU_hwc_color_transform GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_1 
+07-17 16:06:34.343  1386  1435 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 9592832
+07-17 16:06:34.374  1386  1435 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 9592832
+07-17 16:06:34.404  2300  2450 D EGL_emulation: eglMakeCurrent: 0x726d325d20: ver 3 1 (tinfo 0x726b9fe280)
+07-17 16:06:34.405  1801  1963 D EGL_emulation: eglMakeCurrent: 0x726ee45940: ver 3 1 (tinfo 0x726ee0dfa0)
+07-17 16:06:34.409  4220  4220 W ex.app.nome.de: Accessing hidden field Landroid/os/Trace;->TRACE_TAG_APP:J (light greylist, reflection)
+07-17 16:06:34.409  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/os/Trace;->isTagEnabled(J)Z (light greylist, reflection)
+07-17 16:06:34.411  4220  4220 D WM-WrkMgrInitializer: Initializing WorkManager with default configuration.
+07-17 16:06:34.421  4220  4220 D WM-PackageManagerHelper: Skipping component enablement for androidx.work.impl.background.systemjob.SystemJobService
+07-17 16:06:34.421  4220  4220 D WM-Schedulers: Created SystemJobScheduler and enabled SystemJobService
+07-17 16:06:34.425  4220  4241 D SIMPLEX : starting server
+07-17 16:06:34.425  4220  4241 D SIMPLEX : started server
+07-17 16:06:34.468  4220  4241 D SIMPLEX : started receiver
+07-17 16:06:34.470  4220  4241 D SIMPLEX : starting receiver loop
+07-17 16:06:34.508  4220  4238 W ex.app.nome.de: Accessing hidden method Landroid/graphics/ImageDecoder;->createSource([B)Landroid/graphics/ImageDecoder$Source; (dark greylist, linking)
+07-17 16:06:34.509  1492  1492 I keystore: 1 0
+07-17 16:06:34.511  1628  1643 W BroadcastQueue: Background execution not allowed: receiving Intent { act=android.intent.action.DROPBOX_ENTRY_ADDED flg=0x10 (has extras) } to com.google.android.gms/.stats.service.DropBoxEntryAddedReceiver
+07-17 16:06:34.511  1628  1643 W BroadcastQueue: Background execution not allowed: receiving Intent { act=android.intent.action.DROPBOX_ENTRY_ADDED flg=0x10 (has extras) } to com.google.android.gms/.chimera.GmsIntentOperationService$PersistentTrustedReceiver
+07-17 16:06:34.543  4220  4220 D OpenGLRenderer: Skia GL Pipeline
+07-17 16:06:34.544  1486  1665 E SurfaceFlinger: ro.sf.lcd_density must be defined as a build property
+07-17 16:06:34.605  4220  4220 W ex.app.nome.de: Accessing hidden field Landroid/graphics/Insets;->left:I (light greylist, linking)
+07-17 16:06:34.605  4220  4220 W ex.app.nome.de: Accessing hidden field Landroid/graphics/Insets;->top:I (light greylist, linking)
+07-17 16:06:34.605  4220  4220 W ex.app.nome.de: Accessing hidden field Landroid/graphics/Insets;->right:I (light greylist, linking)
+07-17 16:06:34.605  4220  4220 W ex.app.nome.de: Accessing hidden field Landroid/graphics/Insets;->bottom:I (light greylist, linking)
+07-17 16:06:34.619  4220  4220 W ex.app.nome.de: Accessing hidden field Landroid/view/WindowInsets;->CONSUMED:Landroid/view/WindowInsets; (light greylist, reflection)
+07-17 16:06:34.619  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/view/View;->getViewRootImpl()Landroid/view/ViewRootImpl; (light greylist, reflection)
+07-17 16:06:34.619  4220  4220 W ex.app.nome.de: Accessing hidden field Landroid/view/View$AttachInfo;->mVisibleInsets:Landroid/graphics/Rect; (light greylist, reflection)
+07-17 16:06:34.619  4220  4220 W ex.app.nome.de: Accessing hidden field Landroid/view/ViewRootImpl;->mAttachInfo:Landroid/view/View$AttachInfo; (light greylist, reflection)
+07-17 16:06:34.624  1386  1435 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 9592832
+07-17 16:06:34.624  1386  1437 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 9592832
+07-17 16:06:34.625  4220  4256 D HostConnection: HostConnection::get() New Host Connection established 0x726d327760, tid 4256
+07-17 16:06:34.625  1386  1386 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 9592832
+07-17 16:06:34.625  4220  4256 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_sync_buffer_data ANDROID_EMU_hwc_color_transform GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_1 
+07-17 16:06:34.625  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/view/RenderNode;->create(Ljava/lang/String;Landroid/view/View;)Landroid/view/RenderNode; (light greylist, linking)
+07-17 16:06:34.625  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/view/RenderNode;->getScaleX()F (dark greylist, linking)
+07-17 16:06:34.626  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/view/RenderNode;->setClipToBounds(Z)Z (light greylist, linking)
+07-17 16:06:34.626  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/view/RenderNode;->setClipToOutline(Z)Z (dark greylist, linking)
+07-17 16:06:34.626  4220  4220 I chatty  : uid=10088(chat.simplex.app.nome.dev) identical 1 line
+07-17 16:06:34.626  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/view/RenderNode;->setClipToOutline(Z)Z (dark greylist, linking)
+07-17 16:06:34.626  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/view/RenderNode;->setLayerType(I)Z (dark greylist, linking)
+07-17 16:06:34.626  4220  4220 I chatty  : uid=10088(chat.simplex.app.nome.dev) identical 1 line
+07-17 16:06:34.626  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/view/RenderNode;->setLayerType(I)Z (dark greylist, linking)
+07-17 16:06:34.626  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/view/RenderNode;->getMatrix(Landroid/graphics/Matrix;)V (dark greylist, linking)
+07-17 16:06:34.626  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/view/DisplayListCanvas;->drawRenderNode(Landroid/view/RenderNode;)V (light greylist, linking)
+07-17 16:06:34.626  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/view/RenderNode;->isValid()Z (light greylist, linking)
+07-17 16:06:34.626  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/view/RenderNode;->start(II)Landroid/view/DisplayListCanvas; (light greylist, linking)
+07-17 16:06:34.626  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/view/RenderNode;->end(Landroid/view/DisplayListCanvas;)V (light greylist, linking)
+07-17 16:06:34.626  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/view/RenderNode;->setAlpha(F)Z (dark greylist, linking)
+07-17 16:06:34.626  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/view/RenderNode;->setCameraDistance(F)Z (dark greylist, linking)
+07-17 16:06:34.626  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/view/RenderNode;->setLayerPaint(Landroid/graphics/Paint;)Z (dark greylist, linking)
+07-17 16:06:34.626  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/view/RenderNode;->setOutline(Landroid/graphics/Outline;)Z (dark greylist, linking)
+07-17 16:06:34.626  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/view/RenderNode;->setPivotX(F)Z (dark greylist, linking)
+07-17 16:06:34.626  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/view/RenderNode;->setPivotX(F)Z (dark greylist, linking)
+07-17 16:06:34.626  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/view/RenderNode;->setLeftTopRightBottom(IIII)Z (light greylist, linking)
+07-17 16:06:34.626  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/view/RenderNode;->setPivotX(F)Z (dark greylist, linking)
+07-17 16:06:34.626  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/view/RenderNode;->setRotationX(F)Z (dark greylist, linking)
+07-17 16:06:34.626  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/view/RenderNode;->setRotationY(F)Z (dark greylist, linking)
+07-17 16:06:34.626  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/view/RenderNode;->setRotation(F)Z (dark greylist, linking)
+07-17 16:06:34.626  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/view/RenderNode;->setScaleX(F)Z (dark greylist, linking)
+07-17 16:06:34.626  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/view/RenderNode;->setScaleY(F)Z (dark greylist, linking)
+07-17 16:06:34.626  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/view/RenderNode;->setElevation(F)Z (dark greylist, linking)
+07-17 16:06:34.626  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/view/RenderNode;->setTranslationX(F)Z (dark greylist, linking)
+07-17 16:06:34.626  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/view/RenderNode;->setTranslationY(F)Z (dark greylist, linking)
+07-17 16:06:34.626  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/view/RenderNode;->getScaleX()F (dark greylist, linking)
+07-17 16:06:34.626  4220  4256 I ConfigStore: android::hardware::configstore::V1_0::ISurfaceFlingerConfigs::hasWideColorDisplay retrieved: 0
+07-17 16:06:34.626  4220  4256 I ConfigStore: android::hardware::configstore::V1_0::ISurfaceFlingerConfigs::hasHDRDisplay retrieved: 0
+07-17 16:06:34.626  4220  4256 I OpenGLRenderer: Initialized EGL, version 1.4
+07-17 16:06:34.626  4220  4256 D OpenGLRenderer: Swap behavior 1
+07-17 16:06:34.626  4220  4256 W OpenGLRenderer: Failed to choose config with EGL_SWAP_BEHAVIOR_PRESERVED, retrying without...
+07-17 16:06:34.626  4220  4256 D OpenGLRenderer: Swap behavior 0
+07-17 16:06:34.626  4220  4256 D eglCodecCommon: setVertexArrayObject: set vao to 0 (0) 0 0
+07-17 16:06:34.626  4220  4256 D EGL_emulation: eglCreateContext: 0x726d329c40: maj 3 min 1 rcv 4
+07-17 16:06:34.626  4220  4256 D EGL_emulation: eglMakeCurrent: 0x726d329c40: ver 3 1 (tinfo 0x726d3e6780)
+07-17 16:06:34.627  4220  4256 E eglCodecCommon: glUtilsParamSize: unknow param 0x000082da
+07-17 16:06:34.627  4220  4256 E eglCodecCommon: glUtilsParamSize: unknow param 0x000082da
+07-17 16:06:34.627  1486  1665 E SurfaceFlinger: ro.sf.lcd_density must be defined as a build property
+07-17 16:06:34.663  4220  4256 D HostConnection: createUnique: call
+07-17 16:06:34.663  4220  4256 D HostConnection: HostConnection::get() New Host Connection established 0x726d3c6ec0, tid 4256
+07-17 16:06:34.664  4220  4256 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_sync_buffer_data ANDROID_EMU_hwc_color_transform GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_1 
+07-17 16:06:34.669  1628  1694 I GnssLocationProvider: WakeLock acquired by sendMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@e30d488)
+07-17 16:06:34.669  1628  1642 I GnssLocationProvider: WakeLock released by handleMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@e30d488)
+07-17 16:06:34.678  4220  4256 D EGL_emulation: eglMakeCurrent: 0x726d329c40: ver 3 1 (tinfo 0x726d3e6780)
+07-17 16:06:34.678  4220  4256 D eglCodecCommon: setVertexArrayObject: set vao to 0 (0) 1 2
+07-17 16:06:34.691  1628  1651 I ActivityManager: Displayed chat.simplex.app.nome.dev/chat.simplex.app.MainActivity: +385ms (total +18s168ms)
+07-17 16:06:34.692  1776  1776 I GoogleInputMethod: onFinishInput() : Dummy InputConnection bound
+07-17 16:06:34.692  1776  1776 I GoogleInputMethod: onStartInput() : Dummy InputConnection bound
+07-17 16:06:34.703  1486  1665 W SurfaceFlinger: Attempting to set client state on removed layer: Splash Screen chat.simplex.app.nome.dev#0
+07-17 16:06:34.703  1486  1665 W SurfaceFlinger: Attempting to destroy on removed layer: Splash Screen chat.simplex.app.nome.dev#0
+07-17 16:06:34.728  1801  1963 D EGL_emulation: eglMakeCurrent: 0x726ee45940: ver 3 1 (tinfo 0x726ee0dfa0)
+07-17 16:06:34.730  1801  1963 D EGL_emulation: eglMakeCurrent: 0x726ee45940: ver 3 1 (tinfo 0x726ee0dfa0)
+07-17 16:06:34.746  1486  1665 E SurfaceFlinger: ro.sf.lcd_density must be defined as a build property
+07-17 16:06:34.747  1386  1435 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 9592832
+07-17 16:06:34.747  1486  1486 W SurfaceFlinger: FB is protected: PERMISSION_DENIED
+07-17 16:06:34.790  4220  4238 D SIMPLEX : Network changed: UserNetworkInfo(networkType=WIFI, online=true)
+07-17 16:06:34.791  1628  2934 D ConnectivityService: requestNetwork for uid/pid:10088/4220 NetworkRequest [ TRACK_DEFAULT id=25, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Unwanted:  Uid: 10088] ]
+07-17 16:06:34.792  1628  1731 D WIFI    : got request NetworkRequest [ TRACK_DEFAULT id=25, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Unwanted:  Uid: 10088] ] with score 60
+07-17 16:06:34.792  1628  1731 D WIFI_UT : got request NetworkRequest [ TRACK_DEFAULT id=25, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Unwanted:  Uid: 10088] ] with score 60
+07-17 16:06:34.795  1835  1835 D PhoneSwitcherNetworkRequstListener: got request NetworkRequest [ TRACK_DEFAULT id=25, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Unwanted:  Uid: 10088] ] with score 60
+07-17 16:06:34.795  1801  1963 D EGL_emulation: eglMakeCurrent: 0x726ee45940: ver 3 1 (tinfo 0x726ee0dfa0)
+07-17 16:06:34.825  4220  4272 W SIMPLEX_SERVICE: Starting foreground service
+07-17 16:06:34.859  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/content/ContextWrapper;->getDisplay()Landroid/view/Display; (light greylist, linking)
+07-17 16:06:34.901  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/text/SpannableStringInternal;->length()I (light greylist, linking)
+07-17 16:06:34.913  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/graphics/FontFamily;-><init>()V (light greylist, reflection)
+07-17 16:06:34.913  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/graphics/FontFamily;->addFontFromAssetManager(Landroid/content/res/AssetManager;Ljava/lang/String;IZIII[Landroid/graphics/fonts/FontVariationAxis;)Z (light greylist, reflection)
+07-17 16:06:34.913  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/graphics/FontFamily;->addFontFromBuffer(Ljava/nio/ByteBuffer;I[Landroid/graphics/fonts/FontVariationAxis;II)Z (light greylist, reflection)
+07-17 16:06:34.913  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/graphics/FontFamily;->freeze()Z (light greylist, reflection)
+07-17 16:06:34.913  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/graphics/FontFamily;->abortCreation()V (light greylist, reflection)
+07-17 16:06:34.913  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/graphics/Typeface;->createFromFamiliesWithDefault([Landroid/graphics/FontFamily;Ljava/lang/String;II)Landroid/graphics/Typeface; (light greylist, reflection)
+07-17 16:06:35.017  1486  1665 E SurfaceFlinger: ro.sf.lcd_density must be defined as a build property
+07-17 16:06:35.017  1386  1435 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 9592832
+07-17 16:06:35.017  1486  1486 W SurfaceFlinger: FB is protected: PERMISSION_DENIED
+07-17 16:06:35.028  4220  4257 W SIMPLEX_SERVICE: Starting foreground service
+07-17 16:06:35.044  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/os/Trace;->asyncTraceBegin(JLjava/lang/String;I)V (light greylist, reflection)
+07-17 16:06:35.044  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/os/Trace;->asyncTraceEnd(JLjava/lang/String;I)V (light greylist, reflection)
+07-17 16:06:35.044  4220  4220 W ex.app.nome.de: Accessing hidden method Landroid/os/Trace;->traceCounter(JLjava/lang/String;I)V (light greylist, reflection)
+07-17 16:06:35.052  2017  2029 I FontLog : Received query Noto Color Emoji Compat, URI content://com.google.android.gms.fonts [CONTEXT service_id=132 ]
+07-17 16:06:35.052  2017  2029 I FontLog : Query [emojicompat-emoji-font] resolved to {Noto Color Emoji Compat, wdth 100.0, wght 400, ital 0.0, bestEffort false} [CONTEXT service_id=132 ]
+07-17 16:06:35.052  2017  2029 I FontLog : Fetch {Noto Color Emoji Compat, wdth 100.0, wght 400, ital 0.0, bestEffort false} end status Status{statusCode=SUCCESS, resolution=null} [CONTEXT service_id=132 ]
+07-17 16:06:35.054  2017  2029 I FontLog : Pulling font file for id = 5, cache size = 5 [CONTEXT service_id=132 ]
+07-17 16:06:35.057  2017  2029 I FontLog : Pulling font file for id = 5, cache size = 5 [CONTEXT service_id=132 ]
+07-17 16:06:35.254  1486  1665 E SurfaceFlinger: ro.sf.lcd_density must be defined as a build property
+07-17 16:06:35.255  1386  1435 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 9592832
+07-17 16:06:35.255  1486  1486 W SurfaceFlinger: FB is protected: PERMISSION_DENIED
+07-17 16:06:35.521  1486  1665 E SurfaceFlinger: ro.sf.lcd_density must be defined as a build property
+07-17 16:06:35.521  1386  1435 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 9592832
+07-17 16:06:35.521  1486  1486 W SurfaceFlinger: FB is protected: PERMISSION_DENIED
+07-17 16:06:35.672  1628  1694 I GnssLocationProvider: WakeLock acquired by sendMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@1066fb8)
+07-17 16:06:35.672  1628  1642 I GnssLocationProvider: WakeLock released by handleMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@1066fb8)
+07-17 16:06:35.789  1486  1665 E SurfaceFlinger: ro.sf.lcd_density must be defined as a build property
+07-17 16:06:35.789  1386  1435 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 9592832
+07-17 16:06:35.789  1486  1486 W SurfaceFlinger: FB is protected: PERMISSION_DENIED
+07-17 16:06:36.056  1486  1665 E SurfaceFlinger: ro.sf.lcd_density must be defined as a build property
+07-17 16:06:36.057  1386  1435 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 9592832
+07-17 16:06:36.057  1486  1486 W SurfaceFlinger: FB is protected: PERMISSION_DENIED
+07-17 16:06:36.324  1486  1665 E SurfaceFlinger: ro.sf.lcd_density must be defined as a build property
+07-17 16:06:36.324  1386  1435 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 9592832
+07-17 16:06:36.324  1486  1486 W SurfaceFlinger: FB is protected: PERMISSION_DENIED
+07-17 16:06:36.591  1486  1665 E SurfaceFlinger: ro.sf.lcd_density must be defined as a build property
+07-17 16:06:36.591  1386  1435 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 9592832
+07-17 16:06:36.591  1486  1486 W SurfaceFlinger: FB is protected: PERMISSION_DENIED
+07-17 16:06:36.680  1628  1694 I GnssLocationProvider: WakeLock acquired by sendMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@617d191)
+07-17 16:06:36.680  1628  1642 I GnssLocationProvider: WakeLock released by handleMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@617d191)
+07-17 16:06:36.858  1486  1665 E SurfaceFlinger: ro.sf.lcd_density must be defined as a build property
+07-17 16:06:36.858  1386  1435 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 9592832
+07-17 16:06:36.859  1486  1486 W SurfaceFlinger: FB is protected: PERMISSION_DENIED
+07-17 16:06:37.126  1486  1665 E SurfaceFlinger: ro.sf.lcd_density must be defined as a build property
+07-17 16:06:37.126  1386  1435 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 9592832
+07-17 16:06:37.126  1486  1486 W SurfaceFlinger: FB is protected: PERMISSION_DENIED
+07-17 16:06:37.392  1486  1665 E SurfaceFlinger: ro.sf.lcd_density must be defined as a build property
+07-17 16:06:37.392  1386  1435 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 9592832
+07-17 16:06:37.393  1486  1486 W SurfaceFlinger: FB is protected: PERMISSION_DENIED
+07-17 16:06:37.660  1486  1665 E SurfaceFlinger: ro.sf.lcd_density must be defined as a build property
+07-17 16:06:37.660  1386  1435 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 9592832
+07-17 16:06:37.660  1486  1486 W SurfaceFlinger: FB is protected: PERMISSION_DENIED
+07-17 16:06:37.688  1628  1694 I GnssLocationProvider: WakeLock acquired by sendMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@12498f6)
+07-17 16:06:37.688  1628  1642 I GnssLocationProvider: WakeLock released by handleMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@12498f6)
+07-17 16:06:37.928  1486  1665 E SurfaceFlinger: ro.sf.lcd_density must be defined as a build property
+07-17 16:06:37.928  1386  1435 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 9592832
+07-17 16:06:37.928  1486  1486 W SurfaceFlinger: FB is protected: PERMISSION_DENIED
+07-17 16:06:38.195  1486  1665 E SurfaceFlinger: ro.sf.lcd_density must be defined as a build property
+07-17 16:06:38.195  1386  1435 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 9592832
+07-17 16:06:38.196  1486  1486 W SurfaceFlinger: FB is protected: PERMISSION_DENIED
+07-17 16:06:38.409  1628  1758 E TaskPersister: File error accessing recents directory (directory doesn't exist?).
+07-17 16:06:38.463  1486  1665 E SurfaceFlinger: ro.sf.lcd_density must be defined as a build property
+07-17 16:06:38.464  1386  1435 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 9592832
+07-17 16:06:38.464  1486  1486 W SurfaceFlinger: FB is protected: PERMISSION_DENIED
+07-17 16:06:38.699  1628  1694 I GnssLocationProvider: WakeLock acquired by sendMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@77444f7)
+07-17 16:06:38.699  1628  1642 I GnssLocationProvider: WakeLock released by handleMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@77444f7)
+07-17 16:06:39.334  1497  3626 W DnsTlsSocket: SSL_connect error 5, errno=111
+07-17 16:06:39.413  1628  1642 E memtrack: Couldn't load memtrack module
+07-17 16:06:39.413  1628  1642 W android.os.Debug: failed to get memory consumption info: -1
+07-17 16:06:39.423  1628  1642 E memtrack: Couldn't load memtrack module
+07-17 16:06:39.423  1628  1642 W android.os.Debug: failed to get memory consumption info: -1
+07-17 16:06:39.701  1628  1694 I GnssLocationProvider: WakeLock acquired by sendMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@78ecf64)
+07-17 16:06:39.702  1628  1642 I GnssLocationProvider: WakeLock released by handleMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@78ecf64)
+07-17 16:06:40.150  4220  4335 D ProfileInstaller: Installing profile for chat.simplex.app.nome.dev
+07-17 16:06:40.705  1628  1694 I GnssLocationProvider: WakeLock acquired by sendMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@656f5cd)
+07-17 16:06:40.705  1628  1642 I GnssLocationProvider: WakeLock released by handleMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@656f5cd)
+07-17 16:06:41.710  1628  1694 I GnssLocationProvider: WakeLock acquired by sendMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@b794e82)
+07-17 16:06:41.710  1628  1642 I GnssLocationProvider: WakeLock released by handleMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@b794e82)
+07-17 16:06:42.716  1628  1694 I GnssLocationProvider: WakeLock acquired by sendMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@31e3993)
+07-17 16:06:42.716  1628  1642 I GnssLocationProvider: WakeLock released by handleMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@31e3993)
+07-17 16:06:43.725  1628  1694 I GnssLocationProvider: WakeLock acquired by sendMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@41b7dd0)
+07-17 16:06:43.725  1628  1642 I GnssLocationProvider: WakeLock released by handleMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@41b7dd0)
+07-17 16:06:44.734  1628  1694 I GnssLocationProvider: WakeLock acquired by sendMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@eea21c9)
+07-17 16:06:44.735  1628  1642 I GnssLocationProvider: WakeLock released by handleMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@eea21c9)
+07-17 16:06:44.742  1486  1665 E SurfaceFlinger: ro.sf.lcd_density must be defined as a build property
+07-17 16:06:44.742  1386  1435 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 9592832
+07-17 16:06:44.743  1486  1486 W SurfaceFlinger: FB is protected: PERMISSION_DENIED
+07-17 16:06:44.789  4341  4341 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+07-17 16:06:44.865  4341  4341 I app_process: The ClassLoaderContext is a special shared library.
+07-17 16:06:44.866  4341  4341 I app_process: The ClassLoaderContext is a special shared library.
+07-17 16:06:44.902  4341  4341 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+07-17 16:06:44.908  1628  1628 V SettingsProvider: Notifying for 0: content://settings/secure/accessibility_enabled
+07-17 16:06:45.745  1628  1694 I GnssLocationProvider: WakeLock acquired by sendMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@282a6fc)
+07-17 16:06:45.745  1628  1642 I GnssLocationProvider: WakeLock released by handleMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@282a6fc)
+07-17 16:06:45.963  4341  4341 W AccessibilityNodeInfoDumper: Fetch time: 6ms
+07-17 16:06:45.964  1628  2934 W WindowManager: removeWindowToken: Attempted to remove non-existing token: android.os.Binder@a71d0ce
+07-17 16:06:45.965  1628  1628 V SettingsProvider: Notifying for 0: content://settings/secure/accessibility_enabled
+07-17 16:06:45.968  1628  1628 V SettingsProvider: Notifying for 0: content://settings/system/accelerometer_rotation
+07-17 16:06:45.969  4341  4341 D AndroidRuntime: Shutting down VM

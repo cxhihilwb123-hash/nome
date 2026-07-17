@@ -1,6 +1,6 @@
 # Chat List Specification
 
-Source: `common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatListView.kt`
+Sources: `common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatListView.kt`, `common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.kt`, and `common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/`
 
 ---
 
@@ -15,12 +15,13 @@ Source: `common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatLis
 7. [Tag System](#7-tag-system)
 8. [UserPicker](#8-userpicker)
 9. [Source Files](#9-source-files)
+10. [Nome Android P07/P08 Production Home](#10-nome-android-p07p08-production-home)
 
 ---
 
 ## Executive Summary
 
-The Chat List is the landing screen of SimpleX Chat, rendering all conversations for the active user. Built around `ChatListView` (line 126 in `ChatListView.kt`), it provides a searchable, filterable `LazyColumn` of chat previews with a toolbar, tag-based filtering, and a user-switching side panel. The view adapts between one-hand UI mode (toolbar at bottom, reversed list) and standard mode (toolbar at top). Search also accepts SimpleX links for direct connection.
+The Chat List is the landing screen of SimpleX Chat, rendering conversations for the active user. The upstream `ChatListView` provides searchable, filterable chat previews, tag controls, and a user-switching side panel. Phase 2 Batch 2 adds a platform seam at the existing home selection point: Android renders a Nome P07/P08 read-only home over typed load/connectivity/core facts, while Desktop delegates the upstream `ChatListView` content unchanged.
 
 ---
 
@@ -53,7 +54,7 @@ ChatListView
 
 ## 2. ChatListView Composable
 
-**Location:** [`ChatListView.kt#L127`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatListView.kt#L127)
+**Location:** [`ChatListView()`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatListView.kt#L189-L254)
 
 ```kotlin
 fun ChatListView(
@@ -64,10 +65,10 @@ fun ChatListView(
 )
 ```
 
-### Initialization
+### Route-level notice and initialization
 
-- Shows "What's New" modal on first launch after update (line ~130), with a 1-second delay.
-- On desktop, closing a chat resets audio/video players (line ~138).
+- [`ChatListNoticeEffect`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatListView.kt#L177-L186) runs from `StartPartOfScreen` above the platform seam, preserving the "What's New"/updated-conditions modal and 1-second delay for either platform home renderer.
+- On desktop, closing a chat resets audio/video players.
 
 ### Layout Modes
 
@@ -88,8 +89,8 @@ The `oneHandUI` preference (`appPrefs.oneHandUI.state`) controls the layout:
 
 ### Android-specific
 
-- `SetNotificationsModeAdditions`: Notification permission setup (line ~184).
-- `UserPicker`: Overlay side panel for user switching (line ~192).
+- `SetNotificationsModeAdditions`: Notification permission setup.
+- `UserPicker`: Overlay side panel for user switching.
 
 ---
 
@@ -106,6 +107,10 @@ The `oneHandUI` preference (`appPrefs.oneHandUI.state`) controls the layout:
 | `chatModel.currentUser` | `ChatModel.currentUser` | Active user profile |
 | `chatModel.users` | `ChatModel.users` | All user profiles (for UserPicker) |
 | `chatModel.showChatPreviews` | `ChatModel.showChatPreviews` | Privacy toggle for message previews |
+| `chatModel.chatListLoadState` | `ChatListLoadState` | Generation-scoped `Initial`, `Loading`, `Loaded`, `Unavailable`, or `NoCurrentUser` fact |
+| `chatModel.currentChatListGeneration()` | active remote host + current user ID | Identity/host generation that a load result must match before rows can be replaced or exposed |
+| `NetworkObserver.shared.platformNetworkInfo` | nullable Android `UserNetworkInfo` | `null` before first platform observation; later online/offline describes device connectivity only |
+| `chatModel.chatRunning` | `Boolean?` | `null` starting, `true` running, `false` stopped; independent of list content and device connectivity |
 
 ---
 
@@ -113,7 +118,7 @@ The `oneHandUI` preference (`appPrefs.oneHandUI.state`) controls the layout:
 
 ### Active Filter Types
 
-Defined as sealed class `ActiveFilter` (line ~51):
+Defined as sealed class `ActiveFilter`:
 
 ```kotlin
 sealed class ActiveFilter {
@@ -136,7 +141,7 @@ sealed class ActiveFilter {
 
 ### Search Filtering
 
-The `filteredChats` function (line ~1188) applies filters in this order:
+The `filteredChats` function applies filters in this order:
 
 1. **SimpleX link match:** If a pasted link resolved to a known contact/group, show only that chat.
 2. **Text search:** Case-insensitive match against `chat.chatInfo.chatViewName`, `chat.chatInfo.fullName`, and `chat.chatInfo.localAlias`.
@@ -147,7 +152,7 @@ The `filteredChats` function (line ~1188) applies filters in this order:
 
 ### Search Bar
 
-`ChatListSearchBar` (line ~611) provides:
+`ChatListSearchBar` provides:
 - Text input with search icon.
 - SimpleX link detection: When a pasted string contains a single SimpleX link, it triggers `planAndConnect` for connection, suppressing normal search.
 - Unread filter toggle button (right side, when search is empty).
@@ -158,7 +163,7 @@ The `filteredChats` function (line ~1188) applies filters in this order:
 
 ## 5. Chat Preview
 
-**Location:** [`ChatPreviewView.kt#L40`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatPreviewView.kt#L40)
+**Location:** [`ChatPreviewView()`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatPreviewView.kt#L41-L52)
 
 ```kotlin
 fun ChatPreviewView(
@@ -201,7 +206,7 @@ When `chatModelDraftChatId` matches the chat ID, the preview shows a draft indic
 
 ## 6. ChatListNavLinkView
 
-**Location:** [`ChatListNavLinkView.kt#L37`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatListNavLinkView.kt#L37)
+**Location:** [`ChatListNavLinkView()`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatListNavLinkView.kt#L37)
 
 Routes each chat to the appropriate click action and context menu based on `chat.chatInfo`:
 
@@ -224,7 +229,7 @@ On desktop, the currently selected chat (`chatModel.chatId.value == chat.id`) re
 
 ### TagsView
 
-**Location:** [`ChatListView.kt#L929`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatListView.kt#L929)
+**Location:** [`TagsView()`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatListView.kt#L1055)
 
 Renders a horizontally scrollable row of tag chips (via `TagsRow`, which is a platform-specific `expect` composable).
 
@@ -244,7 +249,7 @@ Layout logic:
 
 ### TagListView
 
-**Location:** [`TagListView.kt#L48`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/TagListView.kt#L48)
+**Location:** [`TagListView()`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/TagListView.kt#L48)
 
 Full-screen tag management view opened from the "+" button or long-press menu.
 
@@ -263,7 +268,7 @@ fun TagListView(rhId: Long?, chat: Chat? = null, close: () -> Unit, reorderMode:
 
 ## 8. UserPicker
 
-**Location:** [`UserPicker.kt#L46`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/UserPicker.kt#L46)
+**Location:** [`UserPicker()`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/UserPicker.kt#L46-L50)
 
 ```kotlin
 fun UserPicker(
@@ -312,3 +317,69 @@ Uses `AnimatedViewState` (`GONE`, `VISIBLE`, `HIDING`) with a `MutableStateFlow`
 | `ShareListView.kt` | Share target list (forwarding flow) |
 | `TagListView.kt` | Tag management and assignment view |
 | `UserPicker.kt` | User switching side panel |
+| `PlatformHomeRoute.kt` | Shared platform seam at the existing normal-home selection point |
+| `NomeHomeStateAdapter.kt` | Android-only pure P07/P08 truth derivation |
+| `NomeHomeRoute.android.kt` | Android actual, P07/P08 renderer, and permitted existing chat-open navigation |
+| `PlatformHomeRoute.desktop.kt` | Desktop actual that invokes upstream `defaultContent` unchanged |
+
+---
+
+## 10. Nome Android P07/P08 Production Home
+
+### Source-set split
+
+[`PlatformHomeRoute()`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.kt#L16-L22) is deliberately only an `expect` seam. `StartPartOfScreen` keeps the original WhatsNew/updated-conditions effect above that seam and passes the existing `ChatListView` as `defaultContent`; the [Android actual](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeRoute.android.kt#L63-L123) renders Nome, and the [Desktop actual](../../common/src/desktopMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.desktop.kt#L9-L17) calls `defaultContent()` unchanged. The matching Desktop regression test executes the actual composable and observes that `defaultContent` is invoked because this is a narrowly justified `commonMain` wrapper, not a Desktop redesign.
+
+### Typed truth and stale-row boundary
+
+[`ChatListLoadGeneration`, `ChatListLoadState`, and `ChatListLoadResult`](../../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L81-L106) distinguish a response for a specific `(remoteHostId, userId)` from empty data. [`beginChatListLoad()` and `applyChatListLoadResult()`](../../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L264-L311) hide rows when requested and accept a success/failure only while its attempt ID and generation still match the active identity and host. [`apiGetChatsResult()`](../../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1054-L1081) preserves `NoCurrentUser`, `Failure`, and `Success` instead of collapsing all three to `emptyList()`.
+
+Android connectivity has a separate nullable fact: [`platformNetworkInfo`](../../common/src/androidMain/kotlin/chat/simplex/common/helpers/NetworkObserver.kt#L18-L24) is `null` until Android has made its first observation. It is not reconstructed from the legacy optimistic `ChatModel.networkInfo` default and it does not imply relay, service, or private-routing health.
+
+[`NomeHomeStateAdapter.derive()`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeStateAdapter.kt#L49-L112) produces three orthogonal dimensions:
+
+| Dimension | Values | Truth rule |
+|---|---|---|
+| content | `LOADING`, `FIRST_USE`, `TRUE_EMPTY`, `FILTERED_NO_RESULT`, `POPULATED`, `UNAVAILABLE` | Empty requires a matching-generation typed load success; switching or generation mismatch never exposes stale rows. |
+| connectivity | `UNKNOWN`, `ONLINE`, `DEVICE_OFFLINE` | Derived only from the nullable Android platform observation. |
+| core | `STARTING`, `RUNNING`, `STOPPED` | Derived only from `chatRunning`; stopped is not rewritten as empty or offline. |
+
+Content precedence is fail-closed: switching/unknown readiness/in-flight hidden rows first, explicit first-use next, then generation validity and typed failure, then populated/filter/true-empty classification. Cached rows are exposed only when their generation matches; a matching-generation `UNAVAILABLE` may retain those rows alongside the error panel.
+
+The pure adapter is intentionally broader than current route reachability. The unchanged root
+routes no-current-user into onboarding before `PlatformHomeRoute`, so `FIRST_USE` is currently a
+defensive renderer/test branch. The bounded Android home also exposes no filter producer or clear
+control, so `FILTERED_NO_RESULT` is likewise defensive on a fresh production process. Neither is
+claimed as a passed production P08 route until a separately scoped route/filter change exists.
+
+### P07 populated, read-only home
+
+[`NomeHomeRouteContent()`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeRoute.android.kt#L125-L280) preserves the order returned by the existing `filteredChats` projection and renders profile name, chat name/type, timestamp, unread count, and favorite status. Message preview text and its spoken equivalent are included only while the existing `showChatPreviews` privacy preference permits them. Batch 2 adds no home mutation affordance: no favorite toggle, mark-read action, mute, delete, tag editor, profile-switch redesign, connection mutation, search field, or filter control.
+
+Opening an already-ready direct, group, or local chat is existing navigation, not a new home mutation. It is enabled only while the core is `RUNNING`; contact requests, pending connections, invalid data, not-ready rows, contact cards, pending-deletion rows, and all rows while stopped remain non-clickable/read-only. Composer and send behavior remain owned by the existing chat destination and are outside Batch 2.
+
+### P08 loading and non-populated truth
+
+The renderer keeps these states distinct:
+
+| State | Renderer presentation and current route reachability |
+|---|---|
+| `LOADING` | production-reachable skeleton with polite live-region/state semantics |
+| `FIRST_USE` | explicit no-current-user/first-use panel; defensive renderer/test branch because onboarding currently consumes no-user first |
+| `TRUE_EMPTY` | production-reachable successful matching-generation empty list |
+| `FILTERED_NO_RESULT` | loaded base list plus active filter hides every row; defensive renderer/test branch because this bounded home has no filter producer |
+| `UNAVAILABLE` | load result cannot be verified; never presented as true empty |
+| `UNAVAILABLE` with matching cached rows | error panel plus cached rows; never success/empty, and existing navigation remains available when the core/readiness/deletion guards allow it |
+| initial connectivity unknown | separate “checking device connection” panel |
+| device offline | separate device-only offline panel; matching cached rows remain readable |
+| core stopped | separate stopped panel; matching cached rows remain readable but cannot open |
+
+The approved P08 image is a visual hierarchy reference for the non-populated family; the production adapter does not render contradictory skeleton and true-empty facts simultaneously.
+
+### Tests and exclusions
+
+The exact Batch 2 contract tests are [`NomeHomeStateAdapterTest`](../../android/src/test/java/chat/simplex/app/nome/home/NomeHomeStateAdapterTest.kt#L16-L242), [`NomeHomeComposeTest`](../../android/src/androidTest/java/chat/simplex/app/nome/home/NomeHomeComposeTest.kt#L53-L562), [`NomeHomePackagingTest`](../../android/src/androidTest/java/chat/simplex/app/nome/home/NomeHomePackagingTest.kt#L13-L38), and [`PlatformHomeRouteDesktopTest`](../../common/src/desktopTest/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRouteDesktopTest.kt#L14-L55). The separate argument-gated [`NomeHomeCoreCycleTest`](../../android/src/androidTest/java/chat/simplex/app/nome/home/NomeHomeCoreCycleTest.kt#L1-L90) is a real-core evidence gate: it waits for a current user, running core, and non-empty rows, then asserts the exact cached chat-ID sequence across the official stop and start paths.
+
+The debug-only [`NomeHomeEvidenceActivity`](../../android/src/debug/java/chat/simplex/app/nome/home/NomeHomeEvidenceActivity.kt#L45-L253) hosts the production renderer with an explicit “not live core” badge, localized synthetic profile, case locale, and stable cross-year row timestamp. [`NomeHomeScreenshotTest`](../../android/src/androidTest/java/chat/simplex/app/nome/home/NomeHomeScreenshotTest.kt#L18-L177) defines and executed an API 35/Asia-Shanghai matrix of 10 states × 2 locales × 2 themes × 2 font scales = 80 captures, including unavailable-with-cached, and asserts a device year newer than the fixture. The batch evidence root records the capture, comparison, real-core, and release-isolation execution artifacts without treating the fixture as live core. Formal review status is owned only by that root's `review-rounds.md` and is not asserted by this specification.
+
+This batch does not implement the one-time locale marker, favorite/profile/connection mutations, search, filter controls, composer/send, Haskell/native core changes, database-format changes, or protocol/command/event additions. Its first-use and filtered-no-result renderer tests therefore do not substitute for production-route evidence.

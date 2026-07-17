@@ -14,14 +14,14 @@ android {
     defaultConfig {
         applicationId = "chat.simplex.app"
         namespace = "chat.simplex.app"
-        minSdk = 26
+        minSdk = 28
         targetSdk = 35
         // !!!
         // skip version code after release to F-Droid, as it uses two version codes
         versionCode = (extra["android.version_code"] as String).toInt()
         versionName = extra["android.version_name"] as String
 
-        testInstrumentationRunner = "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -129,6 +129,8 @@ android {
 }
 
 dependencies {
+    val composeVersion = rootProject.extra["compose.version"] as String
+
     implementation(project(":common"))
     implementation("androidx.core:core-ktx:1.13.1")
     //implementation("androidx.compose.ui:ui:${rootProject.extra["compose.version"] as String}")
@@ -153,8 +155,11 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
-    //androidTestImplementation("androidx.compose.ui:ui-test-junit4:$compose_version")
-    debugImplementation("androidx.compose.ui:ui-tooling:1.6.4")
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4:$composeVersion")
+    debugImplementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
+    debugImplementation("androidx.compose.ui:ui-test-manifest:$composeVersion")
+    debugImplementation("androidx.compose.ui:ui-tooling-preview:$composeVersion")
+    debugImplementation("androidx.compose.ui:ui-tooling:$composeVersion")
 }
 
 tasks {

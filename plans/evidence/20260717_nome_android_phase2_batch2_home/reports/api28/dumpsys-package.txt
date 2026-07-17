@@ -1,0 +1,317 @@
+Activity Resolver Table:
+  Full MIME Types:
+      */*:
+        75e2bda chat.simplex.app.nome.dev/chat.simplex.app.MainActivity filter 30030e9
+          Action: "android.intent.action.SEND"
+          Category: "android.intent.category.DEFAULT"
+          Type: "*"
+          mPriority=0, mOrder=0, mHasPartialTypes=true
+      image/*:
+        75e2bda chat.simplex.app.nome.dev/chat.simplex.app.MainActivity filter 332016e
+          Action: "android.intent.action.SEND_MULTIPLE"
+          Category: "android.intent.category.DEFAULT"
+          Type: "image"
+          mPriority=0, mOrder=0, mHasPartialTypes=true
+
+  Wild MIME Types:
+      *:
+        75e2bda chat.simplex.app.nome.dev/chat.simplex.app.MainActivity filter 30030e9
+          Action: "android.intent.action.SEND"
+          Category: "android.intent.category.DEFAULT"
+          Type: "*"
+          mPriority=0, mOrder=0, mHasPartialTypes=true
+      image:
+        75e2bda chat.simplex.app.nome.dev/chat.simplex.app.MainActivity filter 332016e
+          Action: "android.intent.action.SEND_MULTIPLE"
+          Category: "android.intent.category.DEFAULT"
+          Type: "image"
+          mPriority=0, mOrder=0, mHasPartialTypes=true
+
+  Schemes:
+      http:
+        75e2bda chat.simplex.app.nome.dev/chat.simplex.app.MainActivity filter ed1d570
+          Action: "android.intent.action.VIEW"
+          Category: "android.intent.category.DEFAULT"
+          Category: "android.intent.category.BROWSABLE"
+          Scheme: "http"
+          Scheme: "https"
+          Authority: "simplex.chat": -1
+          Authority: "smp4.simplex.im": -1
+          Authority: "smp5.simplex.im": -1
+          Authority: "smp6.simplex.im": -1
+          Authority: "smp7.simplex.im": -1
+          Authority: "smp8.simplex.im": -1
+          Authority: "smp9.simplex.im": -1
+          Authority: "smp10.simplex.im": -1
+          Authority: "smp11.simplex.im": -1
+          Authority: "smp12.simplex.im": -1
+          Authority: "smp14.simplex.im": -1
+          Authority: "smp15.simplex.im": -1
+          Authority: "smp16.simplex.im": -1
+          Authority: "smp17.simplex.im": -1
+          Authority: "smp18.simplex.im": -1
+          Authority: "smp19.simplex.im": -1
+          Authority: "smp1.simplexonflux.com": -1
+          Authority: "smp2.simplexonflux.com": -1
+          Authority: "smp3.simplexonflux.com": -1
+          Authority: "smp4.simplexonflux.com": -1
+          Authority: "smp5.simplexonflux.com": -1
+          Authority: "smp6.simplexonflux.com": -1
+          Path: "PatternMatcher{PREFIX: /invitation}"
+          Path: "PatternMatcher{PREFIX: /contact}"
+          Path: "PatternMatcher{PREFIX: /a}"
+          Path: "PatternMatcher{PREFIX: /c}"
+          Path: "PatternMatcher{PREFIX: /g}"
+          Path: "PatternMatcher{PREFIX: /i}"
+          AutoVerify=true
+      https:
+        75e2bda chat.simplex.app.nome.dev/chat.simplex.app.MainActivity filter ed1d570
+          Action: "android.intent.action.VIEW"
+          Category: "android.intent.category.DEFAULT"
+          Category: "android.intent.category.BROWSABLE"
+          Scheme: "http"
+          Scheme: "https"
+          Authority: "simplex.chat": -1
+          Authority: "smp4.simplex.im": -1
+          Authority: "smp5.simplex.im": -1
+          Authority: "smp6.simplex.im": -1
+          Authority: "smp7.simplex.im": -1
+          Authority: "smp8.simplex.im": -1
+          Authority: "smp9.simplex.im": -1
+          Authority: "smp10.simplex.im": -1
+          Authority: "smp11.simplex.im": -1
+          Authority: "smp12.simplex.im": -1
+          Authority: "smp14.simplex.im": -1
+          Authority: "smp15.simplex.im": -1
+          Authority: "smp16.simplex.im": -1
+          Authority: "smp17.simplex.im": -1
+          Authority: "smp18.simplex.im": -1
+          Authority: "smp19.simplex.im": -1
+          Authority: "smp1.simplexonflux.com": -1
+          Authority: "smp2.simplexonflux.com": -1
+          Authority: "smp3.simplexonflux.com": -1
+          Authority: "smp4.simplexonflux.com": -1
+          Authority: "smp5.simplexonflux.com": -1
+          Authority: "smp6.simplexonflux.com": -1
+          Path: "PatternMatcher{PREFIX: /invitation}"
+          Path: "PatternMatcher{PREFIX: /contact}"
+          Path: "PatternMatcher{PREFIX: /a}"
+          Path: "PatternMatcher{PREFIX: /c}"
+          Path: "PatternMatcher{PREFIX: /g}"
+          Path: "PatternMatcher{PREFIX: /i}"
+          AutoVerify=true
+      simplex:
+        75e2bda chat.simplex.app.nome.dev/chat.simplex.app.MainActivity filter 21eabb3
+          Action: "android.intent.action.VIEW"
+          Category: "android.intent.category.DEFAULT"
+          Category: "android.intent.category.BROWSABLE"
+          Scheme: "simplex"
+
+  Non-Data Actions:
+      android.intent.action.MAIN:
+        911480b chat.simplex.app.nome.dev/chat.simplex.app.MainActivity_dark_blue filter 1ce500f
+          Action: "android.intent.action.MAIN"
+          Category: "android.intent.category.LAUNCHER"
+        3d136e8 chat.simplex.app.nome.dev/chat.simplex.app.MainActivity_default filter bd6d89c
+          Action: "android.intent.action.MAIN"
+          Category: "android.intent.category.LAUNCHER"
+
+  MIME Typed Actions:
+      android.intent.action.SEND:
+        75e2bda chat.simplex.app.nome.dev/chat.simplex.app.MainActivity filter 30030e9
+          Action: "android.intent.action.SEND"
+          Category: "android.intent.category.DEFAULT"
+          Type: "*"
+          mPriority=0, mOrder=0, mHasPartialTypes=true
+      android.intent.action.SEND_MULTIPLE:
+        75e2bda chat.simplex.app.nome.dev/chat.simplex.app.MainActivity filter 332016e
+          Action: "android.intent.action.SEND_MULTIPLE"
+          Category: "android.intent.category.DEFAULT"
+          Type: "image"
+          mPriority=0, mOrder=0, mHasPartialTypes=true
+
+Receiver Resolver Table:
+  Non-Data Actions:
+      android.intent.action.BATTERY_OKAY:
+        e3f4101 chat.simplex.app.nome.dev/androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryNotLowProxy filter c071235
+          Action: "android.intent.action.BATTERY_OKAY"
+          Action: "android.intent.action.BATTERY_LOW"
+      android.intent.action.ACTION_POWER_DISCONNECTED:
+        e832ba6 chat.simplex.app.nome.dev/androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryChargingProxy filter 7457c6c
+          Action: "android.intent.action.ACTION_POWER_CONNECTED"
+          Action: "android.intent.action.ACTION_POWER_DISCONNECTED"
+      androidx.profileinstaller.action.SAVE_PROFILE:
+        d8a59e7 chat.simplex.app.nome.dev/androidx.profileinstaller.ProfileInstallReceiver filter 5a452ed
+          Action: "androidx.profileinstaller.action.SAVE_PROFILE"
+      android.intent.action.DEVICE_STORAGE_LOW:
+        af6d994 chat.simplex.app.nome.dev/androidx.work.impl.background.systemalarm.ConstraintProxy$StorageNotLowProxy filter 8d16ca
+          Action: "android.intent.action.DEVICE_STORAGE_LOW"
+          Action: "android.intent.action.DEVICE_STORAGE_OK"
+      android.net.conn.CONNECTIVITY_CHANGE:
+        dddec3d chat.simplex.app.nome.dev/androidx.work.impl.background.systemalarm.ConstraintProxy$NetworkStateProxy filter 340703b
+          Action: "android.net.conn.CONNECTIVITY_CHANGE"
+      android.intent.action.DEVICE_STORAGE_OK:
+        af6d994 chat.simplex.app.nome.dev/androidx.work.impl.background.systemalarm.ConstraintProxy$StorageNotLowProxy filter 8d16ca
+          Action: "android.intent.action.DEVICE_STORAGE_LOW"
+          Action: "android.intent.action.DEVICE_STORAGE_OK"
+      androidx.profileinstaller.action.INSTALL_PROFILE:
+        d8a59e7 chat.simplex.app.nome.dev/androidx.profileinstaller.ProfileInstallReceiver filter bbd517
+          Action: "androidx.profileinstaller.action.INSTALL_PROFILE"
+      android.intent.action.BATTERY_LOW:
+        e3f4101 chat.simplex.app.nome.dev/androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryNotLowProxy filter c071235
+          Action: "android.intent.action.BATTERY_OKAY"
+          Action: "android.intent.action.BATTERY_LOW"
+      android.intent.action.TIMEZONE_CHANGED:
+        9a65c32 chat.simplex.app.nome.dev/androidx.work.impl.background.systemalarm.RescheduleReceiver filter d43f358
+          Action: "android.intent.action.BOOT_COMPLETED"
+          Action: "android.intent.action.TIME_SET"
+          Action: "android.intent.action.TIMEZONE_CHANGED"
+      android.intent.action.TIME_SET:
+        9a65c32 chat.simplex.app.nome.dev/androidx.work.impl.background.systemalarm.RescheduleReceiver filter d43f358
+          Action: "android.intent.action.BOOT_COMPLETED"
+          Action: "android.intent.action.TIME_SET"
+          Action: "android.intent.action.TIMEZONE_CHANGED"
+      androidx.profileinstaller.action.SKIP_FILE:
+        d8a59e7 chat.simplex.app.nome.dev/androidx.profileinstaller.ProfileInstallReceiver filter 1b0ed04
+          Action: "androidx.profileinstaller.action.SKIP_FILE"
+      androidx.profileinstaller.action.BENCHMARK_OPERATION:
+        d8a59e7 chat.simplex.app.nome.dev/androidx.profileinstaller.ProfileInstallReceiver filter 889b522
+          Action: "androidx.profileinstaller.action.BENCHMARK_OPERATION"
+      android.intent.action.BOOT_COMPLETED:
+        c98ad83 chat.simplex.app.nome.dev/chat.simplex.app.SimplexService$StartReceiver filter 512ecbe
+          Action: "android.intent.action.BOOT_COMPLETED"
+        9a65c32 chat.simplex.app.nome.dev/androidx.work.impl.background.systemalarm.RescheduleReceiver filter d43f358
+          Action: "android.intent.action.BOOT_COMPLETED"
+          Action: "android.intent.action.TIME_SET"
+          Action: "android.intent.action.TIMEZONE_CHANGED"
+      android.intent.action.ACTION_POWER_CONNECTED:
+        e832ba6 chat.simplex.app.nome.dev/androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryChargingProxy filter 7457c6c
+          Action: "android.intent.action.ACTION_POWER_CONNECTED"
+          Action: "android.intent.action.ACTION_POWER_DISCONNECTED"
+      androidx.work.diagnostics.REQUEST_DIAGNOSTICS:
+        831fb00 chat.simplex.app.nome.dev/androidx.work.impl.diagnostics.DiagnosticsReceiver filter 2cdd596
+          Action: "androidx.work.diagnostics.REQUEST_DIAGNOSTICS"
+      android.intent.action.MY_PACKAGE_REPLACED:
+        9c20f39 chat.simplex.app.nome.dev/chat.simplex.app.SimplexService$AppUpdateReceiver filter 624e11f
+          Action: "android.intent.action.MY_PACKAGE_REPLACED"
+      androidx.work.impl.background.systemalarm.UpdateProxies:
+        75a097e chat.simplex.app.nome.dev/androidx.work.impl.background.systemalarm.ConstraintProxyUpdateReceiver filter 8239cb1
+          Action: "androidx.work.impl.background.systemalarm.UpdateProxies"
+
+Permissions:
+  Permission [chat.simplex.app.nome.dev.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION] (ca07eab):
+    sourcePackage=chat.simplex.app.nome.dev
+    uid=10088 gids=null type=0 prot=signature
+    perm=Permission{5ae9edf chat.simplex.app.nome.dev.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION}
+    packageSetting=PackageSetting{c18e8a1 chat.simplex.app.nome.dev/10088}
+
+Registered ContentProviders:
+  chat.simplex.app.nome.dev/androidx.core.content.FileProvider:
+    Provider{f3bc72c chat.simplex.app.nome.dev/androidx.core.content.FileProvider}
+  chat.simplex.app.nome.dev/androidx.startup.InitializationProvider:
+    Provider{b2b65f5 chat.simplex.app.nome.dev/androidx.startup.InitializationProvider}
+
+ContentProvider Authorities:
+  [chat.simplex.app.nome.dev.provider]:
+    Provider{f3bc72c chat.simplex.app.nome.dev/androidx.core.content.FileProvider}
+      applicationInfo=ApplicationInfo{b093f8a chat.simplex.app.nome.dev}
+  [chat.simplex.app.nome.dev.androidx-startup]:
+    Provider{b2b65f5 chat.simplex.app.nome.dev/androidx.startup.InitializationProvider}
+      applicationInfo=ApplicationInfo{b093f8a chat.simplex.app.nome.dev}
+
+Key Set Manager:
+  [chat.simplex.app.nome.dev]
+      Signing KeySets: 20
+
+Packages:
+  Package [chat.simplex.app.nome.dev] (c18e8a1):
+    userId=10088
+    pkg=Package{30849fb chat.simplex.app.nome.dev}
+    codePath=/data/app/chat.simplex.app.nome.dev-QOfWo3DGLli8d8_YEqyVkQ==
+    resourcePath=/data/app/chat.simplex.app.nome.dev-QOfWo3DGLli8d8_YEqyVkQ==
+    legacyNativeLibraryDir=/data/app/chat.simplex.app.nome.dev-QOfWo3DGLli8d8_YEqyVkQ==/lib
+    primaryCpuAbi=arm64-v8a
+    secondaryCpuAbi=null
+    versionCode=358 minSdk=28 targetSdk=35
+    versionName=6.5.6
+    splits=[base]
+    apkSigningVersion=2
+    applicationInfo=ApplicationInfo{b093f8a chat.simplex.app.nome.dev}
+    flags=[ DEBUGGABLE HAS_CODE ALLOW_CLEAR_USER_DATA LARGE_HEAP ]
+    privateFlags=[ PRIVATE_FLAG_ACTIVITIES_RESIZE_MODE_RESIZEABLE_VIA_SDK_VERSION HAS_DOMAIN_URLS PARTIALLY_DIRECT_BOOT_AWARE ]
+    dataDir=/data/user/0/chat.simplex.app.nome.dev
+    supportsScreens=[small, medium, large, xlarge, resizeable, anyDensity]
+    usesOptionalLibraries:
+      androidx.window.extensions
+      androidx.window.sidecar
+    timeStamp=2026-07-17 16:05:58
+    firstInstallTime=2026-07-17 14:45:44
+    lastUpdateTime=2026-07-17 16:05:58
+    signatures=PackageSignatures{9484d52 version:2, signatures:[25dad336], past signatures:[]}
+    installPermissionsFixed=true
+    pkgFlags=[ DEBUGGABLE HAS_CODE ALLOW_CLEAR_USER_DATA LARGE_HEAP ]
+    declared permissions:
+      chat.simplex.app.nome.dev.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION: prot=signature, INSTALLED
+    requested permissions:
+      android.permission.CAMERA
+      android.permission.POST_NOTIFICATIONS
+      android.permission.VIDEO_CAPTURE
+      android.permission.RECORD_AUDIO
+      android.permission.MODIFY_AUDIO_SETTINGS
+      android.permission.FOREGROUND_SERVICE
+      android.permission.WAKE_LOCK
+      android.permission.RECEIVE_BOOT_COMPLETED
+      android.permission.VIBRATE
+      android.permission.INTERNET
+      android.permission.ACCESS_NETWORK_STATE
+      android.permission.WRITE_EXTERNAL_STORAGE
+      android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+      android.permission.USE_FULL_SCREEN_INTENT
+      android.permission.FOREGROUND_SERVICE_REMOTE_MESSAGING
+      android.permission.FOREGROUND_SERVICE_MICROPHONE
+      android.permission.FOREGROUND_SERVICE_CAMERA
+      android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK
+      android.permission.USE_BIOMETRIC
+      android.permission.USE_FINGERPRINT
+      chat.simplex.app.nome.dev.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+      android.permission.READ_EXTERNAL_STORAGE
+    install permissions:
+      android.permission.MODIFY_AUDIO_SETTINGS: granted=true
+      chat.simplex.app.nome.dev.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION: granted=true
+      android.permission.FOREGROUND_SERVICE: granted=true
+      android.permission.RECEIVE_BOOT_COMPLETED: granted=true
+      android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS: granted=true
+      android.permission.INTERNET: granted=true
+      android.permission.ACCESS_NETWORK_STATE: granted=true
+      android.permission.USE_FINGERPRINT: granted=true
+      android.permission.VIBRATE: granted=true
+      android.permission.USE_BIOMETRIC: granted=true
+      android.permission.WAKE_LOCK: granted=true
+    User 0: ceDataInode=123177 installed=true hidden=false suspended=false stopped=false notLaunched=false enabled=0 instant=false virtual=false
+      gids=[3003]
+      runtime permissions:
+      enabledComponents:
+        chat.simplex.app.SimplexService$StartReceiver
+        chat.simplex.app.SimplexService$AppUpdateReceiver
+        androidx.work.impl.background.systemalarm.RescheduleReceiver
+        androidx.work.impl.background.systemjob.SystemJobService
+
+Package Changes:
+  Sequence number=11
+  User 0:
+    seq=1, package=com.google.android.setupwizard
+    seq=3, package=com.google.android.apps.messaging
+    seq=8, package=com.google.android.gms
+    seq=9, package=chat.simplex.app.nome.dev
+    seq=10, package=chat.simplex.app.nome.dev.test
+
+
+Dexopt state:
+  [chat.simplex.app.nome.dev]
+    path: /data/app/chat.simplex.app.nome.dev-QOfWo3DGLli8d8_YEqyVkQ==/base.apk
+      arm64: [status=extract] [reason=boot]
+
+
+Compiler stats:
+  [chat.simplex.app.nome.dev]
+     base.apk - 650

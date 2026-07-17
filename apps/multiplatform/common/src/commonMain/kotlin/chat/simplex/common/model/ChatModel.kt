@@ -78,6 +78,33 @@ object ConnectProgressManager {
 
 val connectProgressManager = ConnectProgressManager
 
+@Immutable
+data class ChatListLoadGeneration(
+  val remoteHostId: Long?,
+  val userId: Long,
+)
+
+@Immutable
+sealed class ChatListLoadState {
+  data object Initial: ChatListLoadState()
+  data class Loading(
+    val generation: ChatListLoadGeneration?,
+    val hideRows: Boolean,
+  ): ChatListLoadState()
+  data class Loaded(val generation: ChatListLoadGeneration): ChatListLoadState()
+  data class Unavailable(val generation: ChatListLoadGeneration?): ChatListLoadState()
+  data class NoCurrentUser(val remoteHostId: Long?): ChatListLoadState()
+}
+
+sealed class ChatListLoadResult {
+  data class Success(
+    val generation: ChatListLoadGeneration,
+    val chats: List<Chat>,
+  ): ChatListLoadResult()
+  data class Failure(val generation: ChatListLoadGeneration): ChatListLoadResult()
+  data class NoCurrentUser(val remoteHostId: Long?): ChatListLoadResult()
+}
+
 object ChannelRelaysModel {
   val groupId = mutableStateOf<Long?>(null)
   val groupRelays = mutableStateListOf<GroupRelay>()
@@ -132,6 +159,9 @@ object ChatModel {
   val secondaryChatsContext = mutableStateOf<ChatsContext?>(null)
   // declaration of chatsContext should be before any other variable that is taken from ChatsContext class and used in the model, otherwise, strange crash with NullPointerException for "this" parameter in random functions
   val chats: State<List<Chat>> = chatsContext.chats
+  val chatListLoadState = mutableStateOf<ChatListLoadState>(ChatListLoadState.Initial)
+  private val nextChatListLoadAttemptId = AtomicLong(0)
+  private val activeChatListLoadAttemptId = AtomicLong(0)
   // rhId, chatId
   val deletedChats = mutableStateOf<List<Pair<Long?, String>>>(emptyList())
   val creatingChannelId = mutableStateOf<String?>(null)
@@ -230,6 +260,55 @@ object ChatModel {
   fun remoteHostId(): Long? = currentRemoteHost.value?.remoteHostId
   val remoteHostPairing = mutableStateOf<Pair<RemoteHostInfo?, RemoteHostSessionState>?>(null)
   val remoteCtrlSession = mutableStateOf<RemoteCtrlSession?>(null)
+
+  fun currentChatListGeneration(rhId: Long? = remoteHostId()): ChatListLoadGeneration? =
+    currentUser.value?.let { ChatListLoadGeneration(rhId, it.userId) }
+
+  fun beginChatListLoad(rhId: Long?, hideRows: Boolean): Long {
+    val attemptId = nextChatListLoadAttemptId.incrementAndGet()
+    activeChatListLoadAttemptId.set(attemptId)
+    chatListLoadState.value = ChatListLoadState.Loading(
+      generation = currentChatListGeneration(rhId),
+      hideRows = hideRows,
+    )
+    return attemptId
+  }
+
+  fun applyChatListLoadResult(
+    result: ChatListLoadResult,
+    attemptId: Long,
+    keepingChatId: String? = null,
+  ): Boolean {
+    if (activeChatListLoadAttemptId.get() != attemptId) return false
+    return when (result) {
+      is ChatListLoadResult.Success -> {
+        if (currentChatListGeneration() == result.generation) {
+          chatsContext.updateChats(result.chats, keepingChatId)
+          chatListLoadState.value = ChatListLoadState.Loaded(result.generation)
+          true
+        } else {
+          false
+        }
+      }
+      is ChatListLoadResult.Failure -> {
+        if (currentChatListGeneration() == result.generation) {
+          chatListLoadState.value = ChatListLoadState.Unavailable(result.generation)
+          true
+        } else {
+          false
+        }
+      }
+      is ChatListLoadResult.NoCurrentUser -> {
+        if (currentUser.value == null && remoteHostId() == result.remoteHostId) {
+          chatsContext.updateChats(emptyList(), keepingChatId)
+          chatListLoadState.value = ChatListLoadState.NoCurrentUser(result.remoteHostId)
+          true
+        } else {
+          false
+        }
+      }
+    }
+  }
 
   val processedCriticalError: ProcessedErrors<AgentErrorType.CRITICAL> = ProcessedErrors(60_000)
   val processedInternalError: ProcessedErrors<AgentErrorType.INTERNAL> = ProcessedErrors(20_000)

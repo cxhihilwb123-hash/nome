@@ -1,0 +1,17 @@
+Verifies
+Verified using v1 scheme (JAR signing): false
+Verified using v2 scheme (APK Signature Scheme v2): true
+Verified using v3 scheme (APK Signature Scheme v3): true
+Verified using v3.1 scheme (APK Signature Scheme v3.1): false
+Verified using v4 scheme (APK Signature Scheme v4): false
+Verified for SourceStamp: false
+Number of signers: 1
+Signer #1 certificate DN: CN=Evgeny Poberezkin, O=SimpleX Chat, C=UK
+Signer #1 certificate SHA-256 digest: 3c52c4fd3cad1c07c9b00a7080e358fab9fefcb8af5aec147765f16d0f21ad85
+Signer #1 certificate SHA-1 digest: da31bcac122f6513d12e541e6598b943b84468bd
+Signer #1 certificate MD5 digest: e65c76af43af851b8e2b6d8dec1c04e4
+Signer #1 key algorithm: RSA
+Signer #1 key size (bits): 2048
+Signer #1 public key SHA-256 digest: 32b36e1f93ded5a2184492709af0ec0cf73851af9f47a96a1513fb64f1f64ded
+Signer #1 public key SHA-1 digest: dd970544faab349ffa79f5970530e6f59cb73dea
+Signer #1 public key MD5 digest: fabe106f53dd68f6be5af28fe04c0788
