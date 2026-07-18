@@ -7,6 +7,7 @@ import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.semantics.Role
 import chat.simplex.common.ui.nome.accessibility.nomeMinimumTouchTarget
 import chat.simplex.common.ui.nome.accessibility.nomeTalkBackSemantics
@@ -27,6 +28,7 @@ fun NomeButton(
   enabled: Boolean = true,
   semanticsLabel: String? = null,
   stateDescription: String? = null,
+  shape: Shape? = null,
   leadingIcon: (@Composable () -> Unit)? = null,
 ) {
   val colors = NomeTheme.colors
@@ -52,7 +54,7 @@ fun NomeButton(
         enabled = enabled,
       ),
     enabled = enabled,
-    shape = NomeTheme.shapes.control,
+    shape = shape ?: NomeTheme.shapes.control,
     border = null,
     colors = ButtonDefaults.buttonColors(
       backgroundColor = backgroundColor,

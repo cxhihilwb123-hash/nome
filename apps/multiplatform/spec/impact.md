@@ -91,7 +91,11 @@ Path aliases are relative to `apps/multiplatform/`: `CM` = `common/src/commonMai
 | `android/src/androidTest/java/chat/simplex/app/nome/**` | PC24, PC32 | Medium | Compose semantics/contrast/48dp/200%, minSdk/package isolation, and API 35 native screenshot suites. |
 | `android/build.gradle.kts`; `common/build.gradle.kts` | PC32 | Medium | minSdk 28 plus AndroidX Compose test/tooling support; no native rebuild. |
 
-All PC32 implementation batches that touch this scope route through `spec/client/nome-android-ui.md` and `product/views/nome-android.md`. The batch gate remains bilingual coverage, light/dark coverage, complete states, accessibility, real-core validation, native screenshot comparison, and two consecutive zero-issue reviews. Broad Desktop, iOS, and Haskell/native core work is not an implementation target; Batch 2's narrow Desktop fallback actual is listed separately below.
+All PC32 implementation groups that touch this scope route through `spec/client/nome-android-ui.md`
+and `product/views/nome-android.md`. Ordinary UI groups use focused tests/compile, API 35
+production smoke, one primary side-by-side page-baseline comparison, affected accessibility, and
+one review; full device/language/theme/accessibility/release matrices run at milestones/final.
+Broad Desktop, iOS, and Haskell/native core work is not an implementation target.
 
 ### PC32 Phase 2 Batch 2 exact production sources
 
@@ -127,8 +131,21 @@ The only Desktop implementation change is the required fallback actual for the s
 | `common/src/desktopTest/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRouteDesktopTest.kt` | PC1, PC32 | Medium | Executes the Desktop actual in a runtime composition and observes invocation of the unchanged fallback content. |
 
 The pure renderer includes first-use and filtered-no-result branches, but the production root
-consumes no-user in onboarding and the bounded home has no active-filter producer. They remain
-defensive test branches with open production-reachability gates.
+consumes no-user in onboarding. The later P09 producer makes filtered-no-result reachable only for
+an active nonblank query over an available loaded base; this does not change the frozen P08 result.
+
+### PC32 Milestone 2 P09/P10 exact production sources
+
+| Exact source or test path | Product concepts | Risk | P09/P10 responsibility |
+|---|---|---|---|
+| `common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeRoute.android.kt` | PC1, PC24, PC32 | High | Adds P09 query ownership, guarded result navigation, and P10 Home entry over frozen Home state. |
+| `common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeSearchStateAdapter.kt` | PC1, PC32 | Medium | Groups only official filtered direct/group/channel/note rows. |
+| `common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeSearchRoute.android.kt` | PC1, PC24, PC32 | Medium | P09 visual-acceptance route, truthful scope/policy sections, 48dp actions, and back behavior. |
+| `common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatListView.kt` | PC1, PC12, PC32 | High | Reuses the existing New Chat modal and optionally returns to the official user picker. |
+| `common/src/commonMain/kotlin/chat/simplex/common/views/newchat/{NewChatSheet.kt,PlatformNewChatHub.kt}` | PC12, PC19, PC31, PC32 | Medium | Carries actual profile display data and the existing four action closures through the P10 seam. |
+| `common/src/androidMain/kotlin/chat/simplex/common/views/newchat/PlatformNewChatHub.android.kt` | PC12, PC19, PC24, PC31, PC32 | Medium | Android P10 visual-acceptance renderer. |
+| `common/src/desktopMain/kotlin/chat/simplex/common/views/newchat/PlatformNewChatHub.desktop.kt` | PC12, PC32 | Low | Invokes the legacy New Chat content unchanged. |
+| `android/src/androidTest/java/chat/simplex/app/nome/{home,newchat}/**` | PC1, PC12, PC24, PC32 | Medium | Focused grouping, truth-boundary, 48dp/back, and one-to-one callback tests. |
 
 Batch 2 does not add favorite mutation, profile-switch redesign, connection mutation, search/filter UI, composer/send behavior, locale-marker persistence, or any Haskell/native core, database-format, protocol, command, or event change. Those surfaces remain transitive preservation scope only.
 
@@ -340,7 +357,10 @@ Path prefix: `common/src/commonMain/kotlin/chat/simplex/common/`
 | Source File | Product Concepts Affected | Risk Level | Notes |
 |-------------|--------------------------|------------|-------|
 | `views/newchat/NewChatView.kt` | PC12, PC29, PC32 | High | New connection creation — onramp for all contacts |
-| `views/newchat/NewChatSheet.kt` | PC12 | Medium | Bottom sheet with connection options |
+| `views/newchat/NewChatSheet.kt` | PC12, PC32 | Medium | Owns the existing four connection/group/channel callbacks and delegates Android P10 presentation through the platform seam |
+| `views/newchat/PlatformNewChatHub.kt` | PC12, PC19, PC31, PC32 | Medium | P10 presentation-only expect seam; carries actual current-profile display data and existing action closures |
+| `androidMain/.../views/newchat/PlatformNewChatHub.android.kt` | PC12, PC19, PC24, PC31, PC32 | Medium | Android P10 visual-acceptance renderer over official callbacks |
+| `desktopMain/.../views/newchat/PlatformNewChatHub.desktop.kt` | PC12, PC32 | Low | Invokes the legacy New Chat content unchanged |
 | `views/newchat/ConnectPlan.kt` | PC12, PC15, PC20, PC32 | High | Link planning plus the P13 legacy-default, context-bound, single-submit connection-preview integration |
 | `views/newchat/PlatformConnectionPreview.kt` | PC12, PC15, PC20, PC32 | High | P13 safe model, exhaustive branch policy, typed callbacks, and expect seam |
 | `views/newchat/AddGroupView.kt` | PC3, PC14 | Medium | New group creation flow |

@@ -338,7 +338,7 @@ This Android effort must not add a native progress API or alter migration orderi
 **Category:** Security / Authentication
 **Platform:** Android
 **Page:** P02
-**Decision status:** **[DECIDED 2026-07-17 — RECOMMENDED ROUTE ADOPTED; IMPLEMENTATION PENDING]**
+**Decision status:** **[DECIDED 2026-07-17 — P09 LOADED-CHAT SCOPE IMPLEMENTED; P23 SETTINGS INDEX PENDING]**
 
 ### Recorded Decision
 
@@ -370,7 +370,7 @@ This is Android/client authentication behavior. It must not be implemented by ch
 **Category:** UI state / Error recovery / Permissions
 **Platform:** Android
 **Pages:** P04, P05, P06, P11, P12, P20, P22, P24
-**Decision status:** **[DECIDED 2026-07-17 — RECOMMENDED ROUTE ADOPTED; IMPLEMENTATION PENDING]**
+**Decision status:** **[PARTIALLY IMPLEMENTED 2026-07-18 — P09 CLOSED; P23 PENDING]**
 
 ### Recorded Decision
 
@@ -407,6 +407,10 @@ Client operation state may wrap existing calls. It cannot manufacture an API res
 ### Recorded Decision
 
 Use an explicitly scoped client search coordinator. Contacts, groups, and channels may be grouped from loaded local chat truth. The first release does not claim complete global message aggregation; the unsupported grouped-message state is removed or reworded as a clearly limited single-conversation scope. Settings search uses an allowlisted local index with stable route IDs. The first release stores no recent-query history in preferences, logs, or production fixtures.
+
+P09 now groups only the official loaded-chat filter result. Its message-region copy explicitly
+states that incomplete global message results are not shown, and its recent-search region states
+that the device does not store recent queries. P23's allowlisted settings-route index remains open.
 
 ### Description
 

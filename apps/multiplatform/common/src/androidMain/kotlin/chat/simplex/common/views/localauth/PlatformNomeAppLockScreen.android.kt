@@ -22,9 +22,9 @@ import androidx.compose.material.Icon
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.rounded.Fingerprint
 import androidx.compose.material.icons.rounded.Key
-import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Security
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -62,26 +62,26 @@ internal actual fun PlatformNomeAppLockScreen(
       .background(NomeTheme.colors.background)
       .windowInsetsPadding(WindowInsets.statusBars)
       .windowInsetsPadding(WindowInsets.navigationBars)
-      .padding(horizontal = NomeTheme.dimensions.screenHorizontalInset),
+      .padding(horizontal = NomeTheme.dimensions.space24),
     horizontalAlignment = Alignment.CenterHorizontally,
   ) {
     Spacer(Modifier.height(4.dp))
     Image(
       painter = painterResource(R.drawable.nome_header_logo),
       contentDescription = stringResource(R.string.nome_brand_logo_description),
-      modifier = Modifier.width(104.dp).height(44.dp),
+      modifier = Modifier.width(68.dp).height(28.dp),
     )
-    Spacer(Modifier.height(34.dp))
+    Spacer(Modifier.height(56.dp))
     Surface(
-      modifier = Modifier.size(84.dp),
+      modifier = Modifier.size(92.dp),
       shape = NomeTheme.shapes.large,
       color = NomeTheme.colors.successContainer,
     ) {
       Box(contentAlignment = Alignment.Center) {
         Icon(
-          imageVector = Icons.Rounded.Lock,
+          imageVector = Icons.Outlined.Lock,
           contentDescription = null,
-          modifier = Modifier.size(42.dp),
+          modifier = Modifier.size(46.dp),
           tint = NomeTheme.colors.action,
         )
       }
@@ -108,16 +108,16 @@ internal actual fun PlatformNomeAppLockScreen(
       textAlign = TextAlign.Center,
     )
     if (!displayName.isNullOrBlank()) {
-      Spacer(Modifier.height(18.dp))
+      Spacer(Modifier.height(30.dp))
       Surface(
-        modifier = Modifier.size(72.dp),
+        modifier = Modifier.size(74.dp),
         shape = CircleShape,
         border = BorderStroke(1.dp, NomeTheme.colors.action),
         color = NomeTheme.colors.surfaceSubtle,
       ) {
         Box(contentAlignment = Alignment.Center) {
           ProfileImage(
-            size = 68.dp,
+            size = 70.dp,
             image = profileImage,
             color = NomeTheme.colors.action,
             backgroundColor = NomeTheme.colors.successContainer,
@@ -132,7 +132,7 @@ internal actual fun PlatformNomeAppLockScreen(
         textAlign = TextAlign.Center,
       )
     }
-    Spacer(Modifier.height(24.dp))
+    Spacer(Modifier.height(29.dp))
     NomeButton(
       text = stringResource(
         if (usingLAMode == LAMode.SYSTEM) {
@@ -150,6 +150,7 @@ internal actual fun PlatformNomeAppLockScreen(
           R.string.nome_p02_passcode_unlock
         },
       ),
+      shape = NomeTheme.shapes.pill,
       leadingIcon = {
         Icon(
           imageVector = if (usingLAMode == LAMode.SYSTEM) Icons.Rounded.Fingerprint else Icons.Rounded.Key,
@@ -165,10 +166,11 @@ internal actual fun PlatformNomeAppLockScreen(
         modifier = Modifier.fillMaxWidth(),
         variant = NomeButtonVariant.SECONDARY,
         semanticsLabel = stringResource(R.string.nome_p02_device_lock),
+        shape = NomeTheme.shapes.pill,
         leadingIcon = { Icon(Icons.Rounded.Key, contentDescription = null) },
       )
     }
-    Spacer(Modifier.height(14.dp))
+    Spacer(Modifier.height(20.dp))
     Surface(
       modifier = Modifier.fillMaxWidth(),
       shape = NomeTheme.shapes.compact,

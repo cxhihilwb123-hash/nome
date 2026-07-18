@@ -60,7 +60,10 @@ sealed class ActiveFilter {
   data object Unread: ActiveFilter()
 }
 
-private fun showNewChatSheet(oneHandUI: State<Boolean>) {
+internal fun showNewChatSheet(
+  oneHandUI: State<Boolean>,
+  onOpenProfile: (() -> Unit)? = null,
+) {
   connectProgressManager.cancelConnectProgress()
   ModalManager.start.closeModals()
   ModalManager.end.closeModals()
@@ -72,13 +75,26 @@ private fun showNewChatSheet(oneHandUI: State<Boolean>) {
       chatModel.newChatSheetVisible.value = false
       close()
     }
-    ModalView(close, showAppBar = !oneHandUI.value) {
+    ModalView(
+      close,
+      showAppBar = !oneHandUI.value && !appPlatform.isAndroid,
+    ) {
       if (appPlatform.isAndroid) {
         BackHandler {
           close()
         }
       }
-      NewChatSheet(rh = chatModel.currentRemoteHost.value, close)
+      NewChatSheet(
+        rh = chatModel.currentRemoteHost.value,
+        close = close,
+        onOpenProfile =
+          onOpenProfile?.let { openProfile ->
+            {
+              close()
+              openProfile()
+            }
+          },
+      )
       DisposableEffect(Unit) {
         onDispose {
           chatModel.newChatSheetVisible.value = false

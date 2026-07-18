@@ -55,46 +55,54 @@ for page-level fidelity. A production page may restructure its Android presentat
 corresponding P01–P24 baseline while preserving the official route, state, action, data, and core
 owners. A baseline structure cannot be skipped merely because the upstream screen is composed
 differently. Pixel-perfect reproduction and the former per-state heavy matrix are not required.
-P01 and all completed security/database/official-fidelity work remain intact. Starting with active
-P02–P06, no page family can be marked ready until its principal API 35 production capture has been
-compared with the reference at the matching language/viewport and obvious differences have been
-corrected. The earlier P02–P06 onboarding screenshots predate this clarification and are diagnostic
-inputs only, not closure evidence.
+P01 and all completed security/database/official-fidelity work remain intact. P02–P06 are reopened
+only for a targeted page-level visual recheck: their frozen functional/security work and Milestone
+1 checkpoint are not rolled back or repeated. From P02 onward, no page family can be marked
+visually accepted until its principal API 35 production capture has been compared with the
+reference at the matching language/viewport and obvious differences have been corrected. The
+earlier Milestone 1 P02–P06 screenshots predate this clarification and remain historical diagnostic
+inputs. The targeted recheck must explicitly cover the onboarding wordmark, page composition,
+region placement, hierarchy, typography, spacing, corners, icons, action sizing, and content
+density; shared components are not accepted as a proxy for the rendered-page comparison. The
+accepted post-clarification captures and comparisons are now recorded under the P02–P06 result and
+test sections below.
 
 ## Current milestone and batch
 
-- Milestone: 1 — startup and trust.
-- Batch: Milestone 1 checkpoint preparation — the concentrated P01–P06 gate passed.
-- Validation tier: milestone complete — P01/P02 high-risk depth checks, P03–P06 page-level visual
-  acceptance, full Android/Desktop regression and release build, disposable API 28/33/35,
-  bilingual light/dark, 100%/200%, 48dp, real TalkBack binding, historical manifests, release
-  isolation, privacy restoration, and one risk review all passed. Exact results are in
-  `MILESTONE_1_VERIFICATION.md`.
+- Milestone: 2 — Home and discovery.
+- Batch: merged P09 local search + P10 new-connection hub and the targeted P02–P06 onboarding
+  visual correction are closed and frozen by the local Milestone 2 checkpoint containing this
+  ledger.
+- Validation tier: milestone-concentrated — API 28/API 33/API 35, bilingual light/dark, 200%,
+  TalkBack, release-isolation, regression, and historical-manifest checks passed once across the
+  Milestone 2 surface instead of repeating the ordinary page-family checks.
 - Scope: Android-only, local-only; no push, release, production signing, native/core, protocol,
   database/archive, message-state-machine, or iOS changes.
 - Frozen inputs: the v6.5.6 baseline, Phase 1, Phase 2 foundation, Batch 2, and P13 checkpoint
   evidence remain read-only.
 - `FIRST_USE` remains official onboarding/root owned.
-- `FILTERED_NO_RESULT` remains deferred until P09 has a real producer.
+- P09 now owns a real official loaded-chat filter producer. `FILTERED_NO_RESULT` is production
+  reachable only while that producer is active with a nonblank query, the loaded base is
+  available, and the official filtered result is empty; this does not reclassify or rewrite P08.
 - Page completion matrix:
   `plans/evidence/20260718_nome_android_completion/PAGE_COMPLETION_MATRIX.md`.
 
 ## Repository recovery
 
 - Branch: `codex/nome-android-v656`
-- HEAD: `b714f78efc7b3cc8c4e252d6351c4b629f60e277`
+- HEAD: `4260545d96d84055efb281cb5a9b3226a498cb07`
 - Baseline: tag `v6.5.6` at `59fce95d3cd08897b4ef742447b785cf2e56c7ce`, an ancestor of HEAD.
 - Origin: `https://github.com/simplex-chat/simplex-chat.git`
-- HEAD commit: `checkpoint(nome-android): freeze phase 2 batch 3 p13`
-- Current reconciliation before Milestone 1 staging: staged `0`, dirty tracked `31`, untracked
-  files `102`, conflicts `0`. The set consists of current Milestone 1
-  source/product/spec/test/ledger/report and compact visual-baseline work plus the excluded unknown
-  `apps/multiplatform/Screenshot_1784275771.png`; that unknown file remains untouched and excluded.
-- Current Gate C tree: the allowlisted P01 Android/common/Desktop production, resource, and test
-  paths plus this ledger, the P01 plan, and its evidence root are modified or new; staged/conflicted
-  remain zero and the excluded screenshot remains untouched.
-- Historical SHA manifests: Phase 1 (48 entries), Phase 2 foundation (131 entries), and Batch 2
-  (254 entries) each verified from its declared working-directory convention.
+- HEAD commit: `checkpoint(nome-android): freeze milestone 1 startup and trust`
+- Exact Milestone 2 checkpoint input: staged paths `42`, unstaged tracked paths `0`, conflicts `0`,
+  staged forbidden paths `0`, staged sensitive-text hits `0`, and one excluded untracked unknown
+  file. The input consists of the allowlisted P09/P10 Android/common/Desktop presentation seams,
+  resources, focused tests, P02–P06 presentation correction, synchronized product/spec/ledger/
+  matrix/report files, and accepted comparison PNGs. The excluded
+  `apps/multiplatform/Screenshot_1784275771.png` remains untouched and outside the checkpoint at
+  SHA-256 `d2463deaf565b7fe11e96661a79d6e5a340a8568d86302e81f2fecc981ab5514`.
+- Historical SHA manifests were independently rehashed from the P13 checkpoint without checkout:
+  Phase 1 48/48, Phase 2 foundation 131/131, Batch 2 254/254, and P13 139/139.
 - Forbidden dirty-scope audit: no Haskell/native, `Core.kt`, iOS, native binary, archive/schema, or
   protocol changes found at recovery.
 
@@ -226,9 +234,16 @@ presentation seams needed to reuse official route/state/action owners. Any `comm
 retain an unchanged Desktop fallback and cannot add model/core/protocol/database truth. Forbidden
 native/core/`Core.kt`/protocol/database/archive/iOS paths remain outside scope.
 
+The completed targeted P02–P06 recheck additionally used only
+`NomeButton.kt`, `PlatformNomeAppLockScreen.android.kt`,
+`PlatformNomeOnboardingPages.android.kt`, synchronized product/spec/CODE records, this ledger/page
+matrix, and the accepted API 35 production/comparison PNGs. It changed presentation geometry and
+the optional shared button shape only; it did not change authentication, onboarding stage,
+create-user, operator/notification, conditions, migration, or Desktop owners.
+
 ## P02–P06 Batch 1B result
 
-- Status: `READY FOR MILESTONE`.
+- Status: `FROZEN` by the green Milestone 2 presentation gate and its local checkpoint input.
 - P02 uses the real current local identity, actual configured `LAMode`, and existing
   `AppLock.runAuthenticate` result handling. System-unavailable, cancel, wrong passcode, and retry
   remain locked; only a real success authorizes. No reference portrait, fallback credential path,
@@ -237,7 +252,10 @@ native/core/`Core.kt`/protocol/database/archive/iOS paths remain outside scope.
   operator/notification configuration, conditions, and migration-entry owners. Desktop actuals
   delegate the legacy renderer unchanged.
 - The approved Nome header asset is hash-identical to the supplied prototype asset
-  (`SHA-256 1c306154…`). The onboarding pages now match their visual acceptance baselines in
+  (`SHA-256 1c306154…`). The post-clarification recheck reduced the production wordmark to the
+  baseline scale, aligned the P02 lock/identity/action stack, applied the baseline pill actions,
+  and corrected P03–P06 top/footer spacing, preview/card density, row spacing, information strips,
+  and commitment-card geometry. The rendered pages now match their visual acceptance baselines in
   composition, hierarchy, region placement, typography, density, controls, and footer placement.
 - P05 displays actual selected operators and explicitly labels the card as configuration rather
   than connectivity/server health. It does not reproduce the design's unsupported connected/ready
@@ -256,7 +274,47 @@ native/core/`Core.kt`/protocol/database/archive/iOS paths remain outside scope.
   while locked, and active-call visibility ownership remains unchanged.
 - One risk-oriented implementation review was completed. Its two actionable findings—the
   non-clickable Home profile control and the wrapped P06 disclosure—were fixed and reverified;
-  no remaining issue was found in the ordinary-batch scope.
+  no remaining issue was found in the ordinary-batch scope. A post-clarification targeted review
+  then covered only the presentation correction, final comparison images, synchronized records,
+  and unchanged official-owner boundaries. It returned `ZERO ISSUES / APPROVE` without a source or
+  evidence change.
+
+## P09/P10 result
+
+- P09 is implemented over the official loaded-chat filter: the query is local, uses the existing
+  chat-list producer, and opens only official direct/group/note routes. Result grouping is derived
+  from the already-filtered official rows; no persisted recent query, global message
+  aggregation, synthetic contact, online state, or success fact is rendered.
+- P09 loading/unavailable remains fail-closed. The no-result state appears only for a nonblank
+  active query over an available loaded base with zero official matches. P08 and `FIRST_USE`
+  ownership are unchanged.
+- P10 is implemented as an Android-owned presentation over the existing New Chat callbacks:
+  one-time invitation, scan/paste, create group, and create channel retain their official route
+  owners and back/cancellation behavior. Desktop delegates the legacy renderer unchanged.
+- P10's identity card uses the actual current local profile. When launched from Nome Home it may
+  open the already-owned user picker; no cloud-account, connection-health, or success fact is
+  implied.
+- P09 preserves the design's message-result and recent-query regions, but fills them with explicit
+  truthful scope/policy copy: the current producer matches loaded conversation names only, and
+  recent searches are not persisted. It does not fabricate global message rows or recent-query
+  chips. P10 labels the group action according to the actual create-group callback rather than
+  claiming that an existing group was joined. These are truth-preserving content adaptations
+  inside the baseline structure, not permission to skip composition, hierarchy, density, or
+  styling review.
+- API 35 production smoke on the controlled populated client opened the real P09 route and showed
+  three actual matching `AddressSender28` conversations with result click semantics. It also
+  opened P10 through the Home FAB and projected the actual `IncogTarget35` profile plus all four
+  official actions.
+- Accepted reference-size Chinese/light v3 comparisons:
+  - P09 production `529d500e…`, side-by-side `cca3f145…`;
+  - P10 production `f50ab2bf…`, side-by-side `812bd9e2…`;
+  - exact references remain P09 `39724477…` and P10 `95221c6e…`.
+- The combined images were inspected as the actual visual QA input. P09 now matches the baseline
+  page structure with truthful message-scope and recent-retention regions; P10 matches its header,
+  identity card, disclosure, and four-action density while using a truthful initial fallback
+  because the controlled profile has no image. No obvious composition, placement, hierarchy,
+  typography, spacing, corner, icon, action-size, or density mismatch remains in the accepted
+  primary states.
 
 ## Tests and evidence
 
@@ -326,14 +384,23 @@ native/core/`Core.kt`/protocol/database/archive/iOS paths remain outside scope.
     P04 local-user creation, P05 operator/notification configuration, P06 conditions acceptance,
     Android notification denial recovery, and reached the real Home with the created synthetic
     identity;
-  - reference viewport was 390 × 844 dp, Chinese, light theme. Final side-by-side acceptance
-    images are `P03-side-by-side-390x844-v2.png`,
-    `P04-side-by-side-390x844-v4.png`,
-    `P05-side-by-side-390x844-v3.png`, and
-    `P06-side-by-side-390x844-v5.png`; P02 uses
-    `P02-side-by-side-system-unavailable-390x844-v2.png`;
-  - final side-by-side SHA-256 prefixes are respectively `18d8f3f4…`, `348c7056…`,
-    `92edeee1…`, `2da698ba…`, and P02 `44b62d44…`;
+  - reference viewport was 390 × 844 dp, Chinese, light theme. The accepted
+    post-clarification production images are
+    `P02-production-system-unavailable-390x844-v4.png`,
+    `P03-production-390x844-v5.png`, `P04-production-390x844-v6.png`,
+    `P05-production-390x844-v6.png`, and `P06-production-390x844-v8.png`;
+  - their accepted side-by-side comparisons use the same version suffixes. Production SHA-256
+    prefixes are respectively `69d255c4…`, `b63504e8…`, `d971cd4f…`, `4c6f4365…`, and
+    `2d8ea546…`; comparison prefixes are `c37462c1…`, `0327e7a7…`, `e6dde253…`,
+    `4442670d…`, and `bb7678c…`;
+  - combined-image inspection found no remaining obvious mismatch in the baseline wordmark,
+    composition, region placement, hierarchy, typography, spacing, corners, icons, action size,
+    or content density. P04 uses the controlled local identity's truthful initial fallback rather
+    than the reference portrait. P05 retains actual operator configuration rows and arrows rather
+    than fake health/toggles, and omits an unsafe post-create back transition;
+  - P02 was captured from the real production SYSTEM-unavailable lock route with a controlled
+    no-credential device. The two exact preference entries used to reopen that existing route were
+    removed after capture (`p02_fixture_hits=0`); no authentication outcome was synthesized;
   - the screenshot-only `PrivacyProtectScreen=false` fixture existed only on the disposable
     API 35 app data during capture. It was removed exactly; the app returned to Home and a
     post-cleanup secure screenshot had one color with RGBA mean `0,0,0,1` (all black).
@@ -342,7 +409,35 @@ native/core/`Core.kt`/protocol/database/archive/iOS paths remain outside scope.
   - `:common:desktopTest --tests chat.simplex.common.AppUnlockPolicyTest` — pass;
   - `:common:compileKotlinDesktop`, `:common:compileDebugKotlinAndroid`, and
     `:android:assembleDebug` — pass;
+  - after the targeted visual correction,
+    `:android:compileDebugKotlin :android:assembleDebug :android:assembleDebugAndroidTest` — pass;
+    API 35 `NomeFoundationComposeTest` — `OK (5 tests)`, covering the shared button's 48dp/TalkBack
+    contract, state coverage, 200% action reachability, and light/dark contrast;
+  - one transient Kotlin incremental source-set resolution failure cleared on a safe
+    `--rerun-tasks --no-daemon` retry; the immediately following normal full invocation passed
+    without source rollback or project-setting change;
   - `git diff --check`, forbidden-path probe, and synthetic-passcode repository scan — pass.
+- P09/P10 focused closure:
+  - a combined Android/Desktop invocation exhausted the Kotlin Desktop daemon
+    (`GC overhead limit exceeded`); the safe sequential in-process retry with 6 GiB heap and one
+    worker passed `:common:compileKotlinDesktop` in 50 seconds;
+  - Android unit, `:android:compileDebugKotlin`, debug APK, and debug androidTest APK — pass in
+    1 minute 42 seconds with the same sequential in-process strategy;
+  - API 35 exact-class instrumentation for the P09 state adapter/Compose route, P10 hub, and the
+    existing Home projection/boundary suite — 15 tests, zero failure;
+  - tests cover deterministic real-result grouping, fail-closed unavailable/no-result ownership,
+    truthful message/recent policy regions, 48dp result activation/back, real Home
+    query/projection boundaries, and one-to-one dispatch from all four P10 actions to their
+    existing official callbacks;
+  - API 35 controlled-client P09/P10 production smoke and page-level side-by-side visual
+    acceptance — pass;
+  - the temporary controlled screenshot preference was deleted exactly; preference hits `0`, the
+    production window again reports `SECURE`, and an ADB framebuffer proof is one
+    `srgba(0,0,0,1)` color with RGB channel means `0,0,0`;
+  - the group's single risk-oriented review initially returned one high and two medium findings.
+    The truthful P09 structural regions, real P10 profile-image path, added assertions, and
+    existing projection/boundary tests resolved all three. Final resolution: zero remaining
+    issues, `APPROVE`.
 - Milestone 1 concentrated closure:
   - Android unit/lint/debug/androidTest/release aggregate — `BUILD SUCCESSFUL in 3m 5s`, 196
     tasks; Desktop suite — `BUILD SUCCESSFUL in 44s`;
@@ -366,6 +461,31 @@ native/core/`Core.kt`/protocol/database/archive/iOS paths remain outside scope.
     a downstream final distribution blocker, not misreported as complete;
   - full report:
     `plans/evidence/20260718_nome_android_completion/MILESTONE_1_VERIFICATION.md`.
+- Milestone 2 concentrated closure:
+  - Android unit/lint/debug/androidTest/release aggregate —
+    `BUILD SUCCESSFUL in 4m 8s`, 196 tasks; Android unit 39/0/0/0, lint 0 errors;
+  - Desktop suite — `BUILD SUCCESSFUL in 7s`, 24/0/0/0;
+  - disposable API 28 — `OK (35 tests)` in 197.043 seconds; API 33 —
+    `OK (35 tests)` in 52.434 seconds; API 35 complete suite —
+    `OK (39 tests)` in 674.819 seconds;
+  - Home/P09/P10 passed all eight Chinese/English, light/dark, and 100%/200% production
+    combinations. Actual loaded-chat results and all four official P10 actions remained reachable;
+  - real TalkBack focus/double-tap activated Home-to-P09 and Home-to-P10 plus their primary
+    controls. Cleanup restored accessibility/touch exploration off, services null, font `1.0`,
+    light mode, empty per-app locale override, and the original TalkBack notification-permission
+    state;
+  - the post-cleanup Home window reports `SECURE`, the ADB framebuffer is one
+    `srgba(0,0,0,1)` color, and screenshot-fixture preference hits are zero;
+  - frozen evidence rehashed from the P13 checkpoint: Phase 1 48/48, Foundation 131/131,
+    Batch 2 254/254, and P13 139/139;
+  - ARMv7/ARM64 unsigned release SHA-256 values are respectively
+    `c95b640ac95eef529d7d233738066f7b41ffa9928c8bc98ce35a65b3fa4bad3b` and
+    `b41bc7f80991cbf78b2cc53f2b75b1286e07001a025740acd56214b98b9ffc91`;
+    archive, manifest, DEX, dirty-text sensitive-value, and forbidden-path exact scans are zero;
+  - the P09/P10 ordinary review and the P02–P06 post-clarification targeted review both close at
+    `ZERO ISSUES / APPROVE`;
+  - full report:
+    `plans/evidence/20260718_nome_android_completion/MILESTONE_2_VERIFICATION.md`.
 - Gate C focused verification:
   - `:common:desktopTest --tests ConnectionPreviewPolicyTest` — pass;
   - `:android:testDebugUnitTest --tests ConnectionPreviewRouteBoundaryTest` — pass;
@@ -476,21 +596,25 @@ native/core/`Core.kt`/protocol/database/archive/iOS paths remain outside scope.
 
 ## Checkpoints
 
-- Last frozen checkpoint: `b714f78efc7b3cc8c4e252d6351c4b629f60e277` (P13).
+- Milestone 2 frozen checkpoint: the current commit containing this ledger, with subject
+  `checkpoint(nome-android): freeze milestone 2 home and discovery`.
+- Milestone 2 input/parent:
+  `4260545d96d84055efb281cb5a9b3226a498cb07` (Milestone 1, P01–P06).
+- P13 frozen checkpoint: `b714f78efc7b3cc8c4e252d6351c4b629f60e277`.
 - Prior frozen checkpoint: `fa95d96c7c24370c01b2707b9e2b0ad52a7a5112` (Batch 2).
-- Next checkpoint: the single Milestone 1 checkpoint; the gate passed and exact staging is the
-  only remaining action. There is no separate P01 checkpoint under the amended contract.
+- There are no ordinary P09/P10 checkpoint commits.
 - Remote mutations: none.
 
 ## Blocker
 
-- No Milestone 1 blocker. The current unsigned release package/label/App Links are still the
-  official SimpleX distribution identity and are explicitly `NOT FOR DISTRIBUTION`; that is a
-  declared downstream application-identity/App Links/brand audit item for final RC, not a hidden
-  Milestone 1 pass.
+- No current P02–P10 implementation, visual, test, review, or concentrated-gate blocker.
+- The current unsigned release package/label/App Links are still the official SimpleX distribution
+  identity and are explicitly `NOT FOR DISTRIBUTION`; that is a declared downstream
+  application-identity/App Links/brand audit item for final RC.
 
 ## Unique next action
 
-Stage the exact Milestone 1 source/product/spec/test/ledger/report and compact visual-baseline set,
-exclude `apps/multiplatform/Screenshot_1784275771.png`, rerun staged-path/diff/secret/forbidden
-checks, and create the single local Milestone 1 checkpoint. Do not push.
+Start the merged P11 one-time-invitation + P12 scan/paste production presentation group from their
+page-level visual acceptance baselines and official v6.5.6 route/action owners. Preserve exact
+created/copied/shared/connected and parser/camera/permission/duplicate evidence levels; do not
+invent expiry, connectivity, success, or safety facts.

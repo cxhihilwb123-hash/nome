@@ -46,4 +46,48 @@
     <string name="nome_home_unread_marker">%1$d</string>
     <string name="nome_home_favorite">已收藏</string>
     <string name="nome_home_skeleton_semantics">会话列表正在加载</string>
+
+    <string name="nome_home_search">搜索会话</string>
+    <string name="nome_home_new_connection">新建连接</string>
+
+    <string name="nome_p09_title">搜索</string>
+    <string name="nome_p09_back">关闭搜索</string>
+    <string name="nome_p09_search_placeholder">搜索</string>
+    <string name="nome_p09_search_semantics">按名称搜索已加载的会话</string>
+    <string name="nome_p09_clear">清除搜索</string>
+    <string name="nome_p09_idle">按名称搜索已加载的联系人、群组、频道和本地笔记。</string>
+    <string name="nome_p09_loading">正在等待当前身份已加载的会话列表。</string>
+    <string name="nome_p09_unavailable">当前会话列表结果不可用；此状态不会被当作搜索无结果。</string>
+    <string name="nome_p09_results_heading">联系人与会话</string>
+    <string name="nome_p09_messages_heading">消息中的结果</string>
+    <string name="nome_p09_messages_scope">当前仅按已加载会话名称搜索；不会显示不完整的全局消息结果。</string>
+    <string name="nome_p09_recent_heading">最近搜索</string>
+    <string name="nome_p09_recent_policy">本机不保存最近搜索</string>
+    <string name="nome_p09_core_stopped">聊天核心已停止。仍可搜索已加载的名称，但无法打开结果。</string>
+    <string name="nome_p09_no_result_title">未找到会话</string>
+    <string name="nome_p09_no_result_body">已加载的会话中没有与“%1$s”匹配的结果。</string>
+    <string name="nome_p09_type_contact">联系人</string>
+    <string name="nome_p09_type_group">群组</string>
+    <string name="nome_p09_type_group_members">群组 · %1$d 位成员</string>
+    <string name="nome_p09_type_channel">公开频道</string>
+    <string name="nome_p09_type_notes">本地笔记</string>
+    <string name="nome_p09_type_request">联系人请求</string>
+    <string name="nome_p09_type_pending">待处理连接</string>
+    <string name="nome_p09_type_unavailable">不可用结果</string>
+    <string name="nome_p09_open_result">%1$s。%2$s。打开会话。</string>
+
+    <string name="nome_p10_title">新建连接</string>
+    <string name="nome_p10_back">关闭新建连接</string>
+    <string name="nome_p10_intro">选择已有的连接流程。对方只会收到该流程实际使用的身份。</string>
+    <string name="nome_p10_profile_body">用于这次连接</string>
+    <string name="nome_p10_profile_action">当前身份：%1$s。选择其他身份。</string>
+    <string name="nome_p10_privacy_note">一次性邀请由你主动分享，创建连接前不会公开联系人地址。</string>
+    <string name="nome_p10_add_contact">添加朋友</string>
+    <string name="nome_p10_add_contact_body">创建一次性邀请链接或二维码</string>
+    <string name="nome_p10_scan_paste">扫码或粘贴</string>
+    <string name="nome_p10_scan_paste_body">读取对方发来的 SimpleX 邀请</string>
+    <string name="nome_p10_group">创建群组</string>
+    <string name="nome_p10_group_body">打开现有私密群组创建流程</string>
+    <string name="nome_p10_channel">公开频道</string>
+    <string name="nome_p10_channel_body">打开现有公开频道创建流程</string>
 </resources>

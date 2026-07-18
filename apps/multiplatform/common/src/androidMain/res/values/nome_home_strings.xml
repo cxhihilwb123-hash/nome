@@ -46,4 +46,48 @@
     <string name="nome_home_unread_marker">%1$d</string>
     <string name="nome_home_favorite">Favorite</string>
     <string name="nome_home_skeleton_semantics">Chat list loading</string>
+
+    <string name="nome_home_search">Search chats</string>
+    <string name="nome_home_new_connection">New connection</string>
+
+    <string name="nome_p09_title">Search</string>
+    <string name="nome_p09_back">Close search</string>
+    <string name="nome_p09_search_placeholder">Search</string>
+    <string name="nome_p09_search_semantics">Search loaded chats by name</string>
+    <string name="nome_p09_clear">Clear search</string>
+    <string name="nome_p09_idle">Search loaded contacts, groups, channels, and local notes by name.</string>
+    <string name="nome_p09_loading">Waiting for the current profile’s loaded chat list.</string>
+    <string name="nome_p09_unavailable">The current chat-list result is unavailable. Search has not produced a no-result state.</string>
+    <string name="nome_p09_results_heading">Contacts and conversations</string>
+    <string name="nome_p09_messages_heading">Results in messages</string>
+    <string name="nome_p09_messages_scope">Search currently matches loaded conversation names only; incomplete global message results are not shown.</string>
+    <string name="nome_p09_recent_heading">Recent searches</string>
+    <string name="nome_p09_recent_policy">Recent searches are not stored on this device</string>
+    <string name="nome_p09_core_stopped">The chat core is stopped. Loaded names remain searchable, but results cannot be opened.</string>
+    <string name="nome_p09_no_result_title">No chats found</string>
+    <string name="nome_p09_no_result_body">No loaded chat matches “%1$s”.</string>
+    <string name="nome_p09_type_contact">Contact</string>
+    <string name="nome_p09_type_group">Group</string>
+    <string name="nome_p09_type_group_members">Group · %1$d members</string>
+    <string name="nome_p09_type_channel">Public channel</string>
+    <string name="nome_p09_type_notes">Local notes</string>
+    <string name="nome_p09_type_request">Contact request</string>
+    <string name="nome_p09_type_pending">Pending connection</string>
+    <string name="nome_p09_type_unavailable">Unavailable result</string>
+    <string name="nome_p09_open_result">%1$s. %2$s. Open conversation.</string>
+
+    <string name="nome_p10_title">New connection</string>
+    <string name="nome_p10_back">Close new connection</string>
+    <string name="nome_p10_intro">Choose an existing connection flow. The other party only receives the profile used by that flow.</string>
+    <string name="nome_p10_profile_body">Use for this connection</string>
+    <string name="nome_p10_profile_action">Current profile: %1$s. Choose another profile.</string>
+    <string name="nome_p10_privacy_note">One-time invitations are shared by you and do not publish a contact address.</string>
+    <string name="nome_p10_add_contact">Add contact</string>
+    <string name="nome_p10_add_contact_body">Create a one-time invitation link or QR code</string>
+    <string name="nome_p10_scan_paste">Scan or paste</string>
+    <string name="nome_p10_scan_paste_body">Read a SimpleX invitation received from another person</string>
+    <string name="nome_p10_group">Create group</string>
+    <string name="nome_p10_group_body">Start the existing private group creation flow</string>
+    <string name="nome_p10_channel">Public channel</string>
+    <string name="nome_p10_channel_body">Start the existing public channel creation flow</string>
 </resources>

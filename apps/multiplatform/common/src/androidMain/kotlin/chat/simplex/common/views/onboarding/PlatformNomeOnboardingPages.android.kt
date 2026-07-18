@@ -77,17 +77,19 @@ internal actual fun PlatformNomeWelcomePage(
       NomeButton(
         text = stringResource(R.string.nome_p03_create),
         onClick = onCreate,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
         semanticsLabel = stringResource(R.string.nome_p03_create),
+        shape = NomeTheme.shapes.pill,
         leadingIcon = { Icon(Icons.Rounded.Refresh, contentDescription = null) },
       )
       Spacer(Modifier.height(8.dp))
       NomeButton(
         text = stringResource(R.string.nome_p03_migrate),
         onClick = onMigrate,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
         variant = NomeButtonVariant.SECONDARY,
         semanticsLabel = stringResource(R.string.nome_p03_migrate),
+        shape = NomeTheme.shapes.pill,
         leadingIcon = { Icon(Icons.AutoMirrored.Rounded.Send, contentDescription = null) },
       )
       Text(
@@ -97,7 +99,7 @@ internal actual fun PlatformNomeWelcomePage(
         color = NomeTheme.colors.accent,
         textAlign = TextAlign.Center,
       )
-      Spacer(Modifier.height(26.dp))
+      Spacer(Modifier.height(42.dp))
     },
   ) {
     Column(
@@ -106,7 +108,7 @@ internal actual fun PlatformNomeWelcomePage(
         .padding(horizontal = NomeTheme.dimensions.screenHorizontalInset),
       horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-      Spacer(Modifier.height(30.dp))
+      Spacer(Modifier.height(46.dp))
       NomeBrandLogo()
       Spacer(Modifier.height(20.dp))
       Text(
@@ -166,6 +168,7 @@ internal actual fun PlatformNomeCreateIdentityPage(
         modifier = Modifier.fillMaxWidth(),
         enabled = createEnabled && !creating,
         semanticsLabel = stringResource(if (creating) R.string.nome_p04_creating else R.string.nome_p04_create),
+        shape = NomeTheme.shapes.pill,
         leadingIcon = { Icon(Icons.Rounded.PersonOutline, contentDescription = null) },
       )
     },
@@ -188,11 +191,11 @@ internal actual fun PlatformNomeCreateIdentityPage(
         border = BorderStroke(1.dp, if (createEnabled) NomeTheme.colors.success else NomeTheme.colors.border),
       ) {
         Row(
-          modifier = Modifier.padding(14.dp),
+          modifier = Modifier.padding(16.dp),
           verticalAlignment = Alignment.CenterVertically,
         ) {
           Surface(
-            modifier = Modifier.size(64.dp),
+            modifier = Modifier.size(76.dp),
             shape = CircleShape,
             color = NomeTheme.colors.surfaceSubtle,
           ) {
@@ -306,6 +309,7 @@ internal actual fun PlatformNomeNetworkPage(
         onClick = onContinue,
         modifier = Modifier.fillMaxWidth(),
         semanticsLabel = stringResource(R.string.nome_p05_continue),
+        shape = NomeTheme.shapes.pill,
       )
     },
   ) {
@@ -325,7 +329,7 @@ internal actual fun PlatformNomeNetworkPage(
         border = BorderStroke(1.dp, NomeTheme.colors.border),
       ) {
         Row(
-          modifier = Modifier.padding(14.dp),
+          modifier = Modifier.padding(horizontal = 14.dp, vertical = 19.dp),
           verticalAlignment = Alignment.CenterVertically,
         ) {
           NomeIconTile(Icons.Rounded.Security)
@@ -447,11 +451,11 @@ internal actual fun PlatformNomeCommitmentPage(
           )
         }
       }
-      Spacer(Modifier.height(10.dp))
       NomeInfoStrip(
         icon = Icons.Rounded.Info,
         text = stringResource(R.string.nome_p06_channel_note),
       )
+      Spacer(Modifier.height(16.dp))
       Row(
         modifier = Modifier
           .fillMaxWidth()
@@ -515,7 +519,6 @@ private fun NomeOnboardingScaffold(
         .fillMaxWidth()
         .verticalScroll(rememberScrollState()),
     ) {
-      if (title != null) Spacer(Modifier.height(12.dp))
       content()
       Spacer(Modifier.height(20.dp))
     }
@@ -661,7 +664,7 @@ private fun NomeInfoStrip(
     border = BorderStroke(1.dp, NomeTheme.colors.sentMessageBorder),
   ) {
     Row(
-      modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
+      modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
       verticalAlignment = Alignment.CenterVertically,
     ) {
       Icon(
@@ -694,7 +697,7 @@ private fun NomeSettingsRow(
   Row(
     modifier = clickModifier
       .fillMaxWidth()
-      .padding(vertical = 10.dp, horizontal = 6.dp),
+      .padding(vertical = 13.dp, horizontal = 6.dp),
     verticalAlignment = Alignment.CenterVertically,
   ) {
     NomeIconTile(icon)
@@ -728,7 +731,7 @@ private fun NomeCommitmentRow(
   body: String,
 ) {
   Row(
-    modifier = Modifier.fillMaxWidth().padding(vertical = 13.dp),
+    modifier = Modifier.fillMaxWidth().padding(vertical = 19.dp),
     verticalAlignment = Alignment.CenterVertically,
   ) {
     Icon(

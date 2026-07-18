@@ -40,7 +40,11 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 
 @Composable
-fun ModalData.NewChatSheet(rh: RemoteHostInfo?, close: () -> Unit) {
+fun ModalData.NewChatSheet(
+  rh: RemoteHostInfo?,
+  close: () -> Unit,
+  onOpenProfile: (() -> Unit)? = null,
+) {
   DisposableEffect(Unit) {
     onDispose {
       connectProgressManager.cancelConnectProgress()
@@ -49,34 +53,76 @@ fun ModalData.NewChatSheet(rh: RemoteHostInfo?, close: () -> Unit) {
 
   val oneHandUI = remember { appPrefs.oneHandUI.state }
 
-  Box {
-    val closeAll = { ModalManager.start.closeModals() }
-
-    Column(modifier = Modifier.fillMaxSize()) {
-      NewChatSheetLayout(
-        addContact = {
-          ModalManager.start.showModalCloseable(endButtons = { AddContactLearnMoreButton() }) { _ -> NewChatView(chatModel.currentRemoteHost.value, NewChatOption.INVITE, close = closeAll) }
-        },
-        scanPaste = {
-          ModalManager.start.showModalCloseable(endButtons = { AddContactLearnMoreButton() }) { _ -> NewChatView(chatModel.currentRemoteHost.value, NewChatOption.CONNECT, showQRCodeScanner = appPlatform.isAndroid, close = closeAll) }
-        },
-        createGroup = {
-          ModalManager.start.showCustomModal { close -> AddGroupView(chatModel, chatModel.currentRemoteHost.value, close, closeAll) }
-        },
-        createChannel = {
-          ModalManager.start.showCustomModal { close -> AddChannelView(chatModel, close, closeAll) }
-        },
-        rh = rh,
-        close = close
+  val closeAll = { ModalManager.start.closeModals() }
+  val addContact = {
+    ModalManager.start.showModalCloseable(endButtons = { AddContactLearnMoreButton() }) { _ ->
+      NewChatView(
+        chatModel.currentRemoteHost.value,
+        NewChatOption.INVITE,
+        close = closeAll,
       )
     }
-    if (oneHandUI.value) {
-      Column(Modifier.align(Alignment.BottomCenter)) {
-        DefaultAppBar(
-          navigationButton = { NavigationButtonBack(onButtonClicked = close) },
-          fixedTitleText = generalGetString(MR.strings.new_chat),
-          onTop = false,
+  }
+  val scanPaste = {
+    ModalManager.start.showModalCloseable(endButtons = { AddContactLearnMoreButton() }) { _ ->
+      NewChatView(
+        chatModel.currentRemoteHost.value,
+        NewChatOption.CONNECT,
+        showQRCodeScanner = appPlatform.isAndroid,
+        close = closeAll,
+      )
+    }
+  }
+  val createGroup = {
+    ModalManager.start.showCustomModal { childClose ->
+      AddGroupView(
+        chatModel,
+        chatModel.currentRemoteHost.value,
+        childClose,
+        closeAll,
+      )
+    }
+  }
+  val createChannel = {
+    ModalManager.start.showCustomModal { childClose ->
+      AddChannelView(chatModel, childClose, closeAll)
+    }
+  }
+
+  PlatformNewChatHub(
+    currentProfileName =
+      chatModel.currentUser.value?.profile?.displayName
+        ?.takeIf { it.isNotBlank() }
+        ?: generalGetString(MR.strings.current_user),
+    currentProfileImage = chatModel.currentUser.value?.profile?.image,
+    onOpenProfile = onOpenProfile,
+    onAddContact = addContact,
+    onScanOrPaste = scanPaste,
+    onCreateGroup = createGroup,
+    onCreateChannel = createChannel,
+    onClose = close,
+  ) {
+    Box {
+      Column(modifier = Modifier.fillMaxSize()) {
+        NewChatSheetLayout(
+          addContact = addContact,
+          scanPaste = scanPaste,
+          createGroup = createGroup,
+          createChannel = createChannel,
+          rh = rh,
+          close = close,
         )
+      }
+      if (oneHandUI.value) {
+        Column(Modifier.align(Alignment.BottomCenter)) {
+          DefaultAppBar(
+            navigationButton = {
+              NavigationButtonBack(onButtonClicked = close)
+            },
+            fixedTitleText = generalGetString(MR.strings.new_chat),
+            onTop = false,
+          )
+        }
       }
     }
   }

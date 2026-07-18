@@ -4,25 +4,34 @@
 
 ## Purpose
 
-Main screen of the SimpleX Chat Android and Desktop apps. Displays all conversations sorted by last activity and serves as the navigation root. Desktop continues to use the complete official shared chat list described below. Nome Android currently connects a deliberately bounded P07/P08 production slice at the same root route; that slice does not yet expose the full profile/settings/new-chat/search/mutation surface.
+Main screen of the SimpleX Chat Android and Desktop apps. Displays all conversations sorted by
+last activity and serves as the navigation root. Desktop continues to use the complete official
+shared chat list described below. Nome Android uses the frozen P07/P08 renderer at the same root
+and now adds P09 loaded-chat search plus the P10 New Chat entry without replacing the official
+model, route helpers, or action owners.
 
 ## Route / Navigation
 
 - **Entry point**: App launch (root view), or back-navigation from any chat
 - **Presented by**: `PlatformHomeRoute` when `chatModel.chatId == null`; Android uses the bounded Nome renderer and Desktop invokes `ChatListView` as `defaultContent`
 - **Navigation**: Android Nome uses the existing ready-chat helpers with core/deletion guards; Desktop `ChatListNavLinkView` retains the complete upstream routing
-- **UserPicker**: the overlay remains composed on Android but this bounded renderer adds no profile-switch trigger; Desktop retains the upstream avatar/sidebar behavior
+- **UserPicker**: Nome Home's current-profile control opens the existing Android `UserPicker`;
+  Desktop retains the upstream avatar/sidebar behavior
 
 ## Platform Layout
 
 | Platform | Layout |
 |---|---|
-| Android | Bounded Nome single-column P07/P08 header/status/list; no upstream toolbar, filter, settings, or new-chat control in this batch |
+| Android | Nome single-column P07/P08 header/status/list with P09 local loaded-chat search, current-profile entry, and P10 New Chat FAB |
 | Desktop | 3-column layout: chat list (left), chat view (center), info/detail panel (right via `ModalManager.end`) |
 
 ## Nome Android P07/P08 Production Slice
 
-> **Status:** The authorized Batch 2 production-home slice passed build, API 28/API 35 device and real-core, same-package upgrade, screenshot, accessibility, and release-isolation execution gates. Formal frozen-review status is owned exclusively by the batch evidence root's `review-rounds.md`; this product view does not assert that outcome. First use is still consumed by the unchanged onboarding gate and the bounded Android home still has no active-filter producer, so those two renderer branches are not claimed as production-reachable. This section does not mark all P07/P08 product scope complete.
+> **Status:** The authorized Batch 2 P07/P08 production-home slice is frozen under its evidence
+> root. First use is still consumed by the unchanged onboarding gate. Milestone 2 adds the real
+> P09 loaded-chat query producer and P10 New Chat entry; therefore filtered no result is reachable
+> only while a nonblank P09 query is active over an available loaded base with zero official
+> matches. It is not retroactively claimed as a P08 state.
 
 ### Host and route split
 
@@ -43,7 +52,7 @@ The Android [`NomeHomeStateAdapter`](../../common/src/androidMain/kotlin/chat/si
 
 | Axis | States | Required truth |
 |---|---|---|
-| Content | Loading, first use, true empty, filtered no result, populated, unavailable | The adapter keeps all six facts distinct. True empty requires a typed same-generation success with zero base rows and failure is unavailable. First use and filtered no result remain defensive renderer contracts only: the production root consumes no-user in onboarding, and this home exposes no filter producer. |
+| Content | Loading, first use, true empty, filtered no result, populated, unavailable | The adapter keeps all six facts distinct. True empty requires a typed same-generation success with zero base rows and failure is unavailable. First use remains onboarding-owned. Filtered no result is reachable only from the active P09 query producer over an available loaded base. |
 | Connectivity | Unknown, online, device offline | [`NetworkObserver.platformNetworkInfo`](../../common/src/androidMain/kotlin/chat/simplex/common/helpers/NetworkObserver.kt#L16-L87) is `null` before Android's first platform observation. Online requires a validated observed network; offline describes only device connectivity. |
 | Core | Starting, running, stopped | `chatRunning` is independent of content and connectivity. Stopped may coexist with same-generation cached rows, but actions requiring the core are disabled. |
 
@@ -57,19 +66,29 @@ Any user/remote-host switch, generation mismatch, or loading state that requires
 - Production-reachable P08 source paths render skeleton loading, true empty, typed unavailable, network unknown, device offline, and core stopped. The first-use and active-filter-no-result renderer branches remain defensive/test-only until a separately scoped production route or filter producer exists.
 - Same-generation cached rows may remain visible with an unavailable or stopped state. Unavailable stays explicit but does not itself disable existing chat-open navigation; stopped does.
 - Nome light/dark selection and the Activity system bars observe the existing `CurrentColors` result, including an explicit in-app theme that differs from the system theme.
+- P09 filters the already-loaded official chat list by name, groups the actual direct/group/channel/
+  note results for presentation, and opens only the existing ready-chat routes. It does not claim
+  persisted recent queries or a global message-result aggregation that v6.5.6 did not produce.
+- The Home search field and P10 FAB use the existing Android route. P10 dispatches one-time
+  invitation, scan/paste, create-group, and create-channel actions to the official New Chat
+  callbacks; it adds no duplicate controller or connection command.
 
 ### Explicit Batch 2 exclusions
 
 - favorite toggle or any other chat-list mutation;
-- profile-switching UI (the generation guard is included; the switch control is not);
+- profile mutation or replacement identity model (the current-profile control only opens the
+  existing `UserPicker`);
 - accept/reject/delete/retry mutation for connection or request rows;
-- search field, pasted-link handling, global search, or search no-result derivation;
+- pasted-link handling inside P09, global message aggregation, or persisted recent searches;
 - tag/filter controls or clear-filter action (therefore the defensive filtered-no-result branch has no fresh-production producer in this batch);
-- new-chat/FAB, settings routing, composer/send, locale marker, and archive/migration work.
+- settings routing, composer/send, locale marker, and archive/migration work.
 
 ## Official Shared Fallback Surface
 
-The remaining sections describe the complete official `ChatListView` surface. They continue to apply to the Desktop fallback and serve as capability inventory for later Nome Android batches; controls explicitly excluded above are not currently reachable from the bounded Nome P07/P08 home.
+The remaining sections describe the complete official `ChatListView` surface. They continue to
+apply to the Desktop fallback and serve as capability inventory for later Nome Android batches.
+The P09/P10 presentation above reuses only the explicitly described official actions; other
+upstream list mutations and filters remain pending.
 
 ## Page Sections
 
@@ -188,3 +207,5 @@ Each chat type provides specific dropdown menu items:
 | `PlatformHomeRoute.kt` | `common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.kt` |
 | `NomeHomeRoute.android.kt` | `common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeRoute.android.kt` |
 | `NomeHomeStateAdapter.kt` | `common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeStateAdapter.kt` |
+| `NomeSearchRoute.android.kt` | `common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeSearchRoute.android.kt` |
+| `NomeSearchStateAdapter.kt` | `common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeSearchStateAdapter.kt` |

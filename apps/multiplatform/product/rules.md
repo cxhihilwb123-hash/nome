@@ -271,9 +271,22 @@ The following facts remain independent:
 
 **Enforcement:** [`ChatListLoadGeneration`, `ChatListLoadState`, and `ChatListLoadResult`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L81-L106) encode provenance. [`beginChatListLoad` and `applyChatListLoadResult`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L264-L311) suppress stale attempts/generations and apply rows only when identity still matches. [`apiGetChatsResult`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1054-L1081) discriminates success, failure, and no-current-user while retaining the existing controller/command path. Android exposes a nullable first-observation fact through [`NetworkObserver.platformNetworkInfo`](../common/src/androidMain/kotlin/chat/simplex/common/helpers/NetworkObserver.kt#L16-L87). [`NomeHomeStateAdapter`](../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeStateAdapter.kt#L49-L121) derives the three axes without collapsing them.
 
-**Reachability boundary:** The unchanged root consumes no-current-user in onboarding before the home route, and the bounded home adds no active-filter producer. `FIRST_USE` and `FILTERED_NO_RESULT` therefore remain defensive renderer/test branches until a separately scoped route/filter interaction exists; the invariant above does not turn them into production-route evidence.
+**Reachability boundary:** The unchanged root consumes no-current-user in onboarding before the
+home route, so `FIRST_USE` remains a defensive renderer/test branch there. P09 now supplies a real
+nonblank loaded-chat query. `FILTERED_NO_RESULT` is production-reachable only while that producer
+is active over an available same-generation base with zero matches; it is not a retroactive P08
+claim.
 
-**Batch 2 boundary:** The connected production slice projects name, timestamp, unread, and favorite facts and permits navigation only into already-ready, non-deleting direct/group/local conversations while the core is running. Visible and spoken message summaries remain gated by the existing `showChatPreviews` privacy preference. Favorite mutation, profile switching UI, connection/request mutation, search UI/aggregation, filter controls, composer/send, and archive/migration work are outside this rule's current implementation scope. Source connection and automated tests do not by themselves prove the remaining reachability, device, screenshot, accessibility, real-core, or review gates.
+**Batch 2 boundary:** The frozen production slice projects name, timestamp, unread, and favorite
+facts and permits navigation only into already-ready, non-deleting direct/group/local
+conversations while the core is running. Visible and spoken message summaries remain gated by the
+existing `showChatPreviews` privacy preference.
+
+**Milestone 2 extension:** P09 may group only official loaded-chat filter rows and reuse the same
+navigation guards. It MUST NOT persist recent queries or claim complete global-message results.
+P10 may present only the existing invitation, scan/paste, create-group, and create-channel
+callbacks plus actual current-profile display data. Neither page may manufacture connection,
+network, delivery, identity, or success facts.
 
 ---
 
@@ -302,8 +315,9 @@ The preview MUST:
 
 **Enforcement:** [`connectIfOpenedViaUri`](../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatListView.kt#L738-L754) is the only opt-in. [`planAndConnect`](../common/src/commonMain/kotlin/chat/simplex/common/views/newchat/ConnectPlan.kt#L25-L607) retains a `Legacy` default and guards context/single-submit/cleanup. [`apiConnectPlanResult` and `apiConnectResult`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1571-L1647) preserve typed core truth with P13 command logging disabled. [`ConnectionPreviewPlanBranch`](../common/src/commonMain/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreview.kt#L91-L187) exhaustively defines the seven eligible and fourteen fallback branches.
 
-**Protected boundary:** This rule does not alter P08 `FIRST_USE` or `FILTERED_NO_RESULT`, add a P10
-entry, implement scanner/paste behavior, or change P14–P24.
+**Protected boundary:** P13 does not own the P10 entry or its internal actions, does not implement
+scanner/paste behavior, and does not change P14–P24. P09/P10 do not broaden P13's external
+`ACTION_VIEW` opt-in.
 
 ---
 

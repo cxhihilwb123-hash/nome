@@ -9,14 +9,29 @@ Create new contacts, groups, or connect with others via one-time invitation link
 ## Route / Navigation
 
 - **Entry point**: Tap the new chat button (pencil icon) in `ChatListView` toolbar or FAB
-- **Presented by**: `NewChatSheet` modal from `ChatListView` via `showNewChatSheet()`; wraps `NewChatView` and group creation in `ModalManager.start`
-- **Internal navigation**: `NewChatSheet` provides 3 action buttons:
+- **Presented by**: `NewChatSheet` modal from `ChatListView` via `showNewChatSheet()`; Android
+  renders the Nome P10 hub and Desktop delegates the official legacy content unchanged
+- **Internal navigation**: `NewChatSheet` owns 4 existing action callbacks:
   - "Create 1-time link" -- opens `NewChatView` with `INVITE` tab (generate and share a one-time invitation link)
   - "Scan / paste link" -- opens `NewChatView` with `CONNECT` tab (scan QR code or paste a received link)
   - "Create group" -- opens `AddGroupView`
+  - "Create channel" -- opens `AddChannelView`
 - **Tabs within NewChatView**: `HorizontalPager` with `TabRow` toggles between `NewChatOption.INVITE` (1-time link) and `NewChatOption.CONNECT` (connect via link)
 - **Swipe gesture**: Left/right swipe switches between tabs (Android only; `userScrollEnabled = appPlatform.isAndroid`)
 - **Dismiss behavior**: On dispose, a `DisposableEffect` shows an alert dialog (via `AlertManager.shared.showAlertDialog`) asking whether to keep an unused invitation link or delete it via `controller.deleteChat()`
+
+## Nome Android P10 Hub
+
+The Android P10 presentation shows the actual current local identity and dispatches each visible
+row to the existing one-time invitation, scan/paste, create-group, or create-channel callback.
+When entered from Nome Home, the identity card may close the hub and open the already-owned
+`UserPicker`. The hub does not create a connection, claim that a route succeeded, publish a
+contact address, or infer network health.
+
+The P10 visual-acceptance baseline governs composition, hierarchy, spacing, typography, icon and
+action sizing. Copy follows the actual callback where the baseline is semantically inaccurate:
+the group row starts group creation and does not claim that an existing group was joined. Desktop
+calls `legacyContent()` and receives no Nome presentation.
 
 ## Page Sections
 
@@ -67,10 +82,11 @@ requests the Nome P13 full-screen preview for eligible core plan branches. It sh
 invitation/address/group consequence, current-profile vs new-incognito choice, exact warning or
 owner-proof status, and response-driven connecting/pending/failure states.
 
-The New Chat sheet, Connect tab, scanner, paste field, chat-list link search, message links, chat
-preview links, and group-member links do not opt in during Batch 3 and keep their legacy
-presentation. P13 does not add a P10 home entry, implement P12 camera behavior, or absorb the P16
-group-detail page. It never displays or persists the raw connection URI.
+The New Chat sheet, Connect tab, scanner, paste field, P09 loaded-chat search, message links, chat
+preview links, and group-member links do not opt in to P13 and keep their existing connection
+planning ownership. P10 is only the route hub; P13 remains restricted to Android external
+`ACTION_VIEW`. P13 does not implement P12 camera behavior or absorb P16 group details, and never
+displays or persists the raw connection URI.
 
 ### Create Group (`AddGroupView`)
 
@@ -104,6 +120,9 @@ Group creation flow:
 | `AddGroupView.kt` | `views/newchat/AddGroupView.kt` |
 | `QRCode.kt` | `views/newchat/QRCode.kt` |
 | `NewChatSheet.kt` | `views/newchat/NewChatSheet.kt` |
+| `PlatformNewChatHub.kt` | `commonMain/.../views/newchat/PlatformNewChatHub.kt` |
+| `PlatformNewChatHub.android.kt` | `androidMain/.../views/newchat/PlatformNewChatHub.android.kt` |
+| `PlatformNewChatHub.desktop.kt` | `desktopMain/.../views/newchat/PlatformNewChatHub.desktop.kt` |
 | `ConnectPlan.kt` | `views/newchat/ConnectPlan.kt` |
 | `QRCodeScanner.kt` | `views/newchat/QRCodeScanner.kt` (expect/actual) |
 | `ContactConnectionInfoView.kt` | `views/newchat/ContactConnectionInfoView.kt` |

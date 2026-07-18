@@ -9,10 +9,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Divider
+import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ChatBubbleOutline
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,6 +45,7 @@ import chat.simplex.common.model.Chat
 import chat.simplex.common.model.ChatInfo
 import chat.simplex.common.model.ChatListLoadState
 import chat.simplex.common.model.ChatModel
+import chat.simplex.common.model.ChatController
 import chat.simplex.common.model.getTimestampText
 import chat.simplex.common.ui.nome.accessibility.nomeMinimumTouchTarget
 import chat.simplex.common.ui.nome.accessibility.nomeTalkBackSemantics
@@ -55,6 +59,8 @@ import chat.simplex.common.ui.nome.home.NomeHomeCoreState
 import chat.simplex.common.ui.nome.home.NomeHomeState
 import chat.simplex.common.ui.nome.home.NomeHomeStateAdapter
 import chat.simplex.common.ui.nome.home.NomeHomeTruthInput
+import chat.simplex.common.ui.nome.home.classifyNomeSearchResults
+import chat.simplex.common.ui.nome.home.NomeSearchRouteContent
 import chat.simplex.common.ui.nome.theme.NomeAndroidTheme
 import chat.simplex.common.ui.nome.theme.NomeTheme
 import chat.simplex.common.ui.theme.CurrentColors
@@ -73,6 +79,8 @@ actual fun PlatformHomeRoute(
   stopped: Boolean,
   defaultContent: @Composable () -> Unit,
 ) {
+  val searchOpen = rememberSaveable { mutableStateOf(false) }
+  val searchQuery = rememberSaveable { mutableStateOf("") }
   val allChats = chatModel.chats.value.toList()
   val activeFilter = chatModel.activeChatTagFilter.value
   val noLinkSearch: State<Boolean> = remember { mutableStateOf(false) }
@@ -80,14 +88,16 @@ actual fun PlatformHomeRoute(
   val upstreamVisibleChats = filteredChats(
     searchShowingSimplexLink = noLinkSearch,
     searchChatFilteredBySimplexLink = noLinkChat,
-    searchText = "",
+    searchText = searchQuery.value,
     chats = allChats,
     activeFilter = activeFilter,
   )
+  val hasActiveFilter =
+    activeFilter != null || searchQuery.value.isNotBlank()
   val (baseChats, visibleChats) = nomeHomeRouteProjection(
     allChats = allChats,
     upstreamVisibleChats = upstreamVisibleChats,
-    hasActiveFilter = activeFilter != null,
+    hasActiveFilter = hasActiveFilter,
   )
   val state = NomeHomeStateAdapter.derive(
     NomeHomeTruthInput(
@@ -98,20 +108,69 @@ actual fun PlatformHomeRoute(
       loadState = chatModel.chatListLoadState.value,
       baseChats = baseChats,
       visibleChats = visibleChats,
-      hasActiveFilter = activeFilter != null,
+      hasActiveFilter = hasActiveFilter,
       platformNetworkInfo = NetworkObserver.shared.platformNetworkInfo.value,
     ),
   )
 
   val darkTheme = !CurrentColors.collectAsState().value.colors.isLight
+  val scope = rememberCoroutineScope()
+  val openSearchResult: (Chat) -> Unit = { capturedChat ->
+    resolveOpenableNomeHomeChat(chatModel, capturedChat)?.let { currentChat ->
+      when (val info = currentChat.chatInfo) {
+        is ChatInfo.Direct ->
+          scope.launch { openDirectChat(currentChat.remoteHostId, info.apiId) }
+        is ChatInfo.Group ->
+          scope.launch { openGroupChat(currentChat.remoteHostId, info.apiId) }
+        is ChatInfo.Local ->
+          scope.launch {
+            noteFolderChatAction(
+              currentChat.remoteHostId,
+              info.noteFolder,
+            )
+          }
+        is ChatInfo.ContactRequest,
+        is ChatInfo.ContactConnection,
+        is ChatInfo.InvalidJSON -> Unit
+      }
+    }
+  }
+  val oneHandUI = remember { ChatController.appPrefs.oneHandUI.state }
   NomeAndroidTheme(darkTheme = darkTheme) {
-    NomeHomeRouteContent(
-      chatModel = chatModel,
-      state = state,
-      onOpenProfile = {
-        userPickerState.value = AnimatedViewState.VISIBLE
-      },
-    )
+    if (searchOpen.value) {
+      NomeSearchRouteContent(
+        query = searchQuery.value,
+        results = classifyNomeSearchResults(state.visibleChats),
+        contentState = state.content,
+        coreState = state.core,
+        onQueryChange = { searchQuery.value = it },
+        onOpenChat = openSearchResult,
+        onClose = {
+          searchQuery.value = ""
+          searchOpen.value = false
+        },
+      )
+    } else {
+      NomeHomeRouteContent(
+        chatModel = chatModel,
+        state = state,
+        onOpenProfile = {
+          userPickerState.value = AnimatedViewState.VISIBLE
+        },
+        onSearch = {
+          searchQuery.value = ""
+          searchOpen.value = true
+        },
+        onNewConnection = {
+          showNewChatSheet(
+            oneHandUI = oneHandUI,
+            onOpenProfile = {
+              userPickerState.value = AnimatedViewState.VISIBLE
+            },
+          )
+        },
+      )
+    }
   }
   val wasAllowedToSetupNotifications = rememberSaveable { mutableStateOf(false) }
   val canEnableNotifications = remember {
@@ -138,6 +197,8 @@ fun NomeHomeRouteContent(
   profileNameOverride: String? = null,
   onOpenChat: ((Chat) -> Unit)? = null,
   onOpenProfile: () -> Unit = {},
+  onSearch: () -> Unit = {},
+  onNewConnection: () -> Unit = {},
 ) {
   val dimensions = NomeTheme.dimensions
   val scope = rememberCoroutineScope()
@@ -160,109 +221,128 @@ fun NomeHomeRouteContent(
     }
   }
 
-  LazyColumn(
+  Box(
     modifier = Modifier
       .fillMaxSize()
       .background(NomeTheme.colors.background)
       .windowInsetsPadding(WindowInsets.safeDrawing),
-    contentPadding = PaddingValues(
-      start = dimensions.screenHorizontalInset,
-      top = dimensions.space12,
-      end = dimensions.screenHorizontalInset,
-      bottom = dimensions.space24,
-    ),
-    verticalArrangement = Arrangement.spacedBy(dimensions.space12),
   ) {
-    item {
-      NomeHomeHeader(
-        chatModel = chatModel,
-        profileNameOverride = profileNameOverride,
-        onOpenProfile = onOpenProfile,
-      )
-    }
-    item {
-      Text(
-        text = stringResource(R.string.nome_home_title),
-        modifier = Modifier.semantics { heading() },
-        style = NomeTheme.typography.display,
-        color = NomeTheme.colors.textPrimary,
-      )
-      Text(
-        text = stringResource(R.string.nome_home_subtitle),
-        style = NomeTheme.typography.body,
-        color = NomeTheme.colors.textSecondary,
-      )
-    }
-
-    when (state.connectivity) {
-      NomeHomeConnectivityState.UNKNOWN -> item {
-        NomeStatusPanel(
-          state = NomeStatePanelState.LOADING,
-          title = R.string.nome_home_network_unknown_title,
-          body = R.string.nome_home_network_unknown_body,
-          stateDescription = R.string.nome_home_network_unknown_state,
-        )
-      }
-      NomeHomeConnectivityState.DEVICE_OFFLINE -> item {
-        NomeStatusPanel(
-          state = NomeStatePanelState.OFFLINE,
-          title = R.string.nome_home_offline_title,
-          body = R.string.nome_home_offline_body,
-          stateDescription = R.string.nome_home_offline_state,
-        )
-      }
-      NomeHomeConnectivityState.ONLINE -> Unit
-    }
-
-    if (state.core == NomeHomeCoreState.STOPPED) {
+    LazyColumn(
+      modifier = Modifier.fillMaxSize(),
+      contentPadding = PaddingValues(
+        start = dimensions.screenHorizontalInset,
+        top = dimensions.space12,
+        end = dimensions.screenHorizontalInset,
+        bottom = 96.dp,
+      ),
+      verticalArrangement = Arrangement.spacedBy(dimensions.space12),
+    ) {
       item {
-        NomeStatusPanel(
-          state = NomeStatePanelState.ERROR,
-          title = R.string.nome_home_stopped_title,
-          body = R.string.nome_home_stopped_body,
-          stateDescription = R.string.nome_home_stopped_state,
+        NomeHomeHeader(
+          chatModel = chatModel,
+          profileNameOverride = profileNameOverride,
+          onOpenProfile = onOpenProfile,
         )
       }
-    }
+      item {
+        Text(
+          text = stringResource(R.string.nome_home_title),
+          modifier = Modifier.semantics { heading() },
+          style = NomeTheme.typography.display,
+          color = NomeTheme.colors.textPrimary,
+        )
+        Text(
+          text = stringResource(R.string.nome_home_subtitle),
+          style = NomeTheme.typography.body,
+          color = NomeTheme.colors.textSecondary,
+        )
+      }
+      item {
+        NomeHomeSearchBar(onSearch)
+      }
 
-    when (state.content) {
-      NomeHomeContentState.LOADING -> item {
-        NomeHomeSkeleton()
+      when (state.connectivity) {
+        NomeHomeConnectivityState.UNKNOWN -> item {
+          NomeStatusPanel(
+            state = NomeStatePanelState.LOADING,
+            title = R.string.nome_home_network_unknown_title,
+            body = R.string.nome_home_network_unknown_body,
+            stateDescription = R.string.nome_home_network_unknown_state,
+          )
+        }
+        NomeHomeConnectivityState.DEVICE_OFFLINE -> item {
+          NomeStatusPanel(
+            state = NomeStatePanelState.OFFLINE,
+            title = R.string.nome_home_offline_title,
+            body = R.string.nome_home_offline_body,
+            stateDescription = R.string.nome_home_offline_state,
+          )
+        }
+        NomeHomeConnectivityState.ONLINE -> Unit
       }
-      NomeHomeContentState.FIRST_USE -> item {
-        NomeStatusPanel(
-          state = NomeStatePanelState.EMPTY,
-          title = R.string.nome_home_first_use_title,
-          body = R.string.nome_home_first_use_body,
-          stateDescription = R.string.nome_home_first_use_state,
-        )
-      }
-      NomeHomeContentState.TRUE_EMPTY -> item {
-        NomeStatusPanel(
-          state = NomeStatePanelState.EMPTY,
-          title = R.string.nome_home_empty_title,
-          body = R.string.nome_home_empty_body,
-          stateDescription = R.string.nome_home_empty_state,
-        )
-      }
-      NomeHomeContentState.FILTERED_NO_RESULT -> item {
-        NomeStatusPanel(
-          state = NomeStatePanelState.EMPTY,
-          title = R.string.nome_home_filtered_empty_title,
-          body = R.string.nome_home_filtered_empty_body,
-          stateDescription = R.string.nome_home_filtered_empty_state,
-        )
-      }
-      NomeHomeContentState.UNAVAILABLE -> {
+
+      if (state.core == NomeHomeCoreState.STOPPED) {
         item {
           NomeStatusPanel(
             state = NomeStatePanelState.ERROR,
-            title = R.string.nome_home_unavailable_title,
-            body = R.string.nome_home_unavailable_body,
-            stateDescription = R.string.nome_home_unavailable_state,
+            title = R.string.nome_home_stopped_title,
+            body = R.string.nome_home_stopped_body,
+            stateDescription = R.string.nome_home_stopped_state,
           )
         }
-        if (state.visibleChats.isNotEmpty()) {
+      }
+
+      when (state.content) {
+        NomeHomeContentState.LOADING -> item {
+          NomeHomeSkeleton()
+        }
+        NomeHomeContentState.FIRST_USE -> item {
+          NomeStatusPanel(
+            state = NomeStatePanelState.EMPTY,
+            title = R.string.nome_home_first_use_title,
+            body = R.string.nome_home_first_use_body,
+            stateDescription = R.string.nome_home_first_use_state,
+          )
+        }
+        NomeHomeContentState.TRUE_EMPTY -> item {
+          NomeStatusPanel(
+            state = NomeStatePanelState.EMPTY,
+            title = R.string.nome_home_empty_title,
+            body = R.string.nome_home_empty_body,
+            stateDescription = R.string.nome_home_empty_state,
+          )
+        }
+        NomeHomeContentState.FILTERED_NO_RESULT -> item {
+          NomeStatusPanel(
+            state = NomeStatePanelState.EMPTY,
+            title = R.string.nome_home_filtered_empty_title,
+            body = R.string.nome_home_filtered_empty_body,
+            stateDescription = R.string.nome_home_filtered_empty_state,
+          )
+        }
+        NomeHomeContentState.UNAVAILABLE -> {
+          item {
+            NomeStatusPanel(
+              state = NomeStatePanelState.ERROR,
+              title = R.string.nome_home_unavailable_title,
+              body = R.string.nome_home_unavailable_body,
+              stateDescription = R.string.nome_home_unavailable_state,
+            )
+          }
+          if (state.visibleChats.isNotEmpty()) {
+            item { NomeChatsHeading() }
+            items(state.visibleChats, key = { it.remoteHostId to it.id }) { chat ->
+              NomeChatRow(
+                chat = chat,
+                coreState = state.core,
+                pendingDeletion = pendingDeletionChats.contains(chat.remoteHostId to chat.chatInfo.id),
+                showChatPreviews = showChatPreviews,
+                openChat = openChat,
+              )
+            }
+          }
+        }
+        NomeHomeContentState.POPULATED -> {
           item { NomeChatsHeading() }
           items(state.visibleChats, key = { it.remoteHostId to it.id }) { chat ->
             NomeChatRow(
@@ -275,18 +355,61 @@ fun NomeHomeRouteContent(
           }
         }
       }
-      NomeHomeContentState.POPULATED -> {
-        item { NomeChatsHeading() }
-        items(state.visibleChats, key = { it.remoteHostId to it.id }) { chat ->
-          NomeChatRow(
-            chat = chat,
-            coreState = state.core,
-            pendingDeletion = pendingDeletionChats.contains(chat.remoteHostId to chat.chatInfo.id),
-            showChatPreviews = showChatPreviews,
-            openChat = openChat,
-          )
-        }
+    }
+    if (state.core == NomeHomeCoreState.RUNNING) {
+      FloatingActionButton(
+        onClick = onNewConnection,
+        modifier = Modifier
+          .align(Alignment.BottomEnd)
+          .padding(end = dimensions.screenHorizontalInset, bottom = dimensions.space20)
+          .size(56.dp)
+          .nomeTalkBackSemantics(
+            label = stringResource(R.string.nome_home_new_connection),
+            role = Role.Button,
+          ),
+        backgroundColor = NomeTheme.colors.action,
+        contentColor = NomeTheme.colors.onAction,
+      ) {
+        Icon(
+          imageVector = Icons.Rounded.Add,
+          contentDescription = null,
+          modifier = Modifier.size(28.dp),
+        )
       }
+    }
+  }
+}
+
+@Composable
+private fun NomeHomeSearchBar(onSearch: () -> Unit) {
+  NomeSurface(
+    modifier = Modifier
+      .fillMaxWidth()
+      .heightIn(min = 48.dp)
+      .clickable(onClick = onSearch)
+      .nomeTalkBackSemantics(
+        label = stringResource(R.string.nome_home_search),
+        role = Role.Button,
+      ),
+    shape = NomeTheme.shapes.pill,
+    color = NomeTheme.colors.surfaceSubtle,
+  ) {
+    Row(
+      modifier = Modifier.padding(horizontal = 14.dp),
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      Icon(
+        imageVector = Icons.Rounded.Search,
+        contentDescription = null,
+        modifier = Modifier.size(20.dp),
+        tint = NomeTheme.colors.textSecondary,
+      )
+      Spacer(Modifier.width(8.dp))
+      Text(
+        text = stringResource(R.string.nome_p09_search_placeholder),
+        style = NomeTheme.typography.body,
+        color = NomeTheme.colors.textSecondary,
+      )
     }
   }
 }

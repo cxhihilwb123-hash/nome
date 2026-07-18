@@ -1,6 +1,10 @@
 # Nome Android
 
-> **Status:** Phase 2 Android-only foundation, Batch 2 P07/P08, and Batch 3 P13 are frozen under their evidence roots. Active Batch 1A connects only P01 database startup/migration/recovery source; its execution and review status is owned exclusively by its evidence root and is not asserted here. `FIRST_USE` and `FILTERED_NO_RESULT` remain renderer-only/deferred production-reachability branches. P09–P12 and P14–P24 are not claimed.
+> **Status:** Foundation, P07/P08, P13, and Milestone 1 P01–P06 are frozen. The targeted P02–P06
+> post-clarification visual recheck and the P09/P10 ordinary UI group are closed over official
+> v6.5.6 owners; the Milestone 2 concentrated gate/checkpoint is pending.
+> `FIRST_USE` remains official onboarding/root-owned. `FILTERED_NO_RESULT` is reachable only from
+> the active P09 query producer and is not reclassified as P08. P11–P12 and P14–P24 remain pending.
 > **Related spec:** [spec/client/nome-android-ui.md](../../spec/client/nome-android-ui.md)
 > **Coverage matrix:** [plans/20260716_03.md](../../../../plans/20260716_03.md)
 
@@ -22,10 +26,16 @@ The product promise is:
 - Nome's release minimum is Android API 28. API 26–27 are unsupported; Gradle, merged manifests, APK badging, API 28 launch, and API 35 same-package non-empty upgrade checks are complete. The Phase 1 minSdk 26 build and crash evidence remain immutable historical facts.
 - The Haskell/native core, archive format, migration protocol, command protocol, and database semantics stay unchanged.
 - `ChatModel`, `ChatController`, core events, Android services, permissions, and intents remain the source of truth.
-- A visual prototype or screenshot is not a product state source.
+- P01–P24 effect images are page-level visual-acceptance baselines; they govern Android
+  composition, placement, hierarchy, styling, iconography, action sizing, and density, while only
+  official v6.5.6 models/routes/actions may supply product facts.
 - P01–P24 are the P0 effect-page set, not the complete reachable product boundary.
 - Desktop must not be rebranded accidentally through broad `commonMain` changes.
-- Batch 2's home slice is projection plus navigation into already-ready direct/group/note conversations; Batch 3 adds only the external-link P13 modal; Batch 1A replaces only the presentation/controller layer of the existing P01 database roots. None authorizes a second navigation stack/controller/model, direct native calls, or database semantics changes.
+- The frozen P07/P08 home slice is projection plus navigation into already-ready direct/group/note
+  conversations; P09 adds only loaded-chat name filtering and P10 only presents existing New Chat
+  callbacks; P13 remains external-`ACTION_VIEW` only; P01 replaces only the presentation/controller
+  layer of existing database roots. None authorizes a second navigation stack/controller/model,
+  direct native calls, or database semantics changes.
 
 ## Information architecture
 
@@ -74,7 +84,13 @@ When no dedicated effect page exists, the coverage matrix names the adjacent P0 
 
 ## Theme and layout
 
-The approved light palette and component language come from the comprehensive design specification and the 24 Android effect pages. Dark mode is frozen as **Nome Dark Token v1**, represented by P02, P07, P17, P21, and P23.
+The 24 Android effect pages are page-level light-theme visual acceptance baselines, not merely a
+palette or component-token source. Shared components accelerate delivery, but each production page
+must still be rendered at its reference viewport/language and checked side by side for composition,
+region placement, hierarchy, color, type, spacing, corners, icons, action size, and density. The
+official v6.5.6 state/action/data semantics remain authoritative where a reference contains an
+unsupported fact. Dark mode is frozen as **Nome Dark Token v1**, represented by P02, P07, P17,
+P21, and P23.
 
 Dark Token v1 preserves the approved light baseline's information architecture, semantics, copy priority, component dimensions, spacing, typography scale, icon size, state set, 48dp targets, and safe-area behavior. It only remaps surface tiers, text/icon/status contrast, scrim, border, and elevation treatment. It cannot add a second visual direction, change a route or state, or use color as the only signal for danger, error, unread, delivery, verification, relay, or public-channel disclosure. The five deterministic foundation representatives have passed native screenshot, contrast, 200% font, 48dp, and TalkBack-semantics verification. Each later production page still has to repeat its applicable real-state and device gates before shipping.
 
@@ -90,14 +106,23 @@ Minimum interaction rules:
 
 ## Phase 2 source placement
 
-The Android-only foundation keeps its frozen placements, Batch 2 adds one split production
-host/home route, Batch 3 adds one P13 connection seam, and active Batch 1A adds one bounded
-database-root presentation seam:
+The Android-only foundation keeps its frozen placements. The frozen batches add the split
+production host/home route, P13 connection seam, and bounded P01 database-root presentation seam.
+Milestone 2 extends the existing Home/New Chat presentation owners for P09/P10:
 
 - tokens, theme, components, and accessibility primitives: `common/src/androidMain/kotlin/chat/simplex/common/ui/nome/{tokens,theme,components,accessibility}/`;
 - Activity/window host: [`NomeProductionShell.kt`](../../android/src/main/java/chat/simplex/app/nome/NomeProductionShell.kt#L9-L23), installed around the unchanged `AppScreen` by [`MainActivity`](../../android/src/main/java/chat/simplex/app/MainActivity.kt#L60-L65);
 - shared home-selection seam only: [`PlatformHomeRoute.kt`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.kt#L8-L22), called from the existing [`StartPartOfScreen`](../../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L366-L393);
-- Android P07/P08 renderer and adapter: [`NomeHomeRoute.android.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeRoute.android.kt#L63-L123) and [`NomeHomeStateAdapter.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeStateAdapter.kt#L7-L121);
+- Android P07–P09 Home renderer/adapters:
+  [`NomeHomeRoute.android.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeRoute.android.kt),
+  [`NomeHomeStateAdapter.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeStateAdapter.kt),
+  [`NomeSearchRoute.android.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeSearchRoute.android.kt),
+  and [`NomeSearchStateAdapter.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeSearchStateAdapter.kt);
+- P10 platform presentation seam and Android renderer:
+  [`PlatformNewChatHub.kt`](../../common/src/commonMain/kotlin/chat/simplex/common/views/newchat/PlatformNewChatHub.kt),
+  [`PlatformNewChatHub.android.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/views/newchat/PlatformNewChatHub.android.kt),
+  and the unchanged legacy delegate in
+  [`PlatformNewChatHub.desktop.kt`](../../common/src/desktopMain/kotlin/chat/simplex/common/views/newchat/PlatformNewChatHub.desktop.kt);
 - Desktop fallback: [`PlatformHomeRoute.desktop.kt`](../../common/src/desktopMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.desktop.kt#L8-L17), which delegates the official content unchanged;
 - typed shared load provenance: [`ChatListLoadGeneration`, `ChatListLoadState`, and `ChatListLoadResult`](../../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L81-L106), applied through the existing model/controller rather than a second store;
 - Android first-network-observation provenance: [`NetworkObserver.platformNetworkInfo`](../../common/src/androidMain/kotlin/chat/simplex/common/helpers/NetworkObserver.kt#L16-L87);
@@ -134,7 +159,7 @@ The shared typed result is the other bounded exception: [`apiGetChatsResult`](..
 |---|---|
 | Home identity/load | A list result is usable only for the current `(remoteHostId, userId)` generation. Switching, mismatch, initial state, a hidden-row load, or an in-flight load without cached rows hides old rows. A same-generation refresh with `hideRows=false` may continue showing cached rows. |
 | Loading/progress | Use determinate progress only when the API exposes a real numerator/denominator or stage. P08 uses a skeleton only for explicit initial/hidden-row/no-cache in-flight facts, never because a list happens to be empty. |
-| Empty/filtered | True empty requires typed same-generation `ApiChats` success with zero base rows; failure is unavailable. The adapter can distinguish explicit no-user and an already-active filter, but the unchanged root consumes no-user in onboarding and this bounded home has no filter producer. First use and filtered no result are therefore defensive renderer/test contracts, not current production-route claims. |
+| Empty/filtered | True empty requires typed same-generation `ApiChats` success with zero base rows; failure is unavailable. The unchanged root consumes no-user in onboarding, so first use remains defensive at Home. P09 supplies a real nonblank loaded-chat filter producer; filtered no result is reachable only while that producer is active over an available loaded base with zero matches. |
 | Offline/network | Before Android's first platform observation, connectivity is unknown. Device connectivity is not proof that relays, operators, delivery, or private routing are healthy. Label each level precisely. |
 | Core stopped | Core state is independent of content/network. Same-generation cached rows may remain visible while stopped, but core-dependent actions are read-only. |
 | Security | Verification, authentication, encryption, and non-E2EE labels come from the relevant security state, not visual convention. |
@@ -181,12 +206,32 @@ Included source behavior:
 
 Explicit exclusions:
 
-- favorite mutation, profile-switch control, connection/request mutation, and tag/filter controls;
-- search UI, pasted-link handling, global aggregation, and search no-result state;
-- new-chat/settings entry controls, composer/send, locale marker, and GAP-16 archive/migration work;
+- favorite mutation, connection/request mutation, and tag/filter controls;
+- pasted-link handling inside P09, persisted recent queries, and unqueried global message
+  aggregation;
+- settings entry, composer/send, locale marker, and GAP-16 archive/migration work;
 - any Haskell/native-core, protocol, command/event, database/archive, iOS, or Desktop Nome UI change.
 
-The independent Batch 2 evidence records the real-device, real-core, screenshot, manual TalkBack, threat-model, and release-isolation execution gates. Formal two-round review status is recorded only by that evidence root's `review-rounds.md` and is not asserted by this product view. Those execution results cover only the authorized production-home slice and do not close the two production-reachability gaps above.
+The independent Batch 2 evidence records the frozen P07/P08 execution gates. It does not claim the
+later P09 query or P10 route-hub implementation.
+
+## Milestone 2 P09/P10 production boundary
+
+P09 passes a nonblank query to the existing `filteredChats` loaded-chat producer. Android groups
+only the returned direct, group, channel, and note rows for presentation and reuses the existing
+ready-chat navigation guards. It stores no recent-query history, performs no global message
+aggregation, and does not treat loading/unavailable as no result.
+
+P10 is the Android presentation of the existing `NewChatSheet` callbacks. One-time invitation,
+scan/paste, create group, and create channel continue into their official routes. The current
+identity card reads the real local profile and may open the existing `UserPicker`; it does not
+create an account or assert connection status.
+
+Both pages use their effect images as visual-acceptance baselines. Their primary Chinese/light/API
+35 production captures are compared side by side at the reference viewport. P09 keeps the
+baseline's message-result and recent-search regions but replaces unsupported rows/chips with
+truthful scope and local-retention policy copy. P10 keeps the baseline action structure but names
+the group action according to the real create-group callback.
 
 ## Batch 3 P13 production boundary
 
@@ -234,6 +279,14 @@ Each batch is complete only when all applicable page states have:
 
 Preview fixtures can demonstrate visual variants, but only device runs against production state paths satisfy real-behavior evidence.
 
+The targeted P02–P06 API 35 Chinese/light recheck confirms the actual rendered onboarding family,
+not just shared tokens. P02 aligns the compact Nome wordmark, lock/identity stack, pill actions,
+and local-data strip while retaining real local-auth outcomes. P03–P06 align the baseline page
+scaffolds, identity/operator/commitment cards, list density, information strips, and anchored
+actions. Truthful differences remain explicit: P04 uses the current local identity, P05 shows
+operator configuration rather than health/toggles and does not invent an unsafe back transition,
+and P06 retains the official conditions/non-E2EE wording.
+
 ## Recorded product decisions
 
 The 2026-07-17 delegated decision adopts the recommended route for GAP-08 through GAP-17 and freezes GAP-18 at minSdk 28. The detailed contract is in [product/gaps.md](../gaps.md) and `plans/20260717_02.md`; the product consequences are:
@@ -243,10 +296,10 @@ The 2026-07-17 delegated decision adopts the recommended route for GAP-08 throug
 - API 26–27 are unsupported and no native rebuild or native/core source change is authorized;
 - every C row in the coverage matrix remains a missing capability. A product decision can remove or reword that state, but it cannot reclassify C as A/B or mark it implemented.
 
-The foundation, Batch 2, and Batch 3 remain complete under their own frozen evidence. Batch 1A is
-a separate narrow P01 source slice whose formal execution status is owned only by its independent
-evidence root. The first-use/filter reachability gaps remain unchanged, and P09–P12 plus P14–P24
-remain outside this source batch.
+The foundation, P07/P08, P13, and Milestone 1 P01–P06 remain frozen. The targeted P02–P06 visual
+correction and P09/P10 ordinary UI group are ready for the Milestone 2 concentrated gate. First
+use remains onboarding-owned; only P09 closes the filtered-no-result producer gap. P11–P12 plus
+P14–P24 remain outside this group.
 
 ## Current evidence
 
@@ -264,3 +317,7 @@ Batch 1A P01 uses
 tests prove presentation only; disposable database/Keystore/backup/migration fixtures, real
 root/core results, TalkBack, release isolation, and same-digest reviews remain authoritative only
 when recorded there.
+
+Current P02–P06 post-clarification and P09/P10 execution/visual comparisons are recorded only in
+`plans/evidence/20260718_nome_android_completion/`; no standalone ordinary-batch evidence root or
+checkpoint is created.
