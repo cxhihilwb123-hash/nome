@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nome_brand_logo_description">Nome</string>
+
+    <string name="nome_p02_title">Nome is locked</string>
+    <string name="nome_p02_system_body">Use biometrics or the device lock to unlock your local messages</string>
+    <string name="nome_p02_passcode_body">Enter the Nome app passcode to unlock your local messages</string>
+    <string name="nome_p02_system_unlock">Unlock with biometrics</string>
+    <string name="nome_p02_passcode_unlock">Enter app passcode</string>
+    <string name="nome_p02_device_lock">Retry system authentication</string>
+    <string name="nome_p02_local_note">Your identity and messages remain on this device</string>
+
+    <string name="nome_p03_title">Private messaging, made simple</string>
+    <string name="nome_p03_body">Nome does not need a phone number or email. Start with a local identity that belongs to this device.</string>
+    <string name="nome_p03_point_phone_title">No phone number collected</string>
+    <string name="nome_p03_point_phone_body">Connect through invitations</string>
+    <string name="nome_p03_point_device_title">Messages stay on this device</string>
+    <string name="nome_p03_point_device_body">You decide when to create a backup</string>
+    <string name="nome_p03_point_confirm_title">Connections require confirmation</string>
+    <string name="nome_p03_point_confirm_body">Each side chooses whether to connect</string>
+    <string name="nome_p03_create">Get started</string>
+    <string name="nome_p03_migrate">Transfer from an old device</string>
+    <string name="nome_p03_language">English</string>
+
+    <string name="nome_p04_title">Create local identity</string>
+    <string name="nome_p04_intro">This is the name people see when connecting with you. You can change it later.</string>
+    <string name="nome_p04_preview">Identity preview</string>
+    <string name="nome_p04_preview_supporting">Stored on this device</string>
+    <string name="nome_p04_display_name">Display name</string>
+    <string name="nome_p04_display_name_placeholder">Enter a display name</string>
+    <string name="nome_p04_hint">Use a name your contacts will recognize</string>
+    <string name="nome_p04_local_title">Stored only on this device</string>
+    <string name="nome_p04_local_body">This is not a cloud account and does not require sign-in.</string>
+    <string name="nome_p04_create">Create and continue</string>
+    <string name="nome_p04_creating">Creating local identity…</string>
+
+    <string name="nome_p05_title">My network</string>
+    <string name="nome_p05_intro">Choose the server operators used for message routing. You can change this configuration later in Settings.</string>
+    <string name="nome_p05_no_operator">No server operator selected</string>
+    <string name="nome_p05_operator_count">%1$d operator(s) selected</string>
+    <string name="nome_p05_scope_note">Shows configuration only, not connectivity or server health.</string>
+    <string name="nome_p05_preferences">Preferences</string>
+    <string name="nome_p05_notifications">New message notifications</string>
+    <string name="nome_p05_notifications_service">Instant notifications using the background service</string>
+    <string name="nome_p05_notifications_periodic">Periodic notification checks</string>
+    <string name="nome_p05_notifications_off">Notifications are off</string>
+    <string name="nome_p05_operators">Server operators</string>
+    <string name="nome_p05_operators_body">Choose operators used by the existing routing configuration</string>
+    <string name="nome_p05_advanced">Advanced network settings</string>
+    <string name="nome_p05_advanced_body">More provider, relay and Tor controls remain available in Settings</string>
+    <string name="nome_p05_continue">Continue</string>
+
+    <string name="nome_p06_title">Network commitment</string>
+    <string name="nome_p06_intro">Before using Nome, confirm that you understand these basic commitments.</string>
+    <string name="nome_p06_private_title">Respect privacy</string>
+    <string name="nome_p06_private_body">Do not use Nome to harass, track or impersonate anyone.</string>
+    <string name="nome_p06_connection_title">Connect carefully</string>
+    <string name="nome_p06_connection_body">Accept invitations only when you recognize or trust the source.</string>
+    <string name="nome_p06_data_title">Protect your data</string>
+    <string name="nome_p06_data_body">Servers cannot recover local messages after they are lost.</string>
+    <string name="nome_p06_channel_note">Public channels are not end-to-end encrypted. This is explained again before joining.</string>
+    <string name="nome_p06_consent">I have read and accept the network commitment</string>
+    <string name="nome_p06_terms">View full terms</string>
+    <string name="nome_p06_accept">Accept and enter Nome</string>
+    <string name="nome_back">Back</string>
+</resources>

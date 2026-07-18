@@ -51,6 +51,14 @@ page, or any P09–P12/P14–P24 implementation. `FIRST_USE` and `FILTERED_NO_RE
 Batch 3 execution/review status is owned only by
 `plans/evidence/20260717_nome_android_phase2_batch3_p13/`.
 
+Batch 1A connects P01 only at the existing database opening, migration, and guarded
+error/recovery roots. Android derives fixed bilingual states from `chatDbStatus`, migration
+in-progress flags, no-secret Keystore failure class, and the exact matched two-file backup
+predicate. Desktop delegates the official renderer exactly once. There is no percentage, timeout,
+generic rollback, or startup-success claim; copy success still requires a separate fresh open.
+Execution, fixture, accessibility, release-isolation, and review status is authoritative only in
+`plans/evidence/20260718_nome_android_batch1a_p01/`.
+
 ---
 
 ## Vision

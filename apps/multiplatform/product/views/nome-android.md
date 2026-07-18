@@ -1,6 +1,6 @@
 # Nome Android
 
-> **Status:** Phase 2 Android-only design foundation and the authorized Batch 2 production shell plus bounded, read-only P07/P08 production-home slice are frozen. Batch 3 adds only the authorized P13 external-link connection-preview source; its execution and review status is owned exclusively by its evidence root and is not asserted here. `FIRST_USE` and `FILTERED_NO_RESULT` remain renderer-only/deferred production-reachability branches. P09–P12 and P14–P24 are not claimed.
+> **Status:** Phase 2 Android-only foundation, Batch 2 P07/P08, and Batch 3 P13 are frozen under their evidence roots. Active Batch 1A connects only P01 database startup/migration/recovery source; its execution and review status is owned exclusively by its evidence root and is not asserted here. `FIRST_USE` and `FILTERED_NO_RESULT` remain renderer-only/deferred production-reachability branches. P09–P12 and P14–P24 are not claimed.
 > **Related spec:** [spec/client/nome-android-ui.md](../../spec/client/nome-android-ui.md)
 > **Coverage matrix:** [plans/20260716_03.md](../../../../plans/20260716_03.md)
 
@@ -25,7 +25,7 @@ The product promise is:
 - A visual prototype or screenshot is not a product state source.
 - P01–P24 are the P0 effect-page set, not the complete reachable product boundary.
 - Desktop must not be rebranded accidentally through broad `commonMain` changes.
-- Batch 2's home slice is projection plus navigation into already-ready direct/group/note conversations; Batch 3 adds only the external-link P13 modal. Neither authorizes home mutations, a second navigation stack, a second controller/model, or direct native calls.
+- Batch 2's home slice is projection plus navigation into already-ready direct/group/note conversations; Batch 3 adds only the external-link P13 modal; Batch 1A replaces only the presentation/controller layer of the existing P01 database roots. None authorizes a second navigation stack/controller/model, direct native calls, or database semantics changes.
 
 ## Information architecture
 
@@ -91,7 +91,8 @@ Minimum interaction rules:
 ## Phase 2 source placement
 
 The Android-only foundation keeps its frozen placements, Batch 2 adds one split production
-host/home route, and Batch 3 adds one P13 connection seam:
+host/home route, Batch 3 adds one P13 connection seam, and active Batch 1A adds one bounded
+database-root presentation seam:
 
 - tokens, theme, components, and accessibility primitives: `common/src/androidMain/kotlin/chat/simplex/common/ui/nome/{tokens,theme,components,accessibility}/`;
 - Activity/window host: [`NomeProductionShell.kt`](../../android/src/main/java/chat/simplex/app/nome/NomeProductionShell.kt#L9-L23), installed around the unchanged `AppScreen` by [`MainActivity`](../../android/src/main/java/chat/simplex/app/MainActivity.kt#L60-L65);
@@ -112,6 +113,16 @@ host/home route, and Batch 3 adds one P13 connection seam:
   `common/src/androidMain/kotlin/chat/simplex/common/{views/newchat/PlatformConnectionPreview.android.kt,ui/nome/connection/**}` and `common/src/androidMain/res/values*/nome_connection_preview_strings.xml`;
 - Desktop P13 actual:
   `common/src/desktopMain/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreview.desktop.kt`, which returns `false` and preserves legacy presentation.
+- shared P01 facts/action seam:
+  `common/src/commonMain/kotlin/chat/simplex/common/views/database/{PlatformDatabaseRootRoute,DatabaseErrorView}.kt`, called only from the existing root branches in `App.kt`;
+- Android P01 key-read class, process attempt owner, reducer, renderer, and bilingual resources:
+  `common/src/androidMain/kotlin/chat/simplex/common/{platform/Cryptor.android.kt,views/database/PlatformDatabaseRootRoute.android.kt,ui/nome/database/**}` and `common/src/androidMain/res/values*/nome_database_root_strings.xml`;
+- Desktop P01 actual:
+  `common/src/desktopMain/kotlin/chat/simplex/common/views/database/PlatformDatabaseRootRoute.desktop.kt`, which invokes the supplied official content once.
+- P01 deterministic renderer reference and packaging guard:
+  `android/src/debug/java/chat/simplex/app/nome/database/NomeDatabaseRootEvidenceActivity.kt` and
+  `android/src/androidTest/java/chat/simplex/app/nome/database/{NomeDatabaseRootScreenshotTest,NomeDatabaseRootPackagingTest}.kt`;
+  these are debug/test-only and never a real database result.
 
 The app-module shell cannot replace a route selected inside `AppScreen` without duplicating or overlaying the official root/navigation. The narrow `expect`/`actual` seam therefore keeps root gates, authentication, calls, share intents, overlays, safe areas, and back behavior in their existing owners while keeping all Nome presentation in `androidMain`. The Desktop actual and test constrain the shared seam to fallback behavior.
 
@@ -131,6 +142,27 @@ The shared typed result is the other bounded exception: [`apiGetChatsResult`](..
 | Invitation lifecycle | Copied/shared does not mean used. An expiry label requires a real TTL/expiry source. |
 | Presence | Nome does not invent online/last-seen presence. |
 | Migration/recovery | Never promise rollback, resume, cancel, or restore unless the implemented archive/migration path guarantees it. |
+
+## Batch 1A P01 production boundary
+
+P01 is selected only by the existing opening, database-migration-in-progress, and guarded
+database-error branches. The branch order, one-second opening presentation delay, and
+`!unauthorized` ownership remain unchanged. Android derives one fixed state from exact
+`DBMigrationResult` subtype, controller/migration progress flags, stored-key Boolean facts, a
+no-secret database-key read class, and the exact matched two-file backup predicate. Desktop calls
+the official legacy content exactly once.
+
+The Android route permits only the existing operations: open once with an entered key, separately
+save then open, explicit upgrade/downgrade confirmation, exact matched-pair copy, and a separate
+fresh open after copy. The atomic attempt gate prevents duplicate commands. Copy success/failure
+is attempt- and source-bound and cannot override a newer model result. Only a fresh native `OK`
+leaves P01 and invokes the existing Android post-open hook.
+
+Passphrase text is non-saveable and clears on submit, terminal/root transition, background stop,
+and composition disposal. The database Keystore seam records only missing-alias/decrypt-failure
+class plus the existing initial-random Boolean. P01 never repeats raw path, migration name, SQL,
+JSON, stack, key text, percentage, staged progress, timeout, cancel, generic rollback, identity
+loaded, or messaging-restored copy.
 
 ## Batch 2 P07/P08 production boundary
 
@@ -211,10 +243,10 @@ The 2026-07-17 delegated decision adopts the recommended route for GAP-08 throug
 - API 26–27 are unsupported and no native rebuild or native/core source change is authorized;
 - every C row in the coverage matrix remains a missing capability. A product decision can remove or reword that state, but it cannot reclassify C as A/B or mark it implemented.
 
-The foundation and Batch 2 remain complete under their own frozen evidence. Batch 3 is a second
-deliberately narrow production slice and contains P13 only. Formal review status is owned only by
-the independent batch evidence roots. The first-use/filter reachability gaps remain unchanged,
-and P09–P12 plus P14–P24 remain outside this source batch.
+The foundation, Batch 2, and Batch 3 remain complete under their own frozen evidence. Batch 1A is
+a separate narrow P01 source slice whose formal execution status is owned only by its independent
+evidence root. The first-use/filter reachability gaps remain unchanged, and P09–P12 plus P14–P24
+remain outside this source batch.
 
 ## Current evidence
 
@@ -226,3 +258,9 @@ Batch 3 P13 uses a separate evidence root at
 `plans/evidence/20260717_nome_android_phase2_batch3_p13/`. Debug renderer captures are not
 real-core evidence; device production-route, two-client, accessibility, release-isolation, and
 same-digest review results remain authoritative only when recorded there.
+
+Batch 1A P01 uses
+`plans/evidence/20260718_nome_android_batch1a_p01/`. Reducer, Compose, or deterministic renderer
+tests prove presentation only; disposable database/Keystore/backup/migration fixtures, real
+root/core results, TalkBack, release isolation, and same-digest reviews remain authoritative only
+when recorded there.

@@ -288,7 +288,7 @@ This directly undermines RULE-02 (Database Encryption at Rest) and RULE-04 (Self
 **Category:** Product truth / Recovery
 **Platform:** Android
 **Pages:** P01, P08
-**Decision status:** **[DECIDED 2026-07-17 — P08 BOUNDED SOURCE CONNECTED; P08 GATES AND P01 IMPLEMENTATION PENDING]**
+**Decision status:** **[DECIDED 2026-07-18 — P08 FROZEN; P01 BOUNDED SOURCE CONNECTED, EXECUTION GATES ACTIVE]**
 
 ### Recorded Decision
 
@@ -302,7 +302,19 @@ The approved Nome pages show distinct startup, migration, restore, timeout, load
 
 The Batch 2 source adds typed chat-list outcomes instead of changing the core. [`apiGetChatsResult`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1054-L1081) distinguishes a successful `CR.ApiChats`, command/parse failure, and no current user. [`ChatModel`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L81-L106) carries the user/host generation, and [`NomeHomeStateAdapter`](../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeStateAdapter.kt#L49-L121) permits true empty only after same-generation success. Loading, first use, filtered no result, unavailable, connectivity, and core stopped remain distinct in the adapter; identity mismatch suppresses stale rows. First use and filtered no result are not currently production-route reachable because the root consumes no-user in onboarding and this bounded home has no filter producer, so those P08 gates remain open.
 
-Android's first platform network observation is now exposed separately from the legacy optimistic model sentinel. Before that observation P08 renders network unknown; observed absence of a validated network renders device offline only. The source does not add startup percentages, restore, rollback, or timeout guarantees, and it does not implement P01. Batch 2 verification/evidence is still in progress, so GAP-08 is not closed.
+Android's first platform network observation is exposed separately from the legacy optimistic model sentinel. Before that observation P08 renders network unknown; observed absence of a validated network renders device offline only. Batch 2 is frozen under its evidence root.
+
+### Current P01 implementation boundary
+
+Batch 1A preserves the official root order, one-second opening presentation delay, and
+authentication ownership. Android maps only exact `DBMigrationResult` subtypes, in-progress flags,
+no-secret database-key read class, stored-key Boolean facts, and the exact matched backup pair.
+Manual open-once does not persist a key; save-and-open remains separately explicit. Backup copy
+success is attempt/source-bound and still requires a fresh explicit database open. Raw native,
+SQL, path, JSON, and Keystore throwable text are not replayed by the P01 UI or database-key
+Logcat branch. Unsupported percentage, stages, timeout, cancel, generic restore/rollback, identity
+loaded, and messaging-restored claims remain absent. GAP-08 stays open until the P01 evidence root
+closes its real fixtures, accessibility, release, and two-review gates.
 
 ### Product Impact
 

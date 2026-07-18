@@ -13,6 +13,21 @@ import chat.simplex.common.views.usersettings.*
 import chat.simplex.res.MR
 import kotlinx.coroutines.*
 
+internal enum class AppUnlockEffect {
+  AUTHORIZE,
+  KEEP_CURRENT_PROMPT,
+  KEEP_LOCKED_ERROR,
+  KEEP_LOCKED_UNAVAILABLE,
+}
+
+internal fun appUnlockEffect(result: LAResult): AppUnlockEffect =
+  when (result) {
+    LAResult.Success -> AppUnlockEffect.AUTHORIZE
+    is LAResult.Failed -> AppUnlockEffect.KEEP_CURRENT_PROMPT
+    is LAResult.Error -> AppUnlockEffect.KEEP_LOCKED_ERROR
+    is LAResult.Unavailable -> AppUnlockEffect.KEEP_LOCKED_UNAVAILABLE
+  }
+
 // Spec: spec/client/navigation.md#AppLock
 object AppLock {
   /**
@@ -158,21 +173,26 @@ object AppLock {
             selfDestruct = true,
             oneTime = false,
             completed = { laResult ->
-              when (laResult) {
-                LAResult.Success ->
+              when (appUnlockEffect(laResult)) {
+                AppUnlockEffect.AUTHORIZE -> {
                   userAuthorized.value = true
-                is LAResult.Failed -> { /* Can be called multiple times on every failure */ }
-                is LAResult.Error -> {
+                  laFailed.value = false
+                }
+                AppUnlockEffect.KEEP_CURRENT_PROMPT -> {
+                  // Biometric callbacks may report this more than once while the prompt is active.
+                }
+                AppUnlockEffect.KEEP_LOCKED_ERROR -> {
+                  userAuthorized.value = false
                   laFailed.value = true
                   if (m.controller.appPrefs.laMode.get() == LAMode.PASSCODE) {
                     laFailedAlert()
                   }
                 }
-                is LAResult.Unavailable -> {
-                  userAuthorized.value = true
+                AppUnlockEffect.KEEP_LOCKED_UNAVAILABLE -> {
+                  userAuthorized.value = false
+                  laFailed.value = true
                   m.showAuthScreen.value = false
-                  m.controller.appPrefs.performLA.set(false)
-                  laUnavailableTurningOffAlert()
+                  laUnavailableInstructionAlert()
                 }
               }
             }
@@ -257,9 +277,9 @@ object AppLock {
             laFailedAlert()
           }
           is LAResult.Unavailable -> {
-            m.showAuthScreen.value = false
-            prefPerformLA.set(false)
-            laUnavailableTurningOffAlert()
+            m.showAuthScreen.value = true
+            prefPerformLA.set(true)
+            laUnavailableInstructionAlert()
           }
         }
       }

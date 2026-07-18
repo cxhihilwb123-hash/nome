@@ -99,7 +99,7 @@ Common Module (commonMain)
 | Chat List | [spec/client/chat-list.md](client/chat-list.md) | ChatListView, ChatPreviewView, filtering, search, tags |
 | Compose | [spec/client/compose.md](client/compose.md) | ComposeView, SendMsgView, ComposeState, attachments, mentions |
 | Navigation | [spec/client/navigation.md](client/navigation.md) | App screen routing, onboarding, settings, new chat flows |
-| Nome Android UI | [spec/client/nome-android-ui.md](client/nome-android-ui.md) | Android-only Phase 2 foundation, Batch 2 production home, and Batch 3 P13 external-link preview with explicit ingress/fallback/evidence boundaries |
+| Nome Android UI | [spec/client/nome-android-ui.md](client/nome-android-ui.md) | Android-only Phase 2 foundation, frozen Batch 2 home/P13, and active Batch 1A P01 database-root source with explicit truth/fallback/evidence boundaries |
 | Calls | [spec/services/calls.md](services/calls.md) | WebRTC call lifecycle, signaling, platform-specific call views |
 | Files | [spec/services/files.md](services/files.md) | File transfer (SMP inline / XFTP), CryptoFile encryption, platform file paths |
 | Notifications | [spec/services/notifications.md](services/notifications.md) | NtfManager, SimplexService, notification channels, background delivery |

@@ -1,7 +1,6 @@
 package chat.simplex.common.views.localauth
 
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import chat.simplex.common.platform.BackHandler
 import chat.simplex.common.views.helpers.DatabaseUtils
 import chat.simplex.common.views.helpers.DatabaseUtils.ksAppPassword
@@ -19,9 +18,9 @@ fun SetAppPasscodeView(
   cancel: () -> Unit,
   close: () -> Unit
 ) {
-  val passcode = rememberSaveable { mutableStateOf("") }
-  var enteredPassword by rememberSaveable { mutableStateOf("") }
-  var confirming by rememberSaveable { mutableStateOf(false) }
+  val passcode = remember { mutableStateOf("") }
+  var enteredPassword by remember { mutableStateOf("") }
+  var confirming by remember { mutableStateOf(false) }
 
   @Composable
   fun SetPasswordView(title: String, submitLabel: String, submitEnabled: (((String) -> Boolean))? = null, submit: () -> Unit) {

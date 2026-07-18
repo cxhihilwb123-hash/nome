@@ -58,75 +58,87 @@ fun YourNetworkView(chatModel: ChatModel) {
   if (appPlatform.isDesktop) {
     YourNetworkDesktop(serverOperators, selectedOperatorIds)
   } else {
-    CompositionLocalProvider(LocalAppBarHandler provides rememberAppBarHandler()) {
-      ModalView({}, showClose = false, showAppBar = false) {
-        OnboardingShrinkingLayout(
-          modifier = Modifier.fillMaxSize().themedBackground(bgLayerSize = LocalAppBarHandler.current?.backgroundGraphicsLayerSize, bgLayer = LocalAppBarHandler.current?.backgroundGraphicsLayer)
-            .systemBarsPadding()
-            .padding(horizontal = DEFAULT_ONBOARDING_HORIZONTAL_PADDING),
-          topPadding = DEFAULT_PADDING,
-          image = {
-            Column(Modifier.padding(vertical = DEFAULT_PADDING_HALF), horizontalAlignment = Alignment.CenterHorizontally) {
-              OnboardingImage(
-                MR.images.your_network, MR.images.your_network_light, MR.images.ic_dns,
-                modifier = Modifier.padding(horizontal = DEFAULT_ONBOARDING_HORIZONTAL_PADDING).fillMaxWidth()
-              )
-            }
-          },
-          content = {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-              Text(
-                stringResource(MR.strings.onboarding_your_network),
-                style = MaterialTheme.typography.h1,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                lineHeight = 42.sp,
-                modifier = Modifier.padding(top = DEFAULT_PADDING_HALF)
-              )
-              Text(
-                stringResource(MR.strings.onboarding_network_routers_cannot_know),
-                style = MaterialTheme.typography.h3,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colors.secondary,
-                lineHeight = 25.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 14.dp)
-              )
-              Column(
-                Modifier.padding(top = DEFAULT_PADDING_HALF),
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-              ) {
-                ConfigureRoutersButton(serverOperators, selectedOperatorIds) {
-                  ModalManager.fullscreen.showCustomModal { close ->
-                    ChooseServerOperators(serverOperators, selectedOperatorIds, close)
-                  }
-                }
-                ConfigureNotificationsButton(notificationMode) {
-                  ModalManager.fullscreen.showModalCloseable { close ->
-                    SetNotificationsMode(notificationMode, close)
-                  }
+    val configureOperators = {
+      ModalManager.fullscreen.showCustomModal { close ->
+        ChooseServerOperators(serverOperators, selectedOperatorIds, close)
+      }
+    }
+    val configureNotifications = {
+      ModalManager.fullscreen.showModalCloseable { close ->
+        SetNotificationsMode(notificationMode, close)
+      }
+    }
+    val continueOnboarding = {
+      changeNotificationsMode(notificationMode.value, chatModel)
+      appPrefs.onboardingStage.set(OnboardingStage.Step4_NetworkCommitments)
+    }
+    PlatformNomeNetworkPage(
+      serverOperators = serverOperators,
+      selectedOperatorIds = selectedOperatorIds,
+      notificationMode = notificationMode,
+      onConfigureOperators = configureOperators,
+      onConfigureNotifications = configureNotifications,
+      onContinue = continueOnboarding,
+    ) {
+      CompositionLocalProvider(LocalAppBarHandler provides rememberAppBarHandler()) {
+        ModalView({}, showClose = false, showAppBar = false) {
+          OnboardingShrinkingLayout(
+            modifier = Modifier.fillMaxSize().themedBackground(bgLayerSize = LocalAppBarHandler.current?.backgroundGraphicsLayerSize, bgLayer = LocalAppBarHandler.current?.backgroundGraphicsLayer)
+              .systemBarsPadding()
+              .padding(horizontal = DEFAULT_ONBOARDING_HORIZONTAL_PADDING),
+            topPadding = DEFAULT_PADDING,
+            image = {
+              Column(Modifier.padding(vertical = DEFAULT_PADDING_HALF), horizontalAlignment = Alignment.CenterHorizontally) {
+                OnboardingImage(
+                  MR.images.your_network, MR.images.your_network_light, MR.images.ic_dns,
+                  modifier = Modifier.padding(horizontal = DEFAULT_ONBOARDING_HORIZONTAL_PADDING).fillMaxWidth()
+                )
+              }
+            },
+            content = {
+              Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                  stringResource(MR.strings.onboarding_your_network),
+                  style = MaterialTheme.typography.h1,
+                  fontWeight = FontWeight.Bold,
+                  textAlign = TextAlign.Center,
+                  lineHeight = 42.sp,
+                  modifier = Modifier.padding(top = DEFAULT_PADDING_HALF)
+                )
+                Text(
+                  stringResource(MR.strings.onboarding_network_routers_cannot_know),
+                  style = MaterialTheme.typography.h3,
+                  fontWeight = FontWeight.Medium,
+                  color = MaterialTheme.colors.secondary,
+                  lineHeight = 25.sp,
+                  textAlign = TextAlign.Center,
+                  modifier = Modifier.padding(top = 14.dp)
+                )
+                Column(
+                  Modifier.padding(top = DEFAULT_PADDING_HALF),
+                  horizontalAlignment = Alignment.Start,
+                  verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                  ConfigureRoutersButton(serverOperators, selectedOperatorIds, configureOperators)
+                  ConfigureNotificationsButton(notificationMode, configureNotifications)
                 }
               }
+            },
+            button = {
+              Column(
+                Modifier.widthIn(max = 450.dp).padding(bottom = DEFAULT_PADDING * 2),
+                horizontalAlignment = Alignment.CenterHorizontally
+              ) {
+                OnboardingActionButton(
+                  modifier = Modifier.padding(horizontal = DEFAULT_ONBOARDING_HORIZONTAL_PADDING).fillMaxWidth(),
+                  labelId = MR.strings.onboarding_network_operators_continue,
+                  onboarding = null,
+                  onclick = continueOnboarding
+                )
+              }
             }
-          },
-          button = {
-            Column(
-              Modifier.widthIn(max = 450.dp).padding(bottom = DEFAULT_PADDING * 2),
-              horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-              OnboardingActionButton(
-                modifier = Modifier.padding(horizontal = DEFAULT_ONBOARDING_HORIZONTAL_PADDING).fillMaxWidth(),
-                labelId = MR.strings.onboarding_network_operators_continue,
-                onboarding = null,
-                onclick = {
-                  changeNotificationsMode(notificationMode.value, chatModel)
-                  appPrefs.onboardingStage.set(OnboardingStage.Step4_NetworkCommitments)
-                }
-              )
-            }
-          }
-        )
+          )
+        }
       }
     }
   }

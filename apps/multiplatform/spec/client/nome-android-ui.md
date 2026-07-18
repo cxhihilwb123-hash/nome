@@ -1,6 +1,6 @@
 # Nome Android UI Specification
 
-> **Status:** verified Android-only Phase 2 foundation plus frozen Batch 2 production shell/P07/P08 home. Batch 3 implements only the authorized P13 external-link preview source; its execution/review status is owned exclusively by its evidence root and is not asserted here. `FIRST_USE` and `FILTERED_NO_RESULT` remain deferred production-reachability branches; P09–P12 and P14–P24 remain outside Batch 3.
+> **Status:** Phase 2 Android foundation, Batch 2 P07/P08, and Batch 3 P13 are frozen under their immutable evidence roots. Active Batch 1A connects only the existing P01 database opening/migration/recovery roots; its formal execution/review status is owned exclusively by its evidence root and is not asserted here. `FIRST_USE` remains official onboarding/root-owned, `FILTERED_NO_RESULT` remains deferred until P09 has a real producer, and P09–P12 plus P14–P24 remain future batches.
 > **Product view:** [product/views/nome-android.md](../../product/views/nome-android.md)
 > **Coverage matrix:** [plans/20260716_03.md](../../../../plans/20260716_03.md)
 
@@ -33,7 +33,7 @@ Android activity, intents, services, permissions
                     |
 Nome Android shell / navigation / platform adaptation
                     |
-Nome tokens/components + P07/P08 semantic state adapter
+Nome tokens/components + bounded P01/P07/P08/P13 adapters
                     |
 existing Compose flows and platform adapters
                     |
@@ -45,9 +45,9 @@ official v6.5.6 JNI/native core and local database
 Rules:
 
 1. The official model/API/core layers remain authoritative.
-2. Nome presenters/state adapters may combine existing facts into display state but cannot create a protocol fact. Batch 2 adds only the P07/P08 adapter described in §8.
+2. Nome presenters/state adapters may combine existing facts into display state but cannot create a protocol fact. Each implemented adapter and its bounded sharing reason are recorded in §8.
 3. Root state precedence in `App.kt` remains unchanged.
-4. Android-specific presentation stays in Android-controlled paths by default. Batch 2's narrow `PlatformHomeRoute` `expect` declaration is the recorded exception needed at the existing shared home selection point; its Desktop actual invokes the upstream content unchanged and has a `desktopTest` contract.
+4. Android-specific presentation stays in Android-controlled paths by default. The narrow `PlatformHomeRoute`, `PlatformDatabaseRootRoute`, and P13 connection-preview seams are the recorded exceptions at existing shared route-selection points; every Desktop actual declines or invokes upstream content unchanged and has a `desktopTest` contract.
 5. Preview fixtures and screenshot fixtures stay outside production state paths.
 6. A missing capability is a documented GAP, not a reason to call or alter the native core from a new path.
 
@@ -128,7 +128,7 @@ The authoritative row-level map is `plans/20260716_03.md`. The principal adapter
 
 | Domain | Existing sources | Adapter responsibility | Forbidden inference |
 |---|---|---|---|
-| startup/database | root state, database/migration status and errors | semantic phases, indeterminate progress, retry routing | fake percentage, restore/rollback guarantee |
+| startup/database | existing root state, typed migration/open errors, Android database-alias key-read class, and existing recovery actions | exhaustive display-safe phases, single-submit recovery, exact backup-pair copy outcome | fake percentage, restored-data claim before exact copy success, restore/rollback guarantee, bearer/raw diagnostic |
 | local auth | `AppLock`, passcode, biometric result | method availability and recoverable action | silently treating unavailable auth as success |
 | onboarding | `OnboardingStage`, create-user/operator/notification commands | approved information architecture while preserving order | fake account/server registration |
 | chat list/search | chats, tags, unread, load/core/network state, search results | grouped display and exact empty/loading distinction | presence, global result aggregation that was never queried |
@@ -158,13 +158,21 @@ These decisions do not change the A/B/C classification in `plans/20260716_03.md`
 
 ## 8. Implemented source placement
 
-The frozen Phase 2 foundation, Batch 2 production home, and authorized Batch 3 P13 use these
-placements:
+The frozen Phase 2 foundation, frozen Batch 2 production home, frozen Batch 3 P13, and active
+Batch 1A P01 use these placements:
 
 | Responsibility | Source placement | Constraint |
 |---|---|---|
 | tokens, theme, components, accessibility primitives | `common/src/androidMain/kotlin/chat/simplex/common/ui/nome/{tokens,theme,components,accessibility}/` | Android-only foundation; no presenter, model, protocol, or API truth |
 | Activity/system host integration | `android/src/main/java/chat/simplex/app/nome/NomeProductionShell.kt` | wraps the unchanged shared root; owns no navigation/model/core truth |
+| shared P01 root seam and actions | `common/src/commonMain/kotlin/chat/simplex/common/views/database/{PlatformDatabaseRootRoute.kt,DatabaseErrorView.kt}` | existing root facts/actions only; no new database command, migration, or presentation truth |
+| Android P01 key-read classification | `common/src/androidMain/kotlin/chat/simplex/common/platform/Cryptor.android.kt` | database-alias-only missing/unreadable class and fixed non-secret diagnostic; no key/passphrase value |
+| Android P01 production route | `common/src/androidMain/kotlin/chat/simplex/common/{views/database/PlatformDatabaseRootRoute.android.kt,ui/nome/database/**}` | exhaustive safe state, process attempt owner, source-bound recovery presentation, and renderer |
+| P01 production copy | `common/src/androidMain/res/{values,values-zh-rCN}/nome_database_root_strings.xml` | fixed English/Simplified-Chinese copy; never interpolates raw native errors or secret material |
+| Desktop P01 fallback | `common/src/desktopMain/kotlin/chat/simplex/common/views/database/PlatformDatabaseRootRoute.desktop.kt` | invokes the supplied official content exactly once |
+| P01 tests | `android/src/{test,androidTest}/.../nome/database/` and `common/src/desktopTest/.../views/database/` | exhaustive reducer/boundary/attempt, Compose semantics/lifecycle, and Desktop one-call contracts |
+| P01 debug evidence host | `android/src/debug/java/chat/simplex/app/nome/database/NomeDatabaseRootEvidenceActivity.kt` plus paired debug resources/manifest | non-exported deterministic renderer reference, visibly marked as not live database |
+| P01 affected screenshot definition | `android/src/androidTest/java/chat/simplex/app/nome/database/NomeDatabaseRootScreenshotTest.kt` | bilingual/theme/font renderer reference only; real fixtures own database truth |
 | shared home seam | `common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.kt` | declaration only; narrow sharing reason recorded below |
 | Android P07/P08 production home | `common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/{NomeHomeStateAdapter.kt,NomeHomeRoute.android.kt}` | Android-only derivation/rendering over official facts |
 | Desktop fallback | `common/src/desktopMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.desktop.kt` | invokes upstream `defaultContent` unchanged |
@@ -183,9 +191,47 @@ placements:
 | P13 debug evidence host | `android/src/debug/java/chat/simplex/app/nome/connection/NomeConnectionPreviewEvidenceActivity.kt` plus debug resources/manifest | non-exported deterministic renderer host, visibly fixture-only |
 | P13 tests | `common/src/commonTest/.../connection/`, `android/src/{test,androidTest}/.../nome/connection/`, and `common/src/desktopTest/.../views/newchat/` | branch/fallback/context/failure, reducer, route boundary, semantics/48dp/200%, packaging, screenshot matrix, and Desktop fallback |
 
-The sharing reason is route ownership: `StartPartOfScreen` is shared and already decides between delivery-receipt setup, normal home, and share content. Moving or copying that decision into the Android app module would create a second root/navigation truth and would miss non-Activity `AppScreen` entry paths. The `commonMain` seam therefore carries only arguments and `defaultContent`; it contains no Nome UI. The Desktop actual and test preserve the official Desktop `ChatListView`.
+The sharing reason is route ownership: `MainScreen` already owns database-root priority, and
+`StartPartOfScreen` already decides between delivery-receipt setup, normal home, and share content.
+Moving or copying either decision into the Android app module would create a second root/navigation
+truth and would miss non-Activity `AppScreen` entry paths. Each `commonMain` seam therefore carries
+only existing facts, action closures, and/or upstream content; it contains no Nome UI. Desktop
+actuals and tests preserve the official views.
 
-Batch 2 adds generation-scoped load/result types around the existing get-chats API, not a second API or native command. Batch 3 adds typed siblings around the already-shared plan/connect commands because command ownership and the seven branching call sites already live in `commonMain`. The sharing carries no Nome composable and no new native call. Its explicit Desktop actual/test declines presentation. Any later typed adapter still requires its own recorded sharing reason and may not bypass the controller to call the native core.
+Batch 1A P01 wraps the existing root inputs and recovery closures, including an exact typed result
+for the already-existing backup-pair copy. Batch 2 adds generation-scoped load/result types around
+the existing get-chats API, not a second API or native command. Batch 3 adds typed siblings around
+the already-shared plan/connect commands because command ownership and the seven branching call
+sites already live in `commonMain`. None of these seams adds a native call. Any later typed adapter
+still requires its own recorded sharing reason and may not bypass the controller to call the native
+core.
+
+### P01 typed truth and recovery boundary
+
+P01 is selected only by the existing migration-in-progress, opening, and guarded database-error
+branches in `MainScreen`; the root order and the existing delayed-opening behavior stay unchanged.
+The Android actual renders no semantics or action while authentication is not authorized. Desktop
+invokes the supplied official progress/error content exactly once.
+
+| Fact family | Production meaning |
+|---|---|
+| root input | `Opening`, `Migrating`, or the current typed `Error`; none creates a new route or native state |
+| database key | only database-alias `Available`, `MissingAlias(initialRandom)`, or `UnreadableMaterial(initialRandom)`; bearer key/passphrase bytes never enter the model |
+| display state | exhaustive fixed-copy opening/migration, key input/failure, upgrade/downgrade, incompatible/open/key-store/unknown error, and exact backup-pair copy outcome |
+| attempt lifecycle | one process-owned atomic submit at a time; terminal presentation is accepted only for the completed accepted generation and matching source token |
+| recovery result | successful open invokes the existing Android post-open hook; backup copy reports `BACKUP_PAIR_COPIED` or `BACKUP_PAIR_COPY_FAILED` without claiming the database opened |
+
+Passphrase input is non-saveable, password-semantic, and cleared when key entry leaves the state,
+on `ON_STOP`, and on disposal. Duplicate submits and stale/out-of-order completions are ignored.
+Confirmation and backup-pair copy are explicit actions. No raw path, migration name, SQL,
+exception, alias, key bytes, passphrase, percentage, rollback, or restore guarantee enters visible
+copy, semantics, saved state, evidence labels, or the database-alias Logcat message. The exact
+native `Unknown` branch alone maps to an unknown display state; typed native errors never collapse
+into a fabricated unknown.
+
+The adapter does not modify key derivation, database migration/open commands, database or archive
+format, native core, protocol, or the initial-random preference. `FIRST_USE` remains consumed by
+the official onboarding/root and P01 does not create `FILTERED_NO_RESULT`.
 
 ### P07/P08 typed truth
 
@@ -239,6 +285,10 @@ P16 group details. It does not alter `FIRST_USE` or `FILTERED_NO_RESULT`.
 - Material 2 adapter and composition locals: [`NomeTheme` / `NomeAndroidTheme`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/theme/NomeTheme.kt#L54-L130);
 - reusable primitives: [`NomeButton`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/components/NomeButton.kt#L16-L88), [`NomeStatePanel`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/components/NomeStatePanel.kt#L28-L175), [`NomeSurface`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/components/NomeSurface.kt#L13-L31);
 - accessibility modifiers: [`nomeMinimumTouchTarget` and TalkBack semantics](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/accessibility/NomeAccessibility.kt#L18-L35);
+- P01 shared root input/actions: [`PlatformDatabaseRootRoute`](../../common/src/commonMain/kotlin/chat/simplex/common/views/database/PlatformDatabaseRootRoute.kt) and the exact recovery helpers in [`DatabaseErrorView`](../../common/src/commonMain/kotlin/chat/simplex/common/views/database/DatabaseErrorView.kt);
+- P01 Android key/route/state/renderer: [`Cryptor.android.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/platform/Cryptor.android.kt), [`PlatformDatabaseRootRoute.android.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/views/database/PlatformDatabaseRootRoute.android.kt), [`NomeDatabaseRootStateAdapter.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/database/NomeDatabaseRootStateAdapter.kt), and [`NomeDatabaseRootRoute.android.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/database/NomeDatabaseRootRoute.android.kt);
+- P01 contract tests: [`NomeDatabaseRootStateAdapterTest`](../../android/src/test/java/chat/simplex/app/nome/database/NomeDatabaseRootStateAdapterTest.kt), [`NomeDatabaseAttemptGateTest`](../../android/src/test/java/chat/simplex/app/nome/database/NomeDatabaseAttemptGateTest.kt), [`DatabaseRecoveryRouteBoundaryTest`](../../android/src/test/java/chat/simplex/app/nome/database/DatabaseRecoveryRouteBoundaryTest.kt), [`NomeDatabaseRootComposeTest`](../../android/src/androidTest/java/chat/simplex/app/nome/database/NomeDatabaseRootComposeTest.kt), and [`PlatformDatabaseRootRouteDesktopTest`](../../common/src/desktopTest/kotlin/chat/simplex/common/views/database/PlatformDatabaseRootRouteDesktopTest.kt);
+- P01 affected renderer reference and packaging guard: [`NomeDatabaseRootEvidenceActivity`](../../android/src/debug/java/chat/simplex/app/nome/database/NomeDatabaseRootEvidenceActivity.kt), [`NomeDatabaseRootScreenshotTest`](../../android/src/androidTest/java/chat/simplex/app/nome/database/NomeDatabaseRootScreenshotTest.kt), and [`NomeDatabaseRootPackagingTest`](../../android/src/androidTest/java/chat/simplex/app/nome/database/NomeDatabaseRootPackagingTest.kt);
 - deterministic debug entry: [`NomeFixtureSpec`](../../android/src/debug/java/chat/simplex/app/nome/fixtures/NomeFixtureSpec.kt#L7-L93), [`NomeFoundationFixture`](../../android/src/debug/java/chat/simplex/app/nome/fixtures/NomeFoundationFixtures.kt#L54-L822), [`NomeFoundationActivity`](../../android/src/debug/java/chat/simplex/app/nome/harness/NomeFoundationActivity.kt#L23-L76), and [`NomeDesignSystemPreviews`](../../android/src/debug/java/chat/simplex/app/nome/preview/NomeDesignSystemPreviews.kt#L20-L111);
 - contract/device evidence: [`NomeFoundationContractTest`](../../android/src/test/java/chat/simplex/app/nome/NomeFoundationContractTest.kt#L8-L20), [`NomeAndroidPackagingTest`](../../android/src/androidTest/java/chat/simplex/app/nome/NomeAndroidPackagingTest.kt#L15-L47), [`NomeFoundationComposeTest`](../../android/src/androidTest/java/chat/simplex/app/nome/NomeFoundationComposeTest.kt#L53-L513), and [`NomeFoundationScreenshotTest`](../../android/src/androidTest/java/chat/simplex/app/nome/NomeFoundationScreenshotTest.kt#L20-L267).
 - shared/host split: [`StartPartOfScreen()`](../../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L366-L393), [`PlatformHomeRoute()`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.kt#L16-L22), [`NomeProductionShell()`](../../android/src/main/java/chat/simplex/app/nome/NomeProductionShell.kt#L17-L23), [Android actual](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeRoute.android.kt#L63-L123), and [Desktop fallback](../../common/src/desktopMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.desktop.kt#L9-L17);
@@ -285,11 +335,17 @@ The same `.nome.dev` package and debug signing identity covered this foundation'
 
 The Batch 2 test files and source anchors in §8 define the implementation contract. The independent evidence root contains the Gradle, Desktop, API 28/API 35 real-core, bilingual-light-dark-100%-200%, 48dp/TalkBack, P07/P08 comparison, release-isolation, threat-delta, and manifest execution artifacts. This specification does not itself claim the formal two-round outcome; only the evidence root's `review-rounds.md` owns that status.
 
-The Batch 3 P13 evidence root is
-`plans/evidence/20260717_nome_android_phase2_batch3_p13/`. Its debug fixture matrix proves only the
-renderer. API 28/API 35 external-intent traces, two-client connection/identity truth, raw-link
-Logcat/UI/evidence scans, lifecycle/single-submit checks, manual TalkBack, release isolation, and
-two same-digest reviews must be recorded separately before the batch is called complete.
+The frozen Batch 3 P13 evidence root is
+`plans/evidence/20260717_nome_android_phase2_batch3_p13/`; only that root owns its device,
+real-core/two-client, native comparison, accessibility, release-isolation, threat-delta, and
+same-digest review claims.
+
+Active Batch 1A P01 uses
+`plans/evidence/20260718_nome_android_batch1a_p01/`. Unit/Compose/Desktop tests and deterministic
+renderer captures are not substitutes for real opening/migration/recovery fixtures. That root must
+separately own API 28/API 35, real database/key/upgrade/downgrade/backup-pair behavior, lifecycle,
+manual accessibility, release isolation, secret scans, threat delta, and two final same-digest
+reviews before P01 is frozen.
 
 ## 11. Current implementation checkpoint
 
@@ -322,7 +378,7 @@ Implemented and execution-gated in Phase 2 Batch 2:
 - additive unit, Compose, and Desktop fallback tests;
 - API 28/API 35 real-core/device execution, same-package non-empty upgrade, network/core/generation/cancellation truth, 80 renderer screenshots, accessibility/TalkBack traversal, and release isolation. Formal frozen-digest review status is owned only by the evidence root's `review-rounds.md` and is not asserted here.
 
-Implemented in Phase 2 Batch 3 source, with execution status delegated to its evidence root:
+Completed in frozen Phase 2 Batch 3:
 
 - one explicit Android external-`ACTION_VIEW` opt-in and a `Legacy` default for all six other caller surfaces;
 - exhaustive seven-eligible/fourteen-fallback plan policy, safe model, and Desktop-declining expect/actual seam;
@@ -331,11 +387,27 @@ Implemented in Phase 2 Batch 3 source, with execution status delegated to its ev
 - bilingual resources, light/dark tokens, 48dp and 200% Compose coverage, nine-state/72-capture debug screenshot definition, non-exported debug host, release packaging guard, and Desktop fallback test;
 - no change to `FIRST_USE`, `FILTERED_NO_RESULT`, P09–P12, P14–P24, native core, protocol, database, message state, iOS, or Desktop UI.
 
+Implemented in active Batch 1A P01 source, with formal execution status delegated to its evidence
+root:
+
+- the unchanged shared root order delegates only opening, migration-in-progress, and guarded
+  database-error presentation through a narrow platform seam;
+- Android derives exhaustive fixed-copy states from existing typed database results and a
+  database-alias-only key-read class; Desktop invokes the official fallback once;
+- one process-owned atomic attempt, source-bound terminal presentation, non-saveable passphrase,
+  lifecycle/disposal clearing, explicit confirmation, and exact backup-pair copy success/failure;
+- bilingual Nome renderer with safe insets, IME/scroll handling, 48dp actions, heading/live-region
+  semantics, and no raw error, path, migration name, alias, key, passphrase, percentage, rollback,
+  or restore guarantee;
+- additive reducer, boundary, attempt, Compose, and Desktop fallback tests, with no new command,
+  native/core/protocol/database/archive/iOS behavior.
+
 Remaining implementation/evidence gates:
 
 - implement the one-time locale marker without overwriting existing-user language behavior;
-- complete the P13 evidence root's device, real-core/two-client, native comparison, manual accessibility, release isolation, threat-delta, and two-review gates;
-- add exact, release-isolated P13 command-count evidence alongside the device and lifecycle traces;
-- implement P09–P12 and P14–P24 production pages only in separately authorized small batches;
+- complete P01 deterministic/native comparison, real database/key/recovery/upgrade fixtures,
+  API 28/API 35, lifecycle, manual accessibility, release isolation, secret scans, threat delta,
+  and two final same-digest review gates;
+- implement P09–P12 and P14–P24 production pages in the authorized small-batch dependency order;
 - repeat bilingual/theme/applicable-state/accessibility/core/screenshot/threat-model/two-review gates for every connected production batch;
 - add deeper upgrade assertions when a later batch touches identities, chats, attachments, settings, or locale persistence.

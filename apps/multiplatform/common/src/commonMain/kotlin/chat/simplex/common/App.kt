@@ -17,6 +17,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import chat.simplex.common.views.usersettings.SetDeliveryReceiptsView
 import chat.simplex.common.model.*
@@ -29,11 +30,17 @@ import chat.simplex.common.views.SplashView
 import chat.simplex.common.views.call.*
 import chat.simplex.common.views.chat.ChatView
 import chat.simplex.common.views.chatlist.*
+import chat.simplex.common.views.database.DatabaseRootRouteInput
 import chat.simplex.common.views.database.DatabaseErrorView
+import chat.simplex.common.views.database.NomeDatabaseRootFacts
+import chat.simplex.common.views.database.PlatformDatabaseRootRoute
+import chat.simplex.common.views.database.isMatchedDatabaseBackupAvailable
+import chat.simplex.common.views.database.platformDatabaseKeyReadState
 import chat.simplex.common.views.helpers.*
 import chat.simplex.common.views.helpers.ModalManager.Companion.fromEndToStartTransition
 import chat.simplex.common.views.helpers.ModalManager.Companion.fromStartToEndTransition
 import chat.simplex.common.views.localauth.VerticalDivider
+import chat.simplex.common.views.localauth.PlatformNomeAppLockScreen
 import chat.simplex.common.views.newchat.*
 import chat.simplex.common.views.onboarding.*
 import chat.simplex.common.views.usersettings.*
@@ -117,19 +124,29 @@ fun MainScreen() {
 
   @Composable
   fun AuthView() {
-    Surface(color = MaterialTheme.colors.background.copy(1f), contentColor = LocalContentColor.current) {
-      Box(
-        Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-      ) {
-        SimpleButton(
-          stringResource(MR.strings.auth_unlock),
-          icon = painterResource(MR.images.ic_lock),
-          click = {
-            AppLock.laFailed.value = false
-            AppLock.runAuthenticate()
-          }
-        )
+    val unlock = {
+      AppLock.laFailed.value = false
+      AppLock.runAuthenticate()
+    }
+    val currentUser = chatModel.currentUser.value
+    PlatformNomeAppLockScreen(
+      enabled = appPlatform.isAndroid,
+      displayName = currentUser?.displayName,
+      profileImage = currentUser?.image,
+      usingLAMode = chatModel.controller.appPrefs.laMode.get(),
+      onUnlock = unlock,
+    ) {
+      Surface(color = MaterialTheme.colors.background.copy(1f), contentColor = LocalContentColor.current) {
+        Box(
+          Modifier.fillMaxSize(),
+          contentAlignment = Alignment.Center
+        ) {
+          SimpleButton(
+            stringResource(MR.strings.auth_unlock),
+            icon = painterResource(MR.images.ic_lock),
+            click = unlock,
+          )
+        }
       }
     }
   }
@@ -139,76 +156,125 @@ fun MainScreen() {
     val onboarding by remember { chatModel.controller.appPrefs.onboardingStage.state }
     val localUserCreated = chatModel.localUserCreated.value
     var showInitializationView by remember { mutableStateOf(false) }
-    when {
-      onboarding == OnboardingStage.Step1_SimpleXInfo && chatModel.migrationState.value != null -> {
-        // In migration process. Nothing should interrupt it, that's why it's the first branch in when()
-        if (appPlatform.isDesktop) DesktopOnboarding(onboarding, chatModel)
-        else SimpleXInfo(chatModel, onboarding = true)
-      }
-      chatModel.dbMigrationInProgress.value -> DefaultProgressView(stringResource(MR.strings.database_migration_in_progress))
-      chatModel.chatDbStatus.value == null && showInitializationView -> DefaultProgressView(stringResource(MR.strings.opening_database))
-      showChatDatabaseError -> {
-        // Prevent showing keyboard on Android when: passcode enabled and database password not saved
-        if (!unauthorized.value && chatModel.chatDbStatus.value != null) {
-          DatabaseErrorView(chatModel.chatDbStatus, chatModel.controller.appPrefs)
-        }
-      }
-      remember { chatModel.chatDbEncrypted }.value == null || localUserCreated == null -> SplashView()
-      onboarding == OnboardingStage.OnboardingComplete -> {
-        Box {
-          showAdvertiseLAAlert = true
-          val userPickerState by rememberSaveable(stateSaver = AnimatedViewState.saver()) { mutableStateOf(MutableStateFlow(if (chatModel.desktopNoUserNoRemote()) AnimatedViewState.VISIBLE else AnimatedViewState.GONE)) }
-          KeyChangeEffect(chatModel.desktopNoUserNoRemote) {
-            if (chatModel.desktopNoUserNoRemote() && !ModalManager.start.hasModalsOpen()) {
-              userPickerState.value = AnimatedViewState.VISIBLE
-            }
-          }
-          SetupClipboardListener()
-          if (appPlatform.isAndroid) {
-            AndroidWrapInCallLayout {
-              AndroidScreen(userPickerState)
-            }
-          } else {
-            DesktopScreen(userPickerState)
-          }
-        }
-      }
-      else -> {
-        if (appPlatform.isDesktop) {
-          DesktopOnboarding(onboarding, chatModel)
-        } else {
-          AnimatedContent(targetState = onboarding,
-            transitionSpec = {
-              if (targetState > initialState) {
-                fromEndToStartTransition()
-              } else {
-                fromStartToEndTransition()
-              }.using(SizeTransform(clip = false))
-            }
-          ) { state ->
-            when (state) {
-              OnboardingStage.OnboardingComplete -> {}
-              OnboardingStage.Step1_SimpleXInfo -> SimpleXInfo(chatModel, onboarding = true)
-              OnboardingStage.Step2_CreateProfile -> CreateFirstProfile(chatModel) {}
-              OnboardingStage.LinkAMobile -> LinkAMobile()
-              OnboardingStage.Step2_5_SetupDatabasePassphrase -> SetupDatabasePassphrase(chatModel)
-              OnboardingStage.Step3_ChooseServerOperators,
-              OnboardingStage.Step3_CreateSimpleXAddress,
-              OnboardingStage.Step4_SetNotificationsMode -> YourNetworkView(chatModel)
-              OnboardingStage.Step4_NetworkCommitments -> OnboardingConditionsView(chatModel)
-            }
-          }
-        }
-      }
-    }
-    if (appPlatform.isAndroid) {
-      AndroidWrapInCallLayout {
-        ModalManager.fullscreen.showInView()
-      }
-      SwitchingUsersView()
+
+    fun databaseRootFacts(route: DatabaseRootRouteInput): NomeDatabaseRootFacts {
+      val preferences = chatModel.controller.appPrefs
+      val status = (route as? DatabaseRootRouteInput.Error)?.status
+      val downgradeWarningCount =
+        ((status as? DBMigrationResult.ErrorMigration)?.migrationError as? MigrationError.Downgrade)
+          ?.let { downMigrationWarnings(it.downMigrations).size }
+          ?: 0
+      return NomeDatabaseRootFacts(
+        route = route,
+        ctrlInitInProgress = chatModel.ctrlInitInProgress.value,
+        dbMigrationInProgress = chatModel.dbMigrationInProgress.value,
+        storedKeyUseRequested = preferences.storeDBPassphrase.get(),
+        storedKeyMaterialPresent =
+          !preferences.encryptedDBPassphrase.get().isNullOrEmpty() &&
+            !preferences.initializationVectorDBPassphrase.get().isNullOrEmpty(),
+        androidKeyReadState = platformDatabaseKeyReadState(),
+        matchedBackupAvailable = isMatchedDatabaseBackupAvailable(preferences),
+        downgradeWarningCount = downgradeWarningCount,
+      )
     }
 
-    if (unauthorized.value && !(chatModel.activeCallViewIsVisible.value && chatModel.showCallView.value)) {
+    val authOverlayVisible =
+      unauthorized.value && !(chatModel.activeCallViewIsVisible.value && chatModel.showCallView.value)
+    Box(
+      modifier =
+        if (authOverlayVisible) {
+          Modifier.clearAndSetSemantics {}
+        } else {
+          Modifier
+        },
+    ) {
+      when {
+        onboarding == OnboardingStage.Step1_SimpleXInfo && chatModel.migrationState.value != null -> {
+          // In migration process. Nothing should interrupt it, that's why it's the first branch in when()
+          if (appPlatform.isDesktop) DesktopOnboarding(onboarding, chatModel)
+          else SimpleXInfo(chatModel, onboarding = true)
+        }
+        chatModel.dbMigrationInProgress.value -> PlatformDatabaseRootRoute(
+          facts = databaseRootFacts(DatabaseRootRouteInput.Migrating),
+          allowSensitiveContent = !unauthorized.value,
+        ) {
+          DefaultProgressView(stringResource(MR.strings.database_migration_in_progress))
+        }
+        chatModel.chatDbStatus.value == null && showInitializationView -> PlatformDatabaseRootRoute(
+          facts = databaseRootFacts(DatabaseRootRouteInput.Opening),
+          allowSensitiveContent = !unauthorized.value,
+        ) {
+          DefaultProgressView(stringResource(MR.strings.opening_database))
+        }
+        showChatDatabaseError -> {
+          // Prevent showing keyboard on Android when: passcode enabled and database password not saved
+          val status = chatModel.chatDbStatus.value
+          if (!unauthorized.value && status != null) {
+            PlatformDatabaseRootRoute(
+              facts = databaseRootFacts(DatabaseRootRouteInput.Error(status)),
+              allowSensitiveContent = true,
+            ) {
+              DatabaseErrorView(chatModel.chatDbStatus, chatModel.controller.appPrefs)
+            }
+          }
+        }
+        remember { chatModel.chatDbEncrypted }.value == null || localUserCreated == null -> SplashView()
+        onboarding == OnboardingStage.OnboardingComplete -> {
+          Box {
+            showAdvertiseLAAlert = true
+            val userPickerState by rememberSaveable(stateSaver = AnimatedViewState.saver()) { mutableStateOf(MutableStateFlow(if (chatModel.desktopNoUserNoRemote()) AnimatedViewState.VISIBLE else AnimatedViewState.GONE)) }
+            KeyChangeEffect(chatModel.desktopNoUserNoRemote) {
+              if (chatModel.desktopNoUserNoRemote() && !ModalManager.start.hasModalsOpen()) {
+                userPickerState.value = AnimatedViewState.VISIBLE
+              }
+            }
+            SetupClipboardListener()
+            if (appPlatform.isAndroid) {
+              AndroidWrapInCallLayout {
+                AndroidScreen(userPickerState)
+              }
+            } else {
+              DesktopScreen(userPickerState)
+            }
+          }
+        }
+        else -> {
+          if (appPlatform.isDesktop) {
+            DesktopOnboarding(onboarding, chatModel)
+          } else {
+            AnimatedContent(targetState = onboarding,
+              transitionSpec = {
+                if (targetState > initialState) {
+                  fromEndToStartTransition()
+                } else {
+                  fromStartToEndTransition()
+                }.using(SizeTransform(clip = false))
+              }
+            ) { state ->
+              when (state) {
+                OnboardingStage.OnboardingComplete -> {}
+                OnboardingStage.Step1_SimpleXInfo -> SimpleXInfo(chatModel, onboarding = true)
+                OnboardingStage.Step2_CreateProfile -> CreateFirstProfile(chatModel) {}
+                OnboardingStage.LinkAMobile -> LinkAMobile()
+                OnboardingStage.Step2_5_SetupDatabasePassphrase -> SetupDatabasePassphrase(chatModel)
+                OnboardingStage.Step3_ChooseServerOperators,
+                OnboardingStage.Step3_CreateSimpleXAddress,
+                OnboardingStage.Step4_SetNotificationsMode -> YourNetworkView(chatModel)
+                OnboardingStage.Step4_NetworkCommitments -> OnboardingConditionsView(chatModel)
+              }
+            }
+          }
+        }
+      }
+      if (appPlatform.isAndroid) {
+        AndroidWrapInCallLayout {
+          ModalManager.fullscreen.showInView()
+        }
+        SwitchingUsersView()
+      }
+    }
+
+    if (authOverlayVisible) {
       LaunchedEffect(Unit) {
         // With these constrains when user presses back button while on ChatList, activity destroys and shows auth request
         // while the screen moves to a launcher. Detect it and prevent showing the auth

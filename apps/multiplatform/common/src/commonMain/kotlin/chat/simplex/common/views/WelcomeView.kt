@@ -237,74 +237,90 @@ private fun CreateFirstProfileMobile(chatModel: ChatModel, close: () -> Unit) {
   CompositionLocalProvider(LocalAppBarHandler provides rememberAppBarHandler()) {
     val focusRequester = remember { FocusRequester() }
     val refocusTrigger = remember { mutableStateOf(0) }
-    ModalView(
-      close = { onboardingBackAction(chatModel, close) },
-      endButtons = { MigrateButton(refocusTrigger) }
+    val displayName = rememberSaveable { mutableStateOf("") }
+    val creating = remember { mutableStateOf(false) }
+    PlatformNomeCreateIdentityPage(
+      displayName = displayName,
+      createEnabled = canCreateProfile(displayName.value),
+      creating = creating.value,
+      onBack = { onboardingBackAction(chatModel, close) },
+      onCreate = {
+        if (!creating.value && canCreateProfile(displayName.value)) {
+          creating.value = true
+          createProfileOnboarding(chatModel, displayName.value, close) { created ->
+            if (!created) creating.value = false
+          }
+        }
+      },
     ) {
-      val displayName = rememberSaveable { mutableStateOf("") }
-      val keyboardState by getKeyboardState()
-      val imageHeightModifier = if (keyboardState == KeyboardState.Opened) {
-        Modifier.heightIn(max = 100.dp)
-      } else {
-        Modifier
-      }
-      ColumnWithScrollBar(Modifier.padding(horizontal = DEFAULT_ONBOARDING_HORIZONTAL_PADDING), horizontalAlignment = Alignment.CenterHorizontally, maxIntrinsicSize = true) {
-        Spacer(Modifier.weight(1f))
+      ModalView(
+        close = { onboardingBackAction(chatModel, close) },
+        endButtons = { MigrateButton(refocusTrigger) }
+      ) {
+        val keyboardState by getKeyboardState()
+        val imageHeightModifier = if (keyboardState == KeyboardState.Opened) {
+          Modifier.heightIn(max = 100.dp)
+        } else {
+          Modifier
+        }
+        ColumnWithScrollBar(Modifier.padding(horizontal = DEFAULT_ONBOARDING_HORIZONTAL_PADDING), horizontalAlignment = Alignment.CenterHorizontally, maxIntrinsicSize = true) {
+          Spacer(Modifier.weight(1f))
 
-        OnboardingImage(
-          MR.images.your_profile, MR.images.your_profile_light, MR.images.ic_person,
-          modifier = Modifier
-            .then(if (keyboardState != KeyboardState.Opened) Modifier.fillMaxWidth() else Modifier)
-            .then(imageHeightModifier)
-        )
-
-        Text(
-          stringResource(MR.strings.onboarding_your_profile),
-          style = MaterialTheme.typography.h1,
-          fontWeight = FontWeight.Bold,
-          textAlign = TextAlign.Center,
-          modifier = Modifier.padding(top = DEFAULT_PADDING_HALF)
-        )
-        Text(
-          stringResource(MR.strings.onboarding_on_your_phone),
-          style = MaterialTheme.typography.h3,
-          fontWeight = FontWeight.Medium,
-          color = MaterialTheme.colors.secondary,
-          lineHeight = 25.sp,
-          textAlign = TextAlign.Center,
-          modifier = Modifier.padding(top = 14.dp)
-        )
-        Text(
-          stringResource(MR.strings.onboarding_no_account),
-          style = MaterialTheme.typography.body2,
-          color = MaterialTheme.colors.secondary,
-          textAlign = TextAlign.Center,
-          lineHeight = 20.sp,
-          modifier = Modifier.padding(top = DEFAULT_PADDING_HALF)
-        )
-        Spacer(Modifier.height(DEFAULT_PADDING_HALF))
-        ProfileNameField(displayName, stringResource(MR.strings.enter_profile_name), { it.trim() == mkValidName(it) }, focusRequester)
-
-        Spacer(Modifier.weight(1f))
-
-        Column(Modifier.widthIn(max = 450.dp).padding(bottom = DEFAULT_PADDING * 2).align(Alignment.CenterHorizontally), horizontalAlignment = Alignment.CenterHorizontally) {
-          OnboardingActionButton(
-            Modifier.fillMaxWidth(),
-            labelId = MR.strings.create_profile,
-            onboarding = null,
-            enabled = canCreateProfile(displayName.value),
-            onclick = { createProfileOnboarding(chatModel, displayName.value, close) }
+          OnboardingImage(
+            MR.images.your_profile, MR.images.your_profile_light, MR.images.ic_person,
+            modifier = Modifier
+              .then(if (keyboardState != KeyboardState.Opened) Modifier.fillMaxWidth() else Modifier)
+              .then(imageHeightModifier)
           )
-        }
 
-        LaunchedEffect(refocusTrigger.value) {
-          delay(300)
-          focusRequester.requestFocus()
+          Text(
+            stringResource(MR.strings.onboarding_your_profile),
+            style = MaterialTheme.typography.h1,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = DEFAULT_PADDING_HALF)
+          )
+          Text(
+            stringResource(MR.strings.onboarding_on_your_phone),
+            style = MaterialTheme.typography.h3,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colors.secondary,
+            lineHeight = 25.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 14.dp)
+          )
+          Text(
+            stringResource(MR.strings.onboarding_no_account),
+            style = MaterialTheme.typography.body2,
+            color = MaterialTheme.colors.secondary,
+            textAlign = TextAlign.Center,
+            lineHeight = 20.sp,
+            modifier = Modifier.padding(top = DEFAULT_PADDING_HALF)
+          )
+          Spacer(Modifier.height(DEFAULT_PADDING_HALF))
+          ProfileNameField(displayName, stringResource(MR.strings.enter_profile_name), { it.trim() == mkValidName(it) }, focusRequester)
+
+          Spacer(Modifier.weight(1f))
+
+          Column(Modifier.widthIn(max = 450.dp).padding(bottom = DEFAULT_PADDING * 2).align(Alignment.CenterHorizontally), horizontalAlignment = Alignment.CenterHorizontally) {
+            OnboardingActionButton(
+              Modifier.fillMaxWidth(),
+              labelId = MR.strings.create_profile,
+              onboarding = null,
+              enabled = canCreateProfile(displayName.value),
+              onclick = { createProfileOnboarding(chatModel, displayName.value, close) }
+            )
+          }
+
+          LaunchedEffect(refocusTrigger.value) {
+            delay(300)
+            focusRequester.requestFocus()
+          }
         }
       }
-      LaunchedEffect(Unit) {
-        setLastVersionDefault(chatModel)
-      }
+    }
+    LaunchedEffect(Unit) {
+      setLastVersionDefault(chatModel)
     }
   }
 }
@@ -386,25 +402,36 @@ fun createProfileInProfiles(chatModel: ChatModel, displayName: String, shortDesc
   }
 }
 
-fun createProfileOnboarding(chatModel: ChatModel, displayName: String, close: () -> Unit) {
+fun createProfileOnboarding(
+  chatModel: ChatModel,
+  displayName: String,
+  close: () -> Unit,
+  onResult: (Boolean) -> Unit = {},
+) {
   withBGApi {
-    chatModel.currentUser.value = chatModel.controller.apiCreateActiveUser(
-      null, Profile(displayName.trim(), "", null, null)
-    ) ?: return@withBGApi
-    chatModel.localUserCreated.value = true
-    val onboardingStage = chatModel.controller.appPrefs.onboardingStage
-    // No users or no visible users
-    if (chatModel.users.none { u -> !u.user.hidden }) {
-      onboardingStage.set(if (appPlatform.isDesktop && chatModel.controller.appPrefs.initialRandomDBPassphrase.get() && !chatModel.desktopOnboardingRandomPassword.value) {
-        OnboardingStage.Step2_5_SetupDatabasePassphrase
+    var created = false
+    try {
+      chatModel.currentUser.value = chatModel.controller.apiCreateActiveUser(
+        null, Profile(displayName.trim(), "", null, null)
+      ) ?: return@withBGApi
+      chatModel.localUserCreated.value = true
+      val onboardingStage = chatModel.controller.appPrefs.onboardingStage
+      // No users or no visible users
+      if (chatModel.users.none { u -> !u.user.hidden }) {
+        onboardingStage.set(if (appPlatform.isDesktop && chatModel.controller.appPrefs.initialRandomDBPassphrase.get() && !chatModel.desktopOnboardingRandomPassword.value) {
+          OnboardingStage.Step2_5_SetupDatabasePassphrase
+        } else {
+          OnboardingStage.Step3_ChooseServerOperators
+        })
       } else {
-        OnboardingStage.Step3_ChooseServerOperators
-      })
-    } else {
-      // the next two lines are only needed for failure case when because of the database error the app gets stuck on on-boarding screen,
-      // this will get it unstuck.
-      onboardingStage.set(OnboardingStage.OnboardingComplete)
-      close()
+        // the next two lines are only needed for failure case when because of the database error the app gets stuck on on-boarding screen,
+        // this will get it unstuck.
+        onboardingStage.set(OnboardingStage.OnboardingComplete)
+        close()
+      }
+      created = true
+    } finally {
+      onResult(created)
     }
   }
 }

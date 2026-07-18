@@ -42,7 +42,7 @@ fun DatabaseErrorView(
   val dbKey = remember { mutableStateOf("") }
   var storedDBKey by remember { mutableStateOf(DatabaseUtils.ksDatabasePassword.get()) }
   var useKeychain by remember { mutableStateOf(appPreferences.storeDBPassphrase.get()) }
-  val restoreDbFromBackup = remember { mutableStateOf(shouldShowRestoreDbButton(appPreferences)) }
+  val restoreDbFromBackup = remember { mutableStateOf(isMatchedDatabaseBackupAvailable(appPreferences)) }
 
   fun callRunChat(confirmMigrations: MigrationConfirmation? = null) {
     val useKey = if (useKeychain) null else dbKey.value
@@ -50,11 +50,9 @@ fun DatabaseErrorView(
   }
 
   fun saveAndRunChatOnClick() {
-    DatabaseUtils.ksDatabasePassword.set(dbKey.value)
+    saveDatabaseKeyForRecovery(dbKey.value, appPreferences)
     storedDBKey = dbKey.value
-    appPreferences.storeDBPassphrase.set(true)
     useKeychain = true
-    appPreferences.initialRandomDBPassphrase.set(false)
     callRunChat()
   }
 
@@ -211,6 +209,36 @@ fun DatabaseErrorView(
   }
 }
 
+internal fun saveDatabaseKeyForRecovery(
+  dbKey: String,
+  preferences: AppPreferences,
+) {
+  DatabaseUtils.ksDatabasePassword.set(dbKey)
+  preferences.storeDBPassphrase.set(true)
+  preferences.initialRandomDBPassphrase.set(false)
+}
+
+internal suspend fun openDatabaseForRecovery(
+  dbKey: String? = null,
+  confirmMigrations: MigrationConfirmation? = null,
+  chatDbStatus: State<DBMigrationResult?>,
+): DBMigrationResult? {
+  try {
+    initChatController(
+      dbKey,
+      confirmMigrations,
+      startChat = if (appPreferences.chatStopped.get()) {
+        ::showStartChatAfterRestartAlert
+      } else {
+        { CompletableDeferred(true) }
+      },
+    )
+  } catch (e: Exception) {
+    Log.d(TAG, "initializeChat ${e.stackTraceToString()}")
+  }
+  return chatDbStatus.value
+}
+
 private fun runChat(
   dbKey: String? = null,
   confirmMigrations: MigrationConfirmation? = null,
@@ -220,15 +248,9 @@ private fun runChat(
   // Don't do things concurrently. Shouldn't be here concurrently, just in case
   if (progressIndicator.value) return@launch
   progressIndicator.value = true
-  try {
-    initChatController(dbKey, confirmMigrations,
-      startChat = if (appPreferences.chatStopped.get()) ::showStartChatAfterRestartAlert else { { CompletableDeferred(true) } }
-    )
-  } catch (e: Exception) {
-    Log.d(TAG, "initializeChat ${e.stackTraceToString()}")
-  }
+  val status = openDatabaseForRecovery(dbKey, confirmMigrations, chatDbStatus)
   progressIndicator.value = false
-  when (val status = chatDbStatus.value) {
+  when (status) {
     is DBMigrationResult.OK -> {
       platform.androidChatStartedAfterBeingOff()
     }
@@ -253,7 +275,7 @@ fun showErrorOnMigrationIfNeeded(status: DBMigrationResult) =
     is DBMigrationResult.ErrorMigration -> {}
   }
 
-private fun shouldShowRestoreDbButton(prefs: AppPreferences): Boolean {
+internal fun isMatchedDatabaseBackupAvailable(prefs: AppPreferences): Boolean {
   val startedAt = prefs.encryptionStartedAt.get() ?: return false
   /** Just in case there is any small difference between reported Java's [Clock.System.now] and Linux's time on a file */
   val safeDiffInTime = 10_000L
@@ -265,16 +287,40 @@ private fun shouldShowRestoreDbButton(prefs: AppPreferences): Boolean {
       startedAt.toEpochMilliseconds() - safeDiffInTime <= filesAgent.lastModified()
 }
 
-private fun restoreDb(restoreDbFromBackup: MutableState<Boolean>, prefs: AppPreferences) {
+internal enum class DatabaseBackupCopyResult {
+  COPIED,
+  FAILED,
+}
+
+internal fun copyMatchedDatabaseBackupPair(
+  prefs: AppPreferences,
+  onFailure: (Throwable) -> Unit = {},
+): DatabaseBackupCopyResult {
+  if (!isMatchedDatabaseBackupAvailable(prefs)) {
+    return DatabaseBackupCopyResult.FAILED
+  }
   val filesChatBase = dataDir.absolutePath + File.separator + chatDatabaseFileName
   val filesAgentBase = dataDir.absolutePath + File.separator + agentDatabaseFileName
-  try {
+  return try {
     Files.copy(Path("$filesChatBase.bak"), Path(filesChatBase), StandardCopyOption.REPLACE_EXISTING)
     Files.copy(Path("$filesAgentBase.bak"), Path(filesAgentBase), StandardCopyOption.REPLACE_EXISTING)
-    restoreDbFromBackup.value = false
     prefs.encryptionStartedAt.set(null)
+    DatabaseBackupCopyResult.COPIED
   } catch (e: Exception) {
-    AlertManager.shared.showAlertMsg(generalGetString(MR.strings.database_restore_error), e.stackTraceToString())
+    onFailure(e)
+    DatabaseBackupCopyResult.FAILED
+  }
+}
+
+private fun restoreDb(restoreDbFromBackup: MutableState<Boolean>, prefs: AppPreferences) {
+  val result = copyMatchedDatabaseBackupPair(prefs) { error ->
+    AlertManager.shared.showAlertMsg(
+      generalGetString(MR.strings.database_restore_error),
+      error.stackTraceToString(),
+    )
+  }
+  if (result == DatabaseBackupCopyResult.COPIED) {
+    restoreDbFromBackup.value = false
   }
 }
 

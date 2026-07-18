@@ -108,6 +108,9 @@ actual fun PlatformHomeRoute(
     NomeHomeRouteContent(
       chatModel = chatModel,
       state = state,
+      onOpenProfile = {
+        userPickerState.value = AnimatedViewState.VISIBLE
+      },
     )
   }
   val wasAllowedToSetupNotifications = rememberSaveable { mutableStateOf(false) }
@@ -134,6 +137,7 @@ fun NomeHomeRouteContent(
   showChatPreviews: Boolean = chatModel.showChatPreviews.value,
   profileNameOverride: String? = null,
   onOpenChat: ((Chat) -> Unit)? = null,
+  onOpenProfile: () -> Unit = {},
 ) {
   val dimensions = NomeTheme.dimensions
   val scope = rememberCoroutineScope()
@@ -170,7 +174,11 @@ fun NomeHomeRouteContent(
     verticalArrangement = Arrangement.spacedBy(dimensions.space12),
   ) {
     item {
-      NomeHomeHeader(chatModel, profileNameOverride)
+      NomeHomeHeader(
+        chatModel = chatModel,
+        profileNameOverride = profileNameOverride,
+        onOpenProfile = onOpenProfile,
+      )
     }
     item {
       Text(
@@ -344,6 +352,7 @@ internal fun resolveOpenableNomeHomeChat(chatModel: ChatModel, capturedChat: Cha
 private fun NomeHomeHeader(
   chatModel: ChatModel,
   profileNameOverride: String?,
+  onOpenProfile: () -> Unit,
 ) {
   val dimensions = NomeTheme.dimensions
   val currentProfileFocusRequester =
@@ -393,10 +402,12 @@ private fun NomeHomeHeader(
     Box(
       modifier = Modifier
         .size(dimensions.minimumTouchTarget)
+        .clickable(onClick = onOpenProfile)
         .focusRequester(currentProfileFocusRequester)
         .focusable()
         .nomeTalkBackSemantics(
           label = stringResource(R.string.nome_home_current_profile, profileName),
+          role = Role.Button,
         ),
       contentAlignment = Alignment.Center,
     ) {

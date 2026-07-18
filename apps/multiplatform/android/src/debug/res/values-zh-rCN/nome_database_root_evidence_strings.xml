@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="nome_database_root_evidence_activity_label">Nome 数据库根页面证据</string>
+  <string name="nome_database_root_evidence_badge">渲染器测试数据 · %1$s · 非实时数据库</string>
+</resources>

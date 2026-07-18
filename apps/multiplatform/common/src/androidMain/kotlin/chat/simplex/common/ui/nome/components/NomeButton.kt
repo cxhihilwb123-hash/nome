@@ -1,6 +1,5 @@
 package chat.simplex.common.ui.nome.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
@@ -34,7 +33,7 @@ fun NomeButton(
   val dimensions = NomeTheme.dimensions
   val backgroundColor = when (variant) {
     NomeButtonVariant.PRIMARY -> colors.action
-    NomeButtonVariant.SECONDARY -> colors.surface
+    NomeButtonVariant.SECONDARY -> colors.surfaceSubtle
     NomeButtonVariant.DESTRUCTIVE -> colors.danger
   }
   val contentColor = when (variant) {
@@ -42,11 +41,6 @@ fun NomeButton(
     NomeButtonVariant.SECONDARY -> colors.textPrimary
     NomeButtonVariant.DESTRUCTIVE -> colors.onDanger
   }
-  val border = when (variant) {
-    NomeButtonVariant.SECONDARY -> BorderStroke(dimensions.divider, colors.textTertiary)
-    else -> null
-  }
-
   Button(
     onClick = onClick,
     modifier = modifier
@@ -59,7 +53,7 @@ fun NomeButton(
       ),
     enabled = enabled,
     shape = NomeTheme.shapes.control,
-    border = border,
+    border = null,
     colors = ButtonDefaults.buttonColors(
       backgroundColor = backgroundColor,
       contentColor = contentColor,

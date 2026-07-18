@@ -188,10 +188,37 @@ sealed class MigrationError {
 ```kotlin
 enum class MigrationConfirmation(val value: String) {
   YesUp("yesUp"),         // Auto-confirm forward migrations
-  YesUpDown("yesUpDown"), // Auto-confirm both directions (not used in UI)
+  YesUpDown("yesUpDown"), // Explicitly confirm both directions, including P01 downgrade consent
   Error("error")          // Report errors without running migrations
 }
 ```
+
+### Nome Android P01 presentation boundary
+
+The shared root still selects migration-in-progress, delayed opening, and guarded database error
+in the same order. `PlatformDatabaseRootRoute` carries display-safe facts into an Android actual;
+the Desktop actual invokes the supplied legacy content exactly once.
+
+Android derives fixed states from the exact `DBMigrationResult` subtype, controller/migration
+progress, stored-key Boolean facts, a process-local no-secret database-key read class, and the
+existing exact timestamp-matched chat/agent `.bak` predicate. `UnknownFailure` is emitted only for
+the native `Unknown` subtype. Raw paths, migration identifiers, SQL, JSON, stack traces, and key
+text remain outside the display model.
+
+The action extraction in `DatabaseErrorView.kt` preserves the existing low-level calls and order:
+
+- open once passes an entered key without Keystore/preference writes;
+- save-and-open writes Keystore, `storeDBPassphrase`, then clears initial-random ownership before
+  opening;
+- upgrade and downgrade pass `YesUp` and `YesUpDown` only after their exact confirmations;
+- matched-pair copy rechecks both files/timestamps and clears `encryptionStartedAt` only after both
+  copies;
+- copy completion is not database success; Android requires a separate fresh open;
+- only a fresh accepted `OK` invokes the existing Android post-open hook.
+
+Each Android action is single-submit. A local backup-copy presentation is keyed to both its
+accepted attempt generation and the exact current database-result object identity; any newer
+source result clears it even if the reduced visible fields are equal.
 
 ---
 

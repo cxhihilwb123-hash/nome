@@ -1,6 +1,6 @@
 # Navigation Specification
 
-Sources: `common/src/commonMain/kotlin/chat/simplex/common/App.kt`, the platform home actuals, and the P13 connection-preview seam/actuals
+Sources: `common/src/commonMain/kotlin/chat/simplex/common/App.kt`, the platform database/home actuals, and the P13 connection-preview seam/actuals
 
 ---
 
@@ -15,8 +15,9 @@ Sources: `common/src/commonMain/kotlin/chat/simplex/common/App.kt`, the platform
 7. [Authentication Gate](#7-authentication-gate)
 8. [Onboarding Flow](#8-onboarding-flow)
 9. [Source Files](#9-source-files)
-10. [Nome Android Production Home Seam](#10-nome-android-production-home-seam)
-11. [Nome Android External Connection Preview](#11-nome-android-external-connection-preview)
+10. [Nome Android Database Root Route](#10-nome-android-database-root-route)
+11. [Nome Android Production Home Seam](#11-nome-android-production-home-seam)
+12. [Nome Android External Connection Preview](#12-nome-android-external-connection-preview)
 
 ---
 
@@ -34,8 +35,10 @@ AppScreen
     +-- Surface
         +-- MainScreen
             |-- [Migration in progress]     -> DefaultProgressView
-            |-- [Database opening]          -> DefaultProgressView
-            |-- [Database error]            -> DatabaseErrorView
+            |-- [Database opening]          -> PlatformDatabaseRootRoute
+            |                                  (Android: Nome P01 / Desktop: official view)
+            |-- [Database error]            -> PlatformDatabaseRootRoute
+            |                                  (Android: Nome P01 / Desktop: DatabaseErrorView)
             |-- [Encryption check pending]  -> SplashView
             |-- [Onboarding incomplete]     -> AnimatedContent { OnboardingStage views }
             |-- [Onboarding complete]
@@ -97,9 +100,9 @@ fun MainScreen()
 | Priority | Condition | View |
 |---|---|---|
 | 1 | `onboarding == Step1_SimpleXInfo && migrationState != null` | `SimpleXInfo` (migration in progress) |
-| 2 | `dbMigrationInProgress` | `DefaultProgressView("Database migration...")` |
-| 3 | `chatDbStatus == null && showInitializationView` | `DefaultProgressView("Opening database...")` |
-| 4 | `showChatDatabaseError` | `DatabaseErrorView` |
+| 2 | `dbMigrationInProgress` | `PlatformDatabaseRootRoute(Migrating)`; Android renders Nome P01, Desktop renders the supplied official progress view |
+| 3 | `chatDbStatus == null && showInitializationView` | `PlatformDatabaseRootRoute(Opening)`; Android renders Nome P01, Desktop renders the supplied official progress view |
+| 4 | `showChatDatabaseError` | `PlatformDatabaseRootRoute(Error)`; Android renders typed Nome P01 recovery, Desktop renders the supplied `DatabaseErrorView` |
 | 5 | `chatDbEncrypted == null \|\| localUserCreated == null` | `SplashView` |
 | 6 | `onboarding == OnboardingComplete` | Platform-specific main screen |
 | 7 | Other onboarding stages | `AnimatedContent` with stage-specific views |
@@ -380,14 +383,53 @@ The stage value is stored in `appPrefs.onboardingStage` and persisted across app
 | `desktopMain/.../views/chatlist/PlatformHomeRoute.desktop.kt` | Desktop actual that invokes existing content unchanged |
 | `views/chatlist/UserPicker.kt` | User switching panel |
 | `views/chat/ChatView.kt` | Chat view (CenterPartOfScreen content) |
-| `views/database/DatabaseErrorView.kt` | Database error recovery |
+| `views/database/PlatformDatabaseRootRoute.kt` + platform actual | Existing root-branch facts/actions; Android Nome P01 or one exact Desktop fallback invocation |
+| `views/database/DatabaseErrorView.kt` | Existing database recovery actions and exact backup-pair copy result, retained as Desktop presentation |
+| `androidMain/.../ui/nome/database/{NomeDatabaseRootStateAdapter.kt,NomeDatabaseRootRoute.android.kt}` | Android P01 display-safe truth adapter, process-owned attempt/recovery state, and renderer |
+| `androidMain/.../platform/Cryptor.android.kt` | Android database-alias-only missing/unreadable key-material classification; no bearer value enters presentation |
 | `views/SplashView.kt` | Splash / loading screen |
 | `views/call/CallView.kt` | In-call fullscreen view (ActiveCallView) |
 | `views/localauth/PasswordEntry.kt` | Column divider utility (contains VerticalDivider) |
 
 ---
 
-## 10. Nome Android Production Home Seam
+## 10. Nome Android Database Root Route
+
+P01 does not add a destination or change the priority of `MainScreen`. The existing
+`dbMigrationInProgress`, opening, and guarded database-error branches now pass their current facts
+and existing action closures through
+[`PlatformDatabaseRootRoute`](../../common/src/commonMain/kotlin/chat/simplex/common/views/database/PlatformDatabaseRootRoute.kt).
+The shared seam owns no state, model, command, migration, or database semantics.
+
+| Source set | Implementation |
+|---|---|
+| `commonMain` | `DatabaseRootRouteInput`, display-safe `AndroidDatabaseKeyReadState`, current root facts, existing action closures, and an `expect` presentation seam |
+| `androidMain` | Derives an exhaustive fixed-copy state, owns one process-level atomic attempt gate and source-bound recovery presentation, and renders Nome P01 |
+| `desktopMain` | Invokes the supplied official progress/error content exactly once; no Nome Desktop UI |
+| `desktopTest` | Guards the exact one-call fallback contract |
+
+The Android route preserves the root authentication guard: while the user is unauthorized it emits
+no P01 semantics and renders no interactive recovery content. A recovery attempt accepts at most one
+submit, keeps the passphrase in non-saveable memory, clears it when the key-entry state leaves,
+clears it on `ON_STOP` and disposal, and accepts a terminal result only for the current attempt
+generation and current source token. A successful open invokes the existing Android post-open hook;
+it does not manufacture a new root state.
+
+The renderer distinguishes opening, migrating, alternate-key input, stored manual/random key
+failures, upgrade/downgrade confirmation, incompatible version, open failure, key-store failure,
+unknown native failure, backup-pair copied, and backup-pair copy failure. Confirmation and copy are
+explicit actions. No percentage, rollback, restore guarantee, raw path, migration name, SQL,
+exception, key alias, key bytes, or passphrase is presented as product truth. The raw upstream
+database alert remains the Desktop fallback only.
+
+The database-alias Android key read returns only `Available`, `MissingAlias`, or
+`UnreadableMaterial`, clears the transient class after success, and logs a fixed non-secret
+diagnostic. Other cryptor aliases retain their existing behavior. P01 changes no key derivation,
+command, native core, protocol, database format, archive format, or migration operation.
+
+---
+
+## 11. Nome Android Production Home Seam
 
 [`StartPartOfScreen()`](../../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L366-L393) retains its existing branch ownership. Delivery-receipt setup still wins first, shared content still routes to `ShareListView`, and only the ordinary home branch runs the existing notice effect and calls [`PlatformHomeRoute()`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.kt#L16-L22). Therefore migration, database, onboarding, authentication, user-switching, call, privacy-alert, intent, modal, and share gates remain owned by the existing root.
 
@@ -408,7 +450,7 @@ The source/test links above describe the implemented split. They do not claim a 
 
 ---
 
-## 11. Nome Android External Connection Preview
+## 12. Nome Android External Connection Preview
 
 The P13 route does not add a root destination or a second navigation stack. Its production path is:
 

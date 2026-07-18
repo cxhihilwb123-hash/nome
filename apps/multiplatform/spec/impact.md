@@ -43,10 +43,10 @@
 | PC31 | Channels (Relays) |
 | PC32 | Nome Android UI |
 
-PC32 has an exact Android-only Phase 2 design foundation, a frozen Batch 2 production home
-implementation for P07/P08, and an authorized Batch 3 P13 external-link preview implementation.
+PC32 has an exact Android-only Phase 2 design foundation, frozen Batch 2 P07/P08 and Batch 3 P13
+implementations, and an active Batch 1A P01 database-root implementation.
 The rows below keep the larger transitive integration scope for later pages and separately
-enumerate the exact foundation, Batch 2, and Batch 3 source/test paths. Source presence is not
+enumerate the exact foundation, Batch 2, Batch 3, and Batch 1A source/test paths. Source presence is not
 evidence that the current batch verification matrix has passed.
 
 ### PC32 Nome Android transitive scope (authoritative reverse index)
@@ -60,7 +60,7 @@ Path aliases are relative to `apps/multiplatform/`: `CM` = `common/src/commonMai
 | App / root lifecycle | `CM/App.kt`; `CM/platform/AppCommon.kt`; `AM/platform/AppCommon.android.kt`; `APP/java/chat/simplex/app/SimplexApp.kt` | Preserve startup, gate ordering, navigation ownership, and Android application initialization. |
 | ChatModel / SimpleXAPI / core bridge | `CM/model/ChatModel.kt`; `CM/model/SimpleXAPI.kt`; `CM/platform/Core.kt` | Preserve production state and command/event contracts; `Core.kt` is a bridge validation point only. Haskell/native core remains outside PC32 implementation scope. |
 | AppLock / local authentication | `CM/AppLock.kt`; `CM/views/localauth/**`; `AM/views/helpers/LocalAuthentication.android.kt`; `AM/views/usersettings/PrivacySettings.android.kt` | Cover locked, authenticating, cancelled, failed, and unlocked states without bypassing authorization. |
-| Database / migration | `CM/views/database/**`; `CM/views/migration/**`; `CM/views/onboarding/SetupDatabasePassphrase.kt`; `AM/views/database/**` | Cover create, encrypted, error, upgrade, import, export, and interrupted migration states. |
+| Database / migration | `CM/views/database/**`; `CM/views/migration/**`; `CM/views/onboarding/SetupDatabasePassphrase.kt`; `AM/{platform/Cryptor.android.kt,views/database/**,ui/nome/database/**}` | Cover create, encrypted, error, upgrade, bounded matched-pair recovery, import, export, and interrupted migration states without changing core/database truth. |
 | Theme | `CM/ui/theme/**`; `AM/ui/theme/**`; `CM/views/usersettings/Appearance.kt`; `AM/views/usersettings/Appearance.android.kt` | Apply the approved Nome tokens in both light and dark modes while preserving theme resolution. |
 | Locale / bilingual resources | `MR/**/strings.xml`; `CM/platform/Resources.kt`; `CM/platform/UI.kt`; `AM/helpers/Locale.kt`; `AM/platform/Resources.android.kt`; `AM/platform/UI.android.kt` | English and Chinese copy, runtime locale behavior, text expansion, and resource fallback are cross-cutting PC32 requirements. |
 | Onboarding | `CM/views/onboarding/**`; `AM/views/onboarding/**` | Cover every onboarding branch, permission result, database setup result, and restoration path. |
@@ -164,6 +164,33 @@ Android-only. The Desktop actual declines the preview and is covered by a fallba
 Batch 3 changes no `Core.kt`, Haskell/native source, protocol/command/event type, database/archive
 format, message state machine, iOS, or Desktop UI. It adds no P10/P12/P14/P16 behavior and does not
 change P08 `FIRST_USE` or `FILTERED_NO_RESULT`.
+
+### PC32 Batch 1A exact P01 production sources
+
+Batch 1A is limited to the already-selected startup database roots. Common code carries facts and
+mechanically extracts existing low-level actions; all Nome rendering stays Android-only. Desktop
+delegates legacy content exactly once.
+
+| Exact source or test path | Product concepts | Risk | Batch 1A responsibility |
+|---|---|---|---|
+| `common/src/commonMain/kotlin/chat/simplex/common/App.kt` | PC23, PC32 | High | Calls the platform seam in the existing migration/opening/error branches without changing priority, delay, or auth guard. |
+| `common/src/commonMain/kotlin/chat/simplex/common/views/database/PlatformDatabaseRootRoute.kt` | PC23, PC32 | Medium | Display-safe facts/route and expect declarations only. |
+| `common/src/commonMain/kotlin/chat/simplex/common/views/database/DatabaseErrorView.kt` | PC23, PC32 | High | Mechanical extraction of existing open/save/confirm/exact-backup actions while legacy alerts remain Desktop-owned. |
+| `common/src/androidMain/kotlin/chat/simplex/common/platform/Cryptor.android.kt` | PC23, PC32 | High | Database-alias-only no-secret missing/unreadable class and fixed Logcat/user copy; return/throw behavior is unchanged. |
+| `common/src/androidMain/kotlin/chat/simplex/common/views/database/PlatformDatabaseRootRoute.android.kt` | PC23, PC32 | High | Process-owned atomic attempt orchestration, source-bound copy result, existing success hook, and auth-hidden semantics. |
+| `common/src/androidMain/kotlin/chat/simplex/common/ui/nome/database/**` | PC23, PC24, PC32 | High | Exhaustive safe reducer and bilingual accessible P01 route with non-saveable passphrase. |
+| `common/src/androidMain/res/values*/nome_database_root_strings.xml` | PC23, PC32 | Low | Fixed English/Simplified-Chinese P01 copy and semantics. |
+| `common/src/desktopMain/kotlin/chat/simplex/common/views/database/PlatformDatabaseRootRoute.desktop.kt` | PC23, PC32 | Medium | Invokes official legacy content once; no Nome behavior. |
+| `android/src/test/java/chat/simplex/app/nome/database/**` | PC23, PC32 | Medium | Reducer, key-read precedence, action ordering, generation, stale-result, raw-payload, and forbidden-claim tests. |
+| `android/src/androidTest/java/chat/simplex/app/nome/database/**` | PC23, PC24, PC32 | Medium | Compose password semantics, state transition clearing, 48dp, 200%, live-region, and bounded-recovery checks. |
+| `android/src/debug/java/chat/simplex/app/nome/database/NomeDatabaseRootEvidenceActivity.kt` | PC23, PC24, PC32 | Medium | Non-exported deterministic P01 renderer reference; visibly fixture-only and never a real database result. |
+| `android/src/debug/res/values*/nome_database_root_evidence_strings.xml` | PC32 | Low | Debug-only bilingual fixture boundary labels. |
+| `android/src/androidTest/java/chat/simplex/app/nome/database/NomeDatabaseRootScreenshotTest.kt` | PC23, PC24, PC32 | Medium | Defines the affected P01 bilingual/theme/font renderer reference set; it does not promote a fixture to production truth. |
+| `android/src/androidTest/java/chat/simplex/app/nome/database/NomeDatabaseRootPackagingTest.kt` | PC32 | Medium | Guards debug-host presence and non-export; milestone release scans own absence from release. |
+| `common/src/desktopTest/kotlin/chat/simplex/common/views/database/**` | PC23, PC32 | Medium | Executes all three Desktop route variants with sensitive content both allowed/denied and proves one legacy call. |
+
+Batch 1A changes no `Core.kt`, Haskell/native source/binary, protocol, schema/migration order,
+archive format, service/worker source, iOS, or Desktop UI.
 
 ---
 

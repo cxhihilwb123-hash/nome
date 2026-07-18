@@ -86,11 +86,14 @@ fun SimpleButtonIconEnded(
 
 @Composable
 fun SimpleButtonFrame(click: () -> Unit, modifier: Modifier = Modifier, disabled: Boolean = false, content: @Composable RowScope.() -> Unit) {
-  Box(Modifier.clip(RoundedCornerShape(20.dp))) {
+  val shape = if (appPlatform.isAndroid) MaterialTheme.shapes.medium else RoundedCornerShape(20.dp)
+  Box(Modifier.clip(shape)) {
     val modifier = if (disabled) modifier else modifier.clickable { click() }
     Row(
       verticalAlignment = Alignment.CenterVertically,
-      modifier = modifier.padding(8.dp)
+      modifier = modifier
+        .then(if (appPlatform.isAndroid) Modifier.heightIn(min = 48.dp) else Modifier)
+        .padding(horizontal = 12.dp, vertical = 8.dp)
     ) { content() }
   }
 }

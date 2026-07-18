@@ -14,6 +14,7 @@ This document specifies invariants enforced by the Android and Desktop (Kotlin/C
 6. [Call Integrity (RULE-18)](#6-call-integrity)
 7. [Nome Android Home Truth (RULE-19)](#7-nome-android-home-truth)
 8. [Nome Android External Connection Truth (RULE-20)](#8-nome-android-external-connection-truth)
+9. [Nome Android Database Root Truth (RULE-21)](#9-nome-android-database-root-truth)
 
 ---
 
@@ -303,3 +304,40 @@ The preview MUST:
 
 **Protected boundary:** This rule does not alter P08 `FIRST_USE` or `FILTERED_NO_RESULT`, add a P10
 entry, implement scanner/paste behavior, or change P14–P24.
+
+---
+
+## 9. Nome Android Database Root Truth
+
+### RULE-21: P01 Database State, Secret, and Recovery Truth
+
+**Invariant:** Nome P01 MUST preserve the official root priority, delayed opening selection,
+authentication ownership, and `DBMigrationResult` semantics. `UnknownFailure` may come only from
+the exact native `Unknown` subtype. A local copy or persistence failure MUST NOT be relabelled as a
+native database result.
+
+The Android route MUST:
+
+1. keep passphrase text in non-saveable composition state and clear it after submit, on terminal
+   or root change, background stop, rotation/disposal, and failed persistence;
+2. expose only a no-secret missing-alias/decrypt-failure class for the database Keystore alias;
+3. let an initial-random-key failure override opening/alternate-key presentation while offering no
+   manual-key claim;
+4. keep “Open once” non-persistent and “Save and open” separately explicit with the existing write
+   order;
+5. single-submit every open/confirm/copy action and reject stale attempt completion;
+6. offer backup copy only for the exact timestamp-matched chat/agent pair; copy success is bound to
+   its attempt and source result and requires a separate fresh open;
+7. call the existing Android post-open hook exactly once for an accepted fresh `OK`; and
+8. omit raw path, migration name, SQL, JSON, stack, key text, percentage, stages, timeout, cancel,
+   rollback, identity-loaded, and messaging-restored claims.
+
+**Desktop boundary:** The shared expect/actual seam invokes the existing Desktop content exactly
+once and installs no Nome database behavior.
+
+**Location:**
+
+- `common/src/commonMain/kotlin/chat/simplex/common/App.kt`
+- `common/src/commonMain/kotlin/chat/simplex/common/views/database/{DatabaseErrorView,PlatformDatabaseRootRoute}.kt`
+- `common/src/androidMain/kotlin/chat/simplex/common/{platform/Cryptor.android.kt,views/database/PlatformDatabaseRootRoute.android.kt,ui/nome/database/**}`
+- `common/src/desktopMain/kotlin/chat/simplex/common/views/database/PlatformDatabaseRootRoute.desktop.kt`

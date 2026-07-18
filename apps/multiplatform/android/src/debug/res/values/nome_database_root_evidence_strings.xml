@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="nome_database_root_evidence_activity_label">Nome database root evidence</string>
+  <string name="nome_database_root_evidence_badge">RENDERER FIXTURE · %1$s · NOT LIVE DATABASE</string>
+</resources>

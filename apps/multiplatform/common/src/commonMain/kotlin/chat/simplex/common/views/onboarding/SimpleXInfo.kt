@@ -86,7 +86,7 @@ private fun SimpleXInfoDesktop(chatModel: ChatModel) {
         Spacer(Modifier.fillMaxHeight().weight(1f))
         Column(Modifier.widthIn(max = 1000.dp).align(Alignment.CenterHorizontally), horizontalAlignment = Alignment.CenterHorizontally) {
           OnboardingActionButton(user, onboardingStage)
-          TextButtonBelowOnboardingButton(stringResource(MR.strings.why_simplex_is_built), icon = painterResource(MR.images.ic_info), onClick = {
+          TextButtonBelowOnboardingButton(platformOnboardingBrandText(stringResource(MR.strings.why_simplex_is_built)), icon = painterResource(MR.images.ic_info), onClick = {
             ModalManager.fullscreen.showModal(forceAnimated = true) { HowItWorks(user, onboardingStage) }
           })
         }
@@ -105,64 +105,77 @@ fun SimpleXInfoLayout(
   user: User?,
   onboardingStage: SharedPreference<OnboardingStage>?
 ) {
-  val topBar = onboardingStage == null && !appPrefs.oneHandUI.state.value
-  val modifier = Modifier.fillMaxSize().systemBarsPadding().padding(horizontal = DEFAULT_ONBOARDING_HORIZONTAL_PADDING)
-  Column(if (topBar) modifier.padding(top = AppBarHeight * fontSizeSqrtMultiplier) else modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-    Box(Modifier.padding(top = DEFAULT_PADDING * 2).widthIn(max = if (appPlatform.isAndroid) 185.dp else 160.dp), contentAlignment = Alignment.Center) {
-      SimpleXLogo()
-    }
-    OnboardingShrinkingLayout(
-      modifier = Modifier.fillMaxSize(),
-      image = {
-        Column(Modifier.padding(vertical = DEFAULT_PADDING_HALF), horizontalAlignment = Alignment.CenterHorizontally) {
-          OnboardingImage(
-            MR.images.intro, MR.images.intro_light, MR.images.ic_forum,
-            modifier = if (appPlatform.isAndroid) Modifier.fillMaxWidth() else Modifier.heightIn(max = 280.dp)
-          )
+  PlatformNomeWelcomePage(
+    enabled = onboardingStage != null && user == null,
+    onCreate = { onboardingStage?.set(OnboardingStage.Step2_CreateProfile) },
+    onMigrate = {
+      if (chatModel.migrationState.value == null) {
+        chatModel.migrationState.value = MigrationToState.PasteOrScanLink
+      }
+      ModalManager.fullscreen.showCustomModal(animated = false) { close ->
+        MigrateToDeviceView { close() }
       }
     },
-    content = {
-      Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-          stringResource(MR.strings.onboarding_be_free),
-          style = MaterialTheme.typography.h1,
-          fontWeight = FontWeight.Bold,
-          textAlign = TextAlign.Center,
-          lineHeight = 42.sp,
-          modifier = Modifier.padding(top = DEFAULT_PADDING_HALF)
-        )
-        Text(
-          stringResource(MR.strings.onboarding_private_and_secure),
-          style = MaterialTheme.typography.h3,
-          color = MaterialTheme.colors.secondary,
-          fontWeight = FontWeight.Medium,
-          lineHeight = 25.sp,
-          textAlign = TextAlign.Center,
-          modifier = Modifier.padding(top = 14.dp)
-        )
-        Text(
-          stringResource(MR.strings.onboarding_first_network),
-          style = MaterialTheme.typography.body2,
-          color = MaterialTheme.colors.secondary,
-          textAlign = TextAlign.Center,
-          lineHeight = 20.sp,
-          modifier = Modifier.padding(top = DEFAULT_PADDING_HALF)
-        )
+  ) {
+    val topBar = onboardingStage == null && !appPrefs.oneHandUI.state.value
+    val modifier = Modifier.fillMaxSize().systemBarsPadding().padding(horizontal = DEFAULT_ONBOARDING_HORIZONTAL_PADDING)
+    Column(if (topBar) modifier.padding(top = AppBarHeight * fontSizeSqrtMultiplier) else modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+      Box(Modifier.padding(top = DEFAULT_PADDING * 2).widthIn(max = if (appPlatform.isAndroid) 185.dp else 160.dp), contentAlignment = Alignment.Center) {
+        SimpleXLogo()
       }
-    },
-    button = {
-      if (onboardingStage != null) {
-        Column(Modifier.widthIn(max = if (appPlatform.isAndroid) 450.dp else 1000.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-          OnboardingActionButton(user, onboardingStage)
-          TextButtonBelowOnboardingButton(stringResource(MR.strings.why_simplex_is_built), icon = painterResource(MR.images.ic_info), onClick = {
-            ModalManager.fullscreen.showModal { HowItWorks(user, onboardingStage) }
-          })
+      OnboardingShrinkingLayout(
+        modifier = Modifier.fillMaxSize(),
+        image = {
+          Column(Modifier.padding(vertical = DEFAULT_PADDING_HALF), horizontalAlignment = Alignment.CenterHorizontally) {
+            OnboardingImage(
+              MR.images.intro, MR.images.intro_light, MR.images.ic_forum,
+              modifier = if (appPlatform.isAndroid) Modifier.fillMaxWidth() else Modifier.heightIn(max = 280.dp)
+            )
+          }
+        },
+        content = {
+          Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+              stringResource(MR.strings.onboarding_be_free),
+              style = MaterialTheme.typography.h1,
+              fontWeight = FontWeight.Bold,
+              textAlign = TextAlign.Center,
+              lineHeight = 42.sp,
+              modifier = Modifier.padding(top = DEFAULT_PADDING_HALF)
+            )
+            Text(
+              stringResource(MR.strings.onboarding_private_and_secure),
+              style = MaterialTheme.typography.h3,
+              color = MaterialTheme.colors.secondary,
+              fontWeight = FontWeight.Medium,
+              lineHeight = 25.sp,
+              textAlign = TextAlign.Center,
+              modifier = Modifier.padding(top = 14.dp)
+            )
+            Text(
+              stringResource(MR.strings.onboarding_first_network),
+              style = MaterialTheme.typography.body2,
+              color = MaterialTheme.colors.secondary,
+              textAlign = TextAlign.Center,
+              lineHeight = 20.sp,
+              modifier = Modifier.padding(top = DEFAULT_PADDING_HALF)
+            )
+          }
+        },
+        button = {
+          if (onboardingStage != null) {
+            Column(Modifier.widthIn(max = if (appPlatform.isAndroid) 450.dp else 1000.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+              OnboardingActionButton(user, onboardingStage)
+              TextButtonBelowOnboardingButton(platformOnboardingBrandText(stringResource(MR.strings.why_simplex_is_built)), icon = painterResource(MR.images.ic_info), onClick = {
+                ModalManager.fullscreen.showModal { HowItWorks(user, onboardingStage) }
+              })
+            }
+          } else {
+            Spacer(Modifier)
+          }
         }
-      } else {
-        Spacer(Modifier)
-      }
+      )
     }
-  )
   }
   LaunchedEffect(Unit) {
     if (chatModel.migrationState.value != null && !ModalManager.fullscreen.hasModalsOpen()) {
@@ -173,14 +186,16 @@ fun SimpleXInfoLayout(
 
 @Composable
 fun SimpleXLogo() {
-  Image(
-    painter = painterResource(if (isInDarkTheme()) MR.images.logo_light else MR.images.logo),
-    contentDescription = stringResource(MR.strings.image_descr_simplex_logo),
-    contentScale = ContentScale.FillWidth,
-    modifier = Modifier
-      .padding(bottom = 10.dp)
-      .fillMaxWidth()
-  )
+  PlatformOnboardingBrandLogo {
+    Image(
+      painter = painterResource(if (isInDarkTheme()) MR.images.logo_light else MR.images.logo),
+      contentDescription = stringResource(MR.strings.image_descr_simplex_logo),
+      contentScale = ContentScale.FillWidth,
+      modifier = Modifier
+        .padding(bottom = 10.dp)
+        .fillMaxWidth()
+    )
+  }
 }
 
 @Composable
@@ -204,7 +219,7 @@ fun OnboardingActionButton(
       }
     },
     modifier = modifier,
-    shape = CircleShape,
+    shape = if (appPlatform.isAndroid) MaterialTheme.shapes.medium else CircleShape,
     enabled = enabled,
 //    elevation = ButtonDefaults.elevation(defaultElevation = 0.dp, focusedElevation = 0.dp, pressedElevation = 0.dp, hoveredElevation = 0.dp),
     contentPadding = PaddingValues(horizontal = if (icon == null) DEFAULT_PADDING * 2 else DEFAULT_PADDING * 1.5f, vertical = 17.dp),

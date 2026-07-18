@@ -5,6 +5,9 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import chat.simplex.common.views.helpers.AlertManager
 import chat.simplex.common.views.helpers.generalGetString
+import chat.simplex.common.views.database.AndroidDatabaseKeyReadState
+import chat.simplex.common.views.database.clearPlatformDatabaseKeyReadState
+import chat.simplex.common.views.database.reportPlatformDatabaseKeyReadState
 import chat.simplex.res.MR
 import java.security.KeyStore
 import javax.crypto.*
@@ -20,6 +23,14 @@ internal class Cryptor: CryptorInterface {
   override fun decryptData(data: ByteArray, iv: ByteArray, alias: String): String? {
     val secretKey = getSecretKey(alias)
     if (secretKey == null) {
+      if (alias == DATABASE_PASSWORD_ALIAS) {
+        reportPlatformDatabaseKeyReadState(
+          AndroidDatabaseKeyReadState.MissingAlias(
+            initialRandomDBPassphrase =
+              appPreferences.initialRandomDBPassphrase.get(),
+          ),
+        )
+      }
       if (!warningShown) {
         // Repeated calls will not show the alert again
         warningShown = true
@@ -35,10 +46,25 @@ internal class Cryptor: CryptorInterface {
       val cipher: Cipher = Cipher.getInstance(TRANSFORMATION)
       val spec = GCMParameterSpec(128, iv)
       cipher.init(Cipher.DECRYPT_MODE, secretKey, spec)
-      return String(cipher.doFinal(data))
+      val decrypted = String(cipher.doFinal(data))
+      if (alias == DATABASE_PASSWORD_ALIAS) {
+        clearPlatformDatabaseKeyReadState()
+      }
+      return decrypted
     } catch (e: Throwable) {
-      Log.e(TAG, "cipher.init: ${e.stackTraceToString()}")
+      if (alias == DATABASE_PASSWORD_ALIAS) {
+        Log.e(TAG, "cipher.init: database key material unreadable")
+      } else {
+        Log.e(TAG, "cipher.init: ${e.stackTraceToString()}")
+      }
       val randomPassphrase = appPreferences.initialRandomDBPassphrase.get()
+      if (alias == DATABASE_PASSWORD_ALIAS) {
+        reportPlatformDatabaseKeyReadState(
+          AndroidDatabaseKeyReadState.UnreadableMaterial(
+            initialRandomDBPassphrase = randomPassphrase,
+          ),
+        )
+      }
       AlertManager.shared.showAlertMsg(
         title = generalGetString(MR.strings.error_reading_passphrase),
         text = generalGetString(if (randomPassphrase) {
@@ -46,8 +72,7 @@ internal class Cryptor: CryptorInterface {
         } else {
           MR.strings.restore_passphrase_can_not_be_read_enter_manually_desc
         }
-        )
-          .plus("\n\n").plus(e.stackTraceToString())
+        ),
       )
       if (randomPassphrase) {
         // do not allow to override initial random passphrase in case of such error
@@ -85,6 +110,7 @@ internal class Cryptor: CryptorInterface {
   }
 
   companion object {
+    private const val DATABASE_PASSWORD_ALIAS = "databasePassword"
     private val KEY_ALGORITHM = KeyProperties.KEY_ALGORITHM_AES
     private val BLOCK_MODE = KeyProperties.BLOCK_MODE_GCM
     private val TRANSFORMATION = "AES/GCM/NoPadding"

@@ -76,6 +76,20 @@ Defined as [`@Stable object ChatModel`](../common/src/commonMain/kotlin/chat/sim
 | [`dbMigrationInProgress`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L148) | `MutableState<Boolean>` | Database migration in progress |
 | [`incompleteInitializedDbRemoved`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L149) | `MutableState<Boolean>` | Tracks if incomplete DB files were removed (prevents infinite retry) |
 
+### Nome Android P01 process-only state
+
+P01 adds no `ChatModel`, preference, saved-instance, protocol, or database state. Android owns only:
+
+| State | Lifetime | Payload boundary |
+|---|---|---|
+| database key read class | process-local, cleared by successful decrypt or an accepted manual/restored open generation | missing alias or unreadable material plus existing initial-random Boolean; no key/exception text |
+| atomic attempt generation | process-local across rotation/background | monotonically increasing number only; one active action |
+| backup-copy presentation | process-local and source-bound | copied/copy-failed enum plus accepted generation, no file/path/error payload |
+| entered passphrase | composable `remember`, never saveable | cleared on submit, terminal/root change, background stop, and disposal |
+
+`DBMigrationResult`, `ctrlInitInProgress`, and `dbMigrationInProgress` remain the authoritative
+model/core truth. Local action state cannot fabricate or replace a native subtype.
+
 ### Current Chat State
 
 | Field | Type | Purpose |

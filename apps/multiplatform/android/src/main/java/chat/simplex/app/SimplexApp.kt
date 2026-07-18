@@ -20,6 +20,7 @@ import androidx.work.*
 import chat.simplex.app.MainActivity.Companion.OLD_ANDROID_UI_FLAGS
 import chat.simplex.app.model.NtfManager
 import chat.simplex.app.model.NtfManager.AcceptCallAction
+import chat.simplex.app.nome.NomeLocaleInitializer
 import chat.simplex.app.views.call.CallActivity
 import chat.simplex.common.helpers.*
 import chat.simplex.common.model.*
@@ -70,6 +71,7 @@ class SimplexApp: Application(), LifecycleEventObserver {
     context = this
     initHaskell(packageName)
     initMultiplatform()
+    NomeLocaleInitializer.initialize(this)
     reconfigureBroadcastReceivers()
     runMigrations()
     tmpDir.deleteRecursively()

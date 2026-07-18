@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nome_brand_logo_description">Nome</string>
+
+    <string name="nome_p02_title">Nome 已锁定</string>
+    <string name="nome_p02_system_body">使用生物识别或设备锁解锁你的本地消息</string>
+    <string name="nome_p02_passcode_body">输入 Nome 应用密码解锁你的本地消息</string>
+    <string name="nome_p02_system_unlock">使用生物识别解锁</string>
+    <string name="nome_p02_passcode_unlock">输入应用密码解锁</string>
+    <string name="nome_p02_device_lock">重试系统验证</string>
+    <string name="nome_p02_local_note">身份和消息仍保存在此设备</string>
+
+    <string name="nome_p03_title">私密沟通，也可以很简单</string>
+    <string name="nome_p03_body">Nome 不需要手机号或邮箱。先创建一个只属于这台设备的本地身份。</string>
+    <string name="nome_p03_point_phone_title">不收集手机号</string>
+    <string name="nome_p03_point_phone_body">通过邀请建立联系</string>
+    <string name="nome_p03_point_device_title">消息留在设备</string>
+    <string name="nome_p03_point_device_body">由你决定何时创建备份</string>
+    <string name="nome_p03_point_confirm_title">连接需要确认</string>
+    <string name="nome_p03_point_confirm_body">双方各自决定是否建立连接</string>
+    <string name="nome_p03_create">开始创建</string>
+    <string name="nome_p03_migrate">从旧设备迁移</string>
+    <string name="nome_p03_language">简体中文</string>
+
+    <string name="nome_p04_title">创建本地身份</string>
+    <string name="nome_p04_intro">这是别人与你连接时看到的名字，以后可以再修改。</string>
+    <string name="nome_p04_preview">身份预览</string>
+    <string name="nome_p04_preview_supporting">将保存在这台设备</string>
+    <string name="nome_p04_display_name">显示名称</string>
+    <string name="nome_p04_display_name_placeholder">输入显示名称</string>
+    <string name="nome_p04_hint">建议使用联系人能认出的名字</string>
+    <string name="nome_p04_local_title">只保存在本机</string>
+    <string name="nome_p04_local_body">这不是云端账号，也不需要登录。</string>
+    <string name="nome_p04_create">创建并继续</string>
+    <string name="nome_p04_creating">正在创建本地身份…</string>
+
+    <string name="nome_p05_title">我的网络</string>
+    <string name="nome_p05_intro">选择用于消息路由的服务器运营方；稍后仍可在设置中修改此配置。</string>
+    <string name="nome_p05_no_operator">尚未选择服务器运营方</string>
+    <string name="nome_p05_operator_count">已选择 %1$d 个运营方</string>
+    <string name="nome_p05_scope_note">仅显示配置，不代表连通或服务器健康状态。</string>
+    <string name="nome_p05_preferences">偏好</string>
+    <string name="nome_p05_notifications">新消息通知</string>
+    <string name="nome_p05_notifications_service">使用后台服务即时接收通知</string>
+    <string name="nome_p05_notifications_periodic">定期检查新消息通知</string>
+    <string name="nome_p05_notifications_off">通知已关闭</string>
+    <string name="nome_p05_operators">服务器运营方</string>
+    <string name="nome_p05_operators_body">选择现有路由配置使用的运营方</string>
+    <string name="nome_p05_advanced">高级网络设置</string>
+    <string name="nome_p05_advanced_body">更多服务商、中继与 Tor 控制可在设置中使用</string>
+    <string name="nome_p05_continue">继续</string>
+
+    <string name="nome_p06_title">网络使用承诺</string>
+    <string name="nome_p06_intro">使用 Nome 前，请确认你理解以下简明规则。</string>
+    <string name="nome_p06_private_title">尊重隐私</string>
+    <string name="nome_p06_private_body">不通过 Nome 骚扰、跟踪或冒充他人。</string>
+    <string name="nome_p06_connection_title">谨慎建立连接</string>
+    <string name="nome_p06_connection_body">只接受来源可识别或可信任的邀请。</string>
+    <string name="nome_p06_data_title">自行保管数据</string>
+    <string name="nome_p06_data_body">本地消息丢失后无法由服务器找回。</string>
+    <string name="nome_p06_channel_note">公开频道不属于端到端加密会话，加入前会再次说明。</string>
+    <string name="nome_p06_consent">我已阅读并同意网络使用承诺</string>
+    <string name="nome_p06_terms">查看完整条款</string>
+    <string name="nome_p06_accept">同意并进入 Nome</string>
+    <string name="nome_back">返回</string>
+</resources>

@@ -19,6 +19,9 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -54,77 +57,86 @@ fun OnboardingConditionsView(chatModel: ChatModel) {
   if (appPlatform.isDesktop) {
     OnboardingConditionsDesktop(selectedOperatorIds)
   } else {
-    CompositionLocalProvider(LocalAppBarHandler provides rememberAppBarHandler()) {
-      ModalView({}, showClose = false, showAppBar = false) {
-        OnboardingShrinkingLayout(
-          modifier = Modifier.fillMaxSize().themedBackground(bgLayerSize = LocalAppBarHandler.current?.backgroundGraphicsLayerSize, bgLayer = LocalAppBarHandler.current?.backgroundGraphicsLayer)
-            .systemBarsPadding()
-            .padding(horizontal = DEFAULT_ONBOARDING_HORIZONTAL_PADDING),
-          topPadding = DEFAULT_PADDING,
-          image = {
-            Column(Modifier.padding(vertical = DEFAULT_PADDING_HALF), horizontalAlignment = Alignment.CenterHorizontally) {
-              OnboardingImage(
-                MR.images.network_commitments, MR.images.network_commitments_light, MR.images.ic_shield,
-                modifier = Modifier.fillMaxWidth(),
-                aspectRatio = 1.5f
-              )
-            }
-          },
-          content = {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-              Text(
-                stringResource(MR.strings.onboarding_network_commitments),
-                style = MaterialTheme.typography.h1,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                lineHeight = 42.sp,
-                modifier = Modifier.padding(top = DEFAULT_PADDING_HALF)
-              )
-              Column(
-                Modifier.fillMaxWidth()
-                  .padding(horizontal = DEFAULT_PADDING_HALF)
-                  .padding(top = DEFAULT_PADDING),
-                horizontalAlignment = Alignment.Start
-              ) {
-                Text(
-                  stringResource(MR.strings.onboarding_conditions_private_chats_not_accessible),
-                  style = MaterialTheme.typography.body2,
-                  lineHeight = 22.sp
-                )
-                Spacer(Modifier.height(DEFAULT_PADDING))
-                Text(
-                  stringResource(MR.strings.onboarding_conditions_by_using_you_agree),
-                  style = MaterialTheme.typography.body2,
-                  lineHeight = 22.sp
-                )
-                Spacer(Modifier.height(DEFAULT_PADDING))
-                Text(
-                  stringResource(MR.strings.onboarding_conditions_privacy_policy_and_conditions_of_use),
-                  style = MaterialTheme.typography.body1,
-                  fontWeight = FontWeight.Medium,
-                  color = MaterialTheme.colors.primary,
-                  modifier = Modifier
-                    .clickable(
-                      interactionSource = remember { MutableInteractionSource() },
-                      indication = null
-                    ) {
-                      ModalManager.fullscreen.showModal(endButtons = { ConditionsLinkButton() }) {
-                        SimpleConditionsView(rhId = null) {
-                          ModalManager.fullscreen.closeModal()
-                          acceptConditions(selectedOperatorIds.value)
-                        }
-                      }
-                    }
+    val viewTerms = {
+      ModalManager.fullscreen.showModal(endButtons = { ConditionsLinkButton() }) {
+        SimpleConditionsView(rhId = null) {
+          ModalManager.fullscreen.closeModal()
+          acceptConditions(selectedOperatorIds.value)
+        }
+      }
+    }
+    PlatformNomeCommitmentPage(
+      acceptEnabled = selectedOperatorIds.value.isNotEmpty(),
+      onBack = { appPrefs.onboardingStage.set(OnboardingStage.Step3_ChooseServerOperators) },
+      onViewTerms = viewTerms,
+      onAccept = { acceptConditions(selectedOperatorIds.value) },
+    ) {
+      CompositionLocalProvider(LocalAppBarHandler provides rememberAppBarHandler()) {
+        ModalView({}, showClose = false, showAppBar = false) {
+          OnboardingShrinkingLayout(
+            modifier = Modifier.fillMaxSize().themedBackground(bgLayerSize = LocalAppBarHandler.current?.backgroundGraphicsLayerSize, bgLayer = LocalAppBarHandler.current?.backgroundGraphicsLayer)
+              .systemBarsPadding()
+              .padding(horizontal = DEFAULT_ONBOARDING_HORIZONTAL_PADDING),
+            topPadding = DEFAULT_PADDING,
+            image = {
+              Column(Modifier.padding(vertical = DEFAULT_PADDING_HALF), horizontalAlignment = Alignment.CenterHorizontally) {
+                OnboardingImage(
+                  MR.images.network_commitments, MR.images.network_commitments_light, MR.images.ic_shield,
+                  modifier = Modifier.fillMaxWidth(),
+                  aspectRatio = 1.5f
                 )
               }
+            },
+            content = {
+              Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                  stringResource(MR.strings.onboarding_network_commitments),
+                  style = MaterialTheme.typography.h1,
+                  fontWeight = FontWeight.Bold,
+                  textAlign = TextAlign.Center,
+                  lineHeight = 42.sp,
+                  modifier = Modifier.padding(top = DEFAULT_PADDING_HALF)
+                )
+                Column(
+                  Modifier.fillMaxWidth()
+                    .padding(horizontal = DEFAULT_PADDING_HALF)
+                    .padding(top = DEFAULT_PADDING),
+                  horizontalAlignment = Alignment.Start
+                ) {
+                  Text(
+                    stringResource(MR.strings.onboarding_conditions_private_chats_not_accessible),
+                    style = MaterialTheme.typography.body2,
+                    lineHeight = 22.sp
+                  )
+                  Spacer(Modifier.height(DEFAULT_PADDING))
+                  Text(
+                    stringResource(MR.strings.onboarding_conditions_by_using_you_agree),
+                    style = MaterialTheme.typography.body2,
+                    lineHeight = 22.sp
+                  )
+                  Spacer(Modifier.height(DEFAULT_PADDING))
+                  Text(
+                    stringResource(MR.strings.onboarding_conditions_privacy_policy_and_conditions_of_use),
+                    style = MaterialTheme.typography.body1,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colors.primary,
+                    modifier = Modifier
+                      .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = viewTerms,
+                      )
+                  )
+                }
+              }
+            },
+            button = {
+              Column(Modifier.widthIn(max = 450.dp).padding(bottom = DEFAULT_PADDING * 2), horizontalAlignment = Alignment.CenterHorizontally) {
+                AcceptConditionsButton(enabled = selectedOperatorIds.value.isNotEmpty(), selectedOperatorIds)
+              }
             }
-          },
-          button = {
-            Column(Modifier.widthIn(max = 450.dp).padding(bottom = DEFAULT_PADDING * 2), horizontalAlignment = Alignment.CenterHorizontally) {
-              AcceptConditionsButton(enabled = selectedOperatorIds.value.isNotEmpty(), selectedOperatorIds)
-            }
-          }
-        )
+          )
+        }
       }
     }
   }
@@ -240,6 +252,10 @@ private fun OperatorCheckView(serverOperator: ServerOperator, selectedOperatorId
       selectedOperatorIds.value += serverOperator.operatorId
     }
   },
+    modifier = Modifier.semantics(mergeDescendants = true) {
+      contentDescription = serverOperator.tradeName
+      selected = checked
+    },
     border = BorderStroke(1.dp, color = if (checked) MaterialTheme.colors.primary else MaterialTheme.colors.secondary.copy(alpha = 0.5f)),
     shape = RoundedCornerShape(18.dp)
   ) {

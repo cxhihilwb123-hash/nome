@@ -19,6 +19,7 @@ import androidx.compose.ui.layout.*
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import chat.simplex.common.BuildConfigCommon
+import chat.simplex.common.platform.appPlatform
 import chat.simplex.common.ui.theme.DEFAULT_PADDING
 import chat.simplex.common.ui.theme.isInDarkTheme
 import chat.simplex.common.views.helpers.ModalManager
@@ -90,7 +91,7 @@ fun OnboardingImage(
     modifier: Modifier = Modifier,
     aspectRatio: Float = 1f
 ) {
-    if (BuildConfigCommon.SIMPLEX_ASSETS) {
+    if (BuildConfigCommon.SIMPLEX_ASSETS && !appPlatform.isAndroid) {
         Image(
             painterResource(if (isInDarkTheme()) darkImage else lightImage),
             contentDescription = null,

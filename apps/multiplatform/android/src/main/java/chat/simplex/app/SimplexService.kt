@@ -15,6 +15,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource as androidStringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationCompat
@@ -486,7 +488,7 @@ class SimplexService: Service() {
         text = {
           Column {
             Text(
-              if (mode == NotificationsMode.SERVICE) annotatedStringResource(MR.strings.to_preserve_privacy_simplex_has_background_service_instead_of_push_notifications_it_uses_a_few_pc_battery) else annotatedStringResource(MR.strings.periodic_notifications_desc),
+              if (mode == NotificationsMode.SERVICE) AnnotatedString(androidStringResource(R.string.nome_background_service_privacy)) else annotatedStringResource(MR.strings.periodic_notifications_desc),
               Modifier.padding(bottom = 8.dp)
             )
             Text(
@@ -538,7 +540,7 @@ class SimplexService: Service() {
           text = {
             Column {
               Text(
-                if (mode == NotificationsMode.SERVICE) annotatedStringResource(MR.strings.to_preserve_privacy_simplex_has_background_service_instead_of_push_notifications_it_uses_a_few_pc_battery) else annotatedStringResource(MR.strings.periodic_notifications_desc),
+                if (mode == NotificationsMode.SERVICE) AnnotatedString(androidStringResource(R.string.nome_background_service_privacy)) else annotatedStringResource(MR.strings.periodic_notifications_desc),
                 Modifier.padding(bottom = 8.dp)
               )
               Text(annotatedStringResource(MR.strings.turn_off_battery_optimization))

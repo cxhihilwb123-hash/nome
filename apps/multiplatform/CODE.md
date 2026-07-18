@@ -218,7 +218,7 @@ desktop/src/jvmMain/kotlin/chat/simplex/desktop/ -- Desktop app (1 file)
 
 ### PC32 Nome Android cross-cutting scope (authoritative reverse index)
 
-The ordinary Document Map rows below continue to route each source to its **primary** spec and product documents. The PC32 reverse index in `spec/impact.md` is authoritative for the frozen Android-only foundation, the Phase 2 Batch 2 production home implementation, the authorized Phase 2 Batch 3 P13 external-link preview, and the larger transitive scope later pages must preserve. A transitive path is a review/validation dependency, not a prediction that every file will change. Batch 2 uses a narrow shared home seam; Batch 3 uses a narrow shared connection-policy/presentation seam because controller branching already lives in `commonMain`. Both Desktop actuals preserve legacy behavior.
+The ordinary Document Map rows below continue to route each source to its **primary** spec and product documents. The PC32 reverse index in `spec/impact.md` is authoritative for the frozen Android-only foundation, the Phase 2 Batch 2 production home implementation, the frozen Phase 2 Batch 3 P13 external-link preview, the active Batch 1A P01 database-root implementation, and the larger transitive scope later pages must preserve. A transitive path is a review/validation dependency, not a prediction that every file will change. Batch 2 uses a narrow shared home seam, Batch 3 uses a narrow shared connection-policy/presentation seam, and Batch 1A uses a narrow root facts/renderer seam. All Desktop actuals preserve legacy behavior.
 
 Path aliases are relative to `apps/multiplatform/`: `CM` = `common/src/commonMain/kotlin/chat/simplex/common`, `AM` = `common/src/androidMain/kotlin/chat/simplex/common`, `MR` = `common/src/commonMain/resources/MR`, and `APP` = `android/src/main`. Every row also routes to the approved Nome documents: `spec/client/nome-android-ui.md` and `product/views/nome-android.md`.
 
@@ -227,7 +227,7 @@ Path aliases are relative to `apps/multiplatform/`: `CM` = `common/src/commonMai
 | App / root lifecycle | `CM/App.kt`; `CM/platform/AppCommon.kt`; `AM/platform/AppCommon.android.kt`; `APP/java/chat/simplex/app/{MainActivity.kt,SimplexApp.kt,nome/NomeProductionShell.kt}` | `spec/architecture.md`; `spec/client/navigation.md`; `product/flows/onboarding.md`; `product/views/chat-list.md` |
 | ChatModel / SimpleXAPI / core bridge | `CM/model/ChatModel.kt`; `CM/model/SimpleXAPI.kt`; `CM/platform/Core.kt` | `spec/state.md`; `spec/api.md`; `spec/architecture.md`; `product/concepts.md` |
 | AppLock / local authentication | `CM/AppLock.kt`; `CM/views/localauth/**`; `AM/views/helpers/LocalAuthentication.android.kt`; `AM/views/usersettings/PrivacySettings.android.kt` | `spec/architecture.md`; `spec/client/navigation.md`; `product/views/settings.md` |
-| Database / migration | `CM/views/database/**`; `CM/views/migration/**`; `CM/views/onboarding/SetupDatabasePassphrase.kt`; `AM/views/database/**` | `spec/database.md`; `product/flows/onboarding.md`; `product/views/settings.md` |
+| Database / migration | `CM/views/database/**`; `CM/views/migration/**`; `CM/views/onboarding/SetupDatabasePassphrase.kt`; `AM/{platform/Cryptor.android.kt,views/database/**,ui/nome/database/**}`; `common/src/desktopMain/kotlin/chat/simplex/common/views/database/PlatformDatabaseRootRoute.desktop.kt` | `spec/database.md`; `spec/client/navigation.md`; `spec/client/nome-android-ui.md`; `product/flows/onboarding.md`; `product/views/settings.md`; `product/views/nome-android.md` |
 | Theme | `CM/ui/theme/**`; `AM/ui/theme/**`; `CM/views/usersettings/Appearance.kt`; `AM/views/usersettings/Appearance.android.kt` | `spec/services/theme.md`; `product/views/settings.md` |
 | Locale / bilingual resources | `MR/**/strings.xml`; `CM/platform/Resources.kt`; `CM/platform/UI.kt`; `AM/helpers/Locale.kt`; `AM/platform/Resources.android.kt`; `AM/platform/UI.android.kt` | `spec/architecture.md`; all affected product view copy |
 | Onboarding | `CM/views/onboarding/**`; `AM/views/onboarding/**` | `spec/client/navigation.md`; `product/views/onboarding.md`; `product/flows/onboarding.md` |
@@ -305,7 +305,7 @@ bearer values remain in controller closures. Android renders P13 under
 | common/.../common/views/usersettings/UserProfilesView.kt | spec/client/navigation.md | product/views/user-profiles.md |
 | common/.../common/views/onboarding/ | spec/client/navigation.md, spec/client/nome-android-ui.md | product/views/onboarding.md, product/views/nome-android.md |
 | common/.../common/views/localauth/ | spec/architecture.md | product/views/settings.md |
-| common/.../common/views/database/ | spec/database.md | product/views/settings.md |
+| common/.../common/views/database/ | spec/database.md, spec/client/navigation.md, spec/client/nome-android-ui.md | product/views/settings.md, product/views/nome-android.md, product/rules.md |
 | common/.../common/views/migration/ | spec/database.md | product/flows/onboarding.md |
 | common/.../common/views/remote/ | spec/architecture.md | product/views/settings.md |
 | common/.../common/views/contacts/ | spec/client/chat-view.md | product/views/contact-info.md |
@@ -331,6 +331,9 @@ bearer values remain in controller closures. Android renders P13 under
 | common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeRoute.android.kt | spec/client/navigation.md, spec/client/chat-list.md, spec/client/nome-android-ui.md, spec/services/theme.md | product/views/chat-list.md, product/views/nome-android.md |
 | common/src/androidMain/kotlin/chat/simplex/common/ui/nome/connection/NomeConnectionPreviewStateAdapter.kt | spec/state.md, spec/client/navigation.md, spec/client/nome-android-ui.md | product/flows/connection.md, product/views/new-chat.md, product/views/nome-android.md, product/rules.md |
 | common/src/androidMain/kotlin/chat/simplex/common/ui/nome/connection/NomeConnectionPreviewRoute.android.kt | spec/state.md, spec/client/navigation.md, spec/client/nome-android-ui.md, spec/services/theme.md | product/flows/connection.md, product/views/new-chat.md, product/views/nome-android.md, product/rules.md |
+| common/src/androidMain/kotlin/chat/simplex/common/ui/nome/database/** | spec/database.md, spec/state.md, spec/client/navigation.md, spec/client/nome-android-ui.md | product/views/nome-android.md, product/rules.md, product/gaps.md |
+| common/src/androidMain/kotlin/chat/simplex/common/views/database/PlatformDatabaseRootRoute.android.kt | spec/database.md, spec/client/navigation.md, spec/client/nome-android-ui.md | product/views/nome-android.md, product/rules.md |
+| common/src/androidMain/kotlin/chat/simplex/common/platform/Cryptor.android.kt | spec/database.md, spec/state.md, spec/client/nome-android-ui.md | product/views/nome-android.md, product/rules.md, product/gaps.md |
 | common/src/androidMain/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreview.android.kt | spec/client/navigation.md, spec/client/nome-android-ui.md | product/flows/connection.md, product/views/new-chat.md, product/views/nome-android.md |
 | common/src/androidMain/kotlin/chat/simplex/common/helpers/NetworkObserver.kt | spec/client/chat-list.md, spec/client/nome-android-ui.md | product/views/chat-list.md, product/views/nome-android.md |
 | common/src/androidMain/res/values/nome_home_strings.xml | spec/client/chat-list.md, spec/client/nome-android-ui.md | product/views/chat-list.md, product/views/nome-android.md |
@@ -352,6 +355,10 @@ bearer values remain in controller closures. Android renders P13 under
 | android/src/debug/res/values*/nome_connection_preview_evidence_strings.xml | spec/client/nome-android-ui.md | product/views/nome-android.md |
 | android/src/test/java/chat/simplex/app/nome/connection/** | spec/state.md, spec/client/navigation.md, spec/client/nome-android-ui.md | product/flows/connection.md, product/views/nome-android.md, product/rules.md |
 | android/src/androidTest/java/chat/simplex/app/nome/connection/** | spec/state.md, spec/client/navigation.md, spec/client/nome-android-ui.md, spec/services/theme.md | product/flows/connection.md, product/views/nome-android.md, product/rules.md |
+| android/src/debug/java/chat/simplex/app/nome/database/NomeDatabaseRootEvidenceActivity.kt | spec/database.md, spec/client/nome-android-ui.md | product/views/nome-android.md |
+| android/src/debug/res/values*/nome_database_root_evidence_strings.xml | spec/client/nome-android-ui.md | product/views/nome-android.md |
+| android/src/test/java/chat/simplex/app/nome/database/** | spec/database.md, spec/state.md, spec/client/nome-android-ui.md | product/views/nome-android.md, product/rules.md |
+| android/src/androidTest/java/chat/simplex/app/nome/database/** | spec/database.md, spec/client/nome-android-ui.md, spec/services/theme.md | product/views/nome-android.md, product/rules.md |
 
 ### Desktop-Specific Sources
 

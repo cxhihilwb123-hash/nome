@@ -16,7 +16,7 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun LocalAuthView(m: ChatModel, authRequest: LocalAuthRequest) {
-  val passcode = rememberSaveable { mutableStateOf("") }
+  val passcode = remember { mutableStateOf("") }
   val allowToReact = rememberSaveable { mutableStateOf(true) }
   if (!allowToReact.value) {
     BackHandler {
