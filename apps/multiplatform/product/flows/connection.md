@@ -94,10 +94,13 @@ The `planAndConnect` function in `ConnectPlan.kt` orchestrates the full connect 
 suspend fun planAndConnect(
   rhId: Long?,
   shortOrFullLink: String,
+  linkOwnerSig: LinkOwnerSig? = null,
   close: (() -> Unit)?,
   cleanup: (() -> Unit)? = null,
   filterKnownContact: ((Contact) -> Unit)? = null,
   filterKnownGroup: ((GroupInfo) -> Unit)? = null,
+  presentationPolicy: ConnectionPreviewEntryPolicy = ConnectionPreviewEntryPolicy.Legacy,
+  initialPreviewIdentity: ConnectionPreviewIdentity = ConnectionPreviewIdentity.CurrentProfile,
 ): CompletableDeferred<Boolean>
 ```
 
@@ -109,6 +112,8 @@ suspend fun planAndConnect(
    - For `OwnLink`: show alert.
    - For `Connecting`: show reconnect confirmation or prohibit.
 4. Returns a `CompletableDeferred<Boolean>` indicating success.
+5. Every ordinary caller uses the default `Legacy` policy. Only the Android external
+   `ACTION_VIEW` ingress opts into `ExternalActionView`.
 
 ### 2.3 Execute Connection
 
@@ -122,6 +127,33 @@ suspend fun apiConnect(rh: Long?, incognito: Boolean, connLink: CreatedConnLink)
    - For contact addresses: `CR.SentInvitation` is returned.
 3. A `PendingContactConnection` is returned and appears in the chat list.
 4. The connect progress indicator is shown via `ConnectProgressManager`.
+
+### 2.4 Nome Android External Connection Preview (P13)
+
+The P13 full-page preview is offered only after the real core returns one of seven existing
+identity-choice branches: invitation `Ok` without short-link data, invitation `OwnLink`, address
+`Ok` without short-link data, address `OwnLink`, address repeat-request, group `Ok` without
+short-link data, or group repeat-join. Short-link preparation, known/prohibited objects, group
+own-link/no-relay/update-required, and plan errors keep their existing upstream behavior.
+
+The preview:
+
+1. is reachable only from Android `ACTION_VIEW` processing through
+   `connectIfOpenedViaUri`; scan, paste, search, message-link, preview-link, and group-member callers
+   remain legacy;
+2. receives only display-safe type, warning, owner-proof, and local-profile facts; the bearer link
+   and owner signature remain in an ephemeral controller closure and are not shown, saved, or
+   logged by the P13 delegates;
+3. keeps current profile and a new incognito profile mutually exclusive, with incognito scoped to
+   this connection only;
+4. rechecks the active user and remote host before sending, permits one submit per preview
+   session, and treats only `SentConfirmation` or `SentInvitation` as pending success;
+5. retains typed failure/already-existing/no-user/context-changed outcomes, and retry asks the core
+   for a fresh plan under the current user/host before any new connect attempt; and
+6. uses an idempotent cancel/dismiss cleanup that sends no connect command.
+
+Desktop declines the P13 seam and retains the legacy presentation. No core command, response,
+protocol, database, or message-state transition is changed.
 
 ---
 
@@ -232,3 +264,6 @@ While connecting, the chat list shows a `PendingContactConnection` with status:
 | `ConnectProgressManager` | `model/ChatModel.kt` | Manages connect progress indicator with timeout |
 | `Contact` | `model/ChatModel.kt` | Established contact with profile, connection status |
 | `ContactRequest` | `model/ChatModel.kt` | Pending inbound contact request |
+| `APIConnectPlanResult` | `model/SimpleXAPI.kt` | Typed, non-presentational P13 plan result |
+| `APIConnectResult` | `model/SimpleXAPI.kt` | Typed P13 pending/already-existing/failure result |
+| `ConnectionPreviewEntryPolicy` | `views/newchat/PlatformConnectionPreview.kt` | Explicit legacy vs Android external-link presentation policy |

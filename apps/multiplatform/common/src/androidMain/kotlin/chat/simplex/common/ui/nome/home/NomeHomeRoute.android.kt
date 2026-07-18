@@ -3,6 +3,7 @@ package chat.simplex.common.views.chatlist
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -25,6 +26,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
@@ -42,6 +45,7 @@ import chat.simplex.common.model.ChatModel
 import chat.simplex.common.model.getTimestampText
 import chat.simplex.common.ui.nome.accessibility.nomeMinimumTouchTarget
 import chat.simplex.common.ui.nome.accessibility.nomeTalkBackSemantics
+import chat.simplex.common.ui.nome.accessibility.NomeFocusRestoration
 import chat.simplex.common.ui.nome.components.NomeStatePanel
 import chat.simplex.common.ui.nome.components.NomeStatePanelState
 import chat.simplex.common.ui.nome.components.NomeSurface
@@ -58,6 +62,7 @@ import chat.simplex.common.views.helpers.AnimatedViewState
 import chat.simplex.common.views.helpers.tryOrShowError
 import chat.simplex.common.views.onboarding.SetNotificationsModeAdditions
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -341,6 +346,24 @@ private fun NomeHomeHeader(
   profileNameOverride: String?,
 ) {
   val dimensions = NomeTheme.dimensions
+  val currentProfileFocusRequester =
+    remember { FocusRequester() }
+  val currentProfileFocusRequest =
+    NomeFocusRestoration.currentProfileRequests
+      .collectAsState()
+      .value
+  LaunchedEffect(currentProfileFocusRequest) {
+    if (currentProfileFocusRequest == 0L) {
+      return@LaunchedEffect
+    }
+    delay(500)
+    repeat(3) {
+      if (currentProfileFocusRequester.requestFocus()) {
+        return@LaunchedEffect
+      }
+      delay(400)
+    }
+  }
   val profileName =
     profileNameOverride
       ?.takeIf { it.isNotBlank() }
@@ -370,6 +393,8 @@ private fun NomeHomeHeader(
     Box(
       modifier = Modifier
         .size(dimensions.minimumTouchTarget)
+        .focusRequester(currentProfileFocusRequester)
+        .focusable()
         .nomeTalkBackSemantics(
           label = stringResource(R.string.nome_home_current_profile, profileName),
         ),

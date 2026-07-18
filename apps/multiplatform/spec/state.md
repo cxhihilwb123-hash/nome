@@ -7,7 +7,8 @@
 3. [ChatsContext](#3-chatscontext)
 4. [Chat](#4-chat)
 5. [AppPreferences](#5-apppreferences)
-6. [Source Files](#6-source-files)
+6. [Nome P13 Ephemeral Connection State](#6-nome-p13-ephemeral-connection-state)
+7. [Source Files](#7-source-files)
 
 ---
 
@@ -167,8 +168,8 @@ The Android Nome [`NomeHomeStateAdapter`](../common/src/androidMain/kotlin/chat/
 | [`userAddress`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L183) | `MutableState<UserContactLinkRec?>` | User's public contact address |
 | [`chatItemTTL`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L184) | `MutableState<ChatItemTTL>` | Chat item time-to-live setting |
 | [`clearOverlays`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L187) | `MutableState<Boolean>` | Signal to close all overlays/modals |
-| [`appOpenUrl`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L193) | `MutableState<Pair<Long?, String>?>` | URL opened via deep link (rhId, uri) |
-| [`appOpenUrlConnecting`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L194) | `MutableState<Boolean>` | Whether a deep link connection is in progress |
+| [`appOpenUrl`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L195) | `MutableState<AppOpenUrl?>` | Queued contact/invitation URI with immutable [`remoteHostId`, `uri`, and external/internal ingress `source`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L1287-L1296); provenance survives onboarding so only Android external `ACTION_VIEW` ingress opts into P13 |
+| [`appOpenUrlConnecting`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L196) | `MutableState<Boolean>` | Whether a deep link connection is in progress |
 | [`newChatSheetVisible`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L197) | `MutableState<Boolean>` | Whether new chat bottom sheet is visible |
 | [`fullscreenGalleryVisible`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L200) | `MutableState<Boolean>` | Fullscreen gallery mode |
 | [`notificationPreviewMode`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L203) | `MutableState<NotificationPreviewMode>` | Notification content preview level |
@@ -507,14 +508,55 @@ Factory methods: `mkBoolPreference`, `mkIntPreference`, `mkLongPreference`, `mkF
 
 ---
 
-## 6. Source Files
+## 6. Nome P13 Ephemeral Connection State
+
+P13 does not add a field to `ChatModel`, a ViewModel, saved instance state, or a second controller.
+The raw external URI, resolved `CreatedConnLink`, and `LinkOwnerSig` remain in an ephemeral
+callback closure owned by [`planAndConnect`](../common/src/commonMain/kotlin/chat/simplex/common/views/newchat/ConnectPlan.kt#L25-L607).
+The platform seam receives only
+[`ConnectionPreviewUiModel`](../common/src/commonMain/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreview.kt#L52-L89),
+which contains display-safe type, warning, owner-proof, current-profile, and selected-identity
+facts.
+
+Android holds one non-saveable presentation reducer state:
+
+| Phase | Entry | Allowed exit |
+|---|---|---|
+| `Ready` | successful real connection plan in one of seven eligible branches | identity change, one submit, or cancel |
+| `Connecting` | reducer accepts the first submit | typed pending or typed failure; duplicate/out-of-order actions are ignored |
+| `Failure` | already-existing, API failure, no user, or changed user/host | cancel or retry |
+| `Replanning` | retry handoff | a new plan creates a new preview or delegates to the authoritative legacy branch |
+| `Pending` | only `SentConfirmation` / `SentInvitation` with a real pending connection | done/cancel cleanup |
+
+[`NomeConnectionPreviewStateAdapter`](../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/connection/NomeConnectionPreviewStateAdapter.kt#L6-L99)
+is a pure reducer. The controller closure supplies an additional atomic single-submit guard across
+recomposition and an idempotent cleanup guard. Before connect, the closure compares the planned
+`(remoteHostId, userId)` with the active context. Retry resolves the current remote host and asks
+the core for a fresh plan; it never reuses the old `ConnectionPlan`. While that request is active,
+the existing route remains in `Replanning`. A typed planning failure, including no current user,
+returns it to `Failure` without dropping the selected identity; a successful or changed
+authoritative branch performs one modal handoff.
+
+The existing `ChatModel.appOpenUrlConnecting` remains the external-ingress progress guard.
+Cancel/dismiss/configuration cleanup resets it through the original cleanup callback. P13 writes
+the shared model only when a typed successful connect returns a real
+`PendingContactConnection`, which is applied through the existing `ChatsContext` update.
+
+This state is unrelated to the P08 content adapter. `FIRST_USE` and `FILTERED_NO_RESULT` retain
+their existing renderer-only production-reachability boundary.
+
+---
+
+## 7. Source Files
 
 | File | Path | Key Contents |
 |---|---|---|
 | ChatModel.kt | [`common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt) | `ChatModel`, typed chat-list load contract, `ChatsContext`, `Chat`, `ChatInfo`, `ChatStats`, helper methods |
-| SimpleXAPI.kt | [`common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt) | `AppPreferences`, `ChatController`, typed chat-list producer, receiver and command bridge |
+| SimpleXAPI.kt | [`common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt) | `AppPreferences`, `ChatController`, typed chat-list producer, typed P13 delegates, receiver and command bridge |
 | ChatItemsMerger.kt | [`common/src/commonMain/kotlin/chat/simplex/common/views/chat/ChatItemsMerger.kt`](../common/src/commonMain/kotlin/chat/simplex/common/views/chat/ChatItemsMerger.kt) | `ActiveChatState`, chat item merge/diff logic |
 | Core.kt | [`common/src/commonMain/kotlin/chat/simplex/common/platform/Core.kt`](../common/src/commonMain/kotlin/chat/simplex/common/platform/Core.kt) | `initChatController`, state initialization flow |
 | App.kt | [`common/src/commonMain/kotlin/chat/simplex/common/App.kt`](../common/src/commonMain/kotlin/chat/simplex/common/App.kt) | `AppScreen`, `MainScreen`, top-level UI state reads |
 | NomeHomeStateAdapter.kt | [`common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeStateAdapter.kt`](../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeStateAdapter.kt) | Android-only pure presentation-state derivation |
 | NetworkObserver.kt | [`common/src/androidMain/kotlin/chat/simplex/common/helpers/NetworkObserver.kt`](../common/src/androidMain/kotlin/chat/simplex/common/helpers/NetworkObserver.kt) | Direct Android network observation with explicit unknown-before-first-observation state |
+| PlatformConnectionPreview.kt | [`common/src/commonMain/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreview.kt`](../common/src/commonMain/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreview.kt) | Safe P13 model, branch policy, callbacks, and platform seam |
+| NomeConnectionPreviewStateAdapter.kt | [`common/src/androidMain/kotlin/chat/simplex/common/ui/nome/connection/NomeConnectionPreviewStateAdapter.kt`](../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/connection/NomeConnectionPreviewStateAdapter.kt) | Android-only pure P13 presentation reducer |

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="nome_connection_preview_evidence_activity_label">Nome connection preview evidence</string>
+  <string name="nome_connection_preview_evidence_badge">Renderer fixture · %1$s</string>
+  <string name="nome_connection_preview_evidence_owner_failure_reason">controlled proof mismatch</string>
+  <string name="nome_connection_preview_evidence_profile">Evidence profile</string>
+</resources>

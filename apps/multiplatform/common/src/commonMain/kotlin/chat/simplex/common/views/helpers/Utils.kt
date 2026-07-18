@@ -539,7 +539,12 @@ inline fun <reified T> serializableSaver(): Saver<T, *> = Saver(
 )
 
 fun UriHandler.openVerifiedSimplexUri(uri: String) {
-  connectIfOpenedViaUri(chatModel.remoteHostId(), uri, ChatModel)
+  connectIfOpenedViaUri(
+    rhId = chatModel.remoteHostId(),
+    uri = uri,
+    chatModel = ChatModel,
+    source = AppOpenUrlSource.InternalVerified,
+  )
 }
 
 fun uriCreateOrNull(uri: String) = try { URI.create(uri) } catch (e: Exception) { null }

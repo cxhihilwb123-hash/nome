@@ -218,7 +218,7 @@ desktop/src/jvmMain/kotlin/chat/simplex/desktop/ -- Desktop app (1 file)
 
 ### PC32 Nome Android cross-cutting scope (authoritative reverse index)
 
-The ordinary Document Map rows below continue to route each source to its **primary** spec and product documents. The PC32 reverse index in `spec/impact.md` is authoritative for the frozen Android-only foundation, the Phase 2 Batch 2 production home implementation, and the larger transitive scope later pages must preserve. A transitive path is a review/validation dependency, not a prediction that every file will change. The exact Batch 2 split is a narrow `commonMain` platform seam, an Android Nome actual, and a Desktop actual that delegates the existing content unchanged.
+The ordinary Document Map rows below continue to route each source to its **primary** spec and product documents. The PC32 reverse index in `spec/impact.md` is authoritative for the frozen Android-only foundation, the Phase 2 Batch 2 production home implementation, the authorized Phase 2 Batch 3 P13 external-link preview, and the larger transitive scope later pages must preserve. A transitive path is a review/validation dependency, not a prediction that every file will change. Batch 2 uses a narrow shared home seam; Batch 3 uses a narrow shared connection-policy/presentation seam because controller branching already lives in `commonMain`. Both Desktop actuals preserve legacy behavior.
 
 Path aliases are relative to `apps/multiplatform/`: `CM` = `common/src/commonMain/kotlin/chat/simplex/common`, `AM` = `common/src/androidMain/kotlin/chat/simplex/common`, `MR` = `common/src/commonMain/resources/MR`, and `APP` = `android/src/main`. Every row also routes to the approved Nome documents: `spec/client/nome-android-ui.md` and `product/views/nome-android.md`.
 
@@ -232,7 +232,7 @@ Path aliases are relative to `apps/multiplatform/`: `CM` = `common/src/commonMai
 | Locale / bilingual resources | `MR/**/strings.xml`; `CM/platform/Resources.kt`; `CM/platform/UI.kt`; `AM/helpers/Locale.kt`; `AM/platform/Resources.android.kt`; `AM/platform/UI.android.kt` | `spec/architecture.md`; all affected product view copy |
 | Onboarding | `CM/views/onboarding/**`; `AM/views/onboarding/**` | `spec/client/navigation.md`; `product/views/onboarding.md`; `product/flows/onboarding.md` |
 | Chat list | `CM/views/chatlist/**`; `AM/views/chatlist/**`; `AM/ui/nome/home/**`; `common/src/desktopMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.desktop.kt` | `spec/client/chat-list.md`; `spec/client/navigation.md`; `product/views/chat-list.md` |
-| New chat / ConnectPlan | `CM/views/newchat/**`; `AM/views/newchat/**` | `spec/client/navigation.md`; `product/views/new-chat.md`; `product/flows/connection.md` |
+| New chat / ConnectPlan | `CM/views/newchat/**`; `AM/views/newchat/**`; `AM/ui/nome/connection/**`; `common/src/desktopMain/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreview.desktop.kt` | `spec/api.md`; `spec/state.md`; `spec/client/navigation.md`; `product/views/new-chat.md`; `product/flows/connection.md`; `product/rules.md` |
 | Chat / items / compose | `CM/views/chat/*.kt`; `CM/views/chat/item/**`; `AM/views/chat/*.kt`; `AM/views/chat/item/**` | `spec/client/chat-view.md`; `spec/client/compose.md`; `product/views/chat.md`; `product/flows/messaging.md` |
 | Contacts | `CM/views/contacts/**`; `CM/views/chat/{ChatInfoView.kt,VerifyCodeView.kt,ScanCodeView.kt}` | `spec/client/chat-view.md`; `product/views/contact-info.md`; `product/flows/connection.md` |
 | Groups / channels | `CM/views/chat/group/**`; `CM/views/newchat/{AddGroupView.kt,AddChannelView.kt}` | `spec/client/chat-view.md`; `product/views/group-info.md`; `product/flows/group-lifecycle.md` |
@@ -245,9 +245,16 @@ Path aliases are relative to `apps/multiplatform/`: `CM` = `common/src/commonMai
 | Permissions | `APP/AndroidManifest.xml`; `common/src/androidMain/AndroidManifest.xml`; `AM/helpers/Permissions.kt`; Android QR-scanner and notification-onboarding actuals | `spec/client/navigation.md`; `spec/services/notifications.md`; affected onboarding/new-chat/call views |
 | Android services / workers | `APP/java/chat/simplex/app/{SimplexService.kt,CallService.kt,MessagesFetcherWorker.kt}`; `APP/AndroidManifest.xml` | `spec/services/notifications.md`; `spec/services/calls.md`; `product/flows/messaging.md`; `product/flows/calling.md` |
 
-`Core.kt`, Haskell/native core, and iOS remain read-only verification scope for PC32. Phase 2 Batch 2 authorizes only the recorded Kotlin typed-result wrapper in `SimpleXAPI.kt` around the existing command, plus the narrow Desktop seam actual/test described below; it does not authorize a new API owner, protocol/native change, Desktop Nome UI, or Desktop behavior change. Each PC32 batch must still satisfy bilingual and light/dark coverage, complete reachable-state coverage, accessibility, real-core validation, native screenshot comparison, and two consecutive zero-issue reviews.
+`Core.kt`, Haskell/native core, and iOS remain read-only verification scope for PC32. Phase 2 Batch 2 authorizes its recorded get-chats wrapper and shared home seam. Phase 2 Batch 3 authorizes only typed siblings around existing plan/connect commands, the P13 safe model/policy seam, and the required Desktop-declining actual/test. Neither batch authorizes a new API owner, protocol/native change, Desktop Nome UI, or Desktop behavior change. Each PC32 batch must still satisfy bilingual and light/dark coverage, complete reachable-state coverage, accessibility, real-core validation, native screenshot comparison, and two consecutive zero-issue reviews.
 
 Phase 2 Batch 2 is the one explicit exception to the default Android-only placement rule: `StartPartOfScreen` needs a platform-selectable home at the existing shared route selection point. `common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.kt` declares only the seam; it owns no Nome UI, navigation, model, or protocol state. Android implements the Nome P07/P08 home in `common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/`, while `common/src/desktopMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.desktop.kt` invokes `defaultContent` unchanged. The fallback contract is covered by `common/src/desktopTest/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRouteDesktopTest.kt`.
+
+Phase 2 Batch 3 is the second recorded exception: all seven identity-choice call branches and six
+legacy caller surfaces are already shared. `PlatformConnectionPreview.kt` may therefore contain
+only safe display facts, exhaustive branch policy, callbacks, and the expect declaration; raw
+bearer values remain in controller closures. Android renders P13 under
+`common/src/androidMain/kotlin/chat/simplex/common/ui/nome/connection/`. The Desktop actual returns
+`false`, and `PlatformConnectionPreviewDesktopTest` guards that legacy fallback.
 
 ### Shared Sources (commonMain)
 
@@ -256,7 +263,7 @@ Phase 2 Batch 2 is the one explicit exception to the default Android-only placem
 | common/.../common/App.kt | spec/architecture.md, spec/client/navigation.md, spec/client/nome-android-ui.md | product/views/chat-list.md, product/views/nome-android.md |
 | common/.../common/AppLock.kt | spec/architecture.md | product/views/settings.md |
 | common/.../common/model/ChatModel.kt | spec/state.md, spec/client/chat-list.md, spec/client/nome-android-ui.md | product/concepts.md, product/views/chat-list.md, product/views/nome-android.md |
-| common/.../common/model/SimpleXAPI.kt | spec/api.md, spec/architecture.md, spec/client/chat-list.md, spec/client/nome-android-ui.md | product/concepts.md, product/views/chat-list.md, product/views/nome-android.md |
+| common/.../common/model/SimpleXAPI.kt | spec/api.md, spec/architecture.md, spec/state.md, spec/client/chat-list.md, spec/client/nome-android-ui.md | product/concepts.md, product/views/chat-list.md, product/flows/connection.md, product/views/nome-android.md, product/rules.md |
 | common/.../common/model/CryptoFile.kt | spec/services/files.md | product/flows/file-transfer.md |
 | common/.../common/platform/Core.kt | spec/architecture.md | product/concepts.md |
 | common/.../common/platform/AppCommon.kt | spec/architecture.md | product/flows/onboarding.md |
@@ -272,7 +279,7 @@ Phase 2 Batch 2 is the one explicit exception to the default Android-only placem
 | common/.../common/ui/theme/ThemeManager.kt | spec/services/theme.md, spec/client/nome-android-ui.md | product/views/settings.md, product/views/nome-android.md |
 | common/.../common/ui/theme/Theme.kt | spec/services/theme.md, spec/client/nome-android-ui.md | product/views/settings.md, product/views/nome-android.md |
 | common/.../common/ui/theme/Color.kt | spec/services/theme.md, spec/client/nome-android-ui.md | product/views/settings.md, product/views/nome-android.md |
-| common/.../common/views/chatlist/ChatListView.kt | spec/client/chat-list.md, spec/client/nome-android-ui.md | product/views/chat-list.md, product/views/nome-android.md |
+| common/.../common/views/chatlist/ChatListView.kt | spec/client/chat-list.md, spec/client/navigation.md, spec/client/nome-android-ui.md | product/views/chat-list.md, product/views/new-chat.md, product/flows/connection.md, product/views/nome-android.md, product/rules.md |
 | common/.../common/views/chatlist/PlatformHomeRoute.kt | spec/client/navigation.md, spec/client/chat-list.md, spec/client/nome-android-ui.md | product/views/chat-list.md, product/views/nome-android.md |
 | common/.../common/views/chatlist/ChatListNavLinkView.kt | spec/client/chat-list.md | product/views/chat-list.md |
 | common/.../common/views/chatlist/ChatPreviewView.kt | spec/client/chat-list.md | product/views/chat-list.md |
@@ -289,6 +296,8 @@ Phase 2 Batch 2 is the one explicit exception to the default Android-only placem
 | common/.../common/views/call/WebRTC.kt | spec/services/calls.md | product/flows/calling.md |
 | common/.../common/views/newchat/NewChatView.kt | spec/client/navigation.md, spec/client/nome-android-ui.md | product/views/new-chat.md, product/views/nome-android.md |
 | common/.../common/views/newchat/AddGroupView.kt | spec/client/navigation.md | product/views/new-chat.md |
+| common/.../common/views/newchat/ConnectPlan.kt | spec/api.md, spec/state.md, spec/client/navigation.md, spec/client/nome-android-ui.md | product/views/new-chat.md, product/flows/connection.md, product/views/nome-android.md, product/rules.md |
+| common/.../common/views/newchat/PlatformConnectionPreview.kt | spec/api.md, spec/state.md, spec/client/navigation.md, spec/client/nome-android-ui.md | product/concepts.md, product/views/new-chat.md, product/flows/connection.md, product/views/nome-android.md, product/rules.md |
 | common/.../common/views/usersettings/SettingsView.kt | spec/client/navigation.md, spec/client/nome-android-ui.md | product/views/settings.md, product/views/nome-android.md |
 | common/.../common/views/usersettings/Appearance.kt | spec/services/theme.md | product/views/settings.md |
 | common/.../common/views/usersettings/PrivacySettings.kt | spec/client/navigation.md | product/views/settings.md |
@@ -320,9 +329,13 @@ Phase 2 Batch 2 is the one explicit exception to the default Android-only placem
 | common/src/androidMain/kotlin/chat/simplex/common/ui/nome/accessibility/*.kt | spec/client/nome-android-ui.md | product/views/nome-android.md |
 | common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeStateAdapter.kt | spec/client/chat-list.md, spec/client/nome-android-ui.md | product/views/chat-list.md, product/views/nome-android.md |
 | common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeRoute.android.kt | spec/client/navigation.md, spec/client/chat-list.md, spec/client/nome-android-ui.md, spec/services/theme.md | product/views/chat-list.md, product/views/nome-android.md |
+| common/src/androidMain/kotlin/chat/simplex/common/ui/nome/connection/NomeConnectionPreviewStateAdapter.kt | spec/state.md, spec/client/navigation.md, spec/client/nome-android-ui.md | product/flows/connection.md, product/views/new-chat.md, product/views/nome-android.md, product/rules.md |
+| common/src/androidMain/kotlin/chat/simplex/common/ui/nome/connection/NomeConnectionPreviewRoute.android.kt | spec/state.md, spec/client/navigation.md, spec/client/nome-android-ui.md, spec/services/theme.md | product/flows/connection.md, product/views/new-chat.md, product/views/nome-android.md, product/rules.md |
+| common/src/androidMain/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreview.android.kt | spec/client/navigation.md, spec/client/nome-android-ui.md | product/flows/connection.md, product/views/new-chat.md, product/views/nome-android.md |
 | common/src/androidMain/kotlin/chat/simplex/common/helpers/NetworkObserver.kt | spec/client/chat-list.md, spec/client/nome-android-ui.md | product/views/chat-list.md, product/views/nome-android.md |
 | common/src/androidMain/res/values/nome_home_strings.xml | spec/client/chat-list.md, spec/client/nome-android-ui.md | product/views/chat-list.md, product/views/nome-android.md |
 | common/src/androidMain/res/values-zh-rCN/nome_home_strings.xml | spec/client/chat-list.md, spec/client/nome-android-ui.md | product/views/chat-list.md, product/views/nome-android.md |
+| common/src/androidMain/res/values*/nome_connection_preview_strings.xml | spec/client/navigation.md, spec/client/nome-android-ui.md | product/flows/connection.md, product/views/new-chat.md, product/views/nome-android.md |
 | android/src/debug/AndroidManifest.xml | spec/client/nome-android-ui.md | product/views/nome-android.md |
 | android/src/debug/java/chat/simplex/app/nome/** | spec/client/nome-android-ui.md | product/views/nome-android.md |
 | android/src/debug/res/values*/strings.xml | spec/client/nome-android-ui.md | product/views/nome-android.md |
@@ -335,6 +348,10 @@ Phase 2 Batch 2 is the one explicit exception to the default Android-only placem
 | android/src/androidTest/java/chat/simplex/app/nome/home/NomeHomePackagingTest.kt | spec/client/nome-android-ui.md | product/views/nome-android.md |
 | android/src/androidTest/java/chat/simplex/app/nome/home/NomeHomeScreenshotTest.kt | spec/client/chat-list.md, spec/client/nome-android-ui.md, spec/services/theme.md | product/views/chat-list.md, product/views/nome-android.md |
 | android/src/androidTest/java/chat/simplex/app/nome/home/NomeHomeCoreCycleTest.kt | spec/client/chat-list.md, spec/client/nome-android-ui.md | product/views/chat-list.md, product/views/nome-android.md |
+| android/src/debug/java/chat/simplex/app/nome/connection/** | spec/client/nome-android-ui.md | product/views/nome-android.md |
+| android/src/debug/res/values*/nome_connection_preview_evidence_strings.xml | spec/client/nome-android-ui.md | product/views/nome-android.md |
+| android/src/test/java/chat/simplex/app/nome/connection/** | spec/state.md, spec/client/navigation.md, spec/client/nome-android-ui.md | product/flows/connection.md, product/views/nome-android.md, product/rules.md |
+| android/src/androidTest/java/chat/simplex/app/nome/connection/** | spec/state.md, spec/client/navigation.md, spec/client/nome-android-ui.md, spec/services/theme.md | product/flows/connection.md, product/views/nome-android.md, product/rules.md |
 
 ### Desktop-Specific Sources
 
@@ -347,6 +364,8 @@ Phase 2 Batch 2 is the one explicit exception to the default Android-only placem
 | common/.../common/views/helpers/AppUpdater.kt (desktopMain) | spec/architecture.md | product/views/settings.md |
 | common/src/desktopMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.desktop.kt | spec/client/navigation.md, spec/client/chat-list.md, spec/client/nome-android-ui.md | product/views/chat-list.md, product/views/nome-android.md |
 | common/src/desktopTest/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRouteDesktopTest.kt | spec/client/navigation.md, spec/client/chat-list.md, spec/client/nome-android-ui.md | product/views/chat-list.md, product/views/nome-android.md |
+| common/src/desktopMain/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreview.desktop.kt | spec/client/navigation.md, spec/client/nome-android-ui.md | product/flows/connection.md, product/views/new-chat.md, product/views/nome-android.md |
+| common/src/desktopTest/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreviewDesktopTest.kt | spec/client/navigation.md, spec/client/nome-android-ui.md | product/flows/connection.md, product/views/new-chat.md, product/views/nome-android.md |
 
 ### Haskell Core Sources (at `../../src/Simplex/Chat/` relative to `apps/multiplatform/`)
 

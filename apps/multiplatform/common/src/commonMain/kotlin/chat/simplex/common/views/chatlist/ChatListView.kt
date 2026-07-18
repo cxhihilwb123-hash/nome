@@ -735,14 +735,35 @@ private fun ToggleFilterEnabledButton() {
 @Composable
 expect fun ActiveCallInteractiveArea(call: Call)
 
-fun connectIfOpenedViaUri(rhId: Long?, uri: String, chatModel: ChatModel) {
+fun connectIfOpenedViaUri(
+  rhId: Long?,
+  uri: String,
+  chatModel: ChatModel,
+  source: AppOpenUrlSource = AppOpenUrlSource.InternalVerified,
+) {
   Log.d(TAG, "connectIfOpenedViaUri: opened via link")
   if (chatModel.currentUser.value == null) {
-    chatModel.appOpenUrl.value = rhId to uri
+    chatModel.appOpenUrl.value = AppOpenUrl(rhId, uri, source)
   } else {
+    val effectiveRemoteHostId =
+      if (
+        source == AppOpenUrlSource.ExternalActionView &&
+        rhId == null
+      ) {
+        chatModel.currentUser.value?.remoteHostId
+      } else {
+        rhId
+      }
     withBGApi {
       chatModel.appOpenUrlConnecting.value = true
-      planAndConnect(rhId, uri, close = null, cleanup = { chatModel.appOpenUrlConnecting.value = false })
+      planAndConnect(
+        effectiveRemoteHostId,
+        uri,
+        close = null,
+        cleanup = { chatModel.appOpenUrlConnecting.value = false },
+        presentationPolicy =
+          connectionPreviewEntryPolicy(source, appPlatform.isAndroid),
+      )
     }
   }
 }

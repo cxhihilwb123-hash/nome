@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="nome_connection_preview_title">Connection preview</string>
+  <string name="nome_connection_preview_back">Cancel connection preview</string>
+  <string name="nome_connection_preview_source_invitation">A one-time invitation will create a new connection using the identity you choose.</string>
+  <string name="nome_connection_preview_source_address">A contact address will receive a request using the identity you choose.</string>
+  <string name="nome_connection_preview_source_group">A group link will receive a join request using the identity you choose.</string>
+  <string name="nome_connection_preview_choose_identity">Choose connection identity</string>
+  <string name="nome_connection_preview_current_title">Current profile</string>
+  <string name="nome_connection_preview_current_body">Use %1$s for this connection.</string>
+  <string name="nome_connection_preview_incognito_title">New incognito profile</string>
+  <string name="nome_connection_preview_incognito_body">Create a new random name and image for this connection only.</string>
+  <string name="nome_connection_preview_selected">Selected</string>
+  <string name="nome_connection_preview_not_selected">Not selected</string>
+  <string name="nome_connection_preview_warning_title">Confirm before connecting</string>
+  <string name="nome_connection_preview_warning_own_invitation">This is your own one-time invitation. Continuing attempts to connect to yourself.</string>
+  <string name="nome_connection_preview_warning_own_address">This is your own contact address. Continuing attempts to connect to yourself.</string>
+  <string name="nome_connection_preview_warning_repeat_request">You already requested a connection through this address. Continuing sends another request.</string>
+  <string name="nome_connection_preview_warning_repeat_join">You are already joining through this group link. Continuing sends another join request.</string>
+  <string name="nome_connection_preview_owner_verified">The link owner proof passed verification.</string>
+  <string name="nome_connection_preview_owner_failed">The link owner proof failed verification: %1$s</string>
+  <string name="nome_connection_preview_connecting_title">Sending connection request</string>
+  <string name="nome_connection_preview_connecting_body">Keep Nome open while the core sends one request.</string>
+  <string name="nome_connection_preview_replanning_title">Checking the link again</string>
+  <string name="nome_connection_preview_replanning_body">Nome is asking the core for a fresh connection plan.</string>
+  <string name="nome_connection_preview_pending_title">Connection request sent</string>
+  <string name="nome_connection_preview_pending_invitation">You will connect when the other device is online.</string>
+  <string name="nome_connection_preview_pending_address">You will connect when the request is accepted.</string>
+  <string name="nome_connection_preview_pending_group">You will connect when the group host device is online.</string>
+  <string name="nome_connection_preview_failure_title">Connection was not sent</string>
+  <string name="nome_connection_preview_failure_network">The network request failed. Retry to check the link again before sending.</string>
+  <string name="nome_connection_preview_failure_invalid">This connection link is invalid. Check it or ask for a new link.</string>
+  <string name="nome_connection_preview_failure_unsupported">This link requires a newer app version.</string>
+  <string name="nome_connection_preview_failure_already_exists">You are already connected to %1$s through this link.</string>
+  <string name="nome_connection_preview_failure_context_changed">The active profile or host changed. Retry to create a fresh plan for the current context.</string>
+  <string name="nome_connection_preview_failure_no_user">No active local profile is available. Cancel and choose a profile first.</string>
+  <string name="nome_connection_preview_failure_other">The core did not create a pending connection. Retry to check the link again.</string>
+  <string name="nome_connection_preview_continue">Continue connection</string>
+  <string name="nome_connection_preview_retry">Try again</string>
+  <string name="nome_connection_preview_done">Done</string>
+  <string name="nome_connection_preview_cancel">Cancel</string>
+  <string name="nome_connection_preview_state_ready">Ready to connect</string>
+  <string name="nome_connection_preview_state_connecting">Connection request in progress</string>
+  <string name="nome_connection_preview_state_replanning">Link check in progress</string>
+  <string name="nome_connection_preview_state_pending">Connection request pending</string>
+  <string name="nome_connection_preview_state_failure">Connection request failed</string>
+</resources>

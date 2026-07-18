@@ -43,11 +43,15 @@
 | PC31 | Channels (Relays) |
 | PC32 | Nome Android UI |
 
-PC32 has an exact Android-only Phase 2 design foundation and a Phase 2 Batch 2 production home implementation for P07/P08. The rows below keep the larger transitive integration scope for later pages and separately enumerate the exact foundation and Batch 2 source/test paths. Source presence is not evidence that the current Batch 2 verification matrix has passed.
+PC32 has an exact Android-only Phase 2 design foundation, a frozen Batch 2 production home
+implementation for P07/P08, and an authorized Batch 3 P13 external-link preview implementation.
+The rows below keep the larger transitive integration scope for later pages and separately
+enumerate the exact foundation, Batch 2, and Batch 3 source/test paths. Source presence is not
+evidence that the current batch verification matrix has passed.
 
 ### PC32 Nome Android transitive scope (authoritative reverse index)
 
-The detailed rows in sections 1–4 continue to identify each source file's **primary** product concepts. The table below remains the authoritative supplementary reverse index for existing Android-consumed behavior that the current shell and later Nome pages must preserve. Inclusion means transitive review and validation scope, not that every listed file will be edited or that Batch 2 implements the corresponding feature.
+The detailed rows in sections 1–4 continue to identify each source file's **primary** product concepts. The table below remains the authoritative supplementary reverse index for existing Android-consumed behavior that the current shell and later Nome pages must preserve. Inclusion means transitive review and validation scope, not that every listed file will be edited or that the current batch implements the corresponding feature.
 
 Path aliases are relative to `apps/multiplatform/`: `CM` = `common/src/commonMain/kotlin/chat/simplex/common`, `AM` = `common/src/androidMain/kotlin/chat/simplex/common`, `MR` = `common/src/commonMain/resources/MR`, and `APP` = `android/src/main`.
 
@@ -128,6 +132,39 @@ defensive test branches with open production-reachability gates.
 
 Batch 2 does not add favorite mutation, profile-switch redesign, connection mutation, search/filter UI, composer/send behavior, locale-marker persistence, or any Haskell/native core, database-format, protocol, command, or event change. Those surfaces remain transitive preservation scope only.
 
+### PC32 Phase 2 Batch 3 exact P13 production sources
+
+Batch 3 is limited to Android external-`ACTION_VIEW` connection preview. The common files are
+required because the existing controller/caller branching is shared; Nome composables remain
+Android-only. The Desktop actual declines the preview and is covered by a fallback test.
+
+| Exact source or test path | Product concepts | Risk | Batch 3 responsibility |
+|---|---|---|---|
+| `common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt` | PC12, PC20, PC32 | High | Adds typed non-presentational results over unchanged plan/connect commands with P13 terminal logging disabled; legacy wrappers remain. |
+| `common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatListView.kt` | PC1, PC12, PC32 | High | Makes `connectIfOpenedViaUri` the only `ExternalActionView` opt-in; home/search/P08 boundaries remain unchanged. |
+| `common/src/commonMain/kotlin/chat/simplex/common/views/newchat/ConnectPlan.kt` | PC12, PC15, PC20, PC32 | High | Retains `Legacy` default, offers the seam only in seven current identity-choice branches, binds user/host, single-submits, replans retry, updates only a real pending connection, and cleans up idempotently. |
+| `common/src/commonMain/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreview.kt` | PC12, PC15, PC20, PC32 | High | Safe model/callback seam, exhaustive 7/21 branch policy, owner-proof mapping, failure sanitization, and context guard. |
+| `common/src/androidMain/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreview.android.kt` | PC12, PC20, PC32 | Medium | Opens the existing fullscreen modal and applies the official current light/dark choice. |
+| `common/src/androidMain/kotlin/chat/simplex/common/ui/nome/connection/NomeConnectionPreviewStateAdapter.kt` | PC12, PC20, PC32 | High | Pure ready/connecting/replanning/pending/failure reducer with duplicate/out-of-order suppression. |
+| `common/src/androidMain/kotlin/chat/simplex/common/ui/nome/connection/NomeConnectionPreviewRoute.android.kt` | PC12, PC20, PC24, PC32 | High | Bilingual accessible P13 route and safe state presentation using Nome tokens/components. |
+| `common/src/androidMain/res/values/nome_connection_preview_strings.xml` | PC12, PC20, PC32 | Low | English P13 copy and semantics. |
+| `common/src/androidMain/res/values-zh-rCN/nome_connection_preview_strings.xml` | PC12, PC20, PC32 | Low | Simplified-Chinese P13 copy and semantics. |
+| `common/src/desktopMain/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreview.desktop.kt` | PC12, PC32 | Medium | Returns `false`, preserving the legacy Desktop presentation. |
+| `common/src/commonTest/kotlin/chat/simplex/common/views/newchat/ConnectionPreviewPolicyTest.kt` | PC12, PC20, PC32 | Medium | Exhaustive eligibility, safe mapping, context, and sanitized failure tests. |
+| `common/src/desktopTest/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreviewDesktopTest.kt` | PC12, PC32 | Medium | Executes the Desktop actual and proves it declines Nome presentation. |
+| `android/src/debug/AndroidManifest.xml` | PC32 | Medium | Adds the P13 evidence Activity as debug-only/non-exported without changing production manifest ingress. |
+| `android/src/debug/java/chat/simplex/app/nome/connection/NomeConnectionPreviewEvidenceActivity.kt` | PC12, PC20, PC24, PC32 | Medium | Nine deterministic renderer states with safe fixture data; not a real-core source. |
+| `android/src/debug/res/values*/nome_connection_preview_evidence_strings.xml` | PC32 | Low | Debug-only bilingual fixture labels. |
+| `android/src/test/java/chat/simplex/app/nome/connection/ConnectionPreviewRouteBoundaryTest.kt` | PC12, PC32 | Medium | Proves seven call sites and only the external ingress opt-in. |
+| `android/src/test/java/chat/simplex/app/nome/connection/NomeConnectionPreviewStateAdapterTest.kt` | PC12, PC20, PC32 | Medium | Reducer identity/single-submit/retry truth table. |
+| `android/src/androidTest/java/chat/simplex/app/nome/connection/NomeConnectionPreviewComposeTest.kt` | PC12, PC20, PC24, PC32 | Medium | Identity semantics, selection, 48dp, live-region, and 200% action coverage. |
+| `android/src/androidTest/java/chat/simplex/app/nome/connection/NomeConnectionPreviewPackagingTest.kt` | PC32 | Medium | Guards P13 debug-host presence and non-export. |
+| `android/src/androidTest/java/chat/simplex/app/nome/connection/NomeConnectionPreviewScreenshotTest.kt` | PC12, PC20, PC24, PC32 | Medium | Defines API 35 renderer matrix: 9 states × 2 locales × 2 themes × 2 font scales = 72 captures. |
+
+Batch 3 changes no `Core.kt`, Haskell/native source, protocol/command/event type, database/archive
+format, message state machine, iOS, or Desktop UI. It adds no P10/P12/P14/P16 behavior and does not
+change P08 `FIRST_USE` or `FILTERED_NO_RESULT`.
+
 ---
 
 ## 1. Common Sources (commonMain)
@@ -141,7 +178,7 @@ Path prefix: `common/src/commonMain/kotlin/chat/simplex/common/`
 | `App.kt` | PC1 through PC32 | High | Root composable — navigation scaffold for all features; Nome must preserve gate order |
 | `AppLock.kt` | PC22 | Medium | App lock state and authorization lifecycle |
 | `model/ChatModel.kt` | PC1 through PC32 | High | Central state object; PC32 adds generation-scoped chat-list load/result reconciliation without a second model |
-| `model/SimpleXAPI.kt` | PC1 through PC32 | High | FFI bridge to Haskell core; PC32 adds a typed client result around the unchanged get-chats command |
+| `model/SimpleXAPI.kt` | PC1 through PC32 | High | FFI bridge to Haskell core; PC32 adds typed client results around unchanged get-chats and P13 plan/connect commands |
 | `model/CryptoFile.kt` | PC10, PC23 | Medium | Encrypted file read/write helpers |
 | `platform/Core.kt` | PC1 through PC31 | High | Native FFI declarations (`chatMigrateInit`, `chatSendCmd`, etc.) — all API traffic |
 | `platform/AppCommon.kt` | PC1 through PC31 | Medium | Shared app initialization logic |
@@ -177,7 +214,7 @@ Path prefix: `common/src/commonMain/kotlin/chat/simplex/common/`
 
 | Source File | Product Concepts Affected | Risk Level | Notes |
 |-------------|--------------------------|------------|-------|
-| `views/chatlist/ChatListView.kt` | PC1, PC27, PC28, PC32 | High | Main list/search plus the extracted automatic WhatsNew/updated-conditions effect preserved above the platform seam |
+| `views/chatlist/ChatListView.kt` | PC1, PC12, PC27, PC28, PC32 | High | Main list/search, preserved automatic notices, and the only P13 external-link presentation opt-in |
 | `views/chatlist/PlatformHomeRoute.kt` | PC1, PC32 | Medium | Shared platform seam; Android supplies Nome home and Desktop delegates the existing chat list |
 | `views/chatlist/ChatListNavLinkView.kt` | PC1, PC2, PC3 | Medium | Navigation from chat list item to chat |
 | `views/chatlist/ChatPreviewView.kt` | PC1, PC2, PC3, PC11 | Medium | Chat row preview rendering |
@@ -277,7 +314,8 @@ Path prefix: `common/src/commonMain/kotlin/chat/simplex/common/`
 |-------------|--------------------------|------------|-------|
 | `views/newchat/NewChatView.kt` | PC12, PC29, PC32 | High | New connection creation — onramp for all contacts |
 | `views/newchat/NewChatSheet.kt` | PC12 | Medium | Bottom sheet with connection options |
-| `views/newchat/ConnectPlan.kt` | PC12, PC15 | Medium | Link parsing and connection plan resolution |
+| `views/newchat/ConnectPlan.kt` | PC12, PC15, PC20, PC32 | High | Link planning plus the P13 legacy-default, context-bound, single-submit connection-preview integration |
+| `views/newchat/PlatformConnectionPreview.kt` | PC12, PC15, PC20, PC32 | High | P13 safe model, exhaustive branch policy, typed callbacks, and expect seam |
 | `views/newchat/AddGroupView.kt` | PC3, PC14 | Medium | New group creation flow |
 | `views/newchat/AddChannelView.kt` | PC31 | Medium | Public channel creation, channel link card, `RelayStatusIndicator` |
 | `views/newchat/ContactConnectionInfoView.kt` | PC12 | Low | Pending connection details |
@@ -419,9 +457,9 @@ Path prefix: `android/src/main/java/chat/simplex/app/`
 | `model/NtfManager.android.kt` | PC18 | High | Android notification channels, display, and actions |
 | `views/call/CallActivity.kt` | PC17 | Medium | Dedicated activity for full-screen call UI |
 | `views/helpers/Util.kt` | — | Low | Android-specific utility extensions |
-| `android/src/debug/java/chat/simplex/app/nome/**` | PC32 | Low | Debug-only fixtures, Preview, and non-exported screenshot Activity |
-| `android/src/test/java/chat/simplex/app/nome/**` | PC1, PC25, PC32 | Medium | Nome foundation contracts plus production home state-adapter truth table |
-| `android/src/androidTest/java/chat/simplex/app/nome/**` | PC1, PC24, PC32 | Medium | Foundation evidence plus production home semantics/privacy/48dp/200%, packaging, verified screenshots, and explicit real-core stop/start evidence |
+| `android/src/debug/java/chat/simplex/app/nome/**` | PC12, PC20, PC24, PC32 | Low | Debug-only foundation/home/P13 fixtures, Preview, and non-exported screenshot Activities |
+| `android/src/test/java/chat/simplex/app/nome/**` | PC1, PC12, PC20, PC25, PC32 | Medium | Nome foundation/home contracts plus P13 route/reducer truth |
+| `android/src/androidTest/java/chat/simplex/app/nome/**` | PC1, PC12, PC20, PC24, PC32 | Medium | Foundation/home/P13 semantics, 48dp/200%, packaging, screenshots, and explicit real-core gates where defined |
 | `android/src/androidTest/java/chat/simplex/app/ExampleInstrumentedTest.kt` | PC32 | Low | Configured application-ID packaging regression |
 
 ### 2.2 Android Platform Implementations (androidMain)
@@ -491,8 +529,13 @@ Path prefix: `common/src/androidMain/kotlin/chat/simplex/common/`
 | `ui/nome/accessibility/*.kt` | PC32 | Medium | TalkBack and 48dp modifier contracts |
 | `ui/nome/home/NomeHomeStateAdapter.kt` | PC1, PC32 | High | Pure generation/load/connectivity/core derivation for P07/P08 |
 | `ui/nome/home/NomeHomeRoute.android.kt` | PC1, PC24, PC32 | High | Android platform actual and production read-only home renderer |
+| `ui/nome/connection/NomeConnectionPreviewStateAdapter.kt` | PC12, PC20, PC32 | High | Pure P13 presentation reducer |
+| `ui/nome/connection/NomeConnectionPreviewRoute.android.kt` | PC12, PC20, PC24, PC32 | High | Android P13 production route and state renderer |
+| `views/newchat/PlatformConnectionPreview.android.kt` | PC12, PC20, PC32 | Medium | P13 fullscreen platform actual |
 | `common/src/androidMain/res/values/nome_home_strings.xml` | PC1, PC32 | Low | English home resources (full path; outside this section's Kotlin prefix) |
 | `common/src/androidMain/res/values-zh-rCN/nome_home_strings.xml` | PC1, PC32 | Low | Simplified-Chinese home resources (full path; outside this section's Kotlin prefix) |
+| `common/src/androidMain/res/values/nome_connection_preview_strings.xml` | PC12, PC20, PC32 | Low | English P13 resources (full path; outside this section's Kotlin prefix) |
+| `common/src/androidMain/res/values-zh-rCN/nome_connection_preview_strings.xml` | PC12, PC20, PC32 | Low | Simplified-Chinese P13 resources (full path; outside this section's Kotlin prefix) |
 
 ---
 
@@ -568,6 +611,7 @@ Path prefix: `common/src/desktopMain/kotlin/chat/simplex/common/`
 | `ui/theme/Theme.desktop.kt` | PC24 | Low | Desktop system theme detection |
 | `ui/theme/Type.desktop.kt` | PC24 | Low | Desktop typography |
 | `views/chatlist/PlatformHomeRoute.desktop.kt` | PC1, PC32 | Medium | Required actual; delegates the upstream `defaultContent` unchanged |
+| `views/newchat/PlatformConnectionPreview.desktop.kt` | PC12, PC32 | Medium | Required P13 actual; declines Nome presentation and preserves legacy UI |
 | `other/videoplayer/SkiaBitmapVideoSurface.kt` | PC10 | Low | Desktop Skia video surface for VLC |
 
 Path prefix for the following test row is `common/src/desktopTest/kotlin/chat/simplex/common/`.
@@ -575,6 +619,7 @@ Path prefix for the following test row is `common/src/desktopTest/kotlin/chat/si
 | Source File | Product Concepts Affected | Risk Level | Notes |
 |-------------|--------------------------|------------|-------|
 | `views/chatlist/PlatformHomeRouteDesktopTest.kt` | PC1, PC32 | Medium | Regression guard for unchanged Desktop home fallback |
+| `views/newchat/PlatformConnectionPreviewDesktopTest.kt` | PC12, PC32 | Medium | Regression guard for declined Desktop P13 presentation |
 
 ---
 

@@ -187,8 +187,10 @@ Callers that require authoritative list truth first call [`ChatModel.beginChatLi
 | `apiAddContact` | `rh: Long?, incognito: Boolean` | Create a one-time invitation link for a new contact | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1533) |
 | `apiSetConnectionIncognito` | `rh: Long?, connId: Long, incognito: Boolean` | Toggle incognito on a pending connection | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1544) |
 | `apiChangeConnectionUser` | `rh: Long?, connId: Long, userId: Long` | Change the user profile on a pending connection | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1553) |
-| `apiConnectPlan` | `rh: Long?, connLink: String, inProgress: MutableState<Boolean>` | Analyze a connection link before connecting | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1563) |
-| `apiConnect` | `rh: Long?, incognito: Boolean, connLink: CreatedConnLink` | Connect via an invitation or address link | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1571) |
+| `apiConnectPlan` | `rh, connLink, linkOwnerSig, inProgress` | Legacy plan wrapper with existing retry/alert behavior | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1563-L1569) |
+| `apiConnectPlanResult` | `rh: Long?, userId: Long, connLink: String, linkOwnerSig: LinkOwnerSig?` | P13 typed plan result bound to the attempt's captured remote host and user; no presentation and command logging disabled | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1578-L1594) |
+| `apiConnect` | `rh: Long?, incognito: Boolean, connLink: CreatedConnLink` | Legacy connect wrapper with existing retry/alert behavior | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1602-L1616) |
+| `apiConnectResult` | `rh: Long?, userId: Long, incognito: Boolean, connLink: CreatedConnLink` | P13 typed pending/already-existing/failure result bound to the same captured remote host and user; no presentation and command logging disabled | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1619-L1640) |
 | `apiPrepareContact` | `rh, connLink, contactShortLinkData` | Prepare a contact chat from a short link (before connecting) | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1652) |
 | `apiPrepareGroup` | `rh, connLink, groupShortLinkData` | Prepare a group chat from a short link (before connecting) | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1661) |
 | `apiConnectPreparedContact` | `rh, contactId, incognito, msg` | Connect to a previously prepared contact | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1686) |
@@ -210,6 +212,21 @@ Callers that require authoritative list truth first call [`ChatModel.beginChatLi
 | `apiSyncContactRatchet` | `rh: Long?, contactId: Long, force: Boolean` | Force ratchet synchronization with a contact | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1491) |
 | `apiGetContactCode` | `rh: Long?, contactId: Long` | Get the security verification code for a contact | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1505) |
 | `apiVerifyContact` | `rh: Long?, contactId: Long, connectionCode: String?` | Verify a contact's security code | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1519) |
+
+#### P13 typed connection contract
+
+[`APIConnectPlanResult`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L7040-L7049)
+distinguishes `Ready(connectionLink, connectionPlan)`, `Failure(response)`, and
+`NoCurrentUser`. [`APIConnectResult`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L7051-L7061)
+maps only `CR.SentConfirmation` and `CR.SentInvitation` to `Pending`, retains
+`CR.ContactAlreadyExists`, and leaves every other response as failure.
+
+These delegates send the unchanged `CC.APIConnectPlan` and `CC.APIConnect` commands through the
+existing controller. They do not call a native API directly, add a response type, retry
+automatically, or own alerts. `sendCmd(..., log = false)` prevents the P13 bearer command from
+entering the in-app terminal/log path; the legacy wrappers and all non-P13 callers retain their
+prior behavior. Cancellation propagates to the presentation owner rather than being converted to
+a network error.
 
 ### 2.6 File Operations
 

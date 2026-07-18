@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="nome_connection_preview_evidence_activity_label">Nome 连接预览证据</string>
+  <string name="nome_connection_preview_evidence_badge">渲染器测试数据 · %1$s</string>
+  <string name="nome_connection_preview_evidence_owner_failure_reason">受控证明不匹配</string>
+  <string name="nome_connection_preview_evidence_profile">证据身份</string>
+</resources>

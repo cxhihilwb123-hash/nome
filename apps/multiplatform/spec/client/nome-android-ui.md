@@ -1,6 +1,6 @@
 # Nome Android UI Specification
 
-> **Status:** verified Android-only Phase 2 foundation plus an authorized Phase 2 Batch 2 production shell/P07/P08 production-home slice whose execution gates pass. Formal frozen-review status is owned exclusively by the batch evidence root's `review-rounds.md`; this specification does not assert that outcome. `FIRST_USE` and `FILTERED_NO_RESULT` remain deferred production-reachability branches, and later production pages remain outside this batch.
+> **Status:** verified Android-only Phase 2 foundation plus frozen Batch 2 production shell/P07/P08 home. Batch 3 implements only the authorized P13 external-link preview source; its execution/review status is owned exclusively by its evidence root and is not asserted here. `FIRST_USE` and `FILTERED_NO_RESULT` remain deferred production-reachability branches; P09–P12 and P14–P24 remain outside Batch 3.
 > **Product view:** [product/views/nome-android.md](../../product/views/nome-android.md)
 > **Coverage matrix:** [plans/20260716_03.md](../../../../plans/20260716_03.md)
 
@@ -158,7 +158,8 @@ These decisions do not change the A/B/C classification in `plans/20260716_03.md`
 
 ## 8. Implemented source placement
 
-The frozen Phase 2 foundation and the additive Batch 2 production home use these placements:
+The frozen Phase 2 foundation, Batch 2 production home, and authorized Batch 3 P13 use these
+placements:
 
 | Responsibility | Source placement | Constraint |
 |---|---|---|
@@ -174,10 +175,17 @@ The frozen Phase 2 foundation and the additive Batch 2 production home use these
 | Desktop regression test | `common/src/desktopTest/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRouteDesktopTest.kt` | guards unchanged Desktop fallback |
 | Batch 2 renderer evidence host | `android/src/debug/java/chat/simplex/app/nome/home/NomeHomeEvidenceActivity.kt` plus debug manifest/resources | non-exported deterministic host, visibly marked as not live core |
 | Batch 2 screenshot definition | `android/src/androidTest/java/chat/simplex/app/nome/home/NomeHomeScreenshotTest.kt` | API 35, 10 states × 2 locales × 2 themes × 2 font scales = 80 verified captures |
+| shared P13 policy and safe model | `common/src/commonMain/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreview.kt` | display-safe model, exhaustive 7/21 branch policy, callbacks, and expect declaration; bearer values are closure-only |
+| typed P13 controller delegates | `common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt` | unchanged plan/connect commands, typed outcomes, no UI ownership, and P13 terminal logging disabled |
+| Android P13 presenter | `common/src/androidMain/kotlin/chat/simplex/common/{views/newchat/PlatformConnectionPreview.android.kt,ui/nome/connection/**}` | fullscreen modal actual, pure reducer, bilingual Nome renderer |
+| P13 production resources | `common/src/androidMain/res/{values,values-zh-rCN}/nome_connection_preview_strings.xml` | English/Simplified-Chinese page and semantic copy |
+| Desktop P13 fallback | `common/src/desktopMain/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreview.desktop.kt` | returns `false`; no Desktop Nome UI or behavior change |
+| P13 debug evidence host | `android/src/debug/java/chat/simplex/app/nome/connection/NomeConnectionPreviewEvidenceActivity.kt` plus debug resources/manifest | non-exported deterministic renderer host, visibly fixture-only |
+| P13 tests | `common/src/commonTest/.../connection/`, `android/src/{test,androidTest}/.../nome/connection/`, and `common/src/desktopTest/.../views/newchat/` | branch/fallback/context/failure, reducer, route boundary, semantics/48dp/200%, packaging, screenshot matrix, and Desktop fallback |
 
 The sharing reason is route ownership: `StartPartOfScreen` is shared and already decides between delivery-receipt setup, normal home, and share content. Moving or copying that decision into the Android app module would create a second root/navigation truth and would miss non-Activity `AppScreen` entry paths. The `commonMain` seam therefore carries only arguments and `defaultContent`; it contains no Nome UI. The Desktop actual and test preserve the official Desktop `ChatListView`.
 
-Batch 2 adds generation-scoped load/result types around the existing get-chats API, not a second API or native command. A later typed-result adapter that cannot remain Android-controlled still requires its own recorded sharing reason, `desktopTest`, and Desktop visual/behavior check. It may not bypass the shared wrapper to call the native core.
+Batch 2 adds generation-scoped load/result types around the existing get-chats API, not a second API or native command. Batch 3 adds typed siblings around the already-shared plan/connect commands because command ownership and the seven branching call sites already live in `commonMain`. The sharing carries no Nome composable and no new native call. Its explicit Desktop actual/test declines presentation. Any later typed adapter still requires its own recorded sharing reason and may not bypass the controller to call the native core.
 
 ### P07/P08 typed truth
 
@@ -195,6 +203,34 @@ P07 rows are read-only with respect to list state. They show existing name/type/
 
 Batch 2 does not implement the locale marker, connection flow, composer/send, other P pages, protocol/core/database-format changes, or a broad Desktop redesign.
 
+### P13 typed truth and route boundary
+
+The only production opt-in is
+[`connectIfOpenedViaUri`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatListView.kt#L738-L754).
+[`planAndConnect`](../../common/src/commonMain/kotlin/chat/simplex/common/views/newchat/ConnectPlan.kt#L25-L607)
+defaults every other caller to `Legacy`. The safe adapter normalizes all 21 current plan branches
+and marks exactly seven eligible: invitation fresh/own, address fresh/own/repeat-request, and group
+fresh/repeat-join, with fresh branches requiring absent short-link preparation data.
+
+The reducer phases are `Ready`, `Connecting`, `Failure`, `Replanning`, and `Pending`. Identity may
+change only in `Ready`. The route reducer ignores duplicate submits and out-of-order results, while
+the controller closure supplies an atomic guard across recomposition. Only
+`SentConfirmation`/`SentInvitation` with a real pending connection reaches `Pending`.
+Already-existing contact, sanitized API failure, no user, and changed user/host remain failures.
+Retry retains the chosen identity and the old modal in `Replanning` while resolving the current
+host and performing a new plan. Planning failure or no current user returns the same modal to
+`Failure`; only a successful or authoritative fallback plan closes it as a handoff before any
+connect.
+
+The display model never contains the raw URI, `CreatedConnLink`, or `LinkOwnerSig`; those remain in
+an ephemeral controller closure. Both P13 commands use `sendCmd(..., log = false)`. The route
+disables submit, visible back, and cancel during active send/replan, and uses one idempotent cleanup
+for cancel, system dismiss, configuration disposal, and handoff. Desktop returns `false` from the
+actual and retains legacy presentation.
+
+P13 does not add a P10 home entry, implement P12 scan/paste/camera, mutate P14 requests, or render
+P16 group details. It does not alter `FIRST_USE` or `FILTERED_NO_RESULT`.
+
 ### Source anchors
 
 - semantic palette: [`NomeColorTokens`, light/dark values](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/tokens/NomeColorTokens.kt#L7-L131);
@@ -211,6 +247,9 @@ Batch 2 does not implement the locale marker, connection flow, composer/send, ot
 - Batch 2 contract tests: [`NomeHomeStateAdapterTest`](../../android/src/test/java/chat/simplex/app/nome/home/NomeHomeStateAdapterTest.kt#L16-L242), [`NomeHomeComposeTest`](../../android/src/androidTest/java/chat/simplex/app/nome/home/NomeHomeComposeTest.kt#L53-L562), [`NomeHomePackagingTest`](../../android/src/androidTest/java/chat/simplex/app/nome/home/NomeHomePackagingTest.kt#L13-L38), and [`PlatformHomeRouteDesktopTest`](../../common/src/desktopTest/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRouteDesktopTest.kt#L14-L55);
 - explicit real-core evidence gate: [`NomeHomeCoreCycleTest`](../../android/src/androidTest/java/chat/simplex/app/nome/home/NomeHomeCoreCycleTest.kt#L1-L90) runs only with `nomeCoreCycle=true`, invokes the official stop/start paths, and asserts that the exact non-empty cached chat-ID sequence survives both transitions;
 - Batch 2 verified renderer captures: [`NomeHomeEvidenceActivity` and ten evidence states](../../android/src/debug/java/chat/simplex/app/nome/home/NomeHomeEvidenceActivity.kt#L45-L253), [debug-only manifest entry](../../android/src/debug/AndroidManifest.xml#L5-L16), and [`NomeHomeScreenshotTest`](../../android/src/androidTest/java/chat/simplex/app/nome/home/NomeHomeScreenshotTest.kt#L18-L177).
+- P13 typed truth and branch tests: [`ConnectionPreviewPolicyTest`](../../common/src/commonTest/kotlin/chat/simplex/common/views/newchat/ConnectionPreviewPolicyTest.kt#L20-L189), [`NomeConnectionPreviewStateAdapterTest`](../../android/src/test/java/chat/simplex/app/nome/connection/NomeConnectionPreviewStateAdapterTest.kt#L12-L91), and [`ConnectionPreviewRouteBoundaryTest`](../../android/src/test/java/chat/simplex/app/nome/connection/ConnectionPreviewRouteBoundaryTest.kt#L8-L67);
+- P13 Android/desktop presentation: [Android actual](../../common/src/androidMain/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreview.android.kt#L9-L24), [route/content](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/connection/NomeConnectionPreviewRoute.android.kt#L65-L742), [Desktop actual](../../common/src/desktopMain/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreview.desktop.kt#L3-L6), and [`PlatformConnectionPreviewDesktopTest`](../../common/src/desktopTest/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreviewDesktopTest.kt#L6-L29);
+- P13 renderer evidence definition: [`NomeConnectionPreviewEvidenceActivity` and nine fixture states](../../android/src/debug/java/chat/simplex/app/nome/connection/NomeConnectionPreviewEvidenceActivity.kt#L34-L251), [`NomeConnectionPreviewComposeTest`](../../android/src/androidTest/java/chat/simplex/app/nome/connection/NomeConnectionPreviewComposeTest.kt#L33-L228), [`NomeConnectionPreviewPackagingTest`](../../android/src/androidTest/java/chat/simplex/app/nome/connection/NomeConnectionPreviewPackagingTest.kt#L10-L31), and [`NomeConnectionPreviewScreenshotTest`](../../android/src/androidTest/java/chat/simplex/app/nome/connection/NomeConnectionPreviewScreenshotTest.kt#L17-L123), whose matrix is 9 states × 2 locales × 2 themes × 2 font scales = 72 captures.
 
 ## 9. Accessibility contract
 
@@ -246,6 +285,12 @@ The same `.nome.dev` package and debug signing identity covered this foundation'
 
 The Batch 2 test files and source anchors in §8 define the implementation contract. The independent evidence root contains the Gradle, Desktop, API 28/API 35 real-core, bilingual-light-dark-100%-200%, 48dp/TalkBack, P07/P08 comparison, release-isolation, threat-delta, and manifest execution artifacts. This specification does not itself claim the formal two-round outcome; only the evidence root's `review-rounds.md` owns that status.
 
+The Batch 3 P13 evidence root is
+`plans/evidence/20260717_nome_android_phase2_batch3_p13/`. Its debug fixture matrix proves only the
+renderer. API 28/API 35 external-intent traces, two-client connection/identity truth, raw-link
+Logcat/UI/evidence scans, lifecycle/single-submit checks, manual TalkBack, release isolation, and
+two same-digest reviews must be recorded separately before the batch is called complete.
+
 ## 11. Current implementation checkpoint
 
 Completed at the immutable Phase 0/1 checkpoint:
@@ -277,9 +322,20 @@ Implemented and execution-gated in Phase 2 Batch 2:
 - additive unit, Compose, and Desktop fallback tests;
 - API 28/API 35 real-core/device execution, same-package non-empty upgrade, network/core/generation/cancellation truth, 80 renderer screenshots, accessibility/TalkBack traversal, and release isolation. Formal frozen-digest review status is owned only by the evidence root's `review-rounds.md` and is not asserted here.
 
+Implemented in Phase 2 Batch 3 source, with execution status delegated to its evidence root:
+
+- one explicit Android external-`ACTION_VIEW` opt-in and a `Legacy` default for all six other caller surfaces;
+- exhaustive seven-eligible/fourteen-fallback plan policy, safe model, and Desktop-declining expect/actual seam;
+- typed non-logging plan/connect delegates over unchanged core commands;
+- Android P13 ready/current/incognito/warning/connecting/pending/failure/retry/cancel route and pure reducer;
+- bilingual resources, light/dark tokens, 48dp and 200% Compose coverage, nine-state/72-capture debug screenshot definition, non-exported debug host, release packaging guard, and Desktop fallback test;
+- no change to `FIRST_USE`, `FILTERED_NO_RESULT`, P09–P12, P14–P24, native core, protocol, database, message state, iOS, or Desktop UI.
+
 Remaining implementation/evidence gates:
 
 - implement the one-time locale marker without overwriting existing-user language behavior;
-- implement later production pages and their real `CoreBacked`/`Derived`/`ClientOperation`/`Unavailable` adapters in small batches;
+- complete the P13 evidence root's device, real-core/two-client, native comparison, manual accessibility, release isolation, threat-delta, and two-review gates;
+- add exact, release-isolated P13 command-count evidence alongside the device and lifecycle traces;
+- implement P09–P12 and P14–P24 production pages only in separately authorized small batches;
 - repeat bilingual/theme/applicable-state/accessibility/core/screenshot/threat-model/two-review gates for every connected production batch;
 - add deeper upgrade assertions when a later batch touches identities, chats, attachments, settings, or locale persistence.

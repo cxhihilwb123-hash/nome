@@ -240,10 +240,15 @@ fun MainScreen() {
       AlertManager.privacySensitive.showInView()
       if (onboarding == OnboardingStage.OnboardingComplete) {
         LaunchedEffect(chatModel.chatRunning.value, chatModel.currentUser.value, chatModel.appOpenUrl.value) {
-          val (rhId, url) = chatModel.appOpenUrl.value ?: (null to null)
-          if (url != null && chatModel.chatRunning.value == true) {
+          val pendingUrl = chatModel.appOpenUrl.value
+          if (pendingUrl != null && chatModel.chatRunning.value == true) {
             chatModel.appOpenUrl.value = null
-            connectIfOpenedViaUri(rhId, url, chatModel)
+            connectIfOpenedViaUri(
+              rhId = pendingUrl.remoteHostId,
+              uri = pendingUrl.uri,
+              chatModel = chatModel,
+              source = pendingUrl.source,
+            )
           }
         }
       }

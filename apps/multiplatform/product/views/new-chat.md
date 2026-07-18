@@ -59,6 +59,19 @@ When a valid SimpleX link is detected:
 3. If the link matches a known group, filters to that group
 4. Otherwise, creates a new connection
 
+### Android External-Link Preview Boundary
+
+Opening a supported connection URI through Android `ACTION_VIEW` is distinct from this page's
+scan/paste flow. After the unchanged root and core-running gates, that one ingress explicitly
+requests the Nome P13 full-screen preview for eligible core plan branches. It shows a safe
+invitation/address/group consequence, current-profile vs new-incognito choice, exact warning or
+owner-proof status, and response-driven connecting/pending/failure states.
+
+The New Chat sheet, Connect tab, scanner, paste field, chat-list link search, message links, chat
+preview links, and group-member links do not opt in during Batch 3 and keep their legacy
+presentation. P13 does not add a P10 home entry, implement P12 camera behavior, or absorb the P16
+group-detail page. It never displays or persists the raw connection URI.
+
 ### Create Group (`AddGroupView`)
 
 | Element | Description |
@@ -94,3 +107,7 @@ Group creation flow:
 | `ConnectPlan.kt` | `views/newchat/ConnectPlan.kt` |
 | `QRCodeScanner.kt` | `views/newchat/QRCodeScanner.kt` (expect/actual) |
 | `ContactConnectionInfoView.kt` | `views/newchat/ContactConnectionInfoView.kt` |
+| `PlatformConnectionPreview.kt` | `views/newchat/PlatformConnectionPreview.kt` (safe model, explicit policy, platform seam) |
+| `PlatformConnectionPreview.android.kt` | `androidMain/.../views/newchat/PlatformConnectionPreview.android.kt` |
+| `NomeConnectionPreviewRoute.android.kt` | `androidMain/.../ui/nome/connection/NomeConnectionPreviewRoute.android.kt` |
+| `PlatformConnectionPreview.desktop.kt` | `desktopMain/.../views/newchat/PlatformConnectionPreview.desktop.kt` (legacy fallback) |

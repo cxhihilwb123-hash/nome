@@ -1,0 +1,11 @@
+{
+  "score": 99,
+  "verdict": "pass",
+  "category_match": true,
+  "differences": [
+    "System status-bar clock and icon pixels differ between capture sessions.",
+    "The eight Connecting captures differ only in the indeterminate progress-indicator animation phase."
+  ],
+  "suggestions": [],
+  "reasoning": "All 72 final captures match the approved product region: 64 are pixel-identical below the 140 px system bar, and the remaining eight differ only in the animated spinner. Sampled light, dark, English, Chinese, and 200 percent layouts are visually unchanged."
+}

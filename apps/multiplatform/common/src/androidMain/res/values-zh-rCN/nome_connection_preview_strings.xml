@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="nome_connection_preview_title">连接预览</string>
+  <string name="nome_connection_preview_back">取消连接预览</string>
+  <string name="nome_connection_preview_source_invitation">一次性邀请将使用你选择的身份创建新连接。</string>
+  <string name="nome_connection_preview_source_address">联系人地址将收到使用你所选身份发送的请求。</string>
+  <string name="nome_connection_preview_source_group">群组链接将收到使用你所选身份发送的加入请求。</string>
+  <string name="nome_connection_preview_choose_identity">选择连接身份</string>
+  <string name="nome_connection_preview_current_title">当前身份</string>
+  <string name="nome_connection_preview_current_body">本次连接使用 %1$s。</string>
+  <string name="nome_connection_preview_incognito_title">新匿名身份</string>
+  <string name="nome_connection_preview_incognito_body">仅为本次连接创建随机名称和头像。</string>
+  <string name="nome_connection_preview_selected">已选择</string>
+  <string name="nome_connection_preview_not_selected">未选择</string>
+  <string name="nome_connection_preview_warning_title">连接前确认</string>
+  <string name="nome_connection_preview_warning_own_invitation">这是你自己的一次性邀请。继续将尝试连接到你自己。</string>
+  <string name="nome_connection_preview_warning_own_address">这是你自己的联系人地址。继续将尝试连接到你自己。</string>
+  <string name="nome_connection_preview_warning_repeat_request">你已通过此地址请求连接。继续将再次发送请求。</string>
+  <string name="nome_connection_preview_warning_repeat_join">你正在通过此群组链接加入。继续将再次发送加入请求。</string>
+  <string name="nome_connection_preview_owner_verified">链接所有者证明已通过验证。</string>
+  <string name="nome_connection_preview_owner_failed">链接所有者证明验证失败：%1$s</string>
+  <string name="nome_connection_preview_connecting_title">正在发送连接请求</string>
+  <string name="nome_connection_preview_connecting_body">核心发送一次请求期间，请保持 Nome 打开。</string>
+  <string name="nome_connection_preview_replanning_title">正在重新检查链接</string>
+  <string name="nome_connection_preview_replanning_body">Nome 正在向核心请求新的连接计划。</string>
+  <string name="nome_connection_preview_pending_title">连接请求已发送</string>
+  <string name="nome_connection_preview_pending_invitation">对方设备上线后即可连接。</string>
+  <string name="nome_connection_preview_pending_address">请求被接受后即可连接。</string>
+  <string name="nome_connection_preview_pending_group">群主设备上线后即可连接。</string>
+  <string name="nome_connection_preview_failure_title">连接请求未发送</string>
+  <string name="nome_connection_preview_failure_network">网络请求失败。重试时会先重新检查链接，再发送请求。</string>
+  <string name="nome_connection_preview_failure_invalid">此连接链接无效。请检查链接或向对方索取新链接。</string>
+  <string name="nome_connection_preview_failure_unsupported">此链接需要更新版本的应用。</string>
+  <string name="nome_connection_preview_failure_already_exists">你已通过此链接与 %1$s 建立连接。</string>
+  <string name="nome_connection_preview_failure_context_changed">当前身份或主机已变化。重试将为当前上下文创建新计划。</string>
+  <string name="nome_connection_preview_failure_no_user">当前没有可用的本地身份。请取消并先选择身份。</string>
+  <string name="nome_connection_preview_failure_other">核心未创建待处理连接。重试时会先重新检查链接。</string>
+  <string name="nome_connection_preview_continue">继续连接</string>
+  <string name="nome_connection_preview_retry">重试</string>
+  <string name="nome_connection_preview_done">完成</string>
+  <string name="nome_connection_preview_cancel">取消</string>
+  <string name="nome_connection_preview_state_ready">已准备连接</string>
+  <string name="nome_connection_preview_state_connecting">正在发送连接请求</string>
+  <string name="nome_connection_preview_state_replanning">正在检查链接</string>
+  <string name="nome_connection_preview_state_pending">连接请求待处理</string>
+  <string name="nome_connection_preview_state_failure">连接请求失败</string>
+</resources>

@@ -26,11 +26,30 @@ Key platform differences:
 
 ### Nome Android current production slice
 
-The verified Android-only design foundation is followed by a bounded Batch 2 source connection. [`MainActivity`](../android/src/main/java/chat/simplex/app/MainActivity.kt#L60-L65) installs a thin Activity/window [`NomeProductionShell`](../android/src/main/java/chat/simplex/app/nome/NomeProductionShell.kt#L9-L23) around the unchanged shared root. Inside that root, [`StartPartOfScreen`](../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L366-L393) preserves the original home notice effect and selects a narrow [`PlatformHomeRoute`](../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.kt#L8-L22): Android renders the Nome P07/P08 home, while Desktop delegates the official chat list unchanged. Root gates, authentication, calls, intents, overlays, navigation, safe areas, and back behavior are not duplicated.
+The verified Android-only design foundation is followed by bounded Batch 2 home and Batch 3 P13
+source connections. [`MainActivity`](../android/src/main/java/chat/simplex/app/MainActivity.kt#L60-L65)
+installs a thin Activity/window
+[`NomeProductionShell`](../android/src/main/java/chat/simplex/app/nome/NomeProductionShell.kt#L9-L23)
+around the unchanged shared root. Inside that root,
+[`StartPartOfScreen`](../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L366-L393)
+preserves the original home notice effect and selects a narrow
+[`PlatformHomeRoute`](../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.kt#L8-L22):
+Android renders the Nome P07/P08 home, while Desktop delegates the official chat list unchanged.
+Root gates, authentication, calls, intents, overlays, navigation, safe areas, and back behavior are
+not duplicated.
 
 The home adapter consumes the existing `ChatModel`/controller. A typed [`ChatListLoadResult` and user/host generation](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L81-L106) distinguish same-generation `ApiChats` success, failure, and no current user; a successful empty result is the only source for “true empty.” Android's nullable [`platformNetworkInfo`](../common/src/androidMain/kotlin/chat/simplex/common/helpers/NetworkObserver.kt#L16-L87) keeps connectivity unknown until the first platform observation and never upgrades device connectivity into relay/global-health evidence.
 
-The current P07/P08 renderer is read-only except for navigation into already-ready, non-deleting direct/group/note conversations while the core is running. It projects existing name/time/unread/favorite facts, gates visible and spoken message summaries with the existing `showChatPreviews` preference, follows the official `CurrentColors` light/dark result, and keeps loading, true empty, unavailable, network unknown, device offline, and core stopped distinct. Its first-use and active-filter-no-result branches are defensive renderer/test contracts, not production-route claims: onboarding consumes no-user before home, and this bounded home has no filter producer. Favorite/profile/connection mutations, search, filter controls, new chat/settings controls, composer/send, locale marker, and archive/migration work are excluded. The authorized Batch 2 production-home slice has passed its execution gates. Formal frozen-review status is owned exclusively by `plans/evidence/20260717_nome_android_phase2_batch2_home/review-rounds.md`; this product document does not assert that outcome. This does not complete all P07/P08 product scope or any later page.
+The current P07/P08 renderer is read-only except for navigation into already-ready, non-deleting direct/group/note conversations while the core is running. It projects existing name/time/unread/favorite facts, gates visible and spoken message summaries with the existing `showChatPreviews` preference, follows the official `CurrentColors` light/dark result, and keeps loading, true empty, unavailable, network unknown, device offline, and core stopped distinct. Its first-use and active-filter-no-result branches are defensive renderer/test contracts, not production-route claims: onboarding consumes no-user before home, and this bounded home has no filter producer. Favorite/profile/search/filter/new-chat/settings/composer/archive mutations remain excluded from the home slice. Batch 2's execution status and formal frozen review remain owned exclusively by `plans/evidence/20260717_nome_android_phase2_batch2_home/`.
+
+Batch 3 adds only P13 for the already-reachable Android external-link flow. After the real core
+returns an eligible plan, Nome shows a full-screen current-profile/new-incognito choice and
+response-driven pending/failure states. The explicit policy defaults every other shared caller to
+legacy presentation; Desktop declines the seam. Bearer links remain closure-only and P13 command
+logging is disabled. This does not add a home entry, scan/paste page, request mutation, group-detail
+page, or any P09–P12/P14–P24 implementation. `FIRST_USE` and `FILTERED_NO_RESULT` are unchanged.
+Batch 3 execution/review status is owned only by
+`plans/evidence/20260717_nome_android_phase2_batch3_p13/`.
 
 ---
 

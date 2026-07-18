@@ -13,6 +13,7 @@ This document specifies invariants enforced by the Android and Desktop (Kotlin/C
 5. [Notification Delivery (RULE-16 through RULE-17)](#5-notification-delivery)
 6. [Call Integrity (RULE-18)](#6-call-integrity)
 7. [Nome Android Home Truth (RULE-19)](#7-nome-android-home-truth)
+8. [Nome Android External Connection Truth (RULE-20)](#8-nome-android-external-connection-truth)
 
 ---
 
@@ -272,3 +273,33 @@ The following facts remain independent:
 **Reachability boundary:** The unchanged root consumes no-current-user in onboarding before the home route, and the bounded home adds no active-filter producer. `FIRST_USE` and `FILTERED_NO_RESULT` therefore remain defensive renderer/test branches until a separately scoped route/filter interaction exists; the invariant above does not turn them into production-route evidence.
 
 **Batch 2 boundary:** The connected production slice projects name, timestamp, unread, and favorite facts and permits navigation only into already-ready, non-deleting direct/group/local conversations while the core is running. Visible and spoken message summaries remain gated by the existing `showChatPreviews` privacy preference. Favorite mutation, profile switching UI, connection/request mutation, search UI/aggregation, filter controls, composer/send, and archive/migration work are outside this rule's current implementation scope. Source connection and automated tests do not by themselves prove the remaining reachability, device, screenshot, accessibility, real-core, or review gates.
+
+---
+
+## 8. Nome Android External Connection Truth
+
+### RULE-20: External Preview Identity and Command Truth
+
+**Invariant:** Nome P13 may replace the identity-choice presentation only for Android external
+`ACTION_VIEW` links and only for the seven explicitly eligible `ConnectionPlan` branches. All
+other callers and plan variants MUST retain the established legacy path.
+
+The preview MUST:
+
+1. bind the plan to the active `(remoteHostId, userId)` and refuse to send after that context
+   changes;
+2. retain the bearer URI and owner signature only in an ephemeral controller closure, never UI
+   state, saved state, semantics, evidence, or P13 command logs;
+3. treat incognito as a new profile for this connection only;
+4. permit exactly one connect submission per preview session;
+5. enter pending only from a typed `SentConfirmation` or `SentInvitation` response carrying a real
+   `PendingContactConnection`;
+6. retain already-existing, failure, no-user, context-changed, and cancellation as distinct
+   non-success outcomes;
+7. re-plan against the current user/host before retrying; and
+8. make cancel, back, dismiss, and handoff cleanup idempotent and command-free.
+
+**Enforcement:** [`connectIfOpenedViaUri`](../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatListView.kt#L738-L754) is the only opt-in. [`planAndConnect`](../common/src/commonMain/kotlin/chat/simplex/common/views/newchat/ConnectPlan.kt#L25-L607) retains a `Legacy` default and guards context/single-submit/cleanup. [`apiConnectPlanResult` and `apiConnectResult`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1571-L1647) preserve typed core truth with P13 command logging disabled. [`ConnectionPreviewPlanBranch`](../common/src/commonMain/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreview.kt#L91-L187) exhaustively defines the seven eligible and fourteen fallback branches.
+
+**Protected boundary:** This rule does not alter P08 `FIRST_USE` or `FILTERED_NO_RESULT`, add a P10
+entry, implement scanner/paste behavior, or change P14–P24.

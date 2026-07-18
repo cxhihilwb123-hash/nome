@@ -16,10 +16,14 @@ import chat.simplex.common.views.chatlist.*
 import chat.simplex.common.views.helpers.*
 import chat.simplex.res.MR
 import kotlinx.coroutines.*
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 
 enum class ConnectionLinkType {
   INVITATION, CONTACT, GROUP
 }
+
+private val nextConnectionPreviewAttemptId = AtomicLong(0)
 
 suspend fun planAndConnect(
   rhId: Long?,
@@ -29,6 +33,9 @@ suspend fun planAndConnect(
   cleanup: (() -> Unit)? = null,
   filterKnownContact: ((Contact) -> Unit)? = null,
   filterKnownGroup: ((GroupInfo) -> Unit)? = null,
+  presentationPolicy: ConnectionPreviewEntryPolicy = ConnectionPreviewEntryPolicy.Legacy,
+  initialPreviewIdentity: ConnectionPreviewIdentity = ConnectionPreviewIdentity.CurrentProfile,
+  replanCallbacks: ConnectionPreviewReplanCallbacks? = null,
 ): CompletableDeferred<Boolean> {
   when (val target = strConnectTarget(shortOrFullLink.trim())) {
     is ConnectTarget.Name -> {
@@ -52,9 +59,38 @@ suspend fun planAndConnect(
   val inProgress = mutableStateOf(true)
   connectProgressManager.startConnectProgress(generalGetString(MR.strings.loading_profile)) {
     inProgress.value = false
+    replanCallbacks?.closeCurrentPreview?.invoke()
     cleanup?.invoke()
   }
-  return planAndConnectTask(rhId, shortOrFullLink, linkOwnerSig, close, cleanup, filterKnownContact, filterKnownGroup, inProgress)
+  val previewAttemptContext =
+    if (
+      presentationPolicy ==
+        ConnectionPreviewEntryPolicy.ExternalActionView
+    ) {
+      chatModel.currentUser.value?.let {
+        ConnectionPreviewAttemptContext(
+          attemptId = nextConnectionPreviewAttemptId.incrementAndGet(),
+          userId = it.userId,
+          remoteHostId = rhId,
+        )
+      }
+    } else {
+      null
+    }
+  return planAndConnectTask(
+    rhId,
+    shortOrFullLink,
+    linkOwnerSig,
+    close,
+    cleanup,
+    filterKnownContact,
+    filterKnownGroup,
+    inProgress,
+    presentationPolicy,
+    initialPreviewIdentity,
+    replanCallbacks,
+    previewAttemptContext,
+  )
 }
 
 private suspend fun planAndConnectTask(
@@ -65,7 +101,11 @@ private suspend fun planAndConnectTask(
   cleanup: (() -> Unit)? = null,
   filterKnownContact: ((Contact) -> Unit)? = null,
   filterKnownGroup: ((GroupInfo) -> Unit)? = null,
-  inProgress: MutableState<Boolean>
+  inProgress: MutableState<Boolean>,
+  presentationPolicy: ConnectionPreviewEntryPolicy,
+  initialPreviewIdentity: ConnectionPreviewIdentity,
+  replanCallbacks: ConnectionPreviewReplanCallbacks?,
+  previewAttemptContext: ConnectionPreviewAttemptContext?,
 ): CompletableDeferred<Boolean> {
   val completable = CompletableDeferred<Boolean>()
   val close: (() -> Unit) = {
@@ -77,10 +117,102 @@ private suspend fun planAndConnectTask(
     cleanup?.invoke()
     completable.complete(!completable.isActive)
   }
-  val result = chatModel.controller.apiConnectPlan(rhId, shortOrFullLink, linkOwnerSig, inProgress = inProgress)
+  var replanFailureHandled = false
+  fun previewContextMatches(
+    context: ConnectionPreviewAttemptContext,
+  ): Boolean {
+    val activeUser = chatModel.currentUser.value
+    return connectionPreviewContextMatches(
+      context = context,
+      currentUserId = activeUser?.userId,
+      currentUserRemoteHostId = activeUser?.remoteHostId,
+      currentControllerRemoteHostId = chatModel.remoteHostId(),
+    )
+  }
+  fun handlePlanningFailure(
+    kind: ConnectionPreviewFailureKind,
+  ) {
+    if (replanCallbacks != null) {
+      replanFailureHandled = true
+      replanCallbacks.planningFailed(kind)
+    }
+  }
+  val result = try {
+    when (presentationPolicy) {
+      ConnectionPreviewEntryPolicy.Legacy ->
+        chatModel.controller.apiConnectPlan(
+          rhId,
+          shortOrFullLink,
+          linkOwnerSig,
+          inProgress = inProgress,
+        )
+      ConnectionPreviewEntryPolicy.ExternalActionView -> {
+        val context = previewAttemptContext
+        if (context == null) {
+          handlePlanningFailure(
+            ConnectionPreviewFailureKind.NoCurrentUser,
+          )
+          null
+        } else if (!previewContextMatches(context)) {
+          handlePlanningFailure(
+            ConnectionPreviewFailureKind.ContextChanged,
+          )
+          null
+        } else {
+          when (
+            val typedResult =
+              chatModel.controller.apiConnectPlanResult(
+                rh = context.remoteHostId,
+                userId = context.userId,
+                connLink = shortOrFullLink,
+                linkOwnerSig = linkOwnerSig,
+              )
+          ) {
+            is APIConnectPlanResult.Ready -> {
+              if (previewContextMatches(context)) {
+                typedResult.connectionLink to
+                    typedResult.connectionPlan
+              } else {
+                handlePlanningFailure(
+                  ConnectionPreviewFailureKind.ContextChanged,
+                )
+                null
+              }
+            }
+            is APIConnectPlanResult.Failure -> {
+              if (replanCallbacks != null) {
+                handlePlanningFailure(
+                  connectionPreviewFailureKind(
+                    typedResult.response,
+                  ),
+                )
+              } else if (inProgress.value) {
+                chatModel.controller.apiConnectResponseAlert(
+                  typedResult.response,
+                )
+              }
+              null
+            }
+            APIConnectPlanResult.NoCurrentUser -> {
+              handlePlanningFailure(
+                ConnectionPreviewFailureKind.NoCurrentUser,
+              )
+              null
+            }
+          }
+        }
+      }
+    }
+  } catch (e: CancellationException) {
+    connectProgressManager.stopConnectProgress()
+    replanCallbacks?.closeCurrentPreview?.invoke()
+    cleanup()
+    throw e
+  }
   connectProgressManager.stopConnectProgress()
   if (!inProgress.value) { return completable }
   if (result != null) {
+    replanCallbacks?.closeCurrentPreview?.invoke()
     val (connectionLink, connectionPlan) = result
     val target = strConnectTarget(shortOrFullLink.trim())
     val linkText = if (target is ConnectTarget.Link) "<br><br><u>${target.linkText}</u>" else ""
@@ -99,23 +231,33 @@ private suspend fun planAndConnectTask(
             )
           } else {
             Log.d(TAG, "planAndConnect, .InvitationLink, .Ok, no short link data")
-            askCurrentOrIncognitoProfileAlert(
+            showConnectionPreviewOrLegacy(
               chatModel, rhId, connectionLink, connectionPlan, close,
               title = generalGetString(MR.strings.connect_via_invitation_link),
               text = generalGetString(MR.strings.profile_will_be_sent_to_contact_sending_link) + linkText,
               connectDestructive = false,
               cleanup = cleanup,
               ownerVerification = connectionPlan.invitationLinkPlan.ownerVerification,
+              presentationPolicy = presentationPolicy,
+              originalLink = shortOrFullLink,
+              linkOwnerSig = linkOwnerSig,
+              initialIdentity = initialPreviewIdentity,
+              previewAttemptContext = previewAttemptContext,
             )
           }
         InvitationLinkPlan.OwnLink -> {
           Log.d(TAG, "planAndConnect, .InvitationLink, .OwnLink")
-          askCurrentOrIncognitoProfileAlert(
+          showConnectionPreviewOrLegacy(
             chatModel, rhId, connectionLink, connectionPlan, close,
             title = generalGetString(MR.strings.connect_plan_connect_to_yourself),
             text = generalGetString(MR.strings.connect_plan_this_is_your_own_one_time_link) + linkText,
             connectDestructive = true,
             cleanup = cleanup,
+            presentationPolicy = presentationPolicy,
+            originalLink = shortOrFullLink,
+            linkOwnerSig = linkOwnerSig,
+            initialIdentity = initialPreviewIdentity,
+            previewAttemptContext = previewAttemptContext,
           )
         }
         is InvitationLinkPlan.Connecting -> {
@@ -162,33 +304,48 @@ private suspend fun planAndConnectTask(
             )
           } else {
             Log.d(TAG, "planAndConnect, .ContactAddress, .Ok, no short link data")
-            askCurrentOrIncognitoProfileAlert(
+            showConnectionPreviewOrLegacy(
               chatModel, rhId, connectionLink, connectionPlan, close,
               title = generalGetString(MR.strings.connect_via_contact_link),
               text = generalGetString(MR.strings.profile_will_be_sent_to_contact_sending_link) + linkText,
               connectDestructive = false,
               cleanup,
               ownerVerification = connectionPlan.contactAddressPlan.ownerVerification,
+              presentationPolicy = presentationPolicy,
+              originalLink = shortOrFullLink,
+              linkOwnerSig = linkOwnerSig,
+              initialIdentity = initialPreviewIdentity,
+              previewAttemptContext = previewAttemptContext,
             )
           }
         ContactAddressPlan.OwnLink -> {
           Log.d(TAG, "planAndConnect, .ContactAddress, .OwnLink")
-          askCurrentOrIncognitoProfileAlert(
+          showConnectionPreviewOrLegacy(
             chatModel, rhId, connectionLink, connectionPlan, close,
             title = generalGetString(MR.strings.connect_plan_connect_to_yourself),
             text = generalGetString(MR.strings.connect_plan_this_is_your_own_simplex_address) + linkText,
             connectDestructive = true,
             cleanup = cleanup,
+            presentationPolicy = presentationPolicy,
+            originalLink = shortOrFullLink,
+            linkOwnerSig = linkOwnerSig,
+            initialIdentity = initialPreviewIdentity,
+            previewAttemptContext = previewAttemptContext,
           )
         }
         ContactAddressPlan.ConnectingConfirmReconnect -> {
           Log.d(TAG, "planAndConnect, .ContactAddress, .ConnectingConfirmReconnect")
-          askCurrentOrIncognitoProfileAlert(
+          showConnectionPreviewOrLegacy(
             chatModel, rhId, connectionLink, connectionPlan, close,
             title = generalGetString(MR.strings.connect_plan_repeat_connection_request),
             text = generalGetString(MR.strings.connect_plan_you_have_already_requested_connection_via_this_address) + linkText,
             connectDestructive = true,
             cleanup = cleanup,
+            presentationPolicy = presentationPolicy,
+            originalLink = shortOrFullLink,
+            linkOwnerSig = linkOwnerSig,
+            initialIdentity = initialPreviewIdentity,
+            previewAttemptContext = previewAttemptContext,
           )
         }
         is ContactAddressPlan.ConnectingProhibit -> {
@@ -233,13 +390,18 @@ private suspend fun planAndConnectTask(
             )
           } else {
             Log.d(TAG, "planAndConnect, .GroupLink, .Ok, no short link data")
-            askCurrentOrIncognitoProfileAlert(
+            showConnectionPreviewOrLegacy(
               chatModel, rhId, connectionLink, connectionPlan, close,
               title = generalGetString(MR.strings.connect_via_group_link),
               text = generalGetString(MR.strings.you_will_join_group) + linkText,
               connectDestructive = false,
               cleanup = cleanup,
               ownerVerification = connectionPlan.groupLinkPlan.ownerVerification,
+              presentationPolicy = presentationPolicy,
+              originalLink = shortOrFullLink,
+              linkOwnerSig = linkOwnerSig,
+              initialIdentity = initialPreviewIdentity,
+              previewAttemptContext = previewAttemptContext,
             )
           }
         is GroupLinkPlan.OwnLink -> {
@@ -253,12 +415,17 @@ private suspend fun planAndConnectTask(
         }
         GroupLinkPlan.ConnectingConfirmReconnect -> {
           Log.d(TAG, "planAndConnect, .GroupLink, .ConnectingConfirmReconnect")
-          askCurrentOrIncognitoProfileAlert(
+          showConnectionPreviewOrLegacy(
             chatModel, rhId, connectionLink, connectionPlan, close,
             title = generalGetString(MR.strings.connect_plan_repeat_join_request),
             text = generalGetString(MR.strings.connect_plan_you_are_already_joining_the_group_via_this_link) + linkText,
             connectDestructive = true,
             cleanup = cleanup,
+            presentationPolicy = presentationPolicy,
+            originalLink = shortOrFullLink,
+            linkOwnerSig = linkOwnerSig,
+            initialIdentity = initialPreviewIdentity,
+            previewAttemptContext = previewAttemptContext,
           )
         }
         is GroupLinkPlan.ConnectingProhibit -> {
@@ -360,6 +527,8 @@ private suspend fun planAndConnectTask(
         )
       }
     }
+  } else if (replanFailureHandled) {
+    completable.complete(false)
   } else {
     cleanup()
   }
@@ -404,6 +573,165 @@ fun planToConnectionLinkType(connectionPlan: ConnectionPlan): ConnectionLinkType
     is ConnectionPlan.GroupLink -> ConnectionLinkType.GROUP
     is ConnectionPlan.Error -> null
   }
+}
+
+private suspend fun showConnectionPreviewOrLegacy(
+  chatModel: ChatModel,
+  rhId: Long?,
+  connectionLink: CreatedConnLink,
+  connectionPlan: ConnectionPlan,
+  close: (() -> Unit)?,
+  title: String,
+  text: String? = null,
+  connectDestructive: Boolean,
+  cleanup: (() -> Unit)?,
+  ownerVerification: OwnerVerification? = null,
+  presentationPolicy: ConnectionPreviewEntryPolicy,
+  originalLink: String,
+  linkOwnerSig: LinkOwnerSig?,
+  initialIdentity: ConnectionPreviewIdentity,
+  previewAttemptContext: ConnectionPreviewAttemptContext?,
+) {
+  if (presentationPolicy == ConnectionPreviewEntryPolicy.ExternalActionView) {
+    val context = previewAttemptContext
+    val currentUser = chatModel.currentUser.value
+    fun contextStillMatches(): Boolean =
+      context != null &&
+          connectionPreviewContextMatches(
+            context = context,
+            currentUserId =
+              chatModel.currentUser.value?.userId,
+            currentUserRemoteHostId =
+              chatModel.currentUser.value?.remoteHostId,
+            currentControllerRemoteHostId =
+              chatModel.remoteHostId(),
+          )
+    if (
+      context == null ||
+      currentUser == null ||
+      !contextStillMatches()
+    ) {
+      cleanup?.invoke()
+      return
+    }
+    val uiModel = connectionPreviewUiModel(
+      connectionPlan = connectionPlan,
+      currentProfileName = currentUser.profile.profileViewName,
+      currentProfileImage = currentUser.profile.image,
+      initialIdentity = initialIdentity,
+      attemptId = context.attemptId,
+    )
+    if (uiModel != null) {
+      val cleanupStarted = AtomicBoolean(false)
+      val cleanupOnce = {
+        if (cleanupStarted.compareAndSet(false, true)) {
+          cleanup?.invoke()
+        }
+      }
+      val connectStarted = AtomicBoolean(false)
+      val presented = withContext(Dispatchers.Main) {
+        presentPlatformConnectionPreview(
+          model = uiModel,
+          callbacks = ConnectionPreviewCallbacks(
+            connect = { identity ->
+              if (!connectStarted.compareAndSet(false, true)) {
+                ConnectionPreviewAttemptResult.Failure(
+                  ConnectionPreviewFailureKind.Other,
+                )
+              } else {
+                if (!contextStillMatches()) {
+                  ConnectionPreviewAttemptResult.ContextChanged
+                } else {
+                  val result =
+                    chatModel.controller.apiConnectResult(
+                      rh = context.remoteHostId,
+                      userId = context.userId,
+                      incognito =
+                        identity ==
+                          ConnectionPreviewIdentity.Incognito,
+                      connLink = connectionLink,
+                    )
+                  if (!contextStillMatches()) {
+                    ConnectionPreviewAttemptResult.ContextChanged
+                  } else {
+                    when (result) {
+                      is APIConnectResult.Pending -> {
+                        withContext(Dispatchers.Main) {
+                          chatModel.chatsContext
+                            .updateContactConnection(
+                              context.remoteHostId,
+                              result.connection,
+                            )
+                        }
+                        close?.invoke()
+                        ConnectionPreviewAttemptResult.Pending
+                      }
+                      is APIConnectResult.AlreadyExists ->
+                        ConnectionPreviewAttemptResult.AlreadyExists(
+                          result.contact.displayName,
+                        )
+                      is APIConnectResult.Failure ->
+                        ConnectionPreviewAttemptResult.Failure(
+                          connectionPreviewFailureKind(
+                            result.response,
+                          ),
+                        )
+                      APIConnectResult.NoCurrentUser ->
+                        ConnectionPreviewAttemptResult.NoCurrentUser
+                    }
+                  }
+                }
+              }
+            },
+            retry = { identity ->
+              ConnectionPreviewRetryResult.Handoff {
+                closeCurrentPreview,
+                planningFailed,
+              ->
+                if (!contextStillMatches()) {
+                  planningFailed(
+                    ConnectionPreviewFailureKind.ContextChanged,
+                  )
+                } else {
+                  planAndConnect(
+                    rhId = context.remoteHostId,
+                    shortOrFullLink = originalLink,
+                    linkOwnerSig = linkOwnerSig,
+                    close = close,
+                    cleanup = cleanupOnce,
+                    presentationPolicy =
+                      ConnectionPreviewEntryPolicy.ExternalActionView,
+                    initialPreviewIdentity = identity,
+                    replanCallbacks =
+                      ConnectionPreviewReplanCallbacks(
+                        closeCurrentPreview =
+                          closeCurrentPreview,
+                        planningFailed = planningFailed,
+                      ),
+                  )
+                }
+              }
+            },
+            cancel = cleanupOnce,
+            isActive = { !cleanupStarted.get() },
+          ),
+        )
+      }
+      if (presented) return
+    }
+  }
+  askCurrentOrIncognitoProfileAlert(
+    chatModel = chatModel,
+    rhId = rhId,
+    connectionLink = connectionLink,
+    connectionPlan = connectionPlan,
+    close = close,
+    title = title,
+    text = text,
+    connectDestructive = connectDestructive,
+    cleanup = cleanup,
+    ownerVerification = ownerVerification,
+  )
 }
 
 fun askCurrentOrIncognitoProfileAlert(

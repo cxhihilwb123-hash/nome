@@ -1,6 +1,6 @@
 # Navigation Specification
 
-Sources: `common/src/commonMain/kotlin/chat/simplex/common/App.kt`, `common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.kt`, and its Android/Desktop actuals
+Sources: `common/src/commonMain/kotlin/chat/simplex/common/App.kt`, the platform home actuals, and the P13 connection-preview seam/actuals
 
 ---
 
@@ -16,6 +16,7 @@ Sources: `common/src/commonMain/kotlin/chat/simplex/common/App.kt`, `common/src/
 8. [Onboarding Flow](#8-onboarding-flow)
 9. [Source Files](#9-source-files)
 10. [Nome Android Production Home Seam](#10-nome-android-production-home-seam)
+11. [Nome Android External Connection Preview](#11-nome-android-external-connection-preview)
 
 ---
 
@@ -404,3 +405,43 @@ At the Android Activity boundary, [`NomeProductionShell()`](../../android/src/ma
 Batch 2 navigation is deliberately limited to opening an already-ready direct, group, or local chat through existing actions while the core is running. It adds no favorite/profile/connection mutation, search flow, composer/send flow, locale-marker route, new modal zone, new destination, or Desktop UI.
 
 The source/test links above describe the implemented split. They do not claim a current build, `desktopTest`, Android device run, screenshot comparison, real-core run, or review gate has passed.
+
+---
+
+## 11. Nome Android External Connection Preview
+
+The P13 route does not add a root destination or a second navigation stack. Its production path is:
+
+```text
+Android ACTION_VIEW
+  -> MainActivity.processIntent
+  -> ChatModel.appOpenUrl
+  -> unchanged onboarding-complete + chatRunning gate
+  -> connectIfOpenedViaUri (the only ExternalActionView opt-in)
+  -> planAndConnect
+  -> typed APIConnectPlan result
+  -> seven eligible identity-choice branches
+  -> ModalManager.fullscreen
+  -> Android Nome P13 route
+```
+
+[`connectIfOpenedViaUri`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatListView.kt#L738-L754)
+is the only caller that passes `ExternalActionView`.
+[`planAndConnect`](../../common/src/commonMain/kotlin/chat/simplex/common/views/newchat/ConnectPlan.kt#L25-L607)
+defaults to `Legacy`, so New Chat, scan/paste, link search, message links, chat preview links, and
+group-member links remain unchanged. The exhaustive branch adapter offers P13 only for invitation
+fresh/own, address fresh/own/repeat-request, and group fresh/repeat-join branches without
+short-link preparation data. Every other plan remains with the existing upstream branch.
+
+The Android actual uses the already-rendered `ModalManager.fullscreen` zone; it does not own root
+back state. System back and visible cancel are ignored while a connect/replan command is active,
+then use one idempotent cleanup closure. Retry keeps the current modal in `Replanning` while asking
+the core for a fresh plan with the selected identity and current host. A typed planning failure or
+missing current user returns that same modal to `Failure`; only a successful new plan or an
+authoritative legacy fallback closes it as an idempotent handoff. Desktop's actual returns `false`,
+so it owns no Nome route and preserves legacy presentation.
+
+The raw URI and owner signature are closure-only and never become navigation arguments, saved
+state, semantics, or evidence labels. P13 does not alter P08 `FIRST_USE` or
+`FILTERED_NO_RESULT`, create a P10 home control, implement P12 camera behavior, or absorb P16 group
+details.

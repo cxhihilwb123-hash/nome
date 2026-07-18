@@ -163,7 +163,11 @@ fun processIntent(intent: Intent?) {
     "android.intent.action.VIEW" -> {
       val uri = intent.data
       if (uri != null) {
-        chatModel.appOpenUrl.value = null to uri.toString()
+        chatModel.appOpenUrl.value = AppOpenUrl(
+          remoteHostId = null,
+          uri = uri.toString(),
+          source = AppOpenUrlSource.ExternalActionView,
+        )
       } else {
         AlertManager.shared.showAlertMsg(generalGetString(MR.strings.error_parsing_uri_title), generalGetString(MR.strings.error_parsing_uri_desc))
       }

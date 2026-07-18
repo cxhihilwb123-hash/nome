@@ -1,6 +1,6 @@
 # Nome Android
 
-> **Status:** Phase 2 Android-only design foundation and the authorized Batch 2 production shell plus bounded, read-only P07/P08 production-home slice are implemented and have passed their execution gates. Formal frozen-review status is owned exclusively by the batch evidence root's `review-rounds.md`; this product view does not assert that outcome. `FIRST_USE` and `FILTERED_NO_RESULT` remain renderer-only/deferred production-reachability branches, and no other production page is claimed.
+> **Status:** Phase 2 Android-only design foundation and the authorized Batch 2 production shell plus bounded, read-only P07/P08 production-home slice are frozen. Batch 3 adds only the authorized P13 external-link connection-preview source; its execution and review status is owned exclusively by its evidence root and is not asserted here. `FIRST_USE` and `FILTERED_NO_RESULT` remain renderer-only/deferred production-reachability branches. P09–P12 and P14–P24 are not claimed.
 > **Related spec:** [spec/client/nome-android-ui.md](../../spec/client/nome-android-ui.md)
 > **Coverage matrix:** [plans/20260716_03.md](../../../../plans/20260716_03.md)
 
@@ -25,7 +25,7 @@ The product promise is:
 - A visual prototype or screenshot is not a product state source.
 - P01–P24 are the P0 effect-page set, not the complete reachable product boundary.
 - Desktop must not be rebranded accidentally through broad `commonMain` changes.
-- The current production slice is home projection plus navigation into already-ready direct/group/note conversations. It does not authorize home mutations, a second navigation stack, a second controller/model, or direct native calls.
+- Batch 2's home slice is projection plus navigation into already-ready direct/group/note conversations; Batch 3 adds only the external-link P13 modal. Neither authorizes home mutations, a second navigation stack, a second controller/model, or direct native calls.
 
 ## Information architecture
 
@@ -90,7 +90,8 @@ Minimum interaction rules:
 
 ## Phase 2 source placement
 
-The Android-only foundation keeps its frozen placements, and Batch 2 adds one split production host/home route:
+The Android-only foundation keeps its frozen placements, Batch 2 adds one split production
+host/home route, and Batch 3 adds one P13 connection seam:
 
 - tokens, theme, components, and accessibility primitives: `common/src/androidMain/kotlin/chat/simplex/common/ui/nome/{tokens,theme,components,accessibility}/`;
 - Activity/window host: [`NomeProductionShell.kt`](../../android/src/main/java/chat/simplex/app/nome/NomeProductionShell.kt#L9-L23), installed around the unchanged `AppScreen` by [`MainActivity`](../../android/src/main/java/chat/simplex/app/MainActivity.kt#L60-L65);
@@ -102,6 +103,15 @@ The Android-only foundation keeps its frozen placements, and Batch 2 adds one sp
 - deterministic fixtures, screenshot harness, and Preview entry points: `android/src/debug/java/chat/simplex/app/nome/`;
 - JVM/unit tests: `android/src/test/java/chat/simplex/app/nome/`;
 - instrumentation/device tests: `android/src/androidTest/java/chat/simplex/app/nome/`, including an explicit argument-gated real-core stop/start gate that preserves the exact non-empty cached chat-ID sequence.
+- shared P13 safe model and policy:
+  [`PlatformConnectionPreview.kt`](../../common/src/commonMain/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreview.kt#L13-L292), offered only from
+  [`connectIfOpenedViaUri`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatListView.kt#L738-L754);
+- typed P13 command truth:
+  [`apiConnectPlanResult` and `apiConnectResult`](../../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1571-L1647), which suppress P13 terminal command logging without changing legacy wrappers;
+- Android P13 actual, reducer, renderer, and bilingual resources:
+  `common/src/androidMain/kotlin/chat/simplex/common/{views/newchat/PlatformConnectionPreview.android.kt,ui/nome/connection/**}` and `common/src/androidMain/res/values*/nome_connection_preview_strings.xml`;
+- Desktop P13 actual:
+  `common/src/desktopMain/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreview.desktop.kt`, which returns `false` and preserves legacy presentation.
 
 The app-module shell cannot replace a route selected inside `AppScreen` without duplicating or overlaying the official root/navigation. The narrow `expect`/`actual` seam therefore keeps root gates, authentication, calls, share intents, overlays, safe areas, and back behavior in their existing owners while keeping all Nome presentation in `androidMain`. The Desktop actual and test constrain the shared seam to fallback behavior.
 
@@ -146,6 +156,36 @@ Explicit exclusions:
 
 The independent Batch 2 evidence records the real-device, real-core, screenshot, manual TalkBack, threat-model, and release-isolation execution gates. Formal two-round review status is recorded only by that evidence root's `review-rounds.md` and is not asserted by this product view. Those execution results cover only the authorized production-home slice and do not close the two production-reachability gaps above.
 
+## Batch 3 P13 production boundary
+
+P13 is reachable only after Android delivers a supported external `ACTION_VIEW` URI and the
+unchanged root has an active user and running core. The upstream controller still performs the
+real connection plan. Nome replaces only the seven existing current/incognito identity-choice
+branches:
+
+- fresh invitation, address, or group plans without short-link preparation data;
+- the invitation/address own-link warnings; and
+- the address repeat-request and group repeat-join warnings.
+
+Every other core plan retains its existing path. In particular, short-link preparation, known or
+prohibited objects, group own-link/no-relay/update-required, and plan errors do not enter P13.
+New Chat, scan/paste, link search, message links, chat preview links, and group-member links retain
+their legacy presentation.
+
+The page shows only safe type, consequence, local-profile, warning, and owner-proof facts. The raw
+URI, resolved `CreatedConnLink`, and owner signature stay in an ephemeral common closure. Current
+profile and new incognito profile are mutually exclusive; incognito is for this connection, not a
+persistent identity. Continue is single-submit, checks the same user/host, and reaches pending only
+after the core returns `SentConfirmation` or `SentInvitation` with a real pending connection.
+Failure, already-existing contact, missing user, changed context, and cancellation remain
+non-success. Retry retains the selected identity, asks the core for a fresh plan under the current
+user/host, keeps typed planning failure or missing-user truth on the current page, and delegates a
+successful changed plan back to the authoritative existing branch.
+
+Batch 3 does not add a home connection entry, scanner/camera behavior, P14 request mutation, P16
+group details, or any other P09–P24 page. It changes no Haskell/native core, `Core.kt`, protocol,
+database/archive, message-state-machine, iOS, or Desktop UI behavior.
+
 ## Accessibility and evidence contract
 
 Each batch is complete only when all applicable page states have:
@@ -171,10 +211,18 @@ The 2026-07-17 delegated decision adopts the recommended route for GAP-08 throug
 - API 26–27 are unsupported and no native rebuild or native/core source change is authorized;
 - every C row in the coverage matrix remains a missing capability. A product decision can remove or reword that state, but it cannot reclassify C as A/B or mark it implemented.
 
-The foundation batch is complete under its own frozen evidence. Batch 2 is the first deliberately narrow production slice: its shell and bounded P07/P08 production-home execution gates are complete. Formal review status is owned only by the independent evidence root's `review-rounds.md`; this product view does not assert it. The first-use/filter reachability gaps and all later pages remain outside this source batch.
+The foundation and Batch 2 remain complete under their own frozen evidence. Batch 3 is a second
+deliberately narrow production slice and contains P13 only. Formal review status is owned only by
+the independent batch evidence roots. The first-use/filter reachability gaps remain unchanged,
+and P09–P12 plus P14–P24 remain outside this source batch.
 
 ## Current evidence
 
 The unchanged v6.5.6 baseline and Phase 2 foundation evidence remain read-only. The foundation records the Android-only tokens/theme/components/accessibility and non-exported debug harness, 96 deterministic API 35 screenshots, Compose semantics/contrast checks, API 28 real-core startup, and API 35 same-package non-empty upgrade. Those records prove the foundation only.
 
 Batch 2 has a separate evidence root at [`plans/evidence/20260717_nome_android_phase2_batch2_home/README.md`](../../../../plans/evidence/20260717_nome_android_phase2_batch2_home/README.md). That root contains the execution artifacts summarized above. This product document does not itself claim the formal two-round result; only the evidence root's `review-rounds.md` owns that status.
+
+Batch 3 P13 uses a separate evidence root at
+`plans/evidence/20260717_nome_android_phase2_batch3_p13/`. Debug renderer captures are not
+real-core evidence; device production-route, two-client, accessibility, release-isolation, and
+same-digest review results remain authoritative only when recorded there.

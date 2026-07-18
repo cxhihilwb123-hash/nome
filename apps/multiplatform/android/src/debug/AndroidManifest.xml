@@ -3,6 +3,12 @@
 
   <application>
     <activity
+        android:name=".nome.connection.NomeConnectionPreviewEvidenceActivity"
+        android:excludeFromRecents="true"
+        android:exported="false"
+        android:label="@string/nome_connection_preview_evidence_activity_label"
+        android:theme="@style/Theme.SimpleX" />
+    <activity
         android:name=".nome.home.NomeHomeEvidenceActivity"
         android:excludeFromRecents="true"
         android:exported="false"

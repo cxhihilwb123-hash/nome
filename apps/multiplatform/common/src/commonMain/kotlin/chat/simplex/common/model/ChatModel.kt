@@ -191,8 +191,8 @@ object ChatModel {
   // Only needed during onboarding when user skipped password setup (left as random password)
   val desktopOnboardingRandomPassword = mutableStateOf(false)
 
-  // set when app is opened via contact or invitation URI (rhId, uri)
-  val appOpenUrl = mutableStateOf<Pair<Long?, String>?>(null)
+  // set when app is opened via contact or invitation URI; ingress provenance survives onboarding
+  val appOpenUrl = mutableStateOf<AppOpenUrl?>(null)
   val appOpenUrlConnecting = mutableStateOf<Boolean>(false)
 
   // Needed to check for bottom nav bar and to apply or not navigation bar color on Android
@@ -1283,6 +1283,17 @@ object ChatModel {
   val connectedToRemote: Boolean @Composable get() = currentRemoteHost.value != null || remoteCtrlSession.value?.active == true
   fun connectedToRemote(): Boolean = currentRemoteHost.value != null || remoteCtrlSession.value?.active == true
 }
+
+enum class AppOpenUrlSource {
+  ExternalActionView,
+  InternalVerified,
+}
+
+data class AppOpenUrl(
+  val remoteHostId: Long?,
+  val uri: String,
+  val source: AppOpenUrlSource,
+)
 
 data class ShowingInvitation(
   val connId: String,

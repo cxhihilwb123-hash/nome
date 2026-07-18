@@ -42,6 +42,9 @@ Common Module (commonMain)
 |   +-- StartPartOfScreen -> PlatformHomeRoute
 |       +-- Android actual: Nome home route + Android-only presentation adapter
 |       +-- Desktop actual: delegates the existing ChatListView content unchanged
+|   +-- Android ACTION_VIEW -> planAndConnect -> PlatformConnectionPreview
+|       +-- Android actual: Nome P13 fullscreen route + reducer
+|       +-- Desktop actual: declines and preserves the legacy connection alert
 |   +-- ChatListView -> ChatView -> ComposeView -> SendMsgView
 |   +-- ChatItemView (message rendering: text, image, video, voice, file, call, events)
 |   +-- Settings: SettingsView, UserProfileView, UserProfilesView
@@ -96,7 +99,7 @@ Common Module (commonMain)
 | Chat List | [spec/client/chat-list.md](client/chat-list.md) | ChatListView, ChatPreviewView, filtering, search, tags |
 | Compose | [spec/client/compose.md](client/compose.md) | ComposeView, SendMsgView, ComposeState, attachments, mentions |
 | Navigation | [spec/client/navigation.md](client/navigation.md) | App screen routing, onboarding, settings, new chat flows |
-| Nome Android UI | [spec/client/nome-android-ui.md](client/nome-android-ui.md) | Android-only Phase 2 foundation and authorized Batch 2 production-home seam/state adapter, with execution evidence and explicit deferred platform boundaries |
+| Nome Android UI | [spec/client/nome-android-ui.md](client/nome-android-ui.md) | Android-only Phase 2 foundation, Batch 2 production home, and Batch 3 P13 external-link preview with explicit ingress/fallback/evidence boundaries |
 | Calls | [spec/services/calls.md](services/calls.md) | WebRTC call lifecycle, signaling, platform-specific call views |
 | Files | [spec/services/files.md](services/files.md) | File transfer (SMP inline / XFTP), CryptoFile encryption, platform file paths |
 | Notifications | [spec/services/notifications.md](services/notifications.md) | NtfManager, SimplexService, notification channels, background delivery |
@@ -111,10 +114,10 @@ Common Module (commonMain)
 | Overview | [product/README.md](../product/README.md) | Product overview, capability map, navigation map |
 | Concepts | [product/concepts.md](../product/concepts.md) | 32 product concepts (PC1-PC32) mapped to docs, exact source, or remaining planned boundary |
 | Glossary | [product/glossary.md](../product/glossary.md) | Domain term definitions (9 sections) |
-| Rules | [product/rules.md](../product/rules.md) | 18 business rules in 6 categories |
+| Rules | [product/rules.md](../product/rules.md) | 20 business rules, including Nome home and external-connection truth |
 | Gaps | [product/gaps.md](../product/gaps.md) | 18 numbered audit entries: 17 open gaps plus resolved historical GAP-06 |
 | Flows | [product/flows/](../product/flows/) | onboarding, messaging, connection, calling, file-transfer, group-lifecycle |
-| Views | [product/views/](../product/views/) | chat-list, chat, settings, onboarding, call, new-chat, contact-info, group-info, user-profiles, and the Nome Android foundation/production home seam |
+| Views | [product/views/](../product/views/) | chat-list, chat, settings, onboarding, call, new-chat, contact-info, group-info, user-profiles, and the Nome Android foundation/home/P13 boundaries |
 
 ---
 
@@ -141,6 +144,12 @@ Common Module (commonMain)
 | Chat List Load Contract | [`ChatModel.kt`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L81-L106) | `ChatListLoadGeneration`, `ChatListLoadState`, `ChatListLoadResult` |
 | Chat Model | [`ChatModel.kt`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L137) | `object ChatModel` |
 | Chat List Result Application | [`ChatModel.kt`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L264-L311) | `beginChatListLoad`, `applyChatListLoadResult` |
+| P13 Typed Delegates | [`SimpleXAPI.kt`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1571-L1647) | `apiConnectPlanResult`, `apiConnectResult` |
+| Shared P13 Policy/Seam | [`PlatformConnectionPreview.kt`](../common/src/commonMain/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreview.kt#L13-L292) | safe UI model, exhaustive branch policy, `presentPlatformConnectionPreview` |
+| P13 Production Opt-in | [`ChatListView.kt`](../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatListView.kt#L738-L754) | `connectIfOpenedViaUri` |
+| Nome Android P13 Route | [`NomeConnectionPreviewRoute.android.kt`](../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/connection/NomeConnectionPreviewRoute.android.kt#L65-L742) | fullscreen route and content |
+| Nome Android P13 Reducer | [`NomeConnectionPreviewStateAdapter.kt`](../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/connection/NomeConnectionPreviewStateAdapter.kt#L6-L99) | single-submit presentation state |
+| Desktop P13 Fallback | [`PlatformConnectionPreview.desktop.kt`](../common/src/desktopMain/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreview.desktop.kt#L3-L6) | declines Nome presentation |
 | App Preferences | [`SimpleXAPI.kt`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L102) | `class AppPreferences` |
 | Android Network Observation | [`NetworkObserver.kt`](../common/src/androidMain/kotlin/chat/simplex/common/helpers/NetworkObserver.kt#L16-L24) | `NetworkObserver.platformNetworkInfo` |
 | Platform Interface | [`Platform.kt`](../common/src/commonMain/kotlin/chat/simplex/common/platform/Platform.kt#L15) | `interface PlatformInterface` |

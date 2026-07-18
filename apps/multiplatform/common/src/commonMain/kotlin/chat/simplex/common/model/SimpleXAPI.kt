@@ -1568,6 +1568,31 @@ object ChatController {
     return null
   }
 
+  /**
+   * P13-only typed delegate.
+   *
+   * Unlike [apiConnectPlan], this delegate does not open retry/error alerts and deliberately
+   * suppresses terminal command logging because a connection link is a bearer credential.
+   * Cancellation from [sendCmd] is allowed to propagate to the owning presentation coroutine.
+   */
+  suspend fun apiConnectPlanResult(
+    rh: Long?,
+    userId: Long,
+    connLink: String,
+    linkOwnerSig: LinkOwnerSig? = null,
+  ): APIConnectPlanResult {
+    val r = sendCmd(
+      rh,
+      CC.APIConnectPlan(userId, connLink, linkOwnerSig),
+      log = false,
+    )
+    return if (r is API.Result && r.res is CR.CRConnectionPlan) {
+      APIConnectPlanResult.Ready(r.res.connLink, r.res.connectionPlan)
+    } else {
+      APIConnectPlanResult.Failure(r)
+    }
+  }
+
   suspend fun apiConnect(rh: Long?, incognito: Boolean, connLink: CreatedConnLink): PendingContactConnection?  {
     val userId = try { currentUserId("apiConnect") } catch (e: Exception) { return null }
     val r = sendCmdWithRetry(rh, CC.APIConnect(userId, incognito, connLink))
@@ -1584,7 +1609,37 @@ object ChatController {
     return null
   }
 
-  private fun apiConnectResponseAlert(r: API) {
+  /**
+   * P13-only typed delegate. It preserves every response category and owns no presentation.
+   */
+  private suspend fun ensureP13ConnectAttemptActive() {
+    currentCoroutineContext().ensureActive()
+  }
+
+  suspend fun apiConnectResult(
+    rh: Long?,
+    userId: Long,
+    incognito: Boolean,
+    connLink: CreatedConnLink,
+  ): APIConnectResult {
+    val r = sendCmd(
+      rh,
+      CC.APIConnect(userId, incognito, connLink),
+      log = false,
+    )
+    ensureP13ConnectAttemptActive()
+    return when {
+      r is API.Result && r.res is CR.SentConfirmation ->
+        APIConnectResult.Pending(r.res.connection)
+      r is API.Result && r.res is CR.SentInvitation ->
+        APIConnectResult.Pending(r.res.connection)
+      r is API.Result && r.res is CR.ContactAlreadyExists ->
+        APIConnectResult.AlreadyExists(r.res.contact)
+      else -> APIConnectResult.Failure(r)
+    }
+  }
+
+  fun apiConnectResponseAlert(r: API) {
     when {
       r is API.Error && r.err is ChatError.ChatErrorChat
           && r.err.errorType is ChatErrorType.InvalidConnReq -> {
@@ -6974,6 +7029,29 @@ sealed class CR {
 fun apiChatErrorType(r: API): ChatErrorType? =
   if (r is API.Error && r.err is ChatError.ChatErrorChat) r.err.errorType
   else null
+
+sealed class APIConnectPlanResult {
+  data class Ready(
+    val connectionLink: CreatedConnLink,
+    val connectionPlan: ConnectionPlan,
+  ) : APIConnectPlanResult()
+
+  data class Failure(val response: API) : APIConnectPlanResult()
+
+  data object NoCurrentUser : APIConnectPlanResult()
+}
+
+sealed class APIConnectResult {
+  data class Pending(
+    val connection: PendingContactConnection,
+  ) : APIConnectResult()
+
+  data class AlreadyExists(val contact: Contact) : APIConnectResult()
+
+  data class Failure(val response: API) : APIConnectResult()
+
+  data object NoCurrentUser : APIConnectResult()
+}
 
 @Serializable
 sealed class ChatDeleteMode {
