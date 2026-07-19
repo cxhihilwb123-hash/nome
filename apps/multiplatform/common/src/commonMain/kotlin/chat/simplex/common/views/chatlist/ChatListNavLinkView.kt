@@ -393,11 +393,30 @@ fun TagListAction(
     stringResource(if (chat.chatInfo.chatTags.isNullOrEmpty()) MR.strings.add_to_list else MR.strings.change_list),
     painterResource(MR.images.ic_label),
     onClick = {
-      ModalManager.start.showModalCloseable { close ->
-        if (userTags.value.isEmpty()) {
-          TagListEditor(rhId = chat.remoteHostId, chat = chat, close = close)
-        } else {
-          TagListView(rhId = chat.remoteHostId, chat = chat, close = close, reorderMode = false)
+      if (appPlatform.isAndroid) {
+        ModalManager.start.showCustomModal { close ->
+          if (userTags.value.isEmpty()) {
+            TagListEditor(
+              rhId = chat.remoteHostId,
+              chat = chat,
+              close = close,
+            )
+          } else {
+            TagListView(
+              rhId = chat.remoteHostId,
+              chat = chat,
+              close = close,
+              reorderMode = false,
+            )
+          }
+        }
+      } else {
+        ModalManager.start.showModalCloseable { close ->
+          if (userTags.value.isEmpty()) {
+            TagListEditor(rhId = chat.remoteHostId, chat = chat, close = close)
+          } else {
+            TagListView(rhId = chat.remoteHostId, chat = chat, close = close, reorderMode = false)
+          }
         }
       }
       showMenu.value = false
@@ -693,6 +712,40 @@ fun markChatUnread(chat: Chat, chatModel: ChatModel) {
 }
 
 fun contactRequestAlertDialog(rhId: Long?, contactRequest: ChatInfo.ContactRequest, chatModel: ChatModel, onSucess: ((chat: Chat) -> Unit)? = null) {
+  if (
+    showPlatformContactRequestRoute(
+      contactRequest = contactRequest,
+      currentUser = chatModel.currentUser.value,
+      canAcceptIncognito =
+        !chatModel.addressShortLinkDataSet(),
+      onAccept = { incognito ->
+        val chat =
+          acceptContactRequestNow(
+            rhId = rhId,
+            incognito = incognito,
+            contactRequestId = contactRequest.apiId,
+            isCurrentUser = true,
+            chatModel = chatModel,
+          )
+        if (chat != null) {
+          onSucess?.invoke(chat)
+          true
+        } else {
+          false
+        }
+      },
+      onReject = {
+        rejectContactRequestNow(
+          rhId = rhId,
+          contactRequestId = contactRequest.apiId,
+          chatModel = chatModel,
+          dismissToChatList = false,
+        )
+      },
+    )
+  ) {
+    return
+  }
   AlertManager.shared.showAlertDialogButtonsColumn(
     title = generalGetString(MR.strings.accept_connection_request__question),
     text = AnnotatedString(generalGetString(MR.strings.if_you_choose_to_reject_the_sender_will_not_be_notified)),
@@ -735,37 +788,111 @@ fun acceptContactRequest(
 ) {
   withBGApi {
     inProgress?.value = true
-    val contact = chatModel.controller.apiAcceptContactRequest(rhId, incognito, contactRequestId)
-    if (contact != null && isCurrentUser) {
-      val chat = Chat(remoteHostId = rhId, ChatInfo.Direct(contact), listOf())
-      withContext(Dispatchers.Main) {
-        if (contact.contactRequestId != null) { // means contact request was initially created with contact, so we don't need to replace it
-          chatModel.chatsContext.updateContact(rhId, contact)
-        } else {
-          chatModel.chatsContext.replaceChat(rhId, contactRequestChatId(contactRequestId), chat)
-        }
-        inProgress?.value = false
-      }
-      close?.invoke(chat)
-    } else {
+    val chat =
+      acceptContactRequestNow(
+        rhId = rhId,
+        incognito = incognito,
+        contactRequestId = contactRequestId,
+        isCurrentUser = isCurrentUser,
+        chatModel = chatModel,
+      )
+    withContext(Dispatchers.Main) {
       inProgress?.value = false
+    }
+    if (chat != null) {
+      close?.invoke(chat)
     }
   }
 }
 
-fun rejectContactRequest(rhId: Long?, contactRequestId: Long, chatModel: ChatModel, dismissToChatList: Boolean = false) {
-  withBGApi {
-    val contact_ = chatModel.controller.apiRejectContactRequest(rhId, contactRequestId)
-    withContext(Dispatchers.Main) {
-      if (contact_ != null) { // means contact request was initially created with contact, so we need to remove contact chat
-        chatModel.chatsContext.removeChat(rhId, contact_.id)
-      } else {
-        chatModel.chatsContext.removeChat(rhId, contactRequestChatId(contactRequestId))
-      }
-      if (dismissToChatList) {
-        chatModel.chatId.value = null
-      }
+private suspend fun acceptContactRequestNow(
+  rhId: Long?,
+  incognito: Boolean,
+  contactRequestId: Long,
+  isCurrentUser: Boolean,
+  chatModel: ChatModel,
+): Chat? {
+  val contact =
+    chatModel.controller.apiAcceptContactRequest(
+      rhId,
+      incognito,
+      contactRequestId,
+    )
+  if (contact == null || !isCurrentUser) {
+    return null
+  }
+  val chat =
+    Chat(
+      remoteHostId = rhId,
+      ChatInfo.Direct(contact),
+      listOf(),
+    )
+  withContext(Dispatchers.Main) {
+    if (contact.contactRequestId != null) {
+      // The request already had a contact chat.
+      chatModel.chatsContext.updateContact(rhId, contact)
+    } else {
+      chatModel.chatsContext.replaceChat(
+        rhId,
+        contactRequestChatId(contactRequestId),
+        chat,
+      )
     }
+  }
+  return chat
+}
+
+private suspend fun rejectContactRequestNow(
+  rhId: Long?,
+  contactRequestId: Long,
+  chatModel: ChatModel,
+  dismissToChatList: Boolean,
+): Boolean =
+  when (
+    val result =
+      chatModel.controller
+        .apiRejectContactRequestResult(
+          rhId,
+          contactRequestId,
+        )
+  ) {
+    is APIRejectContactRequestResult.Rejected -> {
+      val contact = result.contact
+      withContext(Dispatchers.Main) {
+        if (contact != null) {
+          // The request already had a contact chat.
+          chatModel.chatsContext.removeChat(
+            rhId,
+            contact.id,
+          )
+        } else {
+          chatModel.chatsContext.removeChat(
+            rhId,
+            contactRequestChatId(contactRequestId),
+          )
+        }
+        if (dismissToChatList) {
+          chatModel.chatId.value = null
+        }
+      }
+      true
+    }
+    APIRejectContactRequestResult.Failure -> false
+  }
+
+fun rejectContactRequest(
+  rhId: Long?,
+  contactRequestId: Long,
+  chatModel: ChatModel,
+  dismissToChatList: Boolean = false,
+) {
+  withBGApi {
+    rejectContactRequestNow(
+      rhId = rhId,
+      contactRequestId = contactRequestId,
+      chatModel = chatModel,
+      dismissToChatList = dismissToChatList,
+    )
   }
 }
 
@@ -896,6 +1023,45 @@ suspend fun connectContactViaAddress(chatModel: ChatModel, rhId: Long?, contactI
 }
 
 fun acceptGroupInvitationAlertDialog(rhId: Long?, groupInfo: GroupInfo, chatModel: ChatModel, inProgress: MutableState<Boolean>? = null) {
+  val inviterContact =
+    when (val invitedBy = groupInfo.membership.invitedBy) {
+      is InvitedBy.IBContact ->
+        (
+          chatModel.getContactChat(
+            invitedBy.byContactId,
+          )?.chatInfo as? ChatInfo.Direct
+        )?.contact
+      is InvitedBy.IBUnknown,
+      is InvitedBy.IBUser,
+      -> null
+    }
+  if (
+    showPlatformGroupInvitationRoute(
+      groupInfo = groupInfo,
+      inviterName = inviterContact?.displayName,
+      inviterVerified = inviterContact?.verified == true,
+      onJoin = {
+        inProgress?.value = true
+        val result =
+          chatModel.controller.apiJoinGroupResult(
+            rhId,
+            groupInfo.groupId,
+          )
+        inProgress?.value = false
+        when (result) {
+          is APIJoinGroupResult.Accepted,
+          APIJoinGroupResult.Unavailable,
+          -> true
+          APIJoinGroupResult.NotCompleted -> false
+        }
+      },
+      onDelete = {
+        deleteGroupNow(rhId, groupInfo, chatModel)
+      },
+    )
+  ) {
+    return
+  }
   AlertManager.shared.showAlertDialog(
     title = generalGetString(MR.strings.join_group_question),
     text = generalGetString(MR.strings.you_are_invited_to_group_join_to_connect_with_group_members),
@@ -923,18 +1089,31 @@ fun cantInviteIncognitoAlert() {
 
 fun deleteGroup(rhId: Long?, groupInfo: GroupInfo, chatModel: ChatModel) {
   withBGApi {
-    val r = chatModel.controller.apiDeleteChat(rhId, ChatType.Group, groupInfo.apiId)
-    if (r) {
-      withContext(Dispatchers.Main) {
-        chatModel.chatsContext.removeChat(rhId, groupInfo.id)
-      }
-      if (chatModel.chatId.value == groupInfo.id) {
-        chatModel.chatId.value = null
-        ModalManager.end.closeModals()
-      }
-      ntfManager.cancelNotificationsForChat(groupInfo.id)
-    }
+    deleteGroupNow(rhId, groupInfo, chatModel)
   }
+}
+
+private suspend fun deleteGroupNow(
+  rhId: Long?,
+  groupInfo: GroupInfo,
+  chatModel: ChatModel,
+): Boolean {
+  val deleted =
+    chatModel.controller.apiDeleteChat(
+      rhId,
+      ChatType.Group,
+      groupInfo.apiId,
+    )
+  if (!deleted) return false
+  withContext(Dispatchers.Main) {
+    chatModel.chatsContext.removeChat(rhId, groupInfo.id)
+  }
+  if (chatModel.chatId.value == groupInfo.id) {
+    chatModel.chatId.value = null
+    ModalManager.end.closeModals()
+  }
+  ntfManager.cancelNotificationsForChat(groupInfo.id)
+  return true
 }
 
 fun groupInvitationAcceptedAlert(rhId: Long?) {

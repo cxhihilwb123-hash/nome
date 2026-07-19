@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import dev.icerock.moko.resources.compose.stringResource
 import androidx.compose.desktop.ui.tooling.preview.Preview
+import chat.simplex.common.platform.appPlatform
 import chat.simplex.common.platform.ColumnWithScrollBar
 import chat.simplex.common.ui.theme.DEFAULT_PADDING
 import chat.simplex.common.ui.theme.SimpleXTheme
@@ -15,8 +16,28 @@ import chat.simplex.common.views.helpers.AppBarTitle
 import chat.simplex.res.MR
 
 @Composable
-fun HelpView(userDisplayName: String) {
-  HelpLayout(userDisplayName)
+fun HelpView(
+  userDisplayName: String,
+  close: (() -> Unit)? = null,
+) {
+  PlatformSettingsDetailRoute(
+    title =
+      stringResource(
+        if (appPlatform.isAndroid) {
+          MR.strings.nome_help_and_feedback
+        } else {
+          MR.strings.settings_section_title_help
+        },
+      ),
+    onClose = close,
+    groupedContent = true,
+    legacyContent = {
+      HelpLayout(userDisplayName)
+    },
+    content = {
+      ChatHelpView()
+    },
+  )
 }
 
 @Composable

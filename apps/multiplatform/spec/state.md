@@ -363,6 +363,30 @@ The `AppPreferences` instance is created lazily as [`ChatController.appPrefs`](.
 val appPrefs: AppPreferences by lazy { AppPreferences() }
 ```
 
+### Nome Android one-time locale initialization
+
+[`NomeLocaleInitializer`](../android/src/main/java/chat/simplex/app/nome/NomeLocaleInitializer.kt)
+is an Android/client-only adapter around the existing nullable `appLanguage` preference. Before
+`initHaskell()` or `initMultiplatform()` can create process state, `SimplexApp` freezes only these
+non-personal installation facts:
+
+- the versioned `nome_product/locale_policy_version` marker;
+- whether package first-install and last-update timestamps are equal;
+- whether either official chat/agent database file already exists;
+- whether the upstream application-preference store already contains any value.
+
+After `initMultiplatform()` makes the established `ChatController.appPrefs.appLanguage` owner
+available, the adapter reads that preference once. It writes `zh-CN` only when the marker is
+absent, the language is null, package metadata identifies a non-updated install, and both database
+and upstream-preference evidence were absent before initialization. Upgrade, restored,
+contradictory, existing-data, explicit-language, or already-marked cases never overwrite the
+language. A marker is committed after the first decision, including conservative preserve
+decisions. Unsupported stored language values are preserved and produce only a fixed,
+non-personal warning; the existing Android resource fallback remains authoritative.
+
+This adapter adds no user/account state, identity switch hook, database migration, Desktop/iOS
+behavior, or second locale preference.
+
 ### Preference Categories
 
 #### Notifications (lines 96-103)

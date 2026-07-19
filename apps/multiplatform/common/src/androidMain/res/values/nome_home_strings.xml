@@ -90,4 +90,39 @@
     <string name="nome_p10_group_body">Start the existing private group creation flow</string>
     <string name="nome_p10_channel">Public channel</string>
     <string name="nome_p10_channel_body">Start the existing public channel creation flow</string>
+
+    <string name="nome_p11_title">One-time invitation</string>
+    <string name="nome_p11_back">Close one-time invitation</string>
+    <string name="nome_p11_single_use">For one connection</string>
+    <string name="nome_p11_single_use_body">Shared as %1$s. Connection state comes only from actual events.</string>
+    <string name="nome_p11_profile_action">Current invitation profile: %1$s. Choose another profile.</string>
+    <string name="nome_p11_link_label">Invitation link</string>
+    <string name="nome_p11_copy">Copy link</string>
+    <string name="nome_p11_share">Share</string>
+    <string name="nome_p11_qr_title">One-time QR code</string>
+    <string name="nome_p11_qr_body">The other person can scan it with Nome</string>
+    <string name="nome_p11_share_invitation">Share invitation</string>
+    <string name="nome_p11_learn_more">Invitation info</string>
+    <string name="nome_p11_waiting">Invitation created. Connection state follows actual events.</string>
+    <string name="nome_p11_copied_local">Copied on this device. This does not mean the other person used it.</string>
+    <string name="nome_p11_shared_local">Share opened on this device. This does not mean the other person used it.</string>
+    <string name="nome_p11_creating">Creating an invitation</string>
+    <string name="nome_p11_create_failed">The invitation was not created</string>
+    <string name="nome_p11_retry">Retry</string>
+
+    <string name="nome_p12_title">Scan or paste</string>
+    <string name="nome_p12_back">Close scan or paste</string>
+    <string name="nome_p12_scan_tab">Scan</string>
+    <string name="nome_p12_paste_tab">Paste link</string>
+    <string name="nome_p12_selected">Selected</string>
+    <string name="nome_p12_not_selected">Not selected</string>
+    <string name="nome_p12_scan_heading">Place a QR code in the camera frame</string>
+    <string name="nome_p12_camera_permission">Android requests camera permission only after you choose to scan.</string>
+    <string name="nome_p12_open_camera">Open camera to scan</string>
+    <string name="nome_p12_link_label">SimpleX connection link</string>
+    <string name="nome_p12_link_input">Connection link</string>
+    <string name="nome_p12_link_placeholder">Paste a SimpleX link</string>
+    <string name="nome_p12_clipboard_action">Read from clipboard and check</string>
+    <string name="nome_p12_check">Check link</string>
+    <string name="nome_p12_plan_note">The official connection confirmation flow handles this link; details depend on parsing and the actual core result.</string>
 </resources>

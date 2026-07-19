@@ -46,7 +46,12 @@ actual fun desktopOpenDir(dir: File) {
 }
 
 @Composable
-actual fun rememberFileChooserLauncher(getContent: Boolean, rememberedValue: Any?, onResult: (URI?) -> Unit): FileChooserLauncher =
+actual fun rememberFileChooserLauncher(
+  getContent: Boolean,
+  rememberedValue: Any?,
+  saveMimeType: String?,
+  onResult: (URI?) -> Unit
+): FileChooserLauncher =
   remember(rememberedValue) { FileChooserLauncher(getContent, onResult) }
 
 @Composable

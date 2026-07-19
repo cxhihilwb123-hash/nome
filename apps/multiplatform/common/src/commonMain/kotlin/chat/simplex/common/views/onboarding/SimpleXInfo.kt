@@ -35,13 +35,19 @@ import chat.simplex.common.views.newchat.gradientPoints
 import chat.simplex.common.views.newchat.lightStops
 import chat.simplex.common.views.migration.MigrateToDeviceView
 import chat.simplex.common.views.migration.MigrationToState
+import chat.simplex.common.views.usersettings.PlatformAboutSettingsRoute
 import chat.simplex.res.MR
 import dev.icerock.moko.resources.StringResource
 import kotlin.math.ceil
 import kotlin.math.floor
 
 @Composable
-fun SimpleXInfo(chatModel: ChatModel, onboarding: Boolean = true) {
+fun SimpleXInfo(
+  chatModel: ChatModel,
+  onboarding: Boolean = true,
+  close: (() -> Unit)? = null,
+  showVersion: () -> Unit = {},
+) {
   if (onboarding) {
     if (appPlatform.isDesktop) {
       SimpleXInfoDesktop(chatModel)
@@ -56,9 +62,15 @@ fun SimpleXInfo(chatModel: ChatModel, onboarding: Boolean = true) {
       }
     }
   } else {
-    SimpleXInfoLayout(
-      user = chatModel.currentUser.value,
-      onboardingStage = null
+    PlatformAboutSettingsRoute(
+      onClose = close,
+      onOpenVersion = showVersion,
+      legacyContent = {
+        SimpleXInfoLayout(
+          user = chatModel.currentUser.value,
+          onboardingStage = null,
+        )
+      },
     )
   }
 }

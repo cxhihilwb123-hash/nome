@@ -8,6 +8,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.platform.*
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.icerock.moko.resources.compose.stringResource
 import boofcv.alg.drawing.FiducialImageEngine
@@ -69,6 +70,7 @@ fun QRCode(
   tintColor: Color = Color(0xff062d56),
   withLogo: Boolean = true,
   onShare: (() -> Unit)? = null,
+  imageSize: Dp? = null,
 ) {
   val scope = rememberCoroutineScope()
   val logoSize = if (small) 0.21f else 0.16f
@@ -77,15 +79,22 @@ fun QRCode(
     qrCodeBitmap(connReq, 1024, errorLevel).replaceColor(Color.Black.toArgb(), tintColor.toArgb())
       .let { if (withLogo) it.addLogo(logoSize) else it }
   }
+  val imageModifier =
+    if (imageSize == null) {
+      Modifier
+        .widthIn(max = 400.dp)
+        .fillMaxWidth(if (small) 0.63f else 1f)
+        .aspectRatio(1f)
+    } else {
+      Modifier.size(imageSize)
+    }
   Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
     Image(
       bitmap = qr,
       contentDescription = stringResource(MR.strings.image_descr_qr_code),
       Modifier
         .padding(padding)
-        .widthIn(max = 400.dp)
-        .fillMaxWidth(if (small) 0.63f else 1f)
-        .aspectRatio(1f)
+        .then(imageModifier)
         .then(modifier)
         .clickable {
           scope.launch {

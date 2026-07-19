@@ -111,7 +111,7 @@ class SimplexService: Service() {
     val ntf = serviceNotification
     if (ntf != null) return ntf
 
-    val title = generalGetString(MR.strings.simplex_service_notification_title)
+    val title = getString(R.string.nome_background_service_notification_title)
     val text = generalGetString(MR.strings.simplex_service_notification_text)
     notificationManager = createNotificationChannel()
     val newNtf = createServiceNotification(title, text)
@@ -167,7 +167,11 @@ class SimplexService: Service() {
   private fun createNotificationChannel(): NotificationManager? {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-      val channel = NotificationChannel(NOTIFICATION_CHANNEL_ID, NOTIFICATION_CHANNEL_NAME, NotificationManager.IMPORTANCE_LOW).let {
+      val channel = NotificationChannel(
+        NOTIFICATION_CHANNEL_ID,
+        getString(R.string.nome_background_service_channel_name),
+        NotificationManager.IMPORTANCE_LOW
+      ).let {
         it.setShowBadge(false) // no long-press badge
         it
       }
@@ -309,7 +313,6 @@ class SimplexService: Service() {
   companion object {
     const val TAG = "SIMPLEX_SERVICE"
     const val NOTIFICATION_CHANNEL_ID = "chat.simplex.app.SIMPLEX_SERVICE_NOTIFICATION"
-    const val NOTIFICATION_CHANNEL_NAME = "SimpleX Chat service"
     const val SIMPLEX_SERVICE_ID = 6789
     const val SERVICE_START_WORKER_VERSION = BuildConfig.VERSION_CODE
     const val SERVICE_START_WORKER_INTERVAL_MINUTES = 3 * 60L

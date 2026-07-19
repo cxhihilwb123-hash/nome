@@ -249,6 +249,14 @@ Preloads group members (`setGroupMembers`) and group link (`apiGetGroupLink`).
 
 Key sections: group profile, group link, member list with roles, group preferences (disappearing messages, direct messages, full deletion, voice, files, SimpleX links, history), member admission, welcome message, reports view, and group deletion/leave.
 
+Android suppresses the legacy modal app bar for group info because
+`PlatformGroupChatInfoRoute.android.kt` owns the single top Back/title frame. The shared route only
+changes Android composition and density; all group data, actions, permissions, confirmations, and
+child routes remain owned by the official common code. Desktop uses the legacy modal and layout.
+The Android add-members quick action invokes the `GroupChatInfoView`-owned callback instead of the
+older global closeable-modal helper, so the member refresh/invitation owner is unchanged and the
+child page has one Back control. Unchecked contact rows do not announce the checked state.
+
 ---
 
 ## 9. Source Files
@@ -322,11 +330,14 @@ Key sections: group profile, group link, member list with roles, group preferenc
 | `MemberSupportChatView.kt` | Member support chat (scoped context) |
 | `MemberSupportView.kt` | Support chat list for moderators |
 | `WelcomeMessageView.kt` | Group welcome message editor |
-| `ChannelRelaysView.kt` | Channel relay list. Owner-only Add relay entry opens `AddGroupRelayView` with `existingRelayIds = groupRelays.mapNotNull { it.userChatRelay.chatRelayId }.toSet()` — every relay currently in `groupRelays` is excluded regardless of `relayStatus`, mirroring the backend `APIAddGroupRelays` gate. Long-press menu offers Remove relay for relays that can be removed. |
-| `AddGroupRelayView.kt` | Sheet to pick relays to add to a channel |
+| `ChannelRelaysView.kt` | Channel relay list/status/member-detail route. The owner Add/Remove UI remains commented under `TODO [relays]` in v6.5.6 and is not exposed by Nome. |
+| `AddGroupRelayView.kt` | Source-present relay picker with no active route from `ChannelRelaysView` in v6.5.6 |
 
 ### Relay Rejection Surface
 
 When a relay operator runs `/leave #channel`, the relay sends `x.grp.relay.reject` over the owner-relay direct contact channel. Owner-side handling: the corresponding `GroupRelay.relayStatus` transitions `RSInvited → RSRejected`; the relay's `GroupMember.memberStatus` is set to `MemLeft` so the owner UI renders the rejected relay identically to one that explicitly ran `/leave` (`MemRejected` is reserved for the knocking-admission flow). In `GroupMemberInfoView`, an additional "Status: rejected by relay operator" `InfoRow` appears when `groupRelay?.relayStatus == RelayStatus.RsRejected`. The status is final on the owner side — clearable only by the relay operator running `/group allow #<channel>`, which has no owner-facing event.
 
 The `RelayStatusIndicator` composable in `AddChannelView.kt` renders `RsRejected` with a red dot and "rejected" text, matching the `connFailed`/`removed` rendering.
+
+This rejection/status surface does not make owner-side relay Add/Remove available. Those controls
+remain source-disabled and must not be inferred from the model/API types alone.

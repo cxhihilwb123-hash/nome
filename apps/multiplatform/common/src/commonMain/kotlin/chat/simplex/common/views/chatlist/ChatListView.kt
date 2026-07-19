@@ -592,8 +592,14 @@ private fun ChatListToolbar(userPickerState: MutableStateFlow<AnimatedViewState>
     navigationButton = {
       if (chatModel.users.isEmpty() && !chatModel.desktopNoUserNoRemote) {
         NavigationButtonMenu {
-          ModalManager.start.showModalCloseable { close ->
-            SettingsView(chatModel, setPerformLA, close)
+          if (appPlatform.isAndroid) {
+            ModalManager.start.showCustomModal { close ->
+              SettingsView(chatModel, setPerformLA, close)
+            }
+          } else {
+            ModalManager.start.showModalCloseable { close ->
+              SettingsView(chatModel, setPerformLA, close)
+            }
           }
         }
       } else {

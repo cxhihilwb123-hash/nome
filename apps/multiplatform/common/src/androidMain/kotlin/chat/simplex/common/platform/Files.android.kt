@@ -34,9 +34,18 @@ actual fun desktopOpenDatabaseDir() {}
 actual fun desktopOpenDir(dir: File) {}
 
 @Composable
-actual fun rememberFileChooserLauncher(getContent: Boolean, rememberedValue: Any?, onResult: (URI?) -> Unit): FileChooserLauncher {
+actual fun rememberFileChooserLauncher(
+  getContent: Boolean,
+  rememberedValue: Any?,
+  saveMimeType: String?,
+  onResult: (URI?) -> Unit
+): FileChooserLauncher {
   val launcher = rememberLauncherForActivityResult(
-    contract = if (getContent) ActivityResultContracts.GetContent() else ActivityResultContracts.CreateDocument(),
+    contract = if (getContent) {
+      ActivityResultContracts.GetContent()
+    } else {
+      ActivityResultContracts.CreateDocument(saveMimeType ?: "*/*")
+    },
     onResult = { onResult(it?.toURI()) }
   )
   return FileChooserLauncher(launcher)

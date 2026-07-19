@@ -20,6 +20,7 @@ import kotlin.collections.ArrayList
 @Composable
 fun NotificationsSettingsView(
   chatModel: ChatModel,
+  onClose: () -> Unit = { ModalManager.start.closeModal() },
 ) {
   val onNotificationPreviewModeSelected = { mode: NotificationPreviewMode ->
     chatModel.controller.appPrefs.notificationPreviewMode.set(mode.name)
@@ -29,11 +30,43 @@ fun NotificationsSettingsView(
   NotificationsSettingsLayout(
     notificationsMode = remember { chatModel.controller.appPrefs.notificationsMode.state },
     notificationPreviewMode = chatModel.notificationPreviewMode,
+    onClose = onClose,
     showPage = { page ->
-      ModalManager.start.showModalCloseable(true) {
-        when (page) {
-          CurrentPage.NOTIFICATIONS_MODE -> NotificationsModeView(chatModel.controller.appPrefs.notificationsMode.state) { changeNotificationsMode(it, chatModel) }
-          CurrentPage.NOTIFICATION_PREVIEW_MODE -> NotificationPreviewView(chatModel.notificationPreviewMode, onNotificationPreviewModeSelected)
+      if (appPlatform == AppPlatform.ANDROID) {
+        ModalManager.start.showCustomModal { close ->
+          when (page) {
+            CurrentPage.NOTIFICATIONS_MODE ->
+              NotificationsModeView(
+                chatModel.controller.appPrefs.notificationsMode.state,
+                close,
+              ) {
+                changeNotificationsMode(it, chatModel)
+              }
+            CurrentPage.NOTIFICATION_PREVIEW_MODE ->
+              NotificationPreviewView(
+                chatModel.notificationPreviewMode,
+                close,
+                onNotificationPreviewModeSelected,
+              )
+          }
+        }
+      } else {
+        ModalManager.start.showModalCloseable(true) { close ->
+          when (page) {
+            CurrentPage.NOTIFICATIONS_MODE ->
+              NotificationsModeView(
+                chatModel.controller.appPrefs.notificationsMode.state,
+                close,
+              ) {
+                changeNotificationsMode(it, chatModel)
+              }
+            CurrentPage.NOTIFICATION_PREVIEW_MODE ->
+              NotificationPreviewView(
+                chatModel.notificationPreviewMode,
+                close,
+                onNotificationPreviewModeSelected,
+              )
+          }
         }
       }
     },
@@ -48,65 +81,104 @@ enum class CurrentPage {
 fun NotificationsSettingsLayout(
   notificationsMode: State<NotificationsMode>,
   notificationPreviewMode: State<NotificationPreviewMode>,
+  onClose: () -> Unit,
   showPage: (CurrentPage) -> Unit,
 ) {
   val modes = remember { notificationModes() }
   val previewModes = remember { notificationPreviewModes() }
+  val selectedMode = modes.firstOrNull { it.value == notificationsMode.value }
+  val selectedPreview = previewModes.firstOrNull { it.value == notificationPreviewMode.value }
 
-  ColumnWithScrollBar {
-    AppBarTitle(stringResource(MR.strings.notifications))
-    SectionView(null) {
-      if (appPlatform == AppPlatform.ANDROID) {
-        SettingsActionItemWithContent(null, stringResource(MR.strings.settings_notifications_mode_title), { showPage(CurrentPage.NOTIFICATIONS_MODE) }) {
-          Text(
-            modes.firstOrNull { it.value == notificationsMode.value }?.title ?: "",
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            color = MaterialTheme.colors.secondary
-          )
+  PlatformNotificationsSettingsRoute(
+    title = stringResource(MR.strings.notifications),
+    modeTitle = stringResource(MR.strings.settings_notifications_mode_title),
+    modeValue = selectedMode?.title ?: "",
+    modeDescription = selectedMode?.description?.text ?: "",
+    previewTitle = stringResource(MR.strings.settings_notification_preview_mode_title),
+    previewValue = selectedPreview?.title ?: "",
+    previewDescription = selectedPreview?.description?.text ?: "",
+    onClose = onClose,
+    onOpenMode = { showPage(CurrentPage.NOTIFICATIONS_MODE) },
+    onOpenPreview = { showPage(CurrentPage.NOTIFICATION_PREVIEW_MODE) },
+    legacyContent = {
+      ColumnWithScrollBar {
+        AppBarTitle(stringResource(MR.strings.notifications))
+        SectionView(null) {
+          if (appPlatform == AppPlatform.ANDROID) {
+            SettingsActionItemWithContent(null, stringResource(MR.strings.settings_notifications_mode_title), { showPage(CurrentPage.NOTIFICATIONS_MODE) }) {
+              Text(
+                selectedMode?.title ?: "",
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                color = MaterialTheme.colors.secondary
+              )
+            }
+          }
+          SettingsActionItemWithContent(null, stringResource(MR.strings.settings_notification_preview_mode_title), { showPage(CurrentPage.NOTIFICATION_PREVIEW_MODE) }) {
+            Text(
+              selectedPreview?.title ?: "",
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis,
+              color = MaterialTheme.colors.secondary
+            )
+          }
+          if (platform.androidIsXiaomiDevice() && (notificationsMode.value == NotificationsMode.PERIODIC || notificationsMode.value == NotificationsMode.SERVICE)) {
+            SectionTextFooter(annotatedStringResource(MR.strings.xiaomi_ignore_battery_optimization))
+          }
         }
+        SectionBottomSpacer()
       }
-      SettingsActionItemWithContent(null, stringResource(MR.strings.settings_notification_preview_mode_title), { showPage(CurrentPage.NOTIFICATION_PREVIEW_MODE) }) {
-        Text(
-          previewModes.firstOrNull { it.value == notificationPreviewMode.value }?.title ?: "",
-          maxLines = 1,
-          overflow = TextOverflow.Ellipsis,
-          color = MaterialTheme.colors.secondary
-        )
-      }
-      if (platform.androidIsXiaomiDevice() && (notificationsMode.value == NotificationsMode.PERIODIC || notificationsMode.value == NotificationsMode.SERVICE)) {
-        SectionTextFooter(annotatedStringResource(MR.strings.xiaomi_ignore_battery_optimization))
-      }
-    }
-    SectionBottomSpacer()
-  }
+    },
+  )
 }
 
 @Composable
 fun NotificationsModeView(
   notificationsMode: State<NotificationsMode>,
+  onClose: () -> Unit,
   onNotificationsModeSelected: (NotificationsMode) -> Unit,
 ) {
   val modes = remember { notificationModes() }
-  ColumnWithScrollBar {
-    AppBarTitle(stringResource(MR.strings.settings_notifications_mode_title).lowercase().capitalize(Locale.current))
-    SectionViewSelectable(null, notificationsMode, modes, onNotificationsModeSelected)
-    if (platform.androidIsXiaomiDevice() && (notificationsMode.value == NotificationsMode.PERIODIC || notificationsMode.value == NotificationsMode.SERVICE)) {
-      SectionTextFooter(annotatedStringResource(MR.strings.xiaomi_ignore_battery_optimization))
-    }
-  }
+  val title = stringResource(MR.strings.settings_notifications_mode_title).lowercase().capitalize(Locale.current)
+  PlatformNotificationsModeRoute(
+    title = title,
+    choices = modes.map { NomeNotificationsModeChoice(it.value, it.title, it.description.text) },
+    selected = notificationsMode.value,
+    onClose = onClose,
+    onSelected = onNotificationsModeSelected,
+    legacyContent = {
+      ColumnWithScrollBar {
+        AppBarTitle(title)
+        SectionViewSelectable(null, notificationsMode, modes, onNotificationsModeSelected)
+        if (platform.androidIsXiaomiDevice() && (notificationsMode.value == NotificationsMode.PERIODIC || notificationsMode.value == NotificationsMode.SERVICE)) {
+          SectionTextFooter(annotatedStringResource(MR.strings.xiaomi_ignore_battery_optimization))
+        }
+      }
+    },
+  )
 }
 
 @Composable
 fun NotificationPreviewView(
   notificationPreviewMode: State<NotificationPreviewMode>,
+  onClose: () -> Unit,
   onNotificationPreviewModeSelected: (NotificationPreviewMode) -> Unit,
 ) {
   val previewModes = remember { notificationPreviewModes() }
-  ColumnWithScrollBar {
-    AppBarTitle(stringResource(MR.strings.settings_notification_preview_title))
-    SectionViewSelectable(null, notificationPreviewMode, previewModes, onNotificationPreviewModeSelected)
-  }
+  val title = stringResource(MR.strings.settings_notification_preview_title)
+  PlatformNotificationPreviewRoute(
+    title = title,
+    choices = previewModes.map { NomeNotificationPreviewChoice(it.value, it.title, it.description.text) },
+    selected = notificationPreviewMode.value,
+    onClose = onClose,
+    onSelected = onNotificationPreviewModeSelected,
+    legacyContent = {
+      ColumnWithScrollBar {
+        AppBarTitle(title)
+        SectionViewSelectable(null, notificationPreviewMode, previewModes, onNotificationPreviewModeSelected)
+      }
+    },
+  )
 }
 
 // mode, name, description

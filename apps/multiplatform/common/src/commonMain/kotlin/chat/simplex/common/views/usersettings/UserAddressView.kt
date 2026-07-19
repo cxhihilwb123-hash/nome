@@ -45,6 +45,19 @@ fun UserAddressView(
   val shareViaProfile = remember { mutableStateOf(shareViaProfile) }
   val progressIndicator = remember { mutableStateOf(false) }
   val user = remember { chatModel.currentUser }
+  val userAddress = remember { chatModel.userAddress }
+  var nomeLoadState by remember(
+    user.value?.remoteHostId,
+    user.value?.userId,
+  ) {
+    mutableStateOf(
+      if (userAddress.value == null) {
+        NomeUserAddressLoadState.LOADING
+      } else {
+        NomeUserAddressLoadState.READY
+      },
+    )
+  }
   val clipboard = LocalClipboardManager.current
   KeyChangeEffect(user.value?.remoteHostId, user.value?.userId) {
     close()
@@ -66,6 +79,39 @@ fun UserAddressView(
     }
   }
 
+  fun completeAddressCreation() {
+    val hasRelevantContacts =
+      chatModel.chats.value.any { chat ->
+        val ci = chat.chatInfo
+        ci is ChatInfo.Direct &&
+          ci.contact.active &&
+          !ci.contact.isContactCard &&
+          !ci.contact.contactConnIncognito
+      }
+    if (hasRelevantContacts) {
+      AlertManager.shared.showAlertDialog(
+        title =
+          generalGetString(
+            MR.strings.share_address_with_contacts_question,
+          ),
+        text =
+          generalGetString(
+            MR.strings.add_address_to_your_profile,
+          ),
+        confirmText =
+          generalGetString(MR.strings.share_verb),
+        onConfirm = {
+          setProfileAddress(true)
+          shareViaProfile.value = true
+        },
+      )
+      progressIndicator.value = false
+    } else {
+      setProfileAddress(true)
+      shareViaProfile.value = true
+    }
+  }
+
   fun createAddress() {
     withBGApi {
       progressIndicator.value = true
@@ -79,28 +125,7 @@ fun UserAddressView(
           addressSettings = AddressSettings(businessAddress = false, autoAccept = null, autoReply = null)
         )
 
-        val hasRelevantContacts = chatModel.chats.value.any { chat ->
-          val ci = chat.chatInfo
-          ci is ChatInfo.Direct &&
-            ci.contact.active &&
-            !ci.contact.isContactCard &&
-            !ci.contact.contactConnIncognito
-        }
-        if (hasRelevantContacts) {
-          AlertManager.shared.showAlertDialog(
-            title = generalGetString(MR.strings.share_address_with_contacts_question),
-            text = generalGetString(MR.strings.add_address_to_your_profile),
-            confirmText = generalGetString(MR.strings.share_verb),
-            onConfirm = {
-              setProfileAddress(true)
-              shareViaProfile.value = true
-            }
-          )
-          progressIndicator.value = false
-        } else {
-          setProfileAddress(true)
-          shareViaProfile.value = true
-        }
+        completeAddressCreation()
       } else {
         progressIndicator.value = false
       }
@@ -109,12 +134,99 @@ fun UserAddressView(
 
   fun share(userAddress: String) { clipboard.shareText(userAddress) }
 
+  suspend fun refreshNomeAddress() {
+    nomeLoadState = NomeUserAddressLoadState.LOADING
+    when (
+      val result =
+        chatModel.controller.apiGetUserAddressResult(
+          user.value?.remoteHostId,
+        )
+    ) {
+      is APIUserAddressResult.Ready -> {
+        userAddress.value = result.address
+        nomeLoadState = NomeUserAddressLoadState.READY
+      }
+      APIUserAddressResult.NotFound -> {
+        userAddress.value = null
+        nomeLoadState = NomeUserAddressLoadState.OFF
+      }
+      APIUserAddressResult.Failure -> {
+        nomeLoadState = NomeUserAddressLoadState.FAILURE
+      }
+    }
+  }
+
+  suspend fun createNomeAddress(): Boolean {
+    val created =
+      chatModel.controller.apiCreateUserAddress(
+        user.value?.remoteHostId,
+      ) ?: return false
+    val hasShortLink = created.connShortLink != null
+    userAddress.value =
+      UserContactLinkRec(
+        connLinkContact = created,
+        shortLinkDataSet = hasShortLink,
+        shortLinkLargeDataSet = hasShortLink,
+        addressSettings =
+          AddressSettings(
+            businessAddress = false,
+            autoAccept = null,
+            autoReply = null,
+          ),
+      )
+    nomeLoadState = NomeUserAddressLoadState.READY
+    completeAddressCreation()
+    return true
+  }
+
+  suspend fun setNomeRequiresConfirmation(
+    required: Boolean,
+  ): Boolean {
+    val address = userAddress.value ?: return false
+    val settings =
+      address.addressSettings.copy(
+        autoAccept =
+          if (required) {
+            null
+          } else {
+            AutoAccept(acceptIncognito = false)
+          },
+      )
+    val updated =
+      chatModel.controller.apiSetUserAddressSettings(
+        user.value?.remoteHostId,
+        settings,
+      ) ?: return false
+    userAddress.value = updated
+    return true
+  }
+
+  suspend fun deleteNomeAddress(): Boolean {
+    val updatedUser =
+      chatModel.controller.apiDeleteUserAddress(
+        user.value?.remoteHostId,
+      ) ?: return false
+    userAddress.value = null
+    chatModel.updateUser(updatedUser)
+    shareViaProfile.value = false
+    nomeLoadState = NomeUserAddressLoadState.OFF
+    return true
+  }
+
   LaunchedEffect(autoCreateAddress) {
     if (chatModel.userAddress.value == null && autoCreateAddress) {
       createAddress()
     }
   }
-  val userAddress = remember { chatModel.userAddress }
+  LaunchedEffect(
+    onboarding,
+    user.value?.remoteHostId,
+    user.value?.userId,
+  ) {
+    if (!onboarding) {
+      refreshNomeAddress()
+    }
+  }
   val uriHandler = LocalUriHandler.current
   val showLayout = @Composable {
     UserAddressLayout(
@@ -172,7 +284,74 @@ fun UserAddressView(
   }
 
   ModalView(close = close) {
-    showLayout()
+    if (onboarding) {
+      showLayout()
+    } else {
+      PlatformUserAddressRoute(
+        userAddress = userAddress.value,
+        loadState = nomeLoadState,
+        onReload = ::refreshNomeAddress,
+        onCreate = ::createNomeAddress,
+        onSetRequiresConfirmation =
+          ::setNomeRequiresConfirmation,
+        onDelete = ::deleteNomeAddress,
+        onAddShortLink = {
+          showAddShortLinkAlert(
+            progressIndicator = progressIndicator,
+            share = ::share,
+          )
+        },
+        onShareAddress = { address ->
+          if (
+            userAddress.value?.shouldBeUpgraded == true
+          ) {
+            showAddShortLinkAlert(
+              progressIndicator = progressIndicator,
+              share = ::share,
+              shareAddress = {
+                share(address)
+              },
+            )
+          } else {
+            share(address)
+          }
+        },
+        onOpenAdvanced = {
+          val address = userAddress.value
+          if (address != null) {
+            ModalManager.start.showCustomModal {
+                advancedClose ->
+              UserAddressSettings(
+                user = user.value,
+                userAddress = address,
+                shareViaProfile = shareViaProfile,
+                setProfileAddress = ::setProfileAddress,
+                saveAddressSettings = {
+                    settings,
+                    savedSettings,
+                  ->
+                  withBGApi {
+                    val updated =
+                      chatModel.controller
+                        .apiSetUserAddressSettings(
+                          user.value?.remoteHostId,
+                          settings.addressSettings,
+                        )
+                    if (updated != null) {
+                      userAddress.value = updated
+                      savedSettings.value = settings
+                    }
+                  }
+                },
+                close = advancedClose,
+              )
+            }
+          }
+        },
+        onClose = close,
+        legacyContent = showLayout,
+      )
+    }
   }
 
   if (progressIndicator.value) {

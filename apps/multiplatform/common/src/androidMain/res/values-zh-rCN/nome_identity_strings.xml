@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nome_p21_non_e2ee">公开频道不是端到端加密；聊天中继可以读取频道消息。</string>
+    <string name="nome_p21_history">频道历史</string>
+    <string name="nome_p21_observer">仅查看模式</string>
+    <string name="nome_p21_observer_body">只有频道所有者可以在这里发布消息。</string>
+
+    <string name="nome_p22_title">身份中心</string>
+    <string name="nome_p22_local_identities">本地身份</string>
+    <string name="nome_p22_current">当前使用</string>
+    <string name="nome_p22_current_body">当前使用的本地身份</string>
+    <string name="nome_p22_no_active_identity">当前没有可用的本地身份。</string>
+    <string name="nome_p22_local_identity">此设备上的本地身份</string>
+    <string name="nome_p22_hidden">已隐藏的本地身份</string>
+    <string name="nome_p22_muted">未使用时不接收通知</string>
+    <string name="nome_p22_add_identity">添加本地身份</string>
+    <string name="nome_p22_add_identity_body">创建另一个独立的本地资料</string>
+    <string name="nome_p22_hidden_identities">显示隐藏身份</string>
+    <string name="nome_p22_hidden_identities_body">输入身份密码以显示隐藏资料</string>
+    <string name="nome_p22_hidden_password">隐藏身份密码</string>
+    <string name="nome_p22_connection_privacy">网络隐私</string>
+    <string name="nome_p22_incognito">默认使用隐身身份</string>
+    <string name="nome_p22_incognito_body">为新连接使用独立的随机资料</string>
+    <string name="nome_p22_network_settings">使用 SOCKS 代理</string>
+    <string name="nome_p22_network_settings_body">进入官方网络设置确认代理变更</string>
+    <string name="nome_p22_edit_current">编辑当前身份 %1$s</string>
+    <string name="nome_p22_activate">切换到本地身份 %1$s</string>
+    <string name="nome_p22_identity_actions">本地身份 %1$s 的操作</string>
+    <string name="nome_p22_unhide">取消隐藏身份</string>
+    <string name="nome_p22_hide">隐藏身份</string>
+    <string name="nome_p22_mute">未使用时静音</string>
+    <string name="nome_p22_unmute">启用通知</string>
+    <string name="nome_p22_delete">删除身份</string>
+    <string name="nome_p22_home">首页</string>
+    <string name="nome_p22_contacts">联系人</string>
+    <string name="nome_p22_settings">设置</string>
+    <string name="nome_p22_selected">已选中</string>
+    <string name="nome_p22_back">返回</string>
+    <string name="nome_p22_on">已开启</string>
+    <string name="nome_p22_off">已关闭</string>
+</resources>

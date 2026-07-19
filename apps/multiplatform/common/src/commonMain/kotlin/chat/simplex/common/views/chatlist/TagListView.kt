@@ -70,104 +70,166 @@ fun TagListView(rhId: Long?, chat: Chat? = null, close: () -> Unit, reorderMode:
       userTags.value = userTags.value.toMutableList().apply { add(toIndex, removeAt(fromIndex)) }
       reorderTags(userTags.value.map { it.chatTagId })
     }
-  val topPaddingToContent = topPaddingToContent(false)
-
-  LazyColumnWithScrollBar(
-    modifier = if (reorderMode) Modifier.dragContainer(dragDropState) else Modifier,
-    state = listState,
-    contentPadding = PaddingValues(
-      top = if (oneHandUI.value) WindowInsets.statusBars.asPaddingValues().calculateTopPadding() else topPaddingToContent,
-      bottom = if (oneHandUI.value) WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + AppBarHeight * fontSizeSqrtMultiplier else 0.dp
-    ),
-    verticalArrangement = if (oneHandUI.value) Arrangement.Bottom else Arrangement.Top,
-  ) {
-    @Composable fun CreateList() {
-      SectionItemView({
-        ModalManager.start.showModalCloseable { close ->
-          TagListEditor(rhId = rhId, close = close, chat = chat)
+  PlatformTagListRoute(
+    title =
+      generalGetString(
+        if (chatTagIds.value.isEmpty()) {
+          MR.strings.add_to_list
+        } else {
+          MR.strings.change_list
+        },
+      ),
+    createLabel = generalGetString(MR.strings.create_list),
+    reorderMode = reorderMode,
+    choices =
+      userTags.value.map { tag ->
+        NomeTagListChoice(
+          id = tag.chatTagId,
+          emoji = tag.chatTagEmoji,
+          name = tag.chatTagText,
+          selected = chatTagIds.value.contains(tag.chatTagId),
+        )
+      },
+    saving = saving.value,
+    onClose = close,
+    onCreate = {
+      ModalManager.start.showCustomModal { editorClose ->
+        TagListEditor(
+          rhId = rhId,
+          close = editorClose,
+          chat = chat,
+        )
+      }
+    },
+    onChoice = { tagId ->
+      val tag = userTags.value.firstOrNull { it.chatTagId == tagId }
+      if (tag != null) {
+        val selected = chatTagIds.value.contains(tag.chatTagId)
+        if (chat == null) {
+          ModalManager.start.showCustomModal { editorClose ->
+            TagListEditor(
+              rhId = rhId,
+              tagId = tag.chatTagId,
+              close = editorClose,
+              emoji = tag.chatTagEmoji,
+              name = tag.chatTagText,
+            )
+          }
+        } else {
+          saving.value = true
+          setTag(
+            rhId = rhId,
+            tagId = if (selected) null else tag.chatTagId,
+            chat = chat,
+            close = {
+              saving.value = false
+              close()
+            },
+          )
         }
-      }) {
-        Icon(painterResource(MR.images.ic_add), stringResource(MR.strings.create_list), tint = MaterialTheme.colors.primary)
-        Spacer(Modifier.padding(horizontal = 4.dp))
-        Text(stringResource(MR.strings.create_list), color = MaterialTheme.colors.primary)
       }
-    }
+    },
+    legacyContent = {
+      val topPaddingToContent = topPaddingToContent(false)
 
-    if (oneHandUI.value && !reorderMode) {
-      item {
-        CreateList()
-      }
-    }
-    itemsIndexed(userTags.value, key = { _, item -> item.chatTagId }) { index, tag ->
-      DraggableItem(dragDropState, index) { isDragging ->
-        val elevation by animateDpAsState(if (isDragging) 4.dp else 0.dp)
+      LazyColumnWithScrollBar(
+        modifier = if (reorderMode) Modifier.dragContainer(dragDropState) else Modifier,
+        state = listState,
+        contentPadding = PaddingValues(
+          top = if (oneHandUI.value) WindowInsets.statusBars.asPaddingValues().calculateTopPadding() else topPaddingToContent,
+          bottom = if (oneHandUI.value) WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + AppBarHeight * fontSizeSqrtMultiplier else 0.dp
+        ),
+        verticalArrangement = if (oneHandUI.value) Arrangement.Bottom else Arrangement.Top,
+      ) {
+        @Composable fun CreateList() {
+          SectionItemView({
+            ModalManager.start.showModalCloseable { editorClose ->
+              TagListEditor(rhId = rhId, close = editorClose, chat = chat)
+            }
+          }) {
+            Icon(painterResource(MR.images.ic_add), stringResource(MR.strings.create_list), tint = MaterialTheme.colors.primary)
+            Spacer(Modifier.padding(horizontal = 4.dp))
+            Text(stringResource(MR.strings.create_list), color = MaterialTheme.colors.primary)
+          }
+        }
 
-        Card(
-          elevation = elevation,
-          backgroundColor = if (isDragging) colors.surface else Color.Unspecified
-        ) {
-          Column {
-            val selected = chatTagIds.value.contains(tag.chatTagId)
+        if (oneHandUI.value && !reorderMode) {
+          item {
+            CreateList()
+          }
+        }
+        itemsIndexed(userTags.value, key = { _, item -> item.chatTagId }) { index, tag ->
+          DraggableItem(dragDropState, index) { isDragging ->
+            val elevation by animateDpAsState(if (isDragging) 4.dp else 0.dp)
 
-            Row(
-              Modifier
-                .fillMaxWidth()
-                .sizeIn(minHeight = DEFAULT_MIN_SECTION_ITEM_HEIGHT)
-                .clickable(
-                  enabled = !saving.value && !reorderMode,
-                  onClick = {
-                    if (chat == null) {
-                      ModalManager.start.showModalCloseable { close ->
-                        TagListEditor(
-                          rhId = rhId,
-                          tagId = tag.chatTagId,
-                          close = close,
-                          emoji = tag.chatTagEmoji,
-                          name = tag.chatTagText,
-                        )
-                      }
-                    } else {
-                      saving.value = true
-                      setTag(rhId = rhId, tagId = if (selected) null else tag.chatTagId, chat = chat, close = {
-                        saving.value = false
-                        close()
-                      })
-                    }
-                  },
-                )
-                .padding(PaddingValues(horizontal = DEFAULT_PADDING, vertical = DEFAULT_MIN_SECTION_ITEM_PADDING_VERTICAL)),
-              verticalAlignment = Alignment.CenterVertically
+            Card(
+              elevation = elevation,
+              backgroundColor = if (isDragging) colors.surface else Color.Unspecified
             ) {
-              if (tag.chatTagEmoji != null) {
-                ReactionIcon(tag.chatTagEmoji, fontSize = 14.sp)
-              } else {
-                Icon(painterResource(MR.images.ic_label), null, Modifier.size(18.sp.toDp()), tint = MaterialTheme.colors.onBackground)
-              }
-              Spacer(Modifier.padding(horizontal = 4.dp))
-              Text(
-                tag.chatTagText,
-                color = MenuTextColor,
-                fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal
-              )
-              if (selected) {
-                Spacer(Modifier.weight(1f))
-                Icon(painterResource(MR.images.ic_done_filled), null, Modifier.size(20.dp), tint = MaterialTheme.colors.onBackground)
-              } else if (reorderMode) {
-                Spacer(Modifier.weight(1f))
-                Icon(painterResource(MR.images.ic_drag_handle), null, Modifier.size(20.dp), tint = MaterialTheme.colors.secondary)
+              Column {
+                val selected = chatTagIds.value.contains(tag.chatTagId)
+
+                Row(
+                  Modifier
+                    .fillMaxWidth()
+                    .sizeIn(minHeight = DEFAULT_MIN_SECTION_ITEM_HEIGHT)
+                    .clickable(
+                      enabled = !saving.value && !reorderMode,
+                      onClick = {
+                        if (chat == null) {
+                          ModalManager.start.showModalCloseable { editorClose ->
+                            TagListEditor(
+                              rhId = rhId,
+                              tagId = tag.chatTagId,
+                              close = editorClose,
+                              emoji = tag.chatTagEmoji,
+                              name = tag.chatTagText,
+                            )
+                          }
+                        } else {
+                          saving.value = true
+                          setTag(rhId = rhId, tagId = if (selected) null else tag.chatTagId, chat = chat, close = {
+                            saving.value = false
+                            close()
+                          })
+                        }
+                      },
+                    )
+                    .padding(PaddingValues(horizontal = DEFAULT_PADDING, vertical = DEFAULT_MIN_SECTION_ITEM_PADDING_VERTICAL)),
+                  verticalAlignment = Alignment.CenterVertically
+                ) {
+                  if (tag.chatTagEmoji != null) {
+                    ReactionIcon(tag.chatTagEmoji, fontSize = 14.sp)
+                  } else {
+                    Icon(painterResource(MR.images.ic_label), null, Modifier.size(18.sp.toDp()), tint = MaterialTheme.colors.onBackground)
+                  }
+                  Spacer(Modifier.padding(horizontal = 4.dp))
+                  Text(
+                    tag.chatTagText,
+                    color = MenuTextColor,
+                    fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal
+                  )
+                  if (selected) {
+                    Spacer(Modifier.weight(1f))
+                    Icon(painterResource(MR.images.ic_done_filled), null, Modifier.size(20.dp), tint = MaterialTheme.colors.onBackground)
+                  } else if (reorderMode) {
+                    Spacer(Modifier.weight(1f))
+                    Icon(painterResource(MR.images.ic_drag_handle), null, Modifier.size(20.dp), tint = MaterialTheme.colors.secondary)
+                  }
+                }
+                SectionDivider()
               }
             }
-            SectionDivider()
+          }
+        }
+        if (!oneHandUI.value && !reorderMode) {
+          item {
+            CreateList()
           }
         }
       }
-    }
-    if (!oneHandUI.value && !reorderMode) {
-      item {
-        CreateList()
-      }
-    }
-  }
+    },
+  )
 }
 
 @Composable
@@ -252,46 +314,80 @@ fun ModalData.TagListEditor(
 
   val showError = derivedStateOf { isDuplicateEmojiOrName.value && saving.value != false }
 
-  ColumnWithScrollBar(Modifier.consumeWindowInsets(PaddingValues(bottom = if (oneHandUI.value) WindowInsets.ime.asPaddingValues().calculateBottomPadding().coerceIn(0.dp, WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()) else 0.dp))) {
-    if (oneHandUI.value) {
-      Spacer(Modifier.weight(1f))
-    }
-    ChatTagInput(newName, showError, newEmoji)
-    val disabled = saving.value == true ||
-        (trimmedName.value == name && newEmoji.value == emoji) ||
-        trimmedName.value.isEmpty() ||
-        isDuplicateEmojiOrName.value
-
-    SectionItemView(click = { if (tagId == null) createTag() else updateTag() }, disabled = disabled) {
-      Text(
-        generalGetString(if (chat != null) MR.strings.add_to_list else MR.strings.save_list),
-        color = if (disabled) colors.secondary else colors.primary
-      )
-    }
-    val showErrorMessage = isDuplicateEmojiOrName.value && saving.value != false
-    SectionCustomFooter {
-      Row(
-        Modifier.fillMaxWidth().padding(bottom = DEFAULT_PADDING),
-        verticalAlignment = Alignment.CenterVertically
-      ) {
-        Icon(
-          painterResource(MR.images.ic_error),
-          contentDescription = stringResource(MR.strings.error),
-          tint = if (showErrorMessage) Color.Red else Color.Transparent,
-          modifier = Modifier
-            .size(19.sp.toDp())
-            .offset(x = 2.sp.toDp())
-        )
-        TextIconSpaced()
-        Text(
-          generalGetString(MR.strings.duplicated_list_error),
-          color = if (showErrorMessage) colors.secondary else Color.Transparent,
-          lineHeight = 18.sp,
-          fontSize = 14.sp
-        )
+  val disabled = saving.value == true ||
+      (trimmedName.value == name && newEmoji.value == emoji) ||
+      trimmedName.value.isEmpty() ||
+      isDuplicateEmojiOrName.value
+  val showErrorMessage = isDuplicateEmojiOrName.value && saving.value != false
+  val submitLabel =
+    generalGetString(
+      if (chat != null) {
+        MR.strings.add_to_list
+      } else {
+        MR.strings.save_list
       }
-    }
-  }
+    )
+  PlatformTagEditorRoute(
+    title =
+      generalGetString(
+        when {
+          chat != null -> MR.strings.add_to_list
+          tagId == null -> MR.strings.create_list
+          else -> MR.strings.save_list
+        },
+      ),
+    submitLabel = submitLabel,
+    errorText = generalGetString(MR.strings.duplicated_list_error),
+    showError = showErrorMessage,
+    submitEnabled = !disabled,
+    onClose = close,
+    onSubmit = {
+      if (tagId == null) {
+        createTag()
+      } else {
+        updateTag()
+      }
+    },
+    inputContent = {
+      ChatTagInput(newName, showError, newEmoji)
+    },
+    legacyContent = {
+      ColumnWithScrollBar(Modifier.consumeWindowInsets(PaddingValues(bottom = if (oneHandUI.value) WindowInsets.ime.asPaddingValues().calculateBottomPadding().coerceIn(0.dp, WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()) else 0.dp))) {
+        if (oneHandUI.value) {
+          Spacer(Modifier.weight(1f))
+        }
+        ChatTagInput(newName, showError, newEmoji)
+        SectionItemView(click = { if (tagId == null) createTag() else updateTag() }, disabled = disabled) {
+          Text(
+            submitLabel,
+            color = if (disabled) colors.secondary else colors.primary
+          )
+        }
+        SectionCustomFooter {
+          Row(
+            Modifier.fillMaxWidth().padding(bottom = DEFAULT_PADDING),
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Icon(
+              painterResource(MR.images.ic_error),
+              contentDescription = stringResource(MR.strings.error),
+              tint = if (showErrorMessage) Color.Red else Color.Transparent,
+              modifier = Modifier
+                .size(19.sp.toDp())
+                .offset(x = 2.sp.toDp())
+            )
+            TextIconSpaced()
+            Text(
+              generalGetString(MR.strings.duplicated_list_error),
+              color = if (showErrorMessage) colors.secondary else Color.Transparent,
+              lineHeight = 18.sp,
+              fontSize = 14.sp
+            )
+          }
+        }
+      }
+    },
+  )
 }
 
 @Composable

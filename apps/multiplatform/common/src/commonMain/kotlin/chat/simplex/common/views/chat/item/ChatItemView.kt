@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.*
 import androidx.compose.material.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -61,6 +62,8 @@ data class ChatItemReactionMenuItem (
   val image: String?,
   val onClick: (() -> Unit)?
 )
+
+internal val LocalNomeMessageActionsSheet = staticCompositionLocalOf { false }
 
 // Spec: spec/client/chat-view.md#ChatItemView
 @Composable
@@ -321,6 +324,17 @@ fun ChatItemView(
           Column(
             Modifier
               .clipChatItem(cItem, itemSeparation.largeGap, revealed.value)
+              .then(
+                if (appPlatform.isAndroid && showMenu.value) {
+                  Modifier.border(
+                    width = 2.dp,
+                    color = Color(0xFF276BFF),
+                    shape = RoundedCornerShape(16.dp),
+                  )
+                } else {
+                  Modifier
+                }
+              )
               .hoverable(bubbleInteractionSource)
               .combinedClickable(
                 onLongClick = { showMenu.value = true },
@@ -385,6 +399,10 @@ fun ChatItemView(
             @Composable
             fun MsgContentItemDropdownMenu() {
               val saveFileLauncher = rememberSaveFileLauncher(ciFile = cItem.file)
+              val showReactionChoices = rememberSaveable { mutableStateOf(false) }
+              LaunchedEffect(showMenu.value) {
+                if (!showMenu.value) showReactionChoices.value = false
+              }
               when {
                 // cItem.id check is a special case for live message chat item which has negative ID while not sent yet
                 cItem.isReport && cItem.meta.itemDeleted == null && cInfo is ChatInfo.Group -> {
@@ -398,9 +416,17 @@ fun ChatItemView(
                   }
                 }
                 cItem.content.msgContent != null && cItem.id >= 0 && !cItem.isReport -> {
-                  DefaultDropdownMenu(showMenu) {
+                  PlatformMessageActionsMenu(showMenu) {
                     if (cInfo.featureEnabled(ChatFeature.Reactions) && cItem.allowAddReaction) {
-                      MsgReactionsMenu()
+                      if (LocalNomeMessageActionsSheet.current && !showReactionChoices.value) {
+                        ItemAction(
+                          stringResource(MR.strings.nome_add_reaction),
+                          painterResource(MR.images.ic_add_reaction),
+                          onClick = { showReactionChoices.value = true },
+                        )
+                      } else {
+                        MsgReactionsMenu()
+                      }
                     }
                     if (cItem.meta.itemDeleted == null && !live && !cItem.localNote && cInfo.sendMsgEnabled) {
                       ItemAction(stringResource(MR.strings.reply_verb), painterResource(MR.images.ic_reply), onClick = {
@@ -788,8 +814,8 @@ fun ChatItemView(
                 is CIContent.SndModerated -> DeletedItem()
                 is CIContent.RcvModerated -> DeletedItem()
                 is CIContent.RcvBlocked -> DeletedItem()
-                is CIContent.SndDirectE2EEInfo -> DirectE2EEInfoText(c.e2eeInfo)
-                is CIContent.RcvDirectE2EEInfo -> DirectE2EEInfoText(c.e2eeInfo)
+                is CIContent.SndDirectE2EEInfo -> if (appPlatform.isAndroid) Spacer(Modifier.size(0.dp)) else DirectE2EEInfoText(c.e2eeInfo)
+                is CIContent.RcvDirectE2EEInfo -> if (appPlatform.isAndroid) Spacer(Modifier.size(0.dp)) else DirectE2EEInfoText(c.e2eeInfo)
                 is CIContent.SndGroupE2EEInfo -> GroupE2EEInfoText(c.e2eeInfo)
                 is CIContent.RcvGroupE2EEInfo -> GroupE2EEInfoText(c.e2eeInfo)
                 is CIContent.ChatBanner -> Spacer(modifier = Modifier.size(0.dp))
@@ -1095,6 +1121,22 @@ fun ItemAction(text: String, icon: Painter, color: Color = Color.Unspecified, on
   val finalColor = if (color == Color.Unspecified) {
     MenuTextColor
   } else color
+  if (LocalNomeMessageActionsSheet.current) {
+    val iconColor = if (color == Color.Red || color == MaterialTheme.colors.error) {
+      MaterialTheme.colors.error
+    } else {
+      MaterialTheme.colors.primary
+    }
+    NomeMessageActionRow(
+      text = text,
+      color = finalColor,
+      onClick = onClick,
+      icon = {
+        Icon(icon, text, Modifier.size(22.dp), tint = iconColor)
+      },
+    )
+    return
+  }
   DropdownMenuItem(onClick, contentPadding = PaddingValues(horizontal = DEFAULT_PADDING * 1.5f)) {
     Row(verticalAlignment = Alignment.CenterVertically) {
       Text(
@@ -1115,6 +1157,26 @@ fun ItemAction(text: String, icon: ImageBitmap, textColor: Color = Color.Unspeci
   val finalColor = if (textColor == Color.Unspecified) {
     MenuTextColor
   } else textColor
+  if (LocalNomeMessageActionsSheet.current) {
+    val sheetIconColor = if (textColor == Color.Red || textColor == MaterialTheme.colors.error) {
+      MaterialTheme.colors.error
+    } else {
+      MaterialTheme.colors.primary
+    }
+    NomeMessageActionRow(
+      text = text,
+      color = finalColor,
+      onClick = onClick,
+      icon = {
+        if (iconColor == Color.Unspecified) {
+          Image(icon, text, Modifier.size(22.dp))
+        } else {
+          Icon(icon, text, Modifier.size(22.dp), tint = if (textColor == Color.Unspecified) sheetIconColor else iconColor)
+        }
+      },
+    )
+    return
+  }
   DropdownMenuItem(onClick, contentPadding = PaddingValues(horizontal = DEFAULT_PADDING * 1.5f)) {
     Row(verticalAlignment = Alignment.CenterVertically) {
       Text(
@@ -1147,6 +1209,16 @@ fun ItemAction(
   val finalColor = if (color == Color.Unspecified) {
     MenuTextColor
   } else color
+  if (LocalNomeMessageActionsSheet.current) {
+    NomeMessageActionRow(
+      text = text,
+      color = finalColor,
+      onClick = onClick,
+      icon = composable,
+      lineLimit = lineLimit,
+    )
+    return
+  }
   DropdownMenuItem(onClick, contentPadding = PaddingValues(horizontal = DEFAULT_PADDING * 1.5f)) {
     Row(verticalAlignment = Alignment.CenterVertically) {
       Text(
@@ -1169,6 +1241,22 @@ fun ItemAction(text: String, icon: ImageVector, onClick: () -> Unit, color: Colo
   val finalColor = if (color == Color.Unspecified) {
     MenuTextColor
   } else color
+  if (LocalNomeMessageActionsSheet.current) {
+    val iconColor = if (color == Color.Red || color == MaterialTheme.colors.error) {
+      MaterialTheme.colors.error
+    } else {
+      MaterialTheme.colors.primary
+    }
+    NomeMessageActionRow(
+      text = text,
+      color = finalColor,
+      onClick = onClick,
+      icon = {
+        Icon(icon, text, Modifier.size(22.dp), tint = iconColor)
+      },
+    )
+    return
+  }
   DropdownMenuItem(onClick, contentPadding = PaddingValues(horizontal = DEFAULT_PADDING * 1.5f)) {
     Row(verticalAlignment = Alignment.CenterVertically) {
       Text(
@@ -1189,6 +1277,17 @@ fun ItemAction(text: String, color: Color = Color.Unspecified, onClick: () -> Un
   val finalColor = if (color == Color.Unspecified) {
     MenuTextColor
   } else color
+  if (LocalNomeMessageActionsSheet.current) {
+    NomeMessageActionRow(
+      text = text,
+      color = finalColor,
+      onClick = onClick,
+      icon = {
+        Spacer(Modifier.size(22.dp))
+      },
+    )
+    return
+  }
   DropdownMenuItem(onClick, contentPadding = PaddingValues(horizontal = DEFAULT_PADDING * 1.5f)) {
     Text(
       text,
@@ -1199,6 +1298,60 @@ fun ItemAction(text: String, color: Color = Color.Unspecified, onClick: () -> Un
       color = finalColor
     )
   }
+}
+
+@Composable
+private fun NomeMessageActionRow(
+  text: String,
+  color: Color,
+  onClick: () -> Unit,
+  icon: @Composable () -> Unit,
+  lineLimit: Int = 1,
+) {
+  val destructive = color == Color.Red || color == MaterialTheme.colors.error
+  val iconBackground = if (destructive) {
+    MaterialTheme.colors.error.copy(alpha = 0.10f)
+  } else {
+    MaterialTheme.colors.primary.copy(alpha = 0.10f)
+  }
+  val iconTint = if (destructive) MaterialTheme.colors.error else MaterialTheme.colors.primary
+  DropdownMenuItem(
+    onClick = onClick,
+    modifier = Modifier
+      .fillMaxWidth()
+      .heightIn(min = 54.dp),
+    contentPadding = PaddingValues(horizontal = 8.dp),
+  ) {
+    Row(
+      modifier = Modifier.fillMaxWidth(),
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      Box(
+        modifier = Modifier
+          .size(38.dp)
+          .clip(RoundedCornerShape(12.dp))
+          .background(iconBackground),
+        contentAlignment = Alignment.Center,
+      ) {
+        CompositionLocalProvider(LocalContentColor provides iconTint) {
+          icon()
+        }
+      }
+      Spacer(Modifier.width(12.dp))
+      Text(
+        text = text,
+        modifier = Modifier.weight(1f),
+        color = if (destructive) MaterialTheme.colors.error else MaterialTheme.colors.onSurface,
+        style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Medium),
+        maxLines = lineLimit,
+        overflow = TextOverflow.Ellipsis,
+      )
+    }
+  }
+  Divider(
+    modifier = Modifier.padding(start = 58.dp),
+    color = MaterialTheme.colors.onSurface.copy(alpha = 0.12f),
+  )
 }
 
 @Composable
@@ -1304,6 +1457,9 @@ val shapeStyle: (chatItem: ChatItem?, tailEnabled: Boolean, tailVisible: Boolean
 fun shapeStyleWithTail(chatItem: ChatItem? = null, tailEnabled: Boolean, tailVisible: Boolean, revealed: Boolean): ShapeStyle {
   if (chatItem == null) {
     return ShapeStyle.RoundRect(msgRectMaxRadius)
+  }
+  if (appPlatform.isAndroid) {
+    return ShapeStyle.RoundRect(16.dp)
   }
 
   when (chatItem.content) {

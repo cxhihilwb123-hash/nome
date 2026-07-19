@@ -20,6 +20,7 @@ import chat.simplex.common.ui.theme.*
 import chat.simplex.common.views.chat.item.ItemAction
 import chat.simplex.common.views.chatlist.setGroupMembers
 import chat.simplex.common.views.helpers.*
+import chat.simplex.common.views.usersettings.PlatformSettingsDetailRoute
 import chat.simplex.res.MR
 import dev.icerock.moko.resources.compose.painterResource
 
@@ -47,7 +48,8 @@ fun ChannelRelaysView(
     groupInfo = groupInfo,
     chatModel = chatModel,
     groupRelays = groupRelays,
-    showMemberInfo = showMemberInfo
+    showMemberInfo = showMemberInfo,
+    close = close,
   )
 }
 
@@ -57,14 +59,15 @@ private fun ChannelRelaysLayout(
   groupInfo: GroupInfo,
   chatModel: ChatModel,
   groupRelays: List<GroupRelay>,
-  showMemberInfo: (GroupMember, GroupRelay?) -> Unit
+  showMemberInfo: (GroupMember, GroupRelay?) -> Unit,
+  close: () -> Unit,
 ) {
   val relayMembers = remember { chatModel.groupMembers }.value
     .filter { it.memberRole == GroupMemberRole.Relay && it.memberStatus != GroupMemberStatus.MemRemoved && it.memberStatus != GroupMemberStatus.MemGroupDeleted }
 
-  ColumnWithScrollBar {
-    AppBarTitle(generalGetString(MR.strings.channel_relays_title))
-
+  val title = generalGetString(MR.strings.channel_relays_title)
+  val content: @Composable () -> Unit = {
+    Column {
     if (relayMembers.isEmpty()) {
       SectionView {
         SectionItemView(padding = PaddingValues(horizontal = DEFAULT_PADDING)) {
@@ -141,7 +144,21 @@ private fun ChannelRelaysLayout(
     }
     */
     SectionBottomSpacer()
+    }
   }
+  val legacyContent: @Composable () -> Unit = {
+    ColumnWithScrollBar {
+      AppBarTitle(title)
+      content()
+    }
+  }
+  PlatformSettingsDetailRoute(
+    title = title,
+    onClose = close,
+    groupedContent = true,
+    legacyContent = legacyContent,
+    content = content,
+  )
 }
 
 @Composable

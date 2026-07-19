@@ -9,7 +9,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
+import chat.simplex.common.ui.theme.AppColors
+import chat.simplex.common.ui.theme.LocalAppColors
 import chat.simplex.common.ui.nome.tokens.NomeColorTokens
 import chat.simplex.common.ui.nome.tokens.NomeDarkColorTokens
 import chat.simplex.common.ui.nome.tokens.NomeDimensionTokens
@@ -115,6 +118,16 @@ fun NomeAndroidTheme(
       onError = theme.colors.onDanger,
     )
   }
+  val appColors = remember(theme) {
+    AppColors(
+      title = theme.colors.action,
+      primaryVariant2 = theme.colors.surfaceContainer,
+      sentMessage = theme.colors.sentMessage,
+      sentQuote = theme.colors.successContainer,
+      receivedMessage = theme.colors.receivedMessage,
+      receivedQuote = theme.colors.surfaceSubtle,
+    )
+  }
 
   MaterialTheme(
     colors = materialColors,
@@ -123,6 +136,7 @@ fun NomeAndroidTheme(
   ) {
     CompositionLocalProvider(
       LocalNomeTheme provides theme,
+      LocalAppColors provides appColors,
       LocalContentColor provides theme.colors.textPrimary,
       content = content,
     )

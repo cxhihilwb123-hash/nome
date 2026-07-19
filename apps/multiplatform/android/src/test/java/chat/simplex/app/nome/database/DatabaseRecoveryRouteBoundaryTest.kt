@@ -63,6 +63,28 @@ class DatabaseRecoveryRouteBoundaryTest {
     )
   }
 
+  @Test
+  fun archiveExportRegistersZipAndLeavesChooserCleanupOwnedByItsResult() {
+    val database = commonSource(
+      "commonMain/kotlin/chat/simplex/common/views/database/DatabaseView.kt",
+    ).readText()
+    val files = commonSource(
+      "androidMain/kotlin/chat/simplex/common/platform/Files.android.kt",
+    ).readText()
+    val export = database.functionBody("exportArchive")
+
+    assertTrue(
+      database.contains(
+        """rememberFileChooserLauncher(false, saveMimeType = "application/zip")""",
+      ),
+    )
+    assertTrue(database.contains("""importArchiveLauncher.launch("application/zip")"""))
+    assertTrue(files.contains("""ActivityResultContracts.CreateDocument(saveMimeType ?: "*/*")"""))
+    assertTrue(export.contains("return true"))
+    assertTrue(database.contains("File(archive).delete()"))
+    assertTrue(database.contains("chatArchiveFile.value = null"))
+  }
+
   private fun commonSource(relativePath: String): File {
     var current = File(
       requireNotNull(System.getProperty("user.dir")),

@@ -31,7 +31,10 @@ import kotlinx.coroutines.delay
 import java.util.Locale
 
 @Composable
-actual fun AppearanceView(m: ChatModel) {
+actual fun AppearanceView(
+  m: ChatModel,
+  close: (() -> Unit)?,
+) {
   AppearanceScope.AppearanceLayout(
     m.controller.appPrefs.appLanguage,
     m.controller.appPrefs.systemDarkTheme,

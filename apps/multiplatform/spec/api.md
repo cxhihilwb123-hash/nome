@@ -159,7 +159,8 @@ Callers that require authoritative list truth first call [`ChatModel.beginChatLi
 |---------|-----------|-------------|------|
 | `apiNewGroup` | `rh: Long?, incognito: Boolean, groupProfile: GroupProfile` | Create a new group | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L2198) |
 | `apiAddMember` | `rh: Long?, groupId: Long, contactId: Long, memberRole: GroupMemberRole` | Invite a contact to a group | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L2239) |
-| `apiJoinGroup` | `rh: Long?, groupId: Long` | Accept a group invitation | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L2248) |
+| `apiJoinGroupResult` | `rh: Long?, groupId: Long` | P16 typed join result over the unchanged group-join command | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L2351-L2386) |
+| `apiJoinGroup` | `rh: Long?, groupId: Long` | Compatibility wrapper around the typed group-join result | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L2388-L2393) |
 | `apiAcceptMember` | `rh: Long?, groupId: Long, groupMemberId: Long, memberRole: GroupMemberRole` | Accept a member joining via group link | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L2274) |
 | `apiDeleteMemberSupportChat` | `rh: Long?, groupId: Long, groupMemberId: Long` | Delete a member's support chat | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L2283) |
 | `apiRemoveMembers` | `rh: Long?, groupId: Long, memberIds: List<Long>, withMessages: Boolean` | Remove members from a group | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L2290) |
@@ -201,12 +202,14 @@ Callers that require authoritative list truth first call [`ChatModel.beginChatLi
 | `apiSetContactAlias` | `rh: Long?, contactId: Long, localAlias: String` | Set a local display alias for a contact | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1817) |
 | `apiSetConnectionAlias` | `rh: Long?, connId: Long, localAlias: String` | Set a local display alias for a pending connection | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1831) |
 | `apiSetContactPrefs` | `rh: Long?, contactId: Long, prefs: ChatPreferences` | Update feature preferences for a contact | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1810) |
-| `apiCreateUserAddress` | `rh: Long?` | Create a long-term public contact address | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1852) |
-| `apiDeleteUserAddress` | `rh: Long?` | Delete the user's public contact address | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1868) |
-| `apiAddMyAddressShortLink` | `rh: Long?` | Create a short link for the user's address | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1890) |
-| `apiSetUserAddressSettings` | `rh: Long?, settings: AddressSettings` | Configure auto-accept for incoming contact requests | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1901) |
-| `apiAcceptContactRequest` | `rh: Long?, incognito: Boolean, contactReqId: Long` | Accept an incoming contact request | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1915) |
-| `apiRejectContactRequest` | `rh: Long?, contactReqId: Long` | Reject an incoming contact request | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1938) |
+| `apiCreateUserAddress` | `rh: Long?` | Create a long-term public contact address | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1907-L1921) |
+| `apiDeleteUserAddress` | `rh: Long?` | Delete the user's public contact address | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1923-L1930) |
+| `apiGetUserAddressResult` | `rh: Long?` | Typed address lookup: `Ready`, exact not-found `NotFound`, or `Failure` | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1932-L1955) |
+| `apiAddMyAddressShortLink` | `rh: Long?` | Create a short link for the user's address | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1967-L1976) |
+| `apiSetUserAddressSettings` | `rh: Long?, settings: AddressSettings` | Configure auto-accept for incoming contact requests | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1978-L1990) |
+| `apiAcceptContactRequest` | `rh: Long?, incognito: Boolean, contactReqId: Long` | Accept an incoming contact request | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1992-L2013) |
+| `apiRejectContactRequestResult` | `rh: Long?, contactReqId: Long` | Typed reject result preserving successful null-contact response separately from failure | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L2015-L2033) |
+| `apiRejectContactRequest` | `rh: Long?, contactReqId: Long` | Compatibility nullable wrapper around the typed reject result | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L2035-L2049) |
 | `apiSwitchContact` | `rh: Long?, contactId: Long` | Initiate SMP server switch for a contact | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1463) |
 | `apiAbortSwitchContact` | `rh: Long?, contactId: Long` | Abort an in-progress server switch | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1477) |
 | `apiSyncContactRatchet` | `rh: Long?, contactId: Long, force: Boolean` | Force ratchet synchronization with a contact | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1491) |
@@ -215,9 +218,9 @@ Callers that require authoritative list truth first call [`ChatModel.beginChatLi
 
 #### P13 typed connection contract
 
-[`APIConnectPlanResult`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L7040-L7049)
+[`APIConnectPlanResult`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L7099-L7108)
 distinguishes `Ready(connectionLink, connectionPlan)`, `Failure(response)`, and
-`NoCurrentUser`. [`APIConnectResult`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L7051-L7061)
+`NoCurrentUser`. [`APIConnectResult`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L7110-L7120)
 maps only `CR.SentConfirmation` and `CR.SentInvitation` to `Pending`, retains
 `CR.ContactAlreadyExists`, and leaves every other response as failure.
 
@@ -227,6 +230,26 @@ automatically, or own alerts. `sendCmd(..., log = false)` prevents the P13 beare
 entering the in-app terminal/log path; the legacy wrappers and all non-P13 callers retain their
 prior behavior. Cancellation propagates to the presentation owner rather than being converted to
 a network error.
+
+#### P14/P15 typed request and address contracts
+
+[`APIRejectContactRequestResult`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L7122-L7128)
+distinguishes proven `Rejected(contact?)` from `Failure`, including the valid successful
+null-contact response. [`APIUserAddressResult`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L7130-L7138)
+distinguishes `Ready(address)`, exact `UserContactLinkNotFound` as `NotFound`, and all other lookup
+failures. Both are client-side typed projections over unchanged core commands and response types.
+
+#### P16 typed group-invitation contract
+
+[`APIJoinGroupResult`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L7140-L7148)
+distinguishes proven `Accepted(groupInfo)`, the established expired/not-found terminal
+`Unavailable` path, and `NotCompleted`. `apiJoinGroupResult` sends the unchanged
+`CC.ApiJoinGroup`, retains the official model update and error alerts, and adds no core command or
+response type. The compatibility `apiJoinGroup` wrapper preserves existing callers.
+
+The P16 caller closes the preview after `Accepted` or terminal `Unavailable`; `NotCompleted`
+retains the invitation for retry. An accepted join request does not by itself prove all group
+member connections are established.
 
 ### 2.6 File Operations
 

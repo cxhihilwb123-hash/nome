@@ -27,15 +27,19 @@ import chat.simplex.common.model.ChatController.appPrefs
 import chat.simplex.common.platform.*
 import chat.simplex.common.ui.theme.*
 import chat.simplex.common.views.database.DatabaseView
+import chat.simplex.common.views.chatlist.ActiveFilter
+import chat.simplex.common.views.chatlist.PresetTagKind
 import chat.simplex.common.views.helpers.*
 import chat.simplex.common.views.migration.MigrateFromDeviceView
 import chat.simplex.common.views.onboarding.SimpleXInfo
 import chat.simplex.common.views.onboarding.WhatsNewView
+import chat.simplex.common.views.remote.ConnectDesktopView
 import chat.simplex.common.views.usersettings.networkAndServers.NetworkAndServersView
 import chat.simplex.res.MR
 
 @Composable
 fun SettingsView(chatModel: ChatModel, setPerformLA: (Boolean) -> Unit, close: () -> Unit) {
+  BackHandler(onBack = close)
   val user = chatModel.currentUser.value
   val stopped = chatModel.chatRunning.value == false
   SettingsLayout(
@@ -44,6 +48,7 @@ fun SettingsView(chatModel: ChatModel, setPerformLA: (Boolean) -> Unit, close: (
     remember { chatModel.controller.appPrefs.storeDBPassphrase.state }.value,
     remember { chatModel.controller.appPrefs.notificationsMode.state },
     user?.displayName,
+    onClose = close,
     setPerformLA = setPerformLA,
     showModal = { modalView -> { ModalManager.start.showModal { modalView(chatModel) } } },
     showSettingsModal = { modalView -> { ModalManager.start.showModal(true) { modalView(chatModel) } } },
@@ -84,6 +89,7 @@ fun SettingsLayout(
   passphraseSaved: Boolean,
   notificationsMode: State<NotificationsMode>,
   userDisplayName: String?,
+  onClose: () -> Unit,
   setPerformLA: (Boolean) -> Unit,
   showModal: (@Composable (ChatModel) -> Unit) -> (() -> Unit),
   showSettingsModal: (@Composable (ChatModel) -> Unit) -> (() -> Unit),
@@ -97,48 +103,371 @@ fun SettingsLayout(
     hideKeyboard(view)
   }
   val uriHandler = LocalUriHandler.current
-  ColumnWithScrollBar {
-    AppBarTitle(stringResource(MR.strings.your_settings))
-
-    SectionView(stringResource(MR.strings.settings_section_title_settings)) {
-      SettingsActionItem(painterResource(if (notificationsMode.value == NotificationsMode.OFF) MR.images.ic_bolt_off else MR.images.ic_bolt), stringResource(MR.strings.notifications), showSettingsModal { NotificationsSettingsView(it) }, disabled = stopped)
-      SettingsActionItem(painterResource(MR.images.ic_wifi_tethering), stringResource(MR.strings.network_and_servers), showCustomModal { _, close -> NetworkAndServersView(close) }, disabled = stopped)
-      SettingsActionItem(painterResource(MR.images.ic_videocam), stringResource(MR.strings.settings_audio_video_calls), showSettingsModal { CallSettingsView(it, showModal) }, disabled = stopped)
-      SettingsActionItem(painterResource(MR.images.ic_lock), stringResource(MR.strings.privacy_and_security), showSettingsModal { PrivacySettingsView(it, showSettingsModal, setPerformLA) }, disabled = stopped)
-      SettingsActionItem(painterResource(MR.images.ic_light_mode), stringResource(MR.strings.appearance_settings), showSettingsModal { AppearanceView(it) })
-    }
-    SectionDividerSpaced()
-
-    SectionView(stringResource(MR.strings.settings_section_title_chat_database)) {
-      DatabaseItem(encrypted, passphraseSaved, showSettingsModal { DatabaseView() }, stopped)
-      SettingsActionItem(painterResource(MR.images.ic_ios_share), stringResource(MR.strings.migrate_from_device_to_another_device), { withAuth(generalGetString(MR.strings.auth_open_migration_to_another_device), generalGetString(MR.strings.auth_log_in_using_credential)) { ModalManager.fullscreen.showCustomModal { close -> MigrateFromDeviceView(close) } } }, disabled = stopped)
-    }
-
-    SectionDividerSpaced()
-
-    SectionView(stringResource(MR.strings.settings_section_title_help)) {
-      SettingsActionItem(painterResource(MR.images.ic_help), stringResource(MR.strings.how_to_use_simplex_chat), showModal { HelpView(userDisplayName ?: "") }, disabled = stopped)
-      SettingsActionItem(painterResource(MR.images.ic_add), stringResource(MR.strings.whats_new), showCustomModal { _, close -> WhatsNewView(viaSettings = true, close = close) }, disabled = stopped)
-      SettingsActionItem(painterResource(MR.images.ic_info), stringResource(MR.strings.about_simplex_chat), showModal { SimpleXInfo(it, onboarding = false) })
-      if (!chatModel.desktopNoUserNoRemote) {
-        SettingsActionItem(painterResource(MR.images.ic_tag), stringResource(MR.strings.chat_with_the_founder), { uriHandler.openVerifiedSimplexUri(simplexTeamUri) }, textColor = MaterialTheme.colors.primary, disabled = stopped)
+  val openNotifications =
+    if (appPlatform == AppPlatform.ANDROID) {
+      showCustomModal { chatModel, close ->
+        NotificationsSettingsView(
+          chatModel,
+          close,
+        )
       }
-      SettingsActionItem(painterResource(MR.images.ic_mail), stringResource(MR.strings.send_us_an_email), { uriHandler.openUriCatching("mailto:chat@simplex.chat") }, textColor = MaterialTheme.colors.primary)
-    }
-    SectionDividerSpaced()
-
-    SectionView(stringResource(MR.strings.settings_section_title_support)) {
-      if (!BuildConfigCommon.ANDROID_BUNDLE) {
-        ContributeItem(uriHandler)
+    } else {
+      showSettingsModal {
+        NotificationsSettingsView(it)
       }
-      RateAppItem(uriHandler)
-      StarOnGithubItem(uriHandler)
     }
-    SectionDividerSpaced()
-
-    SettingsSectionApp(showSettingsModal, showVersion, withAuth)
-    SectionBottomSpacer()
+  val openNetwork =
+    showCustomModal { _, close ->
+      NetworkAndServersView(close)
+    }
+  val openPrivacy =
+    showSettingsModal {
+      PrivacySettingsView(
+        it,
+        showSettingsModal,
+        setPerformLA,
+      )
+    }
+  val openAppearance =
+    if (appPlatform == AppPlatform.ANDROID) {
+      showCustomModal { model, close ->
+        AppearanceView(model, close)
+      }
+    } else {
+      showSettingsModal {
+        AppearanceView(it)
+      }
+    }
+  val openHelp =
+    if (appPlatform == AppPlatform.ANDROID) {
+      showCustomModal { _, close ->
+        HelpView(
+          userDisplayName ?: "",
+          close,
+        )
+      }
+    } else {
+      showModal {
+        HelpView(userDisplayName ?: "")
+      }
+    }
+  val openAbout =
+    if (appPlatform == AppPlatform.ANDROID) {
+      showCustomModal { model, close ->
+        SimpleXInfo(
+          model,
+          onboarding = false,
+          close = close,
+          showVersion = showVersion,
+        )
+      }
+    } else {
+      showModal {
+        SimpleXInfo(
+          it,
+          onboarding = false,
+        )
+      }
+    }
+  val openDeveloper =
+    if (appPlatform == AppPlatform.ANDROID) {
+      showCustomModal { _, close ->
+        DeveloperView(
+          withAuth,
+          close,
+        )
+      }
+    } else {
+      showSettingsModal {
+        DeveloperView(withAuth)
+      }
+    }
+  val openMigration = {
+    withAuth(
+      generalGetString(
+        MR.strings.auth_open_migration_to_another_device,
+      ),
+      generalGetString(
+        MR.strings.auth_log_in_using_credential,
+      ),
+    ) {
+      ModalManager.fullscreen.showCustomModal { close ->
+        MigrateFromDeviceView(close)
+      }
+    }
   }
+  val openBackupMigration = {
+    ModalManager.start.showCustomModal { close ->
+      PlatformBackupMigrationRoute(
+        migrationEnabled = !stopped,
+        onClose = close,
+        onOpenArchive =
+          showSettingsModal {
+            DatabaseView()
+          },
+        onOpenMigration = openMigration,
+        legacyContent = {
+          DatabaseView()
+        },
+      )
+    }
+  }
+  PlatformSettingsHomeRoute(
+    currentUser = chatModel.currentUser.value,
+    stopped = stopped,
+    notificationsEnabled =
+      notificationsMode.value != NotificationsMode.OFF,
+    languageCode =
+      remember {
+        appPrefs.appLanguage.state
+      }.value ?: "system",
+    onOpenIdentity = {
+      showSettingsModalWithSearch { m, search ->
+        val profileHidden =
+          rememberSaveable {
+            mutableStateOf(false)
+          }
+        UserProfilesView(
+          m,
+          search,
+          profileHidden,
+        ) { block ->
+          withAuth(
+            generalGetString(
+              MR.strings.auth_open_chat_profiles,
+            ),
+            generalGetString(
+              MR.strings.auth_log_in_using_credential,
+            ),
+            block,
+          )
+        }
+      }
+    },
+    onOpenNotifications = openNotifications,
+    onOpenBackupMigration = openBackupMigration,
+    onOpenDesktop = {
+      ModalManager.fullscreen.showCustomModal { close ->
+        ConnectDesktopView(close)
+      }
+    },
+    onOpenPrivacy = openPrivacy,
+    onOpenNetwork = openNetwork,
+    onOpenLanguage = openAppearance,
+    onOpenAppearance = openAppearance,
+    onOpenHelp = openHelp,
+    onOpenAbout = openAbout,
+    onOpenDeveloper = openDeveloper,
+    onOpenHome = {
+      chatModel.activeChatTagFilter.value = null
+      onClose()
+    },
+    onOpenContacts = {
+      chatModel.activeChatTagFilter.value =
+        ActiveFilter.PresetTag(
+          PresetTagKind.CONTACTS,
+        )
+      onClose()
+    },
+    legacyContent = {
+      ColumnWithScrollBar {
+        AppBarTitle(
+          stringResource(
+            MR.strings.your_settings,
+          ),
+        )
+
+        SectionView(
+          stringResource(
+            MR.strings.settings_section_title_settings,
+          ),
+        ) {
+          SettingsActionItem(
+            painterResource(
+              if (
+                notificationsMode.value ==
+                NotificationsMode.OFF
+              ) {
+                MR.images.ic_bolt_off
+              } else {
+                MR.images.ic_bolt
+              },
+            ),
+            stringResource(
+              MR.strings.notifications,
+            ),
+            openNotifications,
+            disabled = stopped,
+          )
+          SettingsActionItem(
+            painterResource(
+              MR.images.ic_wifi_tethering,
+            ),
+            stringResource(
+              MR.strings.network_and_servers,
+            ),
+            openNetwork,
+            disabled = stopped,
+          )
+          SettingsActionItem(
+            painterResource(
+              MR.images.ic_videocam,
+            ),
+            stringResource(
+              MR.strings.settings_audio_video_calls,
+            ),
+            showSettingsModal {
+              CallSettingsView(
+                it,
+                showModal,
+              )
+            },
+            disabled = stopped,
+          )
+          SettingsActionItem(
+            painterResource(
+              MR.images.ic_lock,
+            ),
+            stringResource(
+              MR.strings.privacy_and_security,
+            ),
+            openPrivacy,
+            disabled = stopped,
+          )
+          SettingsActionItem(
+            painterResource(
+              MR.images.ic_light_mode,
+            ),
+            stringResource(
+              MR.strings.appearance_settings,
+            ),
+            openAppearance,
+          )
+        }
+        SectionDividerSpaced()
+
+        SectionView(
+          stringResource(
+            MR.strings.settings_section_title_chat_database,
+          ),
+        ) {
+          DatabaseItem(
+            encrypted,
+            passphraseSaved,
+            showSettingsModal {
+              DatabaseView()
+            },
+            stopped,
+          )
+          SettingsActionItem(
+            painterResource(
+              MR.images.ic_ios_share,
+            ),
+            stringResource(
+              MR.strings.migrate_from_device_to_another_device,
+            ),
+            openMigration,
+            disabled = stopped,
+          )
+        }
+
+        SectionDividerSpaced()
+
+        SectionView(
+          stringResource(
+            MR.strings.settings_section_title_help,
+          ),
+        ) {
+          SettingsActionItem(
+            painterResource(
+              MR.images.ic_help,
+            ),
+            stringResource(
+              MR.strings.how_to_use_simplex_chat,
+            ),
+            openHelp,
+            disabled = stopped,
+          )
+          SettingsActionItem(
+            painterResource(
+              MR.images.ic_add,
+            ),
+            stringResource(
+              MR.strings.whats_new,
+            ),
+            showCustomModal { _, close ->
+              WhatsNewView(
+                viaSettings = true,
+                close = close,
+              )
+            },
+            disabled = stopped,
+          )
+          SettingsActionItem(
+            painterResource(
+              MR.images.ic_info,
+            ),
+            stringResource(
+              MR.strings.about_simplex_chat,
+            ),
+            openAbout,
+          )
+          if (!chatModel.desktopNoUserNoRemote) {
+            SettingsActionItem(
+              painterResource(
+                MR.images.ic_tag,
+              ),
+              stringResource(
+                MR.strings.chat_with_the_founder,
+              ),
+              {
+                uriHandler.openVerifiedSimplexUri(
+                  simplexTeamUri,
+                )
+              },
+              textColor = MaterialTheme.colors.primary,
+              disabled = stopped,
+            )
+          }
+          SettingsActionItem(
+            painterResource(
+              MR.images.ic_mail,
+            ),
+            stringResource(
+              MR.strings.send_us_an_email,
+            ),
+            {
+              uriHandler.openUriCatching(
+                "mailto:chat@simplex.chat",
+              )
+            },
+            textColor = MaterialTheme.colors.primary,
+          )
+        }
+        SectionDividerSpaced()
+
+        SectionView(
+          stringResource(
+            MR.strings.settings_section_title_support,
+          ),
+        ) {
+          if (!BuildConfigCommon.ANDROID_BUNDLE) {
+            ContributeItem(uriHandler)
+          }
+          RateAppItem(uriHandler)
+          StarOnGithubItem(uriHandler)
+        }
+        SectionDividerSpaced()
+
+        SettingsSectionApp(
+          showSettingsModal,
+          showVersion,
+          withAuth,
+        )
+        SectionBottomSpacer()
+      }
+    },
+  )
 }
 
 @Composable
@@ -487,6 +816,7 @@ fun PreviewSettingsLayout() {
       passphraseSaved = false,
       notificationsMode = remember { mutableStateOf(NotificationsMode.OFF) },
       userDisplayName = "Alice",
+      onClose = {},
       setPerformLA = { _ -> },
       showModal = { {} },
       showSettingsModal = { {} },

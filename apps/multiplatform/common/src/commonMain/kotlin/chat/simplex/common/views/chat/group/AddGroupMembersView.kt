@@ -147,10 +147,10 @@ fun AddGroupMembersLayout(
     }
   }
 
-  ColumnWithScrollBar {
-    AppBarTitle(stringResource(MR.strings.button_add_members))
+  val title = stringResource(MR.strings.button_add_members)
+  val profileContent: @Composable () -> Unit = {
     profileText()
-    Spacer(Modifier.size(DEFAULT_PADDING))
+    Spacer(Modifier.size(DEFAULT_PADDING_HALF))
     Row(
       Modifier.fillMaxWidth(),
       horizontalArrangement = Arrangement.Center
@@ -161,50 +161,79 @@ fun AddGroupMembersLayout(
         iconColor = if (isInDarkTheme()) GroupDark else SettingsSecondaryLight
       )
     }
-    SectionSpacer()
-
-    if (contactsToAdd.isEmpty() && searchText.value.text.isEmpty()) {
-      Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center
-      ) {
-        Text(
-          stringResource(MR.strings.no_contacts_to_add),
-          Modifier.padding(),
-          color = MaterialTheme.colors.secondary
-        )
+  }
+  val setupContent: @Composable () -> Unit = {
+    if (creatingGroup) {
+      SectionItemView(openMemberAdmission) {
+        Text(stringResource(MR.strings.set_member_admission))
       }
-    } else {
-      SectionView {
-        if (creatingGroup) {
-          SectionItemView(openMemberAdmission) {
-            Text(stringResource(MR.strings.set_member_admission))
-          }
-          SectionItemView(openPreferences) {
-            Text(stringResource(MR.strings.set_group_preferences))
-          }
-        }
-        RoleSelectionRow(groupInfo, selectedRole, allowModifyMembers)
-        if (creatingGroup && selectedContacts.isEmpty()) {
-          SkipInvitingButton(close)
-        } else {
-          val titleId = if (groupInfo.businessChat == null) MR.strings.invite_to_group_button else MR.strings.invite_to_chat_button
-          InviteMembersButton(titleId, inviteMembers, disabled = selectedContacts.isEmpty() || !allowModifyMembers)
-        }
-      }
-      SectionCustomFooter {
-        InviteSectionFooter(selectedContactsCount = selectedContacts.size, allowModifyMembers, clearSelection)
-      }
-      SectionDividerSpaced(maxTopPadding = true)
-      SectionView(stringResource(MR.strings.select_contacts).uppercase()) {
-        SectionItemView(padding = PaddingValues(start = DEFAULT_PADDING, end = DEFAULT_PADDING_HALF)) {
-          SearchRowView(searchText)
-        }
-        ContactList(contacts = contactsToAdd, selectedContacts, groupInfo, allowModifyMembers, addContact, removeContact)
+      SectionItemView(openPreferences) {
+        Text(stringResource(MR.strings.set_group_preferences))
       }
     }
-    SectionBottomSpacer()
+    RoleSelectionRow(groupInfo, selectedRole, allowModifyMembers)
+    if (creatingGroup && selectedContacts.isEmpty()) {
+      SkipInvitingButton(close)
+    } else {
+      val titleId = if (groupInfo.businessChat == null) MR.strings.invite_to_group_button else MR.strings.invite_to_chat_button
+      InviteMembersButton(titleId, inviteMembers, disabled = selectedContacts.isEmpty() || !allowModifyMembers)
+    }
   }
+  val selectionFooterContent: @Composable () -> Unit = {
+    InviteSectionFooter(selectedContactsCount = selectedContacts.size, allowModifyMembers, clearSelection)
+  }
+  val contactsContent: @Composable () -> Unit = {
+    SectionItemView(padding = PaddingValues(start = DEFAULT_PADDING, end = DEFAULT_PADDING_HALF)) {
+      SearchRowView(searchText)
+    }
+    ContactList(contacts = contactsToAdd, selectedContacts, groupInfo, allowModifyMembers, addContact, removeContact)
+  }
+  val emptyContent: @Composable () -> Unit = {
+    Row(
+      Modifier.fillMaxWidth(),
+      horizontalArrangement = Arrangement.Center
+    ) {
+      Text(
+        stringResource(MR.strings.no_contacts_to_add),
+        Modifier.padding(),
+        color = MaterialTheme.colors.secondary
+      )
+    }
+  }
+  val legacyContent: @Composable () -> Unit = {
+    ColumnWithScrollBar {
+      AppBarTitle(title)
+      profileContent()
+      SectionSpacer()
+
+      if (contactsToAdd.isEmpty() && searchText.value.text.isEmpty()) {
+        emptyContent()
+      } else {
+        SectionView {
+          setupContent()
+        }
+        SectionCustomFooter {
+          selectionFooterContent()
+        }
+        SectionDividerSpaced(maxTopPadding = true)
+        SectionView(stringResource(MR.strings.select_contacts).uppercase()) {
+          contactsContent()
+        }
+      }
+      SectionBottomSpacer()
+    }
+  }
+  PlatformAddGroupMembersRoute(
+    title = title,
+    hasContacts = contactsToAdd.isNotEmpty() || searchText.value.text.isNotEmpty(),
+    onClose = close,
+    profileContent = profileContent,
+    setupContent = setupContent,
+    selectionFooterContent = selectionFooterContent,
+    contactsContent = contactsContent,
+    emptyContent = emptyContent,
+    legacyContent = legacyContent,
+  )
 }
 
 @Composable
@@ -365,7 +394,12 @@ fun ContactCheckRow(
     Spacer(Modifier.fillMaxWidth().weight(1f))
     Icon(
       icon,
-      contentDescription = stringResource(MR.strings.icon_descr_contact_checked),
+      contentDescription =
+        if (checked) {
+          stringResource(MR.strings.icon_descr_contact_checked)
+        } else {
+          null
+        },
       tint = iconColor
     )
   }

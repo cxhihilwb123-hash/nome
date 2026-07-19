@@ -17,6 +17,7 @@ enum class NomeButtonVariant {
   PRIMARY,
   SECONDARY,
   DESTRUCTIVE,
+  DESTRUCTIVE_SECONDARY,
 }
 
 @Composable
@@ -37,11 +38,15 @@ fun NomeButton(
     NomeButtonVariant.PRIMARY -> colors.action
     NomeButtonVariant.SECONDARY -> colors.surfaceSubtle
     NomeButtonVariant.DESTRUCTIVE -> colors.danger
+    NomeButtonVariant.DESTRUCTIVE_SECONDARY ->
+      colors.dangerContainer
   }
   val contentColor = when (variant) {
     NomeButtonVariant.PRIMARY -> colors.onAction
     NomeButtonVariant.SECONDARY -> colors.textPrimary
     NomeButtonVariant.DESTRUCTIVE -> colors.onDanger
+    NomeButtonVariant.DESTRUCTIVE_SECONDARY ->
+      colors.onDangerContainer
   }
   Button(
     onClick = onClick,

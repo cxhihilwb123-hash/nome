@@ -79,6 +79,8 @@
   <string name="e2ee_info_no_e2ee"><![CDATA[Messages in this channel are <b>not end-to-end encrypted</b>. Chat relays can see these messages.]]></string>
   <string name="e2ee_info_no_pq_short">This chat is protected by end-to-end encryption.</string>
   <string name="e2ee_info_pq_short">This chat is protected by quantum resistant end-to-end encryption.</string>
+  <string name="nome_message_actions">Message actions</string>
+  <string name="nome_add_reaction">Add reaction</string>
 
   <!-- NoteFolder - ChatModel.kt -->
   <string name="note_folder_local_display_name">Private notes</string>
@@ -238,6 +240,11 @@
   <string name="smp_server_test_compare_file">Compare file</string>
   <string name="smp_server_test_delete_file">Delete file</string>
   <string name="error_deleting_user">Error deleting user profile</string>
+  <string name="identity_delete_switch_failed">The active identity could not be switched. The selected identity was not deleted.</string>
+  <string name="identity_delete_after_switch_failed">Another identity is now active, but the selected identity was not deleted. It remains available and you can retry.</string>
+  <string name="identity_delete_target_failed">The selected identity was not deleted. It remains available and you can retry.</string>
+  <string name="identity_delete_refresh_failed">The identity was deleted, but the remaining identity state could not be refreshed. Restart the app to reconcile it.</string>
+  <string name="identity_delete_stop_failed">The identity was deleted and the active state was cleared, but chat could not be stopped. Restart the app to continue.</string>
   <string name="error_updating_user_privacy">Error updating user privacy</string>
   <string name="possible_slow_function_title">Slow function</string>
   <string name="possible_slow_function_desc">Execution of function takes too long time: %1$d seconds: %2$s</string>
@@ -964,6 +971,7 @@
   <!-- ScanCodeView.kt -->
   <string name="scan_code">Scan code</string>
   <string name="incorrect_code">Incorrect security code!</string>
+  <string name="verification_unavailable">Security-code verification is unavailable. Try again without changing the verification state.</string>
   <string name="scan_code_from_contacts_app">Scan security code from your contact\'s app.</string>
 
   <!-- VerifyCodeView.kt -->
@@ -1560,8 +1568,12 @@
   <string name="settings_developer_tools">Developer tools</string>
   <string name="settings_experimental_features">Experimental features</string>
   <string name="settings_section_title_socks">SOCKS PROXY</string>
-  <string name="settings_section_title_interface" translatable="false">INTERFACE</string>
-  <string name="settings_section_title_language" translatable="false">LANGUAGE</string>
+  <string name="settings_section_title_interface">INTERFACE</string>
+  <string name="settings_section_title_language">LANGUAGE</string>
+  <string name="nome_help_and_feedback">Help &amp; feedback</string>
+  <string name="nome_servers_and_tor">Servers &amp; Tor</string>
+  <string name="nome_device_network_status_unknown_title">Device network</string>
+  <string name="nome_device_network_status_unknown">Network status not observed yet</string>
   <string name="settings_section_title_icon">APP ICON</string>
   <string name="settings_section_title_themes">THEMES</string>
   <string name="settings_section_title_profile_images">Profile images</string>
@@ -1899,6 +1911,7 @@
   <string name="button_delete_group">Delete group</string>
   <string name="button_delete_channel">Delete channel</string>
   <string name="button_cancel_and_delete_channel">Cancel and delete channel</string>
+  <string name="deleting_channel">Deleting channel…</string>
   <string name="button_delete_chat">Delete chat</string>
   <string name="delete_group_question">Delete group?</string>
   <string name="delete_channel_question">Delete channel?</string>

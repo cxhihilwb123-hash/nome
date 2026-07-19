@@ -3,6 +3,7 @@ package chat.simplex.common.views.chatlist
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -34,6 +35,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -65,8 +68,11 @@ import chat.simplex.common.ui.nome.theme.NomeAndroidTheme
 import chat.simplex.common.ui.nome.theme.NomeTheme
 import chat.simplex.common.ui.theme.CurrentColors
 import chat.simplex.common.views.helpers.AnimatedViewState
+import chat.simplex.common.views.helpers.DefaultDropdownMenu
 import chat.simplex.common.views.helpers.tryOrShowError
 import chat.simplex.common.views.onboarding.SetNotificationsModeAdditions
+import chat.simplex.common.views.contacts.onRequestAccepted
+import chat.simplex.res.MR
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -119,9 +125,21 @@ actual fun PlatformHomeRoute(
     resolveOpenableNomeHomeChat(chatModel, capturedChat)?.let { currentChat ->
       when (val info = currentChat.chatInfo) {
         is ChatInfo.Direct ->
-          scope.launch { openDirectChat(currentChat.remoteHostId, info.apiId) }
+          scope.launch {
+            directChatAction(
+              currentChat.remoteHostId,
+              info.contact,
+              chatModel,
+            )
+          }
         is ChatInfo.Group ->
-          scope.launch { openGroupChat(currentChat.remoteHostId, info.apiId) }
+          scope.launch {
+            groupChatAction(
+              currentChat.remoteHostId,
+              info.groupInfo,
+              chatModel,
+            )
+          }
         is ChatInfo.Local ->
           scope.launch {
             noteFolderChatAction(
@@ -129,9 +147,19 @@ actual fun PlatformHomeRoute(
               info.noteFolder,
             )
           }
-        is ChatInfo.ContactRequest,
+        is ChatInfo.ContactRequest ->
+          contactRequestAlertDialog(
+            currentChat.remoteHostId,
+            info,
+            chatModel,
+          ) {
+            onRequestAccepted(it)
+          }
         is ChatInfo.ContactConnection,
-        is ChatInfo.InvalidJSON -> Unit
+        is ChatInfo.InvalidJSON ->
+          run {
+            chatModel.chatId.value = currentChat.id
+          }
       }
     }
   }
@@ -209,14 +237,36 @@ fun NomeHomeRouteContent(
         onOpenChat(currentChat)
       } else when (val info = currentChat.chatInfo) {
         is ChatInfo.Direct ->
-          scope.launch { openDirectChat(currentChat.remoteHostId, info.apiId) }
+          scope.launch {
+            directChatAction(
+              currentChat.remoteHostId,
+              info.contact,
+              chatModel,
+            )
+          }
         is ChatInfo.Group ->
-          scope.launch { openGroupChat(currentChat.remoteHostId, info.apiId) }
+          scope.launch {
+            groupChatAction(
+              currentChat.remoteHostId,
+              info.groupInfo,
+              chatModel,
+            )
+          }
         is ChatInfo.Local ->
           scope.launch { noteFolderChatAction(currentChat.remoteHostId, info.noteFolder) }
-        is ChatInfo.ContactRequest,
+        is ChatInfo.ContactRequest ->
+          contactRequestAlertDialog(
+            currentChat.remoteHostId,
+            info,
+            chatModel,
+          ) {
+            onRequestAccepted(it)
+          }
         is ChatInfo.ContactConnection,
-        is ChatInfo.InvalidJSON -> Unit
+        is ChatInfo.InvalidJSON ->
+          run {
+            chatModel.chatId.value = currentChat.id
+          }
       }
     }
   }
@@ -333,6 +383,7 @@ fun NomeHomeRouteContent(
             item { NomeChatsHeading() }
             items(state.visibleChats, key = { it.remoteHostId to it.id }) { chat ->
               NomeChatRow(
+                chatModel = chatModel,
                 chat = chat,
                 coreState = state.core,
                 pendingDeletion = pendingDeletionChats.contains(chat.remoteHostId to chat.chatInfo.id),
@@ -346,6 +397,7 @@ fun NomeHomeRouteContent(
           item { NomeChatsHeading() }
           items(state.visibleChats, key = { it.remoteHostId to it.id }) { chat ->
             NomeChatRow(
+              chatModel = chatModel,
               chat = chat,
               coreState = state.core,
               pendingDeletion = pendingDeletionChats.contains(chat.remoteHostId to chat.chatInfo.id),
@@ -637,6 +689,7 @@ private fun NomeHomeSkeleton() {
 
 @Composable
 private fun NomeChatRow(
+  chatModel: ChatModel,
   chat: Chat,
   coreState: NomeHomeCoreState,
   pendingDeletion: Boolean,
@@ -644,6 +697,12 @@ private fun NomeChatRow(
   openChat: (Chat) -> Unit,
 ) {
   val dimensions = NomeTheme.dimensions
+  val showMenu = remember(chat.id) {
+    mutableStateOf(false)
+  }
+  val inProgress = remember(chat.id) {
+    mutableStateOf(false)
+  }
   val info = chat.chatInfo
   val canOpen = coreState == NomeHomeCoreState.RUNNING &&
     !pendingDeletion &&
@@ -656,6 +715,11 @@ private fun NomeChatRow(
       is ChatInfo.ContactConnection,
       is ChatInfo.InvalidJSON -> false
     }
+  val hasMenu = info !is ChatInfo.InvalidJSON
+  val menuLabel =
+    dev.icerock.moko.resources.compose.stringResource(
+      MR.strings.icon_descr_more_button,
+    )
   val latestItem = chat.chatItems.lastOrNull()
   val preview =
     if (showChatPreviews) {
@@ -698,13 +762,38 @@ private fun NomeChatRow(
   val interactionModifier =
     if (canOpen) {
       Modifier
-        .clickable { openChat(chat) }
+        .combinedClickable(
+          onClick = {
+            if (!inProgress.value) {
+              openChat(chat)
+            }
+          },
+          onLongClick = {
+            if (hasMenu) {
+              showMenu.value = true
+            }
+          },
+        )
         .nomeMinimumTouchTarget()
         .nomeTalkBackSemantics(
           label = spokenLabel,
           state = spokenState.takeIf { it.isNotBlank() },
           role = Role.Button,
         )
+        .semantics {
+          if (hasMenu) {
+            customActions =
+              listOf(
+                CustomAccessibilityAction(
+                  label = menuLabel,
+                  action = {
+                    showMenu.value = true
+                    true
+                  },
+                ),
+              )
+          }
+        }
     } else {
       Modifier
         .nomeMinimumTouchTarget()
@@ -714,97 +803,163 @@ private fun NomeChatRow(
         )
     }
 
-  NomeSurface(
-    modifier = interactionModifier.fillMaxWidth(),
-    color = NomeTheme.colors.surface,
-    border = BorderStroke(dimensions.divider, NomeTheme.colors.border),
-  ) {
-    Row(
-      modifier = Modifier.padding(
-        horizontal = dimensions.space12,
-        vertical = dimensions.space8,
-      ),
-      verticalAlignment = Alignment.CenterVertically,
+  Box {
+    NomeSurface(
+      modifier = interactionModifier.fillMaxWidth(),
+      color = NomeTheme.colors.surface,
+      border = BorderStroke(dimensions.divider, NomeTheme.colors.border),
     ) {
-      Box(
-        modifier = Modifier
-          .size(44.dp)
-          .clip(CircleShape)
-          .background(NomeTheme.colors.surfaceContainer),
-        contentAlignment = Alignment.Center,
+      Row(
+        modifier = Modifier.padding(
+          horizontal = dimensions.space12,
+          vertical = dimensions.space8,
+        ),
+        verticalAlignment = Alignment.CenterVertically,
       ) {
-        Text(
-          text = info.chatViewName.firstOrNull()?.uppercase() ?: "?",
-          style = NomeTheme.typography.title,
-          color = NomeTheme.colors.action,
-        )
-      }
-      Spacer(Modifier.width(dimensions.space12))
-      Column(modifier = Modifier.weight(1f)) {
-        Text(
-          text = info.chatViewName,
-          maxLines = 1,
-          overflow = TextOverflow.Ellipsis,
-          style = NomeTheme.typography.title,
-          color = NomeTheme.colors.textPrimary,
-        )
-        Text(
-          text = preview,
-          maxLines = 2,
-          overflow = TextOverflow.Ellipsis,
-          style = NomeTheme.typography.body,
-          color = NomeTheme.colors.textSecondary,
-        )
-      }
-      Spacer(Modifier.width(dimensions.space8))
-      Column(horizontalAlignment = Alignment.End) {
-        Row(
-          horizontalArrangement = Arrangement.spacedBy(dimensions.space4),
-          verticalAlignment = Alignment.CenterVertically,
+        Box(
+          modifier = Modifier
+            .size(44.dp)
+            .clip(CircleShape)
+            .background(NomeTheme.colors.surfaceContainer),
+          contentAlignment = Alignment.Center,
         ) {
-          if (favorite) {
-            Icon(
-              imageVector = Icons.Rounded.Star,
-              contentDescription = null,
-              modifier = Modifier.size(16.dp),
-              tint = NomeTheme.colors.accent,
-            )
-          }
           Text(
-            text = timestamp,
-            style = NomeTheme.typography.supporting,
-            color = NomeTheme.colors.textTertiary,
+            text = info.chatViewName.firstOrNull()?.uppercase() ?: "?",
+            style = NomeTheme.typography.title,
+            color = NomeTheme.colors.action,
           )
         }
-        if (unreadCount > 0) {
-          Box(
-            modifier = Modifier
-              .padding(top = dimensions.space4)
-              .defaultMinSize(
-                minWidth = dimensions.icon,
-                minHeight = dimensions.icon,
-              )
-              .clip(CircleShape)
-              .background(NomeTheme.colors.action),
-            contentAlignment = Alignment.Center,
+        Spacer(Modifier.width(dimensions.space12))
+        Column(modifier = Modifier.weight(1f)) {
+          Text(
+            text = info.chatViewName,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            style = NomeTheme.typography.title,
+            color = NomeTheme.colors.textPrimary,
+          )
+          Text(
+            text = preview,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            style = NomeTheme.typography.body,
+            color = NomeTheme.colors.textSecondary,
+          )
+        }
+        Spacer(Modifier.width(dimensions.space8))
+        Column(horizontalAlignment = Alignment.End) {
+          Row(
+            horizontalArrangement = Arrangement.spacedBy(dimensions.space4),
+            verticalAlignment = Alignment.CenterVertically,
           ) {
+            if (favorite) {
+              Icon(
+                imageVector = Icons.Rounded.Star,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+                tint = NomeTheme.colors.accent,
+              )
+            }
             Text(
-              text = stringResource(R.string.nome_home_unread_marker, unreadCount),
-              modifier = Modifier.padding(horizontal = dimensions.space4),
+              text = timestamp,
               style = NomeTheme.typography.supporting,
-              color = NomeTheme.colors.onAction,
+              color = NomeTheme.colors.textTertiary,
             )
           }
-        } else if (chat.chatStats.unreadChat) {
-          Box(
-            modifier = Modifier
-              .padding(top = dimensions.space4)
-              .size(dimensions.space8)
-              .clip(CircleShape)
-              .background(NomeTheme.colors.action),
-          )
+          if (unreadCount > 0) {
+            Box(
+              modifier = Modifier
+                .padding(top = dimensions.space4)
+                .defaultMinSize(
+                  minWidth = dimensions.icon,
+                  minHeight = dimensions.icon,
+                )
+                .clip(CircleShape)
+                .background(NomeTheme.colors.action),
+              contentAlignment = Alignment.Center,
+            ) {
+              Text(
+                text = stringResource(R.string.nome_home_unread_marker, unreadCount),
+                modifier = Modifier.padding(horizontal = dimensions.space4),
+                style = NomeTheme.typography.supporting,
+                color = NomeTheme.colors.onAction,
+              )
+            }
+          } else if (chat.chatStats.unreadChat) {
+            Box(
+              modifier = Modifier
+                .padding(top = dimensions.space4)
+                .size(dimensions.space8)
+                .clip(CircleShape)
+                .background(NomeTheme.colors.action),
+            )
+          }
         }
       }
+    }
+    if (hasMenu) {
+      NomeChatDropdownMenu(
+        chatModel = chatModel,
+        chat = chat,
+        showMenu = showMenu,
+        inProgress = inProgress,
+      )
+    }
+  }
+}
+
+@Composable
+private fun NomeChatDropdownMenu(
+  chatModel: ChatModel,
+  chat: Chat,
+  showMenu: androidx.compose.runtime.MutableState<Boolean>,
+  inProgress: androidx.compose.runtime.MutableState<Boolean>,
+) {
+  val showMarkRead =
+    chat.chatStats.unreadCount > 0 ||
+      chat.chatStats.unreadChat
+  DefaultDropdownMenu(
+    showMenu = showMenu,
+  ) {
+    when (val info = chat.chatInfo) {
+      is ChatInfo.Direct ->
+        ContactMenuItems(
+          chat,
+          info.contact,
+          chatModel,
+          showMenu,
+          showMarkRead,
+        )
+      is ChatInfo.Group ->
+        GroupMenuItems(
+          chat,
+          info.groupInfo,
+          chatModel,
+          showMenu,
+          inProgress,
+          showMarkRead,
+        )
+      is ChatInfo.Local ->
+        NoteFolderMenuItems(
+          chat,
+          showMenu,
+          showMarkRead,
+        )
+      is ChatInfo.ContactRequest ->
+        ContactRequestMenuItems(
+          chat.remoteHostId,
+          info.apiId,
+          chatModel,
+          showMenu,
+        )
+      is ChatInfo.ContactConnection ->
+        ContactConnectionMenuItems(
+          chat.remoteHostId,
+          info,
+          chatModel,
+          showMenu,
+        )
+      is ChatInfo.InvalidJSON -> Unit
     }
   }
 }

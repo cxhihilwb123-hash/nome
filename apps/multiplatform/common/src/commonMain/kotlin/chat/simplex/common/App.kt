@@ -180,9 +180,11 @@ fun MainScreen() {
 
     val authOverlayVisible =
       unauthorized.value && !(chatModel.activeCallViewIsVisible.value && chatModel.showCallView.value)
+    val modalOverlayVisible =
+      appPlatform.isAndroid && ModalManager.fullscreen.hasModalsOpen
     Box(
       modifier =
-        if (authOverlayVisible) {
+        if (authOverlayVisible || modalOverlayVisible) {
           Modifier.clearAndSetSemantics {}
         } else {
           Modifier
@@ -266,7 +268,16 @@ fun MainScreen() {
           }
         }
       }
-      if (appPlatform.isAndroid) {
+    }
+    if (appPlatform.isAndroid) {
+      Box(
+        modifier =
+          if (authOverlayVisible) {
+            Modifier.clearAndSetSemantics {}
+          } else {
+            Modifier
+          },
+      ) {
         AndroidWrapInCallLayout {
           ModalManager.fullscreen.showInView()
         }

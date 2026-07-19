@@ -196,27 +196,39 @@ Entry: [`SimplexApp.onCreate()`](../android/src/main/java/chat/simplex/app/Simpl
 
 ```
 SimplexApp.onCreate()
+  +-- capture locale evidence            // Read-only install/data facts before process init
   +-- initHaskell(packageName)           // Load native lib, pipe stdout, call initHS()
   |     +-- System.loadLibrary("app-lib")
   |     +-- pipeStdOutToSocket(packageName)
   |     +-- initHS()
   +-- initMultiplatform()                // Set up ntfManager, platform callbacks
+  +-- initialize Nome locale once        // Existing appLanguage owner; conservative on upgrade
   +-- reconfigureBroadcastReceivers()
   +-- runMigrations()                    // Theme migration, version code tracking
   +-- initChatControllerOnStart()        // -> initChatController() -> chatMigrateInit -> startChat
 ```
 
+The locale adapter writes `zh-CN` only for a jointly proven clean install and then commits a
+versioned marker. Existing, upgraded, restored, explicitly selected, contradictory, and already
+marked states preserve the upstream nullable language value. It does not change onboarding/root
+ownership or native/database initialization.
+
 Activity: [`MainActivity.onCreate()`](../android/src/main/java/chat/simplex/app/MainActivity.kt#L33)
 
 ```
-MainActivity.onCreate()
-  +-- processNotificationIntent(intent)  // Handle OpenChat/AcceptCall from notifications
-  +-- processIntent(intent)              // Handle VIEW intents (deep links)
-  +-- processExternalIntent(intent)      // Handle SEND/SEND_MULTIPLE (share sheet)
+MainActivity.onCreate() / onNewIntent()
+  +-- dispatchMainActivityIntent(intent)
+        +-- processNotificationIntent(intent)  // Handle OpenChat/ShowChats/AcceptCall
+        +-- processIntent(intent)              // Handle VIEW intents (deep links)
+        +-- processExternalIntent(intent)      // Handle SEND/SEND_MULTIPLE (share sheet)
   +-- setContent
         +-- NomeProductionShell          // Android window/system-bar synchronization only
               +-- AppScreen()            // Existing shared root remains authoritative
 ```
+
+The activity is `singleTask`; both first creation and warm delivery therefore offer an intent to
+the same ordered dispatcher. The dispatcher adds no route or payload interpretation and leaves the
+three existing handlers authoritative. Re-created activities do not replay the previous intent.
 
 Lifecycle callbacks in `SimplexApp` (implements `LifecycleEventObserver`):
 - `ON_START`: if chat is running, begin a generation-scoped load, request a typed result, preserve current-chat stats, then apply the result only if it still belongs to the active user/host generation ([`SimplexApp.onStateChanged()`](../android/src/main/java/chat/simplex/app/SimplexApp.kt#L89-L120))

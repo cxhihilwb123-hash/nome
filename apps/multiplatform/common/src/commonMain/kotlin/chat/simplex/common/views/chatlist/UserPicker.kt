@@ -273,15 +273,33 @@ fun UserPicker(
               val search = rememberSaveable { mutableStateOf("") }
               val profileHidden = rememberSaveable { mutableStateOf(false) }
               val authorized = remember { stateGetOrPut("authorized") { false } }
+              val nomeIdentityCenter = appPlatform.isAndroid
               ModalView(
                 { close() },
-                showSearch = true,
-                searchAlwaysVisible = true,
+                showSearch = !nomeIdentityCenter,
+                showAppBar = !nomeIdentityCenter,
+                searchAlwaysVisible = !nomeIdentityCenter,
                 onSearchValueChanged = {
                   search.value = it
                 },
                 content = {
-                  UserProfilesView(chatModel, search, profileHidden) { block ->
+                  UserProfilesView(
+                    chatModel,
+                    search,
+                    profileHidden,
+                    onClose = close,
+                    onOpenHome = {
+                      chatModel.activeChatTagFilter.value = null
+                      close()
+                    },
+                    onOpenContacts = {
+                      chatModel.activeChatTagFilter.value =
+                        ActiveFilter.PresetTag(
+                          PresetTagKind.CONTACTS,
+                        )
+                      close()
+                    },
+                  ) { block ->
                       if (authorized.value) {
                         block()
                       } else {
@@ -380,8 +398,14 @@ private fun GlobalSettingsSection(
 
   SectionItemView(
     click = {
-      ModalManager.start.showModalCloseable { close ->
-        SettingsView(chatModel, setPerformLA, close)
+      if (appPlatform.isAndroid) {
+        ModalManager.start.showCustomModal { close ->
+          SettingsView(chatModel, setPerformLA, close)
+        }
+      } else {
+        ModalManager.start.showModalCloseable { close ->
+          SettingsView(chatModel, setPerformLA, close)
+        }
       }
     },
     padding = if (appPlatform.isDesktop) PaddingValues(start = DEFAULT_PADDING * 1.7f, end = DEFAULT_PADDING + 2.dp) else PaddingValues(start = DEFAULT_PADDING, end = DEFAULT_PADDING_HALF)

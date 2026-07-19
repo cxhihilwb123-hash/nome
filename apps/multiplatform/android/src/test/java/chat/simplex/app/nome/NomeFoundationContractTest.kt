@@ -13,7 +13,7 @@ class NomeFoundationContractTest {
       NomeStatePanelState.entries.map { it.name },
     )
     assertEquals(
-      listOf("PRIMARY", "SECONDARY", "DESTRUCTIVE"),
+      listOf("PRIMARY", "SECONDARY", "DESTRUCTIVE", "DESTRUCTIVE_SECONDARY"),
       NomeButtonVariant.entries.map { it.name },
     )
   }

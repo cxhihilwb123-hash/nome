@@ -29,22 +29,28 @@ fun VerifyCodeView(
   connectionVerified: Boolean,
   verify: suspend (String?) -> Pair<Boolean, String>?,
   close: () -> Unit,
+  profileImage: String? = null,
+  nomeContactPresentation: Boolean = false,
 ) {
   if (connectionCode != null) {
+    var displayedCode by remember(connectionCode) {
+      mutableStateOf(connectionCode)
+    }
     VerifyCodeLayout(
       displayName,
-      connectionCode,
+      displayedCode,
       connectionVerified,
       verifyCode = { newCode ->
         val res = verify(newCode)
         if (res != null) {
-          val (verified) = res
-          if (verified) close()
-          verified
-        } else {
-          false
+          val (_, expectedCode) = res
+          displayedCode = expectedCode
         }
-      }
+        verifyCodeAttempt(res)
+      },
+      close = close,
+      profileImage = profileImage,
+      nomeContactPresentation = nomeContactPresentation,
     )
   }
 }
@@ -54,7 +60,87 @@ private fun VerifyCodeLayout(
   displayName: String,
   connectionCode: String,
   connectionVerified: Boolean,
-  verifyCode: suspend (String?) -> Boolean,
+  verifyCode: suspend (String?) -> VerifyCodeAttempt,
+  close: () -> Unit,
+  profileImage: String?,
+  nomeContactPresentation: Boolean,
+) {
+  val clipboard = LocalClipboardManager.current
+  val scanCode = {
+    ModalManager.end.showModalCloseable { closeScanner ->
+      ScanCodeView(verifyCode) {
+        closeMatchedScanLayers(
+          closeScanner = closeScanner,
+          closeVerification = close,
+        )
+      }
+    }
+  }
+  val markVerified = {
+    withApi {
+      when (verifyCode(connectionCode)) {
+        VerifyCodeAttempt.MATCHED -> close()
+        VerifyCodeAttempt.MISMATCH ->
+          AlertManager.shared.showAlertMsg(
+            title =
+              generalGetString(
+                MR.strings.incorrect_code,
+              ),
+          )
+        VerifyCodeAttempt.UNAVAILABLE ->
+          AlertManager.shared.showAlertMsg(
+            title =
+              generalGetString(
+                MR.strings.verification_unavailable,
+              ),
+          )
+      }
+    }
+    Unit
+  }
+  val clearVerification = {
+    withApi { verifyCode(null) }
+    Unit
+  }
+
+  val legacyContent: @Composable () -> Unit = {
+    DefaultVerifyCodeLayout(
+      displayName = displayName,
+      connectionCode = connectionCode,
+      connectionVerified = connectionVerified,
+      onScanCode = scanCode,
+      onMarkVerified = markVerified,
+      onClearVerification = clearVerification,
+      onShareCode = { clipboard.shareText(connectionCode) },
+    )
+  }
+  if (nomeContactPresentation) {
+    PlatformVerifyCodeLayout(
+      displayName = displayName,
+      profileImage = profileImage,
+      connectionCode = connectionCode,
+      connectionVerified = connectionVerified,
+      onScanCode = scanCode,
+      onMarkVerified = markVerified,
+      onClearVerification = clearVerification,
+      onShareCode = { clipboard.shareText(connectionCode) },
+      onClose = close,
+      legacyContent = legacyContent,
+    )
+  } else {
+    legacyContent()
+  }
+}
+
+@Composable
+private fun DefaultVerifyCodeLayout(
+  displayName: String,
+  connectionCode: String,
+  connectionVerified: Boolean,
+  onScanCode: () -> Unit,
+  onMarkVerified: () -> Unit,
+  onClearVerification: () -> Unit,
+  onShareCode: () -> Unit,
 ) {
   ColumnWithScrollBar(Modifier.padding(horizontal = DEFAULT_PADDING)) {
     AppBarTitle(stringResource(MR.strings.security_code), withPadding = false)
@@ -81,8 +167,7 @@ private fun VerifyCodeLayout(
         )
       }
       Box(Modifier.weight(1f)) {
-        val clipboard = LocalClipboardManager.current
-        IconButton({ clipboard.shareText(connectionCode) }, Modifier.size(20.dp).align(Alignment.CenterStart)) {
+        IconButton(onShareCode, Modifier.size(20.dp).align(Alignment.CenterStart)) {
           Icon(painterResource(MR.images.ic_share_filled), null, tint = MaterialTheme.colors.primary)
         }
       }
@@ -99,30 +184,41 @@ private fun VerifyCodeLayout(
       horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
       if (connectionVerified) {
-        SimpleButton(generalGetString(MR.strings.clear_verification), painterResource(MR.images.ic_shield)) {
-          withApi { verifyCode(null) }
-        }
+        SimpleButton(
+          generalGetString(MR.strings.clear_verification),
+          painterResource(MR.images.ic_shield),
+          click = onClearVerification,
+        )
       } else {
         if (appPlatform.isAndroid) {
-          SimpleButton(generalGetString(MR.strings.scan_code), painterResource(MR.images.ic_qr_code)) {
-            ModalManager.end.showModal {
-              ScanCodeView(verifyCode) { }
-            }
-          }
+          SimpleButton(
+            generalGetString(MR.strings.scan_code),
+            painterResource(MR.images.ic_qr_code),
+            click = onScanCode,
+          )
         }
-        SimpleButton(generalGetString(MR.strings.mark_code_verified), painterResource(MR.images.ic_verified_user)) {
-          withApi {
-            val verified = verifyCode(connectionCode)
-            if (!verified) {
-              AlertManager.shared.showAlertMsg(
-                title = generalGetString(MR.strings.incorrect_code)
-              )
-            }
-          }
-        }
+        SimpleButton(
+          generalGetString(MR.strings.mark_code_verified),
+          painterResource(MR.images.ic_verified_user),
+          click = onMarkVerified,
+        )
       }
     }
     SectionBottomSpacer()
+  }
+}
+
+fun showVerifyCodeModal(
+  content: @Composable (close: () -> Unit) -> Unit,
+) {
+  if (appPlatform.isAndroid) {
+    ModalManager.end.showCustomModal { close ->
+      content(close)
+    }
+  } else {
+    ModalManager.end.showModalCloseable { close ->
+      content(close)
+    }
   }
 }
 
@@ -131,4 +227,27 @@ private fun splitToParts(s: String, length: Int): String {
   return (0..(s.length - 1) / length)
     .map { s.drop(it * length).take(length) }
     .joinToString(separator = "\n")
+}
+
+internal enum class VerifyCodeAttempt {
+  MATCHED,
+  MISMATCH,
+  UNAVAILABLE,
+}
+
+internal fun verifyCodeAttempt(
+  result: Pair<Boolean, String>?,
+): VerifyCodeAttempt =
+  when (result?.first) {
+    true -> VerifyCodeAttempt.MATCHED
+    false -> VerifyCodeAttempt.MISMATCH
+    null -> VerifyCodeAttempt.UNAVAILABLE
+  }
+
+internal fun closeMatchedScanLayers(
+  closeScanner: () -> Unit,
+  closeVerification: () -> Unit,
+) {
+  closeScanner()
+  closeVerification()
 }

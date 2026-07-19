@@ -173,10 +173,17 @@ private fun fileReady(file: CIFile, filePath: String) =
   && File(filePath).length() >= file.fileSize
 
 /**
-* [rememberedValue] is used in `remember(rememberedValue)`. So when the value changes, file saver will update a callback function
+ * [rememberedValue] is used in `remember(rememberedValue)`. So when the value changes, file saver will update a callback function.
+ * [saveMimeType] lets Android register a created document with its real MIME
+ * type on platform versions that do not infer it from the filename.
 * */
 @Composable
-expect fun rememberFileChooserLauncher(getContent: Boolean, rememberedValue: Any? = null, onResult: (URI?) -> Unit): FileChooserLauncher
+expect fun rememberFileChooserLauncher(
+  getContent: Boolean,
+  rememberedValue: Any? = null,
+  saveMimeType: String? = null,
+  onResult: (URI?) -> Unit
+): FileChooserLauncher
 
 @Composable
 expect fun rememberFileChooserMultipleLauncher(onResult: (List<URI>) -> Unit): FileChooserMultipleLauncher

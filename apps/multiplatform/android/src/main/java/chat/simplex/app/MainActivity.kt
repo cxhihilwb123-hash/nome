@@ -46,9 +46,7 @@ class MainActivity: FragmentActivity() {
     // When call ended and orientation changes, it re-process old intent, it's unneeded.
     // Only needed to be processed on first creation of activity
     if (savedInstanceState == null) {
-      processNotificationIntent(intent)
-      processIntent(intent)
-      processExternalIntent(intent)
+      dispatchMainActivityIntent(intent)
     }
     if (ChatController.appPrefs.privacyProtectScreen.get()) {
       Log.d(TAG, "onCreate: set FLAG_SECURE")
@@ -69,8 +67,7 @@ class MainActivity: FragmentActivity() {
 
   override fun onNewIntent(intent: Intent) {
     super.onNewIntent(intent)
-    processIntent(intent)
-    processExternalIntent(intent)
+    dispatchMainActivityIntent(intent)
   }
 
   override fun onResume() {
@@ -133,6 +130,17 @@ class MainActivity: FragmentActivity() {
       }
     }
   }
+}
+
+fun dispatchMainActivityIntent(
+  intent: Intent?,
+  notificationHandler: (Intent?) -> Unit = ::processNotificationIntent,
+  deepLinkHandler: (Intent?) -> Unit = ::processIntent,
+  shareHandler: (Intent?) -> Unit = ::processExternalIntent,
+) {
+  notificationHandler(intent)
+  deepLinkHandler(intent)
+  shareHandler(intent)
 }
 
 fun processNotificationIntent(intent: Intent?) {

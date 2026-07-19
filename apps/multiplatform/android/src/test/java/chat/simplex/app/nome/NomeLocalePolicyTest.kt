@@ -45,7 +45,7 @@ class NomeLocalePolicyTest {
   }
 
   @Test
-  fun explicitLanguageAndExistingMarkerAreNeverOverwritten() {
+  fun explicitLanguageAndExistingMarkerAreNeverOverwrittenAcrossLaterRuns() {
     assertEquals(
       NomeLocaleDecision.PRESERVE_EXPLICIT,
       decideNomeLocale(evidence(explicitLanguage = "en")),
@@ -60,6 +60,50 @@ class NomeLocalePolicyTest {
         ),
       ),
     )
+    assertEquals(
+      NomeLocaleDecision.ALREADY_INITIALIZED,
+      decideNomeLocale(
+        evidence(
+          markerVersion = NOME_LOCALE_POLICY_VERSION,
+          explicitLanguage = "en",
+          sameInstallAndUpdateTime = false,
+          databasePresentBeforeInitialization = true,
+          upstreamPreferencesPresent = true,
+        ),
+      ),
+    )
+  }
+
+  @Test
+  fun preInitializationEvidenceCannotBeReinterpretedAsCleanAfterStartup() {
+    val existingUserEvidence = NomeLocalePreInitializationEvidence(
+      markerVersion = 0,
+      sameInstallAndUpdateTime = true,
+      databasePresent = true,
+      upstreamPreferencesPresent = false,
+    )
+
+    assertEquals(
+      NomeLocaleDecision.PRESERVE_EXISTING_OR_UNKNOWN,
+      decideNomeLocale(
+        NomeLocaleEvidence(
+          markerVersion = existingUserEvidence.markerVersion,
+          explicitLanguage = null,
+          sameInstallAndUpdateTime = existingUserEvidence.sameInstallAndUpdateTime,
+          databasePresentBeforeInitialization = existingUserEvidence.databasePresent,
+          upstreamPreferencesPresent = existingUserEvidence.upstreamPreferencesPresent,
+        ),
+      ),
+    )
+  }
+
+  @Test
+  fun v656LanguagesAreRecognizedWithoutTreatingCorruptValuesAsSupported() {
+    assertEquals(true, isKnownNomeUpstreamLocale("zh-CN"))
+    assertEquals(true, isKnownNomeUpstreamLocale("en"))
+    assertEquals(true, isKnownNomeUpstreamLocale("pt-BR"))
+    assertEquals(false, isKnownNomeUpstreamLocale(""))
+    assertEquals(false, isKnownNomeUpstreamLocale("not_a_locale"))
   }
 
   private fun evidence(

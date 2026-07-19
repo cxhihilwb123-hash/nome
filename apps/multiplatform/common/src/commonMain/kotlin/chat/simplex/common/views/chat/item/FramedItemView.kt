@@ -2,6 +2,7 @@ package chat.simplex.common.views.chat.item
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -219,6 +220,21 @@ fun FramedItemView(
         transparentBackground -> Color.Transparent
         sent -> sentColor
         else -> receivedColor
+      }
+    )
+    .then(
+      if (appPlatform.isAndroid && !transparentBackground) {
+        Modifier.border(
+          width = 1.dp,
+          color = if (sent) {
+            MaterialTheme.colors.primary.copy(alpha = 0.28f)
+          } else {
+            MaterialTheme.colors.onSurface.copy(alpha = 0.16f)
+          },
+          shape = RoundedCornerShape(16.dp),
+        )
+      } else {
+        Modifier
       }
     )) {
     var metaColor = MaterialTheme.colors.secondary

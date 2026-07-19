@@ -90,4 +90,39 @@
     <string name="nome_p10_group_body">打开现有私密群组创建流程</string>
     <string name="nome_p10_channel">公开频道</string>
     <string name="nome_p10_channel_body">打开现有公开频道创建流程</string>
+
+    <string name="nome_p11_title">一次性邀请</string>
+    <string name="nome_p11_back">关闭一次性邀请</string>
+    <string name="nome_p11_single_use">只用于一次连接</string>
+    <string name="nome_p11_single_use_body">以 %1$s 分享；连接状态只由实际事件确认。</string>
+    <string name="nome_p11_profile_action">当前邀请身份：%1$s。选择其他身份。</string>
+    <string name="nome_p11_link_label">邀请链接</string>
+    <string name="nome_p11_copy">复制链接</string>
+    <string name="nome_p11_share">分享</string>
+    <string name="nome_p11_qr_title">一次性二维码</string>
+    <string name="nome_p11_qr_body">让对方使用 Nome 扫描</string>
+    <string name="nome_p11_share_invitation">分享邀请</string>
+    <string name="nome_p11_learn_more">邀请说明</string>
+    <string name="nome_p11_waiting">邀请已创建；连接状态以实际事件为准。</string>
+    <string name="nome_p11_copied_local">已在本机复制；这不代表对方已使用邀请。</string>
+    <string name="nome_p11_shared_local">已在本机打开分享；这不代表对方已使用邀请。</string>
+    <string name="nome_p11_creating">正在创建邀请</string>
+    <string name="nome_p11_create_failed">邀请尚未创建</string>
+    <string name="nome_p11_retry">重试</string>
+
+    <string name="nome_p12_title">扫码或粘贴</string>
+    <string name="nome_p12_back">关闭扫码或粘贴</string>
+    <string name="nome_p12_scan_tab">扫码</string>
+    <string name="nome_p12_paste_tab">粘贴链接</string>
+    <string name="nome_p12_selected">已选择</string>
+    <string name="nome_p12_not_selected">未选择</string>
+    <string name="nome_p12_scan_heading">将二维码放入取景框</string>
+    <string name="nome_p12_camera_permission">只有选择扫码后，Android 才会请求相机权限。</string>
+    <string name="nome_p12_open_camera">打开相机扫描</string>
+    <string name="nome_p12_link_label">SimpleX 连接链接</string>
+    <string name="nome_p12_link_input">连接链接</string>
+    <string name="nome_p12_link_placeholder">粘贴 SimpleX 链接</string>
+    <string name="nome_p12_clipboard_action">从剪贴板读取并检查</string>
+    <string name="nome_p12_check">检查链接</string>
+    <string name="nome_p12_plan_note">链接由官方连接确认流程处理；显示内容以实际解析和 core 返回为准。</string>
 </resources>

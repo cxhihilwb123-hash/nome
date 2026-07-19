@@ -201,6 +201,11 @@
     <string name="error_importing_database">导入聊天数据库错误</string>
     <string name="error_joining_group">加入群错误</string>
     <string name="error_deleting_user">删除用户资料错误</string>
+    <string name="identity_delete_switch_failed">无法切换当前身份；所选身份尚未删除。</string>
+    <string name="identity_delete_after_switch_failed">已切换到另一个身份，但所选身份尚未删除。该身份仍然可用，你可以重试。</string>
+    <string name="identity_delete_target_failed">所选身份尚未删除。该身份仍然可用，你可以重试。</string>
+    <string name="identity_delete_refresh_failed">身份已删除，但无法刷新剩余身份状态。请重启应用以重新对账。</string>
+    <string name="identity_delete_stop_failed">身份已删除且当前状态已清空，但聊天未能停止。请重启应用后继续。</string>
     <string name="passphrase_is_different">数据库密码不同于保存在密钥库中的密码。</string>
     <string name="database_encryption_will_be_updated">数据库加密密码将被更新并存储在密钥库中。</string>
     <string name="database_will_be_encrypted_and_passphrase_stored">数据库将被加密，密码存储在密钥库中。</string>
@@ -288,6 +293,12 @@
     <string name="settings_experimental_features">实验性功能</string>
     <string name="settings_section_title_device">设备</string>
     <string name="settings_developer_tools">开发者工具</string>
+    <string name="settings_section_title_interface">界面</string>
+    <string name="settings_section_title_language">语言</string>
+    <string name="nome_help_and_feedback">帮助与反馈</string>
+    <string name="nome_servers_and_tor">服务器与 Tor</string>
+    <string name="nome_device_network_status_unknown_title">设备网络</string>
+    <string name="nome_device_network_status_unknown">尚未获取网络状态</string>
     <string name="export_database">导出数据库</string>
     <string name="database_passphrase">数据库密码</string>
     <string name="import_database">导入数据库</string>
@@ -455,6 +466,7 @@
     <string name="message_deletion_prohibited">此聊天中禁止不可逆消息移除。</string>
     <string name="v4_5_italian_interface">意大利语界面</string>
     <string name="incorrect_code">安全码不正确！</string>
+    <string name="verification_unavailable">安全码验证当前不可用。请稍后重试；现有验证状态不会因此改变。</string>
     <string name="service_notifications_disabled">即时通知被禁用！</string>
     <string name="invalid_chat">无效聊天</string>
     <string name="smp_servers_invalid_address">无效的服务器地址！</string>
@@ -1609,6 +1621,8 @@
     <string name="unable_to_open_browser_desc">没有默认网络浏览器无法使用通话功能。请在系统中配置默认浏览器并和开发者分享更多信息。</string>
     <string name="e2ee_info_pq_short">此聊天受抗量子的端到端加密保护。</string>
     <string name="e2ee_info_no_pq_short">此聊天受端到端加密保护。</string>
+    <string name="nome_message_actions">消息操作</string>
+    <string name="nome_add_reaction">添加回应</string>
     <string name="auth_open_migration_to_another_device">打开迁移屏幕</string>
     <string name="migrate_from_another_device">从另一台设备迁移</string>
     <string name="set_passphrase">设置密码短语</string>
@@ -2791,6 +2805,7 @@
     <string name="add_relay_button">添加中继</string>
     <string name="add_relays_title">添加中继</string>
     <string name="button_cancel_and_delete_channel">取消并删除频道</string>
+    <string name="deleting_channel">正在删除频道…</string>
     <string name="num_relays_selected">选中了 %d 个中继</string>
     <string name="error_adding_relays">添加中继出错</string>
     <string name="no_available_relays">无可用中继</string>

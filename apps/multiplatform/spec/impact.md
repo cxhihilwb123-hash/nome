@@ -44,7 +44,9 @@
 | PC32 | Nome Android UI |
 
 PC32 has an exact Android-only Phase 2 design foundation, frozen Batch 2 P07/P08 and Batch 3 P13
-implementations, and an active Batch 1A P01 database-root implementation.
+implementations, frozen Milestones 1–2 through P10, and an implemented Milestone 3 presentation
+scope through P24 plus Android-reachable P1 families. The concentrated Milestone 3 non-producer
+matrix is green; external producer results remain separately open.
 The rows below keep the larger transitive integration scope for later pages and separately
 enumerate the exact foundation, Batch 2, Batch 3, and Batch 1A source/test paths. Source presence is not
 evidence that the current batch verification matrix has passed.
@@ -62,7 +64,7 @@ Path aliases are relative to `apps/multiplatform/`: `CM` = `common/src/commonMai
 | AppLock / local authentication | `CM/AppLock.kt`; `CM/views/localauth/**`; `AM/views/helpers/LocalAuthentication.android.kt`; `AM/views/usersettings/PrivacySettings.android.kt` | Cover locked, authenticating, cancelled, failed, and unlocked states without bypassing authorization. |
 | Database / migration | `CM/views/database/**`; `CM/views/migration/**`; `CM/views/onboarding/SetupDatabasePassphrase.kt`; `AM/{platform/Cryptor.android.kt,views/database/**,ui/nome/database/**}` | Cover create, encrypted, error, upgrade, bounded matched-pair recovery, import, export, and interrupted migration states without changing core/database truth. |
 | Theme | `CM/ui/theme/**`; `AM/ui/theme/**`; `CM/views/usersettings/Appearance.kt`; `AM/views/usersettings/Appearance.android.kt` | Apply the approved Nome tokens in both light and dark modes while preserving theme resolution. |
-| Locale / bilingual resources | `MR/**/strings.xml`; `CM/platform/Resources.kt`; `CM/platform/UI.kt`; `AM/helpers/Locale.kt`; `AM/platform/Resources.android.kt`; `AM/platform/UI.android.kt` | English and Chinese copy, runtime locale behavior, text expansion, and resource fallback are cross-cutting PC32 requirements. |
+| Locale / bilingual resources | `MR/**/strings.xml`; `CM/platform/Resources.kt`; `CM/platform/UI.kt`; `AM/helpers/Locale.kt`; `AM/platform/Resources.android.kt`; `AM/platform/UI.android.kt`; `APP/java/chat/simplex/app/nome/NomeLocaleInitializer.kt` | English and Chinese copy, runtime locale behavior, one-time clean-install initialization, text expansion, and resource fallback are cross-cutting PC32 requirements. |
 | Onboarding | `CM/views/onboarding/**`; `AM/views/onboarding/**` | Cover every onboarding branch, permission result, database setup result, and restoration path. |
 | Chat list | `CM/views/chatlist/**`; `AM/views/chatlist/**` | Cover loading, empty, populated, search, filters/tags, requests, errors, multi-user selection, and navigation. |
 | New chat / ConnectPlan | `CM/views/newchat/**`; `AM/views/newchat/**` | Preserve URI/QR/address planning and all invalid, confirmation, pending, success, and failure outcomes. |
@@ -148,6 +150,181 @@ an active nonblank query over an available loaded base; this does not change the
 | `android/src/androidTest/java/chat/simplex/app/nome/{home,newchat}/**` | PC1, PC12, PC24, PC32 | Medium | Focused grouping, truth-boundary, 48dp/back, and one-to-one callback tests. |
 
 Batch 2 does not add favorite mutation, profile-switch redesign, connection mutation, search/filter UI, composer/send behavior, locale-marker persistence, or any Haskell/native core, database-format, protocol, command, or event change. Those surfaces remain transitive preservation scope only.
+
+### PC32 Milestone 3 P11/P12 exact production sources
+
+This group changes Android presentation and camera lifecycle around existing New Chat owners.
+Common files carry the smallest platform seam and extracted reuse of the official parser/plan
+action; Desktop delegates the legacy content unchanged.
+
+| Exact source or test path | Product concepts | Risk | P11/P12 responsibility |
+|---|---|---|---|
+| `common/src/commonMain/kotlin/chat/simplex/common/views/newchat/NewChatView.kt` | PC12, PC29, PC32 | High | Retains `apiAddContact`, invitation disposal, parser, `planAndConnect(..., Legacy)`, and navigation ownership while passing existing facts/actions to the platform seam. |
+| `common/src/commonMain/kotlin/chat/simplex/common/views/newchat/NewChatSheet.kt` | PC12, PC24, PC32 | Medium | Opens the Android child route without the upstream bottom app bar while Desktop retains its established modal path. |
+| `common/src/commonMain/kotlin/chat/simplex/common/views/newchat/PlatformNewChatRoute.kt` | PC12, PC19, PC24, PC32 | Medium | Presentation-only P11/P12 expect seam; carries official link/profile/input facts and existing callbacks without bearer persistence. |
+| `common/src/androidMain/kotlin/chat/simplex/common/views/newchat/PlatformNewChatRoute.android.kt` | PC12, PC19, PC24, PC31, PC32 | High | Android P11/P12 visual-acceptance renderer, explicit clipboard/camera actions, 48dp semantics, and local-action truth boundary. |
+| `common/src/desktopMain/kotlin/chat/simplex/common/views/newchat/PlatformNewChatRoute.desktop.kt` | PC12, PC32 | Low | Invokes the official legacy content unchanged. |
+| `common/src/androidMain/kotlin/chat/simplex/common/views/newchat/QRCodeScanner.android.kt` | PC12, PC24, PC32 | High | Optional-camera, explicit permission, denial/Settings recovery, analyzer-frame closure, and executor disposal. |
+| `common/src/androidMain/res/values*/nome_home_strings.xml` | PC12, PC19, PC24, PC32 | Low | Bilingual P11/P12 fixed copy with no TTL, regeneration, peer-use, or success claims. |
+| `android/src/main/AndroidManifest.xml` | PC24, PC32 | Medium | Declares camera capability optional while retaining the existing camera permission. |
+| `android/src/androidTest/java/chat/simplex/app/nome/newchat/NomeNewChatRouteComposeTest.kt` | PC12, PC24, PC32 | Medium | Focused one-to-one callback, explicit scanner/clipboard activation, unsupported-copy, and 48dp contracts. |
+
+P11/P12 add no command, protocol/event type, database/archive behavior, native/core change, iOS
+behavior, or Desktop Nome UI. P12 internal input retains the legacy plan route and does not broaden
+P13's external-`ACTION_VIEW` opt-in.
+
+### PC32 Milestone 3 P14/P15 exact production sources
+
+This group changes Android presentation and adds discriminated client results over existing
+request/address commands. Common files retain official model mutation and route ownership; each
+Desktop actual preserves legacy presentation.
+
+| Exact source or test path | Product concepts | Risk | P14/P15 responsibility |
+|---|---|---|---|
+| `common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt` | PC12, PC29, PC32 | High | Adds typed reject and address-lookup projections over unchanged commands; compatibility wrappers remain. |
+| `common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/{ChatListNavLinkView.kt,PlatformContactRequestRoute.kt}` | PC1, PC12, PC20, PC32 | High | Retains official accept/reject/chat-list mutation and offers the Android presentation seam only from the existing request owner. |
+| `common/src/androidMain/kotlin/chat/simplex/common/views/chatlist/PlatformContactRequestRoute.android.kt` | PC12, PC20, PC24, PC32 | Medium | P14 requester/current/incognito/reject baseline presentation, single-submit, failure retention, and busy-back behavior. |
+| `common/src/desktopMain/kotlin/chat/simplex/common/views/chatlist/PlatformContactRequestRoute.desktop.kt` | PC12, PC32 | Low | Declines the Nome route and preserves the legacy request alert. |
+| `common/src/commonMain/kotlin/chat/simplex/common/views/usersettings/{UserAddressView.kt,PlatformUserAddressRoute.kt}` | PC19, PC29, PC32 | High | Retains lookup/create/settings/short-link/share/profile/delete owners, explicit replace phases, and official onboarding layout. |
+| `common/src/androidMain/kotlin/chat/simplex/common/views/usersettings/PlatformUserAddressRoute.android.kt` | PC24, PC29, PC32 | Medium | P15 OFF/READY/failure baseline presentation, confirmations, create-only replacement recovery, and bearer-safe semantics. |
+| `common/src/desktopMain/kotlin/chat/simplex/common/views/usersettings/PlatformUserAddressRoute.desktop.kt` | PC29, PC32 | Low | Invokes the official legacy address content. |
+| `common/src/androidMain/kotlin/chat/simplex/common/ui/nome/components/{NomeFullPageScaffold.kt,NomeButton.kt}` | PC24, PC32 | Medium | Shared page scaffold and primary/secondary/destructive visual variants used by the baselines. |
+| `common/src/androidMain/res/values*/nome_connections_strings.xml` | PC12, PC20, PC29, PC32 | Low | Fixed bilingual P14/P15 copy without request-message, atomic-replace, rollback, online, or success claims. |
+| `android/src/androidTest/java/chat/simplex/app/nome/connection/{NomeContactRequestComposeTest.kt,NomePublicContactMethodComposeTest.kt}` | PC12, PC20, PC24, PC29, PC32 | Medium | Focused callback, single-submit, failure, confirmation/retry, bearer semantics, and 48dp contracts. |
+| `android/src/androidTest/java/chat/simplex/app/nome/connection/NomeConnectionManagementScreenshotTest.kt` | PC24, PC29, PC32 | Low | API 35 Chinese/light renderer calibration only; not a production request/address producer. |
+
+P14/P15 add no command, protocol/event type, database/archive behavior, native/core change, iOS
+behavior, or Desktop Nome UI. The fixture comparison cannot satisfy producer-backed production
+acceptance, and P15 OFF cannot be promoted to READY.
+
+### PC32 Milestone 3 P16 exact production sources
+
+This group changes Android presentation and adds a discriminated client result over the existing
+group-join command. Common files retain the official invited-group route and model mutation;
+Desktop declines the Nome seam and preserves the legacy alert.
+
+| Exact source or test path | Product concepts | Risk | P16 responsibility |
+|---|---|---|---|
+| `common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt` | PC14, PC16, PC32 | High | Adds accepted/unavailable/not-completed projection over the unchanged group-join command; the compatibility wrapper remains. |
+| `common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/{ChatListNavLinkView.kt,PlatformGroupInvitationRoute.kt}` | PC1, PC14, PC16, PC20, PC32 | High | Retains the invited-group owner, join/delete mutation, real inviter lookup, and Android presentation opt-in. |
+| `common/src/androidMain/kotlin/chat/simplex/common/views/chatlist/PlatformGroupInvitationRoute.android.kt` | PC14, PC16, PC20, PC24, PC32 | Medium | P16 group/profile/inviter/action baseline presentation, single-submit, failure retention, destructive confirmation, and busy-back behavior. |
+| `common/src/desktopMain/kotlin/chat/simplex/common/views/chatlist/PlatformGroupInvitationRoute.desktop.kt` | PC14, PC32 | Low | Declines the Nome route and preserves the official group-invitation alert. |
+| `common/src/androidMain/kotlin/chat/simplex/common/ui/nome/components/NomeFullPageScaffold.kt` | PC24, PC32 | Medium | Shared baseline page scaffold; owns no group or command truth. |
+| `common/src/androidMain/res/values*/nome_connections_strings.xml` | PC14, PC16, PC20, PC32 | Low | Fixed bilingual P16 copy without verified-admin, joined, connected, online, relay-health, or success claims. |
+| `android/src/androidTest/java/chat/simplex/app/nome/connection/NomeGroupPreviewComposeTest.kt` | PC14, PC16, PC20, PC24, PC32 | Medium | Focused accepted/failure callback, single-submit, busy-back, destructive confirmation, retention, and 48dp contracts. |
+| `android/src/androidTest/java/chat/simplex/app/nome/connection/NomeConnectionManagementScreenshotTest.kt` | PC14, PC16, PC24, PC29, PC32 | Low | API 35 Chinese/light P14/P15/P16 renderer calibration only; not a production invitation producer. |
+
+P16 adds no command, protocol/event type, database/archive behavior, native/core change, iOS
+behavior, or Desktop Nome UI. Its fixture comparison cannot satisfy producer-backed production
+acceptance, and the current API 35 client has no invited group.
+
+### PC32 Milestone 3 P17/P18 exact production sources
+
+This group changes Android conversation and message-action presentation around the existing loaded
+chat, item, composer, and callback owners. The shared changes are platform-guarded; Desktop keeps
+the established wallpaper/layout/action menu.
+
+| Exact source or test path | Product concepts | Risk | P17/P18 responsibility |
+|---|---|---|---|
+| `common/src/commonMain/kotlin/chat/simplex/common/views/chat/ChatView.kt` | PC2, PC3, PC4, PC6, PC7, PC8, PC9, PC11, PC32 | High | Retains the official loaded timeline/composer/navigation, uses actual direct E2EE items for the fixed Android banner, and applies the P17 composition without synthesizing facts. |
+| `common/src/commonMain/kotlin/chat/simplex/common/views/chat/item/{ChatItemView.kt,FramedItemView.kt,PlatformMessageActionsMenu.kt}` | PC2, PC3, PC4, PC5, PC6, PC7, PC8, PC32 | High | Retains item/action eligibility and callbacks, applies Android bubble/selection geometry, and declares the presentation-only P18 platform seam. |
+| `common/src/androidMain/kotlin/chat/simplex/common/views/chat/item/PlatformMessageActionsMenu.android.kt` | PC4, PC5, PC24, PC32 | Medium | Android P18 full-width scrollable action sheet, 48dp close/action rows, scrim, icon tiles, and destructive color. |
+| `common/src/desktopMain/kotlin/chat/simplex/common/views/chat/item/PlatformMessageActionsMenu.desktop.kt` | PC4, PC32 | Low | Invokes the established anchored action menu unchanged. |
+| `common/src/commonMain/kotlin/chat/simplex/common/views/chat/{ComposeView.kt,SendMsgView.kt}` | PC2, PC8, PC9, PC32 | High | Retains attachment/voice/live/input/send owners while applying the P17 Android composer geometry. |
+| `common/src/androidMain/kotlin/chat/simplex/common/platform/PlatformTextField.android.kt` | PC2, PC24, PC32 | Medium | Applies Android input padding/hint styling without changing text or IME ownership. |
+| `common/src/commonMain/kotlin/chat/simplex/common/ui/theme/Theme.kt` and `common/src/androidMain/kotlin/chat/simplex/common/ui/nome/theme/NomeTheme.kt` | PC24, PC32 | Medium | Preserve per-chat theme routing while installing Nome Android material/app colors, including neutral secondary text and message surfaces. |
+| `common/src/commonMain/kotlin/chat/simplex/common/views/helpers/DefaultTopAppBar.kt` | PC24, PC32 | Low | Allows the Android chat title to align to the P17 baseline while default callers remain centered. |
+| `common/src/commonTest/kotlin/chat/simplex/common/views/chat/NomeConversationPresentationTest.kt` | PC3, PC32 | Medium | Proves newest-real-fact selection and fail-closed absence for the fixed E2EE presentation. |
+| `android/src/androidTest/java/chat/simplex/app/nome/chat/NomeConversationActionsComposeTest.kt` | PC4, PC5, PC24, PC32 | Medium | Proves one-to-one official callbacks, dismiss-without-action, and 48dp sheet actions. |
+
+P17/P18 add no command, protocol/event type, database/archive/message-state-machine behavior,
+native/core change, iOS behavior, or Desktop Nome UI. File, voice, and call production/lifecycle
+depth remains assigned to the separate high-risk Android-reachable P1 families.
+
+### PC32 Milestone 3 P19/P20 exact production sources
+
+This group changes Android contact-verification and public-channel setup presentation around the
+existing security-code, scanner, relay, public-group, link, and delete owners. Desktop keeps the
+official layouts, and P20 creation/link/delete remains producer-gated after a real relay timeout.
+
+| Exact source or test path | Product concepts | Risk | P19/P20 responsibility |
+|---|---|---|---|
+| `common/src/commonMain/kotlin/chat/simplex/common/views/chat/{ChatInfoView.kt,ChatView.kt,VerifyCodeView.kt,ScanCodeView.kt,PlatformVerifyCodeLayout.kt}` | PC2, PC13, PC32 | High | Retains direct-contact routing, exact code, scanner/share/mark/clear actions, authoritative returned-contact updates, and declares the Android presentation seam. |
+| `common/src/androidMain/kotlin/chat/simplex/common/views/chat/PlatformVerifyCodeLayout.android.kt` | PC13, PC24, PC32 | Medium | P19 baseline contact/status/QR/code/steps/actions layout with distinct scan and manual attestation and 48dp controls. |
+| `common/src/desktopMain/kotlin/chat/simplex/common/views/chat/PlatformVerifyCodeLayout.desktop.kt` | PC13, PC32 | Low | Invokes the official verification layout unchanged. |
+| `common/src/commonMain/kotlin/chat/simplex/common/views/newchat/QRCode.kt` | PC12, PC13, PC32 | Medium | Adds an optional QR image-size presentation input; all existing callers retain default behavior and payload bytes stay unchanged. |
+| `common/src/commonMain/kotlin/chat/simplex/common/views/newchat/{AddChannelView.kt,NewChatSheet.kt,PlatformChannelSetupRoute.kt}` | PC12, PC14, PC15, PC31, PC32 | High | Retains official relay selection/create/progress/link/delete ownership, routes Join to the existing callback, and finalizes local cancellation only after confirmed deletion. |
+| `common/src/androidMain/kotlin/chat/simplex/common/views/newchat/PlatformChannelSetupRoute.android.kt` | PC14, PC24, PC31, PC32 | Medium | P20 baseline create/join, name/image, post-create link, configured-relay, warning, profile-sharing, and create-action composition without unsupported claims. |
+| `common/src/desktopMain/kotlin/chat/simplex/common/views/newchat/PlatformChannelSetupRoute.desktop.kt` | PC14, PC31, PC32 | Low | Invokes the official channel profile step unchanged. |
+| `common/src/androidMain/res/values*/nome_connections_strings.xml` and `common/src/commonMain/resources/MR/*/strings.xml` | PC13, PC14, PC31, PC32 | Low | Fixed bilingual P19/P20 copy and distinct verification-unavailable message; no code, domain, health, connection, encryption, or success fixture. |
+| `common/src/commonTest/kotlin/chat/simplex/common/views/chat/NomeContactVerificationPolicyTest.kt` | PC13, PC32 | High | Proves all code characters are retained and unavailable is distinct from mismatch/match. |
+| `common/src/commonTest/kotlin/chat/simplex/common/views/newchat/NomeChannelCancellationPolicyTest.kt` | PC14, PC31, PC32 | High | Proves local finalization occurs only after a true delete result and false/exception retain state. |
+| `android/src/androidTest/java/chat/simplex/app/nome/connection/NomeSecurityAndChannelComposeTest.kt` | PC13, PC14, PC24, PC31, PC32 | Medium | Proves distinct scan/manual/clear callbacks, 48dp controls, official join/config/create dispatch, configured-relay/link truth, and no custom Nome domain. |
+
+P19/P20 add no command, protocol/event type, database/archive behavior, native/core change, iOS
+behavior, or Desktop Nome UI. P19 high-risk verification lifecycle is producer-backed on API 28
+and API 35. P20 setup is visually accepted; creation, returned link, relay progression,
+cancellation, and deletion still require a real successful producer.
+
+### PC32 Milestone 3 P21/P22 exact production sources
+
+This group changes Android public-channel chrome and local-identity-center presentation around the
+existing loaded-chat, group, profile, preference, route, and controller owners. Desktop keeps the
+official layouts. P21 production visual acceptance remains producer-gated because the controlled
+clients have no real public channel.
+
+| Exact source or test path | Product concepts | Risk | P21/P22 responsibility |
+|---|---|---|---|
+| `common/src/commonMain/kotlin/chat/simplex/common/views/chat/{ChatView.kt,ComposeView.kt,PlatformChannelConversationChrome.kt}` | PC2, PC3, PC4, PC14, PC32 | High | Retains the loaded channel timeline/composer/profile owners, derives disclosure from real `useRelays` and observer treatment from the real member role, and declares the Android presentation seam. |
+| `common/src/androidMain/kotlin/chat/simplex/common/views/chat/PlatformChannelConversationChrome.android.kt` | PC14, PC24, PC32 | Medium | Renders the P21 fixed non-E2EE disclosure, history separator, and observer read-only treatment without adding a channel, relay, member, moderation, or action result. |
+| `common/src/desktopMain/kotlin/chat/simplex/common/views/chat/PlatformChannelConversationChrome.desktop.kt` | PC14, PC32 | Low | Declines the Android chrome and preserves official Desktop presentation. |
+| `common/src/commonMain/kotlin/chat/simplex/common/views/{chatlist/UserPicker.kt,usersettings/UserProfilesView.kt,usersettings/PlatformIdentityCenterRoute.kt}` | PC1, PC10, PC11, PC32 | High | Retains users, current-user, hidden/authentication, preference, navigation, and action callbacks while declaring the Android identity-center route. |
+| `common/src/commonMain/kotlin/chat/simplex/common/views/usersettings/UserDeletionLifecycle.kt` | PC11, PC32 | High | Types the existing switch/delete/clear/stop stages, preserves their order, rethrows cancellation, and distinguishes target-deleted truth before local cleanup. |
+| `common/src/androidMain/kotlin/chat/simplex/common/views/usersettings/PlatformIdentityCenterRoute.android.kt` | PC10, PC11, PC24, PC32 | Medium | Renders the P22 active/inactive identity hierarchy, actual incognito/SOCKS settings, and official Home/Contacts/Settings actions with 48dp controls. |
+| `common/src/desktopMain/kotlin/chat/simplex/common/views/usersettings/PlatformIdentityCenterRoute.desktop.kt` | PC10, PC11, PC32 | Low | Invokes the official profile list unchanged. |
+| `common/src/androidMain/res/values*/nome_identity_strings.xml` and `common/src/commonMain/resources/MR/*/strings.xml` | PC10, PC11, PC24, PC32 | Low | Fixed bilingual P21/P22 and deletion-reconciliation copy without anonymous-account, private-routing, health, deletion, or success fixtures. |
+| `common/src/commonTest/kotlin/chat/simplex/common/views/usersettings/UserDeletionLifecycleTest.kt` | PC11, PC32 | High | Proves switch/delete/clear/stop ordering plus pre/post-delete failure truth. |
+| `android/src/androidTest/java/chat/simplex/app/nome/connection/NomeChannelIdentityComposeTest.kt` | PC10, PC11, PC14, PC24, PC32 | Medium | Proves P21 disclosure/history/observer presentation, P22 dispatch and toggle routing, 48dp controls, and no duplicate callback invocation. |
+
+P21/P22 add no command, protocol/event type, database/archive/message-state-machine behavior,
+native/core change, iOS behavior, or Desktop Nome UI. P22 destructive lifecycle is producer-backed
+on API 28 and API 35. P21 remains open until a real channel supplies its primary production state.
+
+### PC32 Milestone 3 P23/P24 exact production sources
+
+This group changes Android settings and backup/migration presentation around established
+preference, archive/database-key, platform document, and outbound migration owners. Desktop keeps
+its official layouts. Real archive/import and migration-abort lifecycle is verified only on
+disposable API 28/API 35 data.
+
+| Exact source or test path | Product concepts | Risk | P23/P24 responsibility |
+|---|---|---|---|
+| `common/src/commonMain/kotlin/chat/simplex/common/views/usersettings/{SettingsView.kt,PlatformSettingsHomeRoute.kt}` | PC10, PC18, PC22, PC23, PC24, PC25, PC29, PC32 | High | Retains every official settings route and declares Android settings/backup presentation seams, local route search, nested Back, and Home/Contacts navigation. |
+| `common/src/androidMain/kotlin/chat/simplex/common/views/usersettings/PlatformSettingsHomeRoute.android.kt` | PC10, PC18, PC22, PC24, PC32 | Medium | Renders P23 settings and truthful P24 not-started landing without synthetic health, percentage, restore, rollback, resume, or success claims; disables outbound migration while chat is stopped without stranding archive recovery. |
+| `common/src/desktopMain/kotlin/chat/simplex/common/views/usersettings/PlatformSettingsHomeRoute.desktop.kt` | PC10, PC18, PC22, PC32 | Low | Invokes the official legacy settings content unchanged. |
+| `common/src/{commonMain,androidMain,desktopMain}/kotlin/chat/simplex/common/views/usersettings/{PlatformSettingsDetailRoute*,PlatformAboutSettingsRoute*}` | PC10, PC18, PC22, PC24, PC32 | Medium | Adds Android-only full-page/grouped detail and truthful About presentation seams with nested Back; Desktop and onboarding retain legacy composition, and official preferences/commands/live-version owners remain unchanged. |
+| `common/src/commonMain/kotlin/chat/simplex/common/views/remote/ConnectDesktopView.kt` | PC18, PC27, PC32 | High | Retains official remote-session/controller owners, selects Android full-page/grouped presentation with state-derived title, preserves exact Desktop legacy content, and requires the existing destructive confirmation before linked-device removal. |
+| `common/src/commonMain/kotlin/chat/simplex/common/App.kt` | PC1, PC2, PC10, PC27, PC32 | High | Keeps the Android fullscreen modal outside the semantics-cleared underlying root so an opaque modal cannot expose hidden Home actions; authentication and Desktop layering remain unchanged. |
+| `android/src/main/java/chat/simplex/app/MainActivity.kt` | PC1, PC2, PC12, PC18, PC27, PC32 | High | Offers both cold and `singleTask` warm intents to the same existing notification, external-view, and share handlers in order; action/payload/back/lock semantics remain their official owners. |
+| `android/src/main/java/chat/simplex/app/{SimplexApp.kt,nome/NomeLocaleInitializer.kt}` | PC1, PC18, PC24, PC32 | Medium | Freezes non-personal install/data evidence before process initialization, then defaults only a jointly proven clean install through the existing nullable `appLanguage` owner; upgrade, explicit, existing-data, contradictory, unsupported, and marked states are preserved. |
+| `android/src/test/java/chat/simplex/app/nome/NomeLocalePolicyTest.kt` | PC1, PC18, PC24, PC32 | Medium | Guards clean-install initialization, conservative update/existing-data behavior, explicit/marker idempotence, pre-initialization evidence retention, and the v6.5.6 upstream locale set. |
+| `android/src/androidTest/java/chat/simplex/app/nome/{settings/NomeRemoteDesktopComposeTest.kt,lifecycle/NomeMainActivityIntentDispatchTest.kt}` | PC1, PC18, PC27, PC32 | Medium | Guards Android full-page Back/real pairing content and identical ordered cold/warm dispatch to the three official intent handlers. |
+| `common/src/{commonMain,androidMain,desktopMain}/kotlin/chat/simplex/common/views/usersettings/networkAndServers/{NetworkAndServers.kt,PlatformObservedNetworkInfo*}` | PC10, PC18, PC25, PC32 | Medium | Routes the established Network owner through Android presentation and keeps connectivity unknown before the first Android platform observation; Desktop and all network commands/preferences remain unchanged. |
+| `common/src/commonMain/kotlin/chat/simplex/common/views/usersettings/{Appearance.kt,HelpView.kt,DeveloperView.kt}` | PC10, PC18, PC22, PC29, PC32 | Medium | Routes established settings owners through the Android presentation seam; no preference meaning, locale policy, diagnostic action, or external-link owner changes. |
+| `android/src/androidTest/java/chat/simplex/app/nome/settings/NomeAboutSettingsComposeTest.kt` | PC10, PC18, PC24, PC32 | Medium | Proves truthful packaged version copy, exact About owner dispatch, nested Back action, and 48dp-plus activation. |
+| `common/src/commonMain/kotlin/chat/simplex/common/views/database/DatabaseView.kt` | PC11, PC23, PC26, PC32 | High | Retains database key/export/import operations and returns completed-snapshot truth to the existing stop/run/start wrapper while chooser copy/delete cleanup remains unchanged. |
+| `common/src/{commonMain,androidMain,desktopMain}/kotlin/chat/simplex/common/platform/Files*` | PC26, PC32 | High | Adds an optional save MIME contract; Android database archives register as `application/zip`, Desktop behavior remains unchanged, and archive bytes/naming/format are untouched. |
+| `common/src/desktopMain/kotlin/chat/simplex/common/views/helpers/GetImageView.desktop.kt` | PC24, PC32 | Low | Names the existing file-picker callback after the compatible signature extension; behavior is unchanged. |
+| `common/src/commonMain/kotlin/chat/simplex/common/views/{chatlist/UserPicker.kt,chatlist/ChatListView.kt}` | PC1, PC10, PC32 | Medium | Opens Android settings as a full-page route while retaining official profile/home owners. |
+| `common/src/androidMain/res/values*/nome_settings_strings.xml` | PC10, PC18, PC22, PC23, PC24, PC32 | Low | Fixed bilingual P23/P24 copy without fabricated operation or network facts. |
+| `android/src/test/java/chat/simplex/app/nome/database/DatabaseRecoveryRouteBoundaryTest.kt` | PC23, PC26, PC32 | High | Guards ZIP MIME registration, unchanged import type, completed-snapshot restart truth, and chooser-owned snapshot cleanup. |
+| `android/src/androidTest/java/chat/simplex/app/nome/settings/NomeSettingsBackupComposeTest.kt` | PC10, PC18, PC22, PC24, PC32 | Medium | Proves existing-route dispatch, local filtering, 48dp controls, archive/restore/migration owner dispatch, stopped-chat migration gating, and absence of synthetic progress/resume copy. |
+
+P23/P24 add no command, protocol/event type, database semantic, archive format, native/core
+change, iOS behavior, or Desktop Nome UI. The Android save-MIME property is platform metadata
+only. API 28/API 35 disposable runs prove real export cancellation/save, destructive import
+round-trip/key re-entry, migration upload-stage abort, cleanup, restart, and cold-start data
+preservation; a `0 bytes uploaded` / `0%` producer state is not success.
 
 ### PC32 Phase 2 Batch 3 exact P13 production sources
 
@@ -327,12 +504,12 @@ Path prefix: `common/src/commonMain/kotlin/chat/simplex/common/`
 
 | Source File | Product Concepts Affected | Risk Level | Notes |
 |-------------|--------------------------|------------|-------|
-| `views/chat/group/GroupChatInfoView.kt` | PC3, PC14, PC15, PC16, PC30 | High | Group management hub |
-| `views/chat/group/AddGroupMembersView.kt` | PC14, PC16 | Medium | Member invitation flow |
+| `views/chat/group/GroupChatInfoView.kt` | PC3, PC14, PC15, PC16, PC30, PC32 | High | Group management hub; Android page route and page-owned invitation callback keep one top Back owner |
+| `views/chat/group/AddGroupMembersView.kt` | PC14, PC16, PC32 | Medium | Member invitation flow; Android full-page/card route preserves role/admission/preferences/invite owners and truthful selection semantics |
 | `views/chat/group/GroupMemberInfoView.kt` | PC3, PC14, PC16, PC30, PC31 | Medium | Member details and role management; relay-address + rejected-status info rows |
-| `views/chat/group/ChannelRelaysView.kt` | PC31 | Medium | Channel relay list, add/remove entries |
-| `views/chat/group/AddGroupRelayView.kt` | PC31 | Low | Add relay sheet |
-| `views/chat/group/GroupProfileView.kt` | PC3, PC14 | Medium | Group profile editing |
+| `views/chat/group/ChannelRelaysView.kt` | PC31, PC32 | Medium | Channel relay list/status/member-detail route; Android presentation uses the shared settings-detail frame; Add/Remove entries remain source-disabled under the v6.5.6 `TODO [relays]` boundary |
+| `views/chat/group/AddGroupRelayView.kt` | PC31 | Low | Source-present Add relay sheet with no active `ChannelRelaysView` route in v6.5.6 |
+| `views/chat/group/GroupProfileView.kt` | PC3, PC14, PC32 | Medium | Group profile editing; Android presentation uses the shared settings-detail frame without automatic IME focus |
 | `views/chat/group/GroupLinkView.kt` | PC15 | Low | Group link creation and sharing |
 | `views/chat/group/GroupPreferences.kt` | PC3, PC8, PC14 | Medium | Group feature toggles |
 | `views/chat/group/GroupMentions.kt` | PC3, PC4 | Medium | @mention resolution and display |
@@ -363,7 +540,7 @@ Path prefix: `common/src/commonMain/kotlin/chat/simplex/common/`
 | `desktopMain/.../views/newchat/PlatformNewChatHub.desktop.kt` | PC12, PC32 | Low | Invokes the legacy New Chat content unchanged |
 | `views/newchat/ConnectPlan.kt` | PC12, PC15, PC20, PC32 | High | Link planning plus the P13 legacy-default, context-bound, single-submit connection-preview integration |
 | `views/newchat/PlatformConnectionPreview.kt` | PC12, PC15, PC20, PC32 | High | P13 safe model, exhaustive branch policy, typed callbacks, and expect seam |
-| `views/newchat/AddGroupView.kt` | PC3, PC14 | Medium | New group creation flow |
+| `views/newchat/AddGroupView.kt` | PC3, PC14, PC32 | Medium | New group creation flow; Android presentation delegates through `PlatformAddGroupRoute`, Desktop remains legacy |
 | `views/newchat/AddChannelView.kt` | PC31 | Medium | Public channel creation, channel link card, `RelayStatusIndicator` |
 | `views/newchat/ContactConnectionInfoView.kt` | PC12 | Low | Pending connection details |
 | `views/newchat/AddContactLearnMore.kt` | PC12 | Low | Educational content |

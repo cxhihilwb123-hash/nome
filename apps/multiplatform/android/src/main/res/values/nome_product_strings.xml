@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="nome_app_name" translatable="false">Nome</string>
     <string name="nome_background_service_privacy">To improve privacy, Nome runs in the background instead of using push notifications.</string>
+    <string name="nome_background_service_channel_name">Nome background service</string>
+    <string name="nome_background_service_notification_title">Nome is running</string>
+    <string name="nome_call_service_channel_name">Nome calls</string>
+    <string name="nome_open_app_to_accept_call">Open Nome to accept the call</string>
+    <string name="nome_logo_content_description">Nome logo</string>
 </resources>

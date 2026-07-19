@@ -193,15 +193,37 @@ suspend fun apiAcceptContactRequest(rh: Long?, incognito: Boolean, contactReqId:
 ### 4.2 Reject a Contact Request
 
 ```kotlin
+suspend fun apiRejectContactRequestResult(
+  rh: Long?,
+  contactReqId: Long,
+): APIRejectContactRequestResult
+
 suspend fun apiRejectContactRequest(rh: Long?, contactReqId: Long): Contact?
 ```
 
 1. User selects "Reject" on the contact request.
 2. `CC.ApiRejectContact(contactReqId)` is sent to the core.
 3. The core responds with `CR.ContactRequestRejected`.
-4. A successful response may carry `contact_ == null`; however, the current `apiRejectContactRequest(): Contact?` wrapper also returns null on failure, and the current UI removes the request in both cases.
-5. Nome must preserve the request unless a discriminated client result proves `CR.ContactRequestRejected`; this adapter requirement is GAP-13.
+4. A successful response may carry `contact_ == null`. `apiRejectContactRequestResult` preserves
+   that success as `Rejected(contact = null)` and distinguishes it from `Failure`.
+5. The legacy nullable wrapper remains for compatibility. Nome consumes the typed sibling and
+   preserves the request unless `Rejected` proves `CR.ContactRequestRejected`.
 6. After proven success, the connector's side eventually times out or receives an error.
+
+### 4.3 Accept or Delete a Group Invitation
+
+1. A group row with `GroupMemberStatus.MemInvited` owns the invitation action.
+2. Nome Android P16 projects the existing `GroupInfo`, profile, membership, member count, and
+   resolved `InvitedBy.IBContact` facts; Desktop retains the official alert.
+3. Join sends the unchanged `CC.ApiJoinGroup(groupId)` command. Only
+   `CR.UserAcceptedGroupSent` is accepted; expired/not-found remains terminal unavailable, and
+   other failures leave the invitation retryable.
+4. Acceptance starts the established group-member connection process. It does not itself prove
+   that all member connections are established.
+5. Delete requires explicit confirmation and uses the existing local group-chat deletion. Back
+   closes the preview without sending a command or deleting the invitation.
+6. Channel type comes from `GroupInfo.isChannel`; a resolved verified contact is not relabelled as
+   a verified administrator.
 
 ---
 

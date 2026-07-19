@@ -218,7 +218,7 @@ desktop/src/jvmMain/kotlin/chat/simplex/desktop/ -- Desktop app (1 file)
 
 ### PC32 Nome Android cross-cutting scope (authoritative reverse index)
 
-The ordinary Document Map rows below continue to route each source to its **primary** spec and product documents. The PC32 reverse index in `spec/impact.md` is authoritative for the frozen Android-only foundation, the Phase 2 Batch 2 production home implementation, the frozen Phase 2 Batch 3 P13 external-link preview, the active Batch 1A P01 database-root implementation, and the larger transitive scope later pages must preserve. A transitive path is a review/validation dependency, not a prediction that every file will change. Batch 2 uses a narrow shared home seam, Batch 3 uses a narrow shared connection-policy/presentation seam, and Batch 1A uses a narrow root facts/renderer seam. All Desktop actuals preserve legacy behavior.
+The ordinary Document Map rows below continue to route each source to its **primary** spec and product documents. The PC32 reverse index in `spec/impact.md` is authoritative for the frozen Android-only foundation, the Phase 2 Batch 2 production home implementation, the frozen Phase 2 Batch 3 P13 external-link preview, the active Batch 1A P01 database-root implementation, the active Milestone 3 P11/P12, P14/P15, P16, P17/P18, P19/P20, P21/P22, P23/P24, and remote-desktop/Android-intent presentation groups, and the larger transitive scope later pages must preserve. A transitive path is a review/validation dependency, not a prediction that every file will change. Batch 2 uses a narrow shared home seam, Batch 3 uses a narrow shared connection-policy/presentation seam, Batch 1A uses a narrow root facts/renderer seam, P14/P15 use narrow request/address presentation seams, P16 uses a narrow invited-group presentation seam, P17/P18 keep the loaded-chat/item/composer owners while changing Android presentation, P19/P20 keep the verification/channel command owners behind Android presentation seams, P21/P22 keep loaded-channel/profile owners behind Android-only chrome/identity-center seams, P23/P24 keep settings/database/migration owners behind Android presentation and platform-document seams, and the remote-desktop/intent group keeps the official controller and three existing intent handlers behind Android presentation/lifecycle corrections. All Desktop actuals preserve legacy behavior.
 
 Path aliases are relative to `apps/multiplatform/`: `CM` = `common/src/commonMain/kotlin/chat/simplex/common`, `AM` = `common/src/androidMain/kotlin/chat/simplex/common`, `MR` = `common/src/commonMain/resources/MR`, and `APP` = `android/src/main`. Every row also routes to the approved Nome documents: `spec/client/nome-android-ui.md` and `product/views/nome-android.md`.
 
@@ -240,8 +240,8 @@ Path aliases are relative to `apps/multiplatform/`: `CM` = `common/src/commonMai
 | Calls | `CM/views/call/**`; `AM/views/call/**`; `APP/java/chat/simplex/app/views/call/CallActivity.kt` | `spec/services/calls.md`; `product/views/call.md`; `product/flows/calling.md` |
 | Files / media / share | `CM/model/CryptoFile.kt`; `CM/platform/{Files.kt,Images.kt,RecAndPlay.kt,Share.kt,VideoPlayer.kt}`; matching `AM/platform/*.android.kt` actuals | `spec/services/files.md`; `product/flows/file-transfer.md`; `product/views/chat.md` |
 | Notifications / background | `CM/platform/{Notifications.kt,NtfManager.kt,SimplexService.kt}`; matching Android actuals; `APP/java/chat/simplex/app/model/NtfManager.android.kt`; `APP/java/chat/simplex/app/{SimplexService.kt,MessagesFetcherWorker.kt}` | `spec/services/notifications.md`; `product/flows/messaging.md` |
-| Remote desktop | `CM/views/remote/**` | `spec/architecture.md`; `product/views/settings.md` |
-| MainActivity / intents | `APP/AndroidManifest.xml`; `APP/java/chat/simplex/app/{MainActivity.kt,SimplexApp.kt}`; `APP/java/chat/simplex/app/views/helpers/Util.kt` | `spec/architecture.md`; affected navigation/connection/messaging flows |
+| Remote desktop | `CM/views/remote/**` | `spec/architecture.md`; `spec/client/{navigation.md,nome-android-ui.md}`; `spec/impact.md`; `product/views/{settings.md,nome-android.md}` |
+| MainActivity / intents | `APP/AndroidManifest.xml`; `APP/java/chat/simplex/app/{MainActivity.kt,SimplexApp.kt}`; `APP/java/chat/simplex/app/views/helpers/Util.kt` | `spec/architecture.md`; `spec/client/{navigation.md,nome-android-ui.md}`; `spec/impact.md`; affected navigation/connection/messaging flows and `product/views/nome-android.md` |
 | Permissions | `APP/AndroidManifest.xml`; `common/src/androidMain/AndroidManifest.xml`; `AM/helpers/Permissions.kt`; Android QR-scanner and notification-onboarding actuals | `spec/client/navigation.md`; `spec/services/notifications.md`; affected onboarding/new-chat/call views |
 | Android services / workers | `APP/java/chat/simplex/app/{SimplexService.kt,CallService.kt,MessagesFetcherWorker.kt}`; `APP/AndroidManifest.xml` | `spec/services/notifications.md`; `spec/services/calls.md`; `product/flows/messaging.md`; `product/flows/calling.md` |
 
@@ -269,7 +269,7 @@ bearer values remain in controller closures. Android renders P13 under
 | common/.../common/platform/AppCommon.kt | spec/architecture.md | product/flows/onboarding.md |
 | common/.../common/platform/Notifications.kt | spec/services/notifications.md | product/flows/messaging.md |
 | common/.../common/platform/NtfManager.kt | spec/services/notifications.md | product/flows/messaging.md |
-| common/.../common/platform/Files.kt | spec/services/files.md | product/flows/file-transfer.md |
+| common/.../common/platform/Files.kt and platform actuals | spec/services/files.md, spec/client/nome-android-ui.md, spec/impact.md | product/flows/file-transfer.md, product/views/nome-android.md, product/rules.md |
 | common/.../common/platform/SimplexService.kt | spec/services/notifications.md | product/flows/messaging.md |
 | common/.../common/platform/Share.kt | spec/architecture.md | product/concepts.md |
 | common/.../common/platform/VideoPlayer.kt | spec/services/files.md | product/views/chat.md |
@@ -289,20 +289,29 @@ bearer values remain in controller closures. Android renders P13 under
 | common/.../common/views/chat/ComposeView.kt | spec/client/compose.md | product/views/chat.md |
 | common/.../common/views/chat/SendMsgView.kt | spec/client/compose.md | product/views/chat.md |
 | common/.../common/views/chat/ChatInfoView.kt | spec/client/chat-view.md | product/views/contact-info.md |
+| common/src/commonMain/kotlin/chat/simplex/common/views/chat/VerifyCodeView.kt | spec/api.md, spec/client/chat-view.md, spec/client/nome-android-ui.md | product/views/contact-info.md, product/views/nome-android.md, product/rules.md |
+| common/src/commonMain/kotlin/chat/simplex/common/views/chat/PlatformVerifyCodeLayout.kt | spec/client/chat-view.md, spec/client/nome-android-ui.md | product/views/contact-info.md, product/views/nome-android.md, product/rules.md |
 | common/.../common/views/chat/group/ | spec/client/chat-view.md | product/views/group-info.md |
 | common/.../common/views/chat/item/ | spec/client/chat-view.md | product/views/chat.md |
 | common/.../common/views/call/CallView.kt | spec/services/calls.md | product/views/call.md |
 | common/.../common/views/call/IncomingCallAlertView.kt | spec/services/calls.md | product/views/call.md |
 | common/.../common/views/call/WebRTC.kt | spec/services/calls.md | product/flows/calling.md |
 | common/.../common/views/newchat/NewChatView.kt | spec/client/navigation.md, spec/client/nome-android-ui.md | product/views/new-chat.md, product/views/nome-android.md |
+| common/.../common/views/newchat/PlatformNewChatRoute.kt | spec/client/navigation.md, spec/client/nome-android-ui.md | product/views/new-chat.md, product/views/nome-android.md, product/rules.md |
 | common/.../common/views/newchat/AddGroupView.kt | spec/client/navigation.md | product/views/new-chat.md |
+| common/src/commonMain/kotlin/chat/simplex/common/views/newchat/AddChannelView.kt | spec/api.md, spec/client/navigation.md, spec/client/nome-android-ui.md | product/views/new-chat.md, product/views/nome-android.md, product/gaps.md, product/rules.md |
+| common/src/commonMain/kotlin/chat/simplex/common/views/newchat/PlatformChannelSetupRoute.kt | spec/client/navigation.md, spec/client/nome-android-ui.md | product/views/new-chat.md, product/views/nome-android.md, product/gaps.md, product/rules.md |
 | common/.../common/views/newchat/ConnectPlan.kt | spec/api.md, spec/state.md, spec/client/navigation.md, spec/client/nome-android-ui.md | product/views/new-chat.md, product/flows/connection.md, product/views/nome-android.md, product/rules.md |
 | common/.../common/views/newchat/PlatformConnectionPreview.kt | spec/api.md, spec/state.md, spec/client/navigation.md, spec/client/nome-android-ui.md | product/concepts.md, product/views/new-chat.md, product/flows/connection.md, product/views/nome-android.md, product/rules.md |
 | common/.../common/views/usersettings/SettingsView.kt | spec/client/navigation.md, spec/client/nome-android-ui.md | product/views/settings.md, product/views/nome-android.md |
+| common/src/{commonMain,androidMain,desktopMain}/kotlin/chat/simplex/common/views/usersettings/PlatformSettingsHomeRoute* | spec/client/navigation.md, spec/client/nome-android-ui.md, spec/impact.md | product/views/settings.md, product/views/nome-android.md, product/rules.md, product/gaps.md |
+| common/src/{commonMain,androidMain,desktopMain}/kotlin/chat/simplex/common/views/usersettings/{PlatformSettingsDetailRoute*,PlatformAboutSettingsRoute*} | spec/client/navigation.md, spec/client/nome-android-ui.md, spec/impact.md | product/views/settings.md, product/views/nome-android.md, product/rules.md |
 | common/.../common/views/usersettings/Appearance.kt | spec/services/theme.md | product/views/settings.md |
 | common/.../common/views/usersettings/PrivacySettings.kt | spec/client/navigation.md | product/views/settings.md |
 | common/.../common/views/usersettings/networkAndServers/ | spec/architecture.md | product/views/settings.md |
-| common/.../common/views/usersettings/UserProfilesView.kt | spec/client/navigation.md | product/views/user-profiles.md |
+| common/src/{commonMain,androidMain,desktopMain}/kotlin/chat/simplex/common/views/usersettings/networkAndServers/PlatformObservedNetworkInfo* | spec/architecture.md, spec/client/nome-android-ui.md, spec/impact.md | product/views/settings.md, product/views/nome-android.md, product/rules.md |
+| common/.../common/views/usersettings/UserProfilesView.kt | spec/client/navigation.md, spec/client/nome-android-ui.md | product/views/user-profiles.md, product/views/nome-android.md, product/rules.md |
+| common/src/commonMain/kotlin/chat/simplex/common/views/usersettings/{PlatformIdentityCenterRoute.kt,UserDeletionLifecycle.kt} | spec/client/navigation.md, spec/client/nome-android-ui.md, spec/impact.md | product/views/user-profiles.md, product/views/nome-android.md, product/rules.md |
 | common/.../common/views/onboarding/ | spec/client/navigation.md, spec/client/nome-android-ui.md | product/views/onboarding.md, product/views/nome-android.md |
 | common/.../common/views/localauth/ | spec/architecture.md, spec/client/nome-android-ui.md | product/views/settings.md, product/views/nome-android.md |
 | common/.../common/views/database/ | spec/database.md, spec/client/navigation.md, spec/client/nome-android-ui.md | product/views/settings.md, product/views/nome-android.md, product/rules.md |
@@ -337,13 +346,25 @@ bearer values remain in controller closures. Android renders P13 under
 | common/src/androidMain/kotlin/chat/simplex/common/views/database/PlatformDatabaseRootRoute.android.kt | spec/database.md, spec/client/navigation.md, spec/client/nome-android-ui.md | product/views/nome-android.md, product/rules.md |
 | common/src/androidMain/kotlin/chat/simplex/common/platform/Cryptor.android.kt | spec/database.md, spec/state.md, spec/client/nome-android-ui.md | product/views/nome-android.md, product/rules.md, product/gaps.md |
 | common/src/androidMain/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreview.android.kt | spec/client/navigation.md, spec/client/nome-android-ui.md | product/flows/connection.md, product/views/new-chat.md, product/views/nome-android.md |
+| common/src/androidMain/kotlin/chat/simplex/common/views/chat/PlatformVerifyCodeLayout.android.kt | spec/api.md, spec/client/chat-view.md, spec/client/nome-android-ui.md, spec/services/theme.md | product/views/contact-info.md, product/views/nome-android.md, product/rules.md |
+| common/src/androidMain/kotlin/chat/simplex/common/views/newchat/PlatformChannelSetupRoute.android.kt | spec/api.md, spec/client/navigation.md, spec/client/nome-android-ui.md, spec/services/theme.md | product/views/new-chat.md, product/views/nome-android.md, product/gaps.md, product/rules.md |
+| common/src/androidMain/kotlin/chat/simplex/common/views/chat/PlatformChannelConversationChrome.android.kt | spec/client/chat-view.md, spec/client/nome-android-ui.md, spec/impact.md | product/views/chat.md, product/views/nome-android.md, product/rules.md |
+| common/src/androidMain/kotlin/chat/simplex/common/views/usersettings/PlatformIdentityCenterRoute.android.kt | spec/client/navigation.md, spec/client/nome-android-ui.md, spec/impact.md | product/views/user-profiles.md, product/views/nome-android.md, product/rules.md |
+| common/src/androidMain/kotlin/chat/simplex/common/views/usersettings/PlatformSettingsHomeRoute.android.kt | spec/client/navigation.md, spec/client/nome-android-ui.md, spec/impact.md | product/views/settings.md, product/views/nome-android.md, product/rules.md, product/gaps.md |
+| common/src/androidMain/kotlin/chat/simplex/common/views/usersettings/{PlatformSettingsDetailRoute.android.kt,PlatformAboutSettingsRoute.android.kt} | spec/client/navigation.md, spec/client/nome-android-ui.md, spec/impact.md | product/views/settings.md, product/views/nome-android.md, product/rules.md |
+| common/src/androidMain/res/values*/nome_settings_strings.xml | spec/client/nome-android-ui.md, spec/impact.md | product/views/nome-android.md, product/rules.md |
 | common/src/androidMain/kotlin/chat/simplex/common/views/newchat/PlatformNewChatHub.android.kt | spec/client/navigation.md, spec/client/nome-android-ui.md, spec/services/theme.md | product/views/new-chat.md, product/views/nome-android.md |
 | common/src/commonMain/kotlin/chat/simplex/common/views/newchat/PlatformNewChatHub.kt | spec/client/navigation.md, spec/client/nome-android-ui.md | product/views/new-chat.md, product/views/nome-android.md |
 | common/src/desktopMain/kotlin/chat/simplex/common/views/newchat/PlatformNewChatHub.desktop.kt | spec/client/navigation.md, spec/client/nome-android-ui.md | product/views/new-chat.md, product/views/nome-android.md |
+| common/src/androidMain/kotlin/chat/simplex/common/views/newchat/PlatformNewChatRoute.android.kt | spec/client/navigation.md, spec/client/nome-android-ui.md, spec/services/theme.md | product/views/new-chat.md, product/views/nome-android.md, product/rules.md |
+| common/src/commonMain/kotlin/chat/simplex/common/views/newchat/PlatformNewChatRoute.kt | spec/client/navigation.md, spec/client/nome-android-ui.md | product/views/new-chat.md, product/views/nome-android.md, product/rules.md |
+| common/src/desktopMain/kotlin/chat/simplex/common/views/newchat/PlatformNewChatRoute.desktop.kt | spec/client/navigation.md, spec/client/nome-android-ui.md | product/views/new-chat.md, product/views/nome-android.md, product/rules.md |
+| common/src/androidMain/kotlin/chat/simplex/common/views/newchat/QRCodeScanner.android.kt | spec/client/navigation.md, spec/client/nome-android-ui.md, spec/impact.md | product/views/new-chat.md, product/views/nome-android.md, product/gaps.md, product/rules.md |
 | common/src/androidMain/kotlin/chat/simplex/common/helpers/NetworkObserver.kt | spec/client/chat-list.md, spec/client/nome-android-ui.md | product/views/chat-list.md, product/views/nome-android.md |
 | common/src/androidMain/res/values/nome_home_strings.xml | spec/client/chat-list.md, spec/client/nome-android-ui.md | product/views/chat-list.md, product/views/nome-android.md |
 | common/src/androidMain/res/values-zh-rCN/nome_home_strings.xml | spec/client/chat-list.md, spec/client/nome-android-ui.md | product/views/chat-list.md, product/views/nome-android.md |
 | common/src/androidMain/res/values*/nome_connection_preview_strings.xml | spec/client/navigation.md, spec/client/nome-android-ui.md | product/flows/connection.md, product/views/new-chat.md, product/views/nome-android.md |
+| common/src/androidMain/res/values*/nome_connections_strings.xml | spec/api.md, spec/client/navigation.md, spec/client/nome-android-ui.md | product/views/contact-info.md, product/views/new-chat.md, product/views/nome-android.md, product/gaps.md, product/rules.md |
 | android/src/debug/AndroidManifest.xml | spec/client/nome-android-ui.md | product/views/nome-android.md |
 | android/src/debug/java/chat/simplex/app/nome/** | spec/client/nome-android-ui.md | product/views/nome-android.md |
 | android/src/debug/res/values*/strings.xml | spec/client/nome-android-ui.md | product/views/nome-android.md |
@@ -378,6 +399,8 @@ bearer values remain in controller closures. Android renders P13 under
 | common/src/desktopTest/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRouteDesktopTest.kt | spec/client/navigation.md, spec/client/chat-list.md, spec/client/nome-android-ui.md | product/views/chat-list.md, product/views/nome-android.md |
 | common/src/desktopMain/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreview.desktop.kt | spec/client/navigation.md, spec/client/nome-android-ui.md | product/flows/connection.md, product/views/new-chat.md, product/views/nome-android.md |
 | common/src/desktopTest/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreviewDesktopTest.kt | spec/client/navigation.md, spec/client/nome-android-ui.md | product/flows/connection.md, product/views/new-chat.md, product/views/nome-android.md |
+| common/src/desktopMain/kotlin/chat/simplex/common/views/chat/PlatformVerifyCodeLayout.desktop.kt | spec/api.md, spec/client/chat-view.md, spec/client/nome-android-ui.md | product/views/contact-info.md, product/views/nome-android.md |
+| common/src/desktopMain/kotlin/chat/simplex/common/views/newchat/PlatformChannelSetupRoute.desktop.kt | spec/api.md, spec/client/navigation.md, spec/client/nome-android-ui.md | product/views/new-chat.md, product/views/nome-android.md |
 
 ### Haskell Core Sources (at `../../src/Simplex/Chat/` relative to `apps/multiplatform/`)
 

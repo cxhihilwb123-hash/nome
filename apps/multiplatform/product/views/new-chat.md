@@ -16,8 +16,12 @@ Create new contacts, groups, or connect with others via one-time invitation link
   - "Scan / paste link" -- opens `NewChatView` with `CONNECT` tab (scan QR code or paste a received link)
   - "Create group" -- opens `AddGroupView`
   - "Create channel" -- opens `AddChannelView`
-- **Tabs within NewChatView**: `HorizontalPager` with `TabRow` toggles between `NewChatOption.INVITE` (1-time link) and `NewChatOption.CONNECT` (connect via link)
-- **Swipe gesture**: Left/right swipe switches between tabs (Android only; `userScrollEnabled = appPlatform.isAndroid`)
+- **Routes within NewChatView**: the official `NewChatOption.INVITE` and
+  `NewChatOption.CONNECT` owners remain shared. Android presents them as the Nome P11/P12 page
+  pair through `PlatformNewChatRoute`; Desktop keeps the upstream `HorizontalPager`/`TabRow`
+  content unchanged.
+- **Swipe gesture**: Android's P11/P12 presentation retains left/right paging between the two
+  official options.
 - **Dismiss behavior**: On dispose, a `DisposableEffect` shows an alert dialog (via `AlertManager.shared.showAlertDialog`) asking whether to keep an unused invitation link or delete it via `controller.deleteChat()`
 
 ## Nome Android P10 Hub
@@ -32,6 +36,26 @@ The P10 visual-acceptance baseline governs composition, hierarchy, spacing, typo
 action sizing. Copy follows the actual callback where the baseline is semantically inaccurate:
 the group row starts group creation and does not claim that an existing group was joined. Desktop
 calls `legacyContent()` and receives no Nome presentation.
+
+## Nome Android P11/P12 Pages
+
+Android P11 keeps `NewChatView.createInvitation()` and `apiAddContact()` as the sole invitation
+producer. The Nome page presents the resulting official `CreatedConnLink`, uses the existing
+clipboard/share actions, and lets the compact identity header invoke the existing profile picker
+when that owner is available. Generated, copied, shared, and connected are distinct facts. The
+page does not claim a TTL, expiry, peer use, safe invalidation, or atomic regeneration.
+
+Android P12 keeps the existing parser and `planAndConnect(..., Legacy)` path. The camera is
+activated only by an explicit scan action, and clipboard text is read only by an explicit
+clipboard action. Manual entry, camera output, and clipboard output all enter the same official
+parse/plan owner. Camera hardware is optional in the production manifest. A missing camera,
+first denial, permanent denial, Settings recovery, scanner disposal, and frame closure stay
+platform-owned and do not become connection-success facts.
+
+P11 and P12 use their effect images as page-level visual acceptance baselines. Their Android
+presentation follows the baseline composition, region placement, hierarchy, density, type,
+spacing, corners, icons, and action geometry while replacing unsupported reference facts with
+truthful official/client/platform states. The shared seam changes no Desktop UI.
 
 ## Page Sections
 
@@ -64,8 +88,9 @@ Displayed when `selection == CONNECT`:
 
 | Element | Description |
 |---|---|
-| QR code scanner | Camera-based QR code scanner (`showQRCodeScanner` state) |
-| Paste link field | Text field for pasting a SimpleX link (`pastedLink`) |
+| QR code scanner | Camera-based scanner, activated only after the explicit scan action (`showQRCodeScanner` state) |
+| Paste link field | Text field for manually entering a SimpleX link (`pastedLink`) |
+| Clipboard action | Explicitly reads the current clipboard and submits that text through the same parser |
 | Connect button | Initiates connection via `planAndConnect()` |
 
 When a valid SimpleX link is detected:
@@ -123,8 +148,13 @@ Group creation flow:
 | `PlatformNewChatHub.kt` | `commonMain/.../views/newchat/PlatformNewChatHub.kt` |
 | `PlatformNewChatHub.android.kt` | `androidMain/.../views/newchat/PlatformNewChatHub.android.kt` |
 | `PlatformNewChatHub.desktop.kt` | `desktopMain/.../views/newchat/PlatformNewChatHub.desktop.kt` |
+| `PlatformNewChatRoute.kt` | `commonMain/.../views/newchat/PlatformNewChatRoute.kt` |
+| `PlatformNewChatRoute.android.kt` | `androidMain/.../views/newchat/PlatformNewChatRoute.android.kt` |
+| `PlatformNewChatRoute.desktop.kt` | `desktopMain/.../views/newchat/PlatformNewChatRoute.desktop.kt` |
 | `ConnectPlan.kt` | `views/newchat/ConnectPlan.kt` |
 | `QRCodeScanner.kt` | `views/newchat/QRCodeScanner.kt` (expect/actual) |
+| `QRCodeScanner.android.kt` | `androidMain/.../views/newchat/QRCodeScanner.android.kt` |
+| `NomeNewChatRouteComposeTest.kt` | `android/src/androidTest/.../nome/newchat/NomeNewChatRouteComposeTest.kt` |
 | `ContactConnectionInfoView.kt` | `views/newchat/ContactConnectionInfoView.kt` |
 | `PlatformConnectionPreview.kt` | `views/newchat/PlatformConnectionPreview.kt` (safe model, explicit policy, platform seam) |
 | `PlatformConnectionPreview.android.kt` | `androidMain/.../views/newchat/PlatformConnectionPreview.android.kt` |

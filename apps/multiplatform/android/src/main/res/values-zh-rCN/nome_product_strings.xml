@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="nome_background_service_privacy">为提升隐私，Nome 在后台运行，而不是使用推送通知。</string>
+    <string name="nome_background_service_channel_name">Nome 后台服务</string>
+    <string name="nome_background_service_notification_title">Nome 正在运行</string>
+    <string name="nome_call_service_channel_name">Nome 通话</string>
+    <string name="nome_open_app_to_accept_call">打开 Nome 以接听通话</string>
+    <string name="nome_logo_content_description">Nome 标志</string>
 </resources>

@@ -119,7 +119,7 @@ When onboarding is complete:
 
 | Layer | Condition | Content |
 |---|---|---|
-| `ModalManager.fullscreen` | Android + migration/onboarding | Fullscreen modals |
+| `ModalManager.fullscreen` | Android + migration/onboarding | Fullscreen modals; while open on Android, underlying root semantics are cleared and the active modal remains accessible |
 | `SwitchingUsersView` | User switch in progress | Loading overlay |
 | Auth gate | `userAuthorized != true` | `AuthView` or `SplashView` + passcode |
 | Active call | `showCallView == true` | `ActiveCallView` (desktop) or call activity (Android) |
@@ -442,7 +442,7 @@ The `commonMain` seam is the smallest sharing change that can replace the real h
 | `desktopMain` | [Desktop actual](../../common/src/desktopMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.desktop.kt#L9-L17) calls `defaultContent()` unchanged |
 | `desktopTest` | [`PlatformHomeRouteDesktopTest`](../../common/src/desktopTest/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRouteDesktopTest.kt#L14-L55) executes the Desktop actual and observes fallback-content invocation |
 
-At the Android Activity boundary, [`NomeProductionShell()`](../../android/src/main/java/chat/simplex/app/nome/NomeProductionShell.kt#L17-L23) wraps `AppScreen`; [`MainActivity.onCreate()`](../../android/src/main/java/chat/simplex/app/MainActivity.kt#L33-L68) still owns intent processing, secure-window behavior, edge-to-edge setup, and the shared root. The shell owns no route, back stack, model, core, or protocol fact.
+At the Android Activity boundary, [`NomeProductionShell()`](../../android/src/main/java/chat/simplex/app/nome/NomeProductionShell.kt#L17-L23) wraps `AppScreen`; [`MainActivity.onCreate()`](../../android/src/main/java/chat/simplex/app/MainActivity.kt#L33-L66) and [`onNewIntent()`](../../android/src/main/java/chat/simplex/app/MainActivity.kt#L68-L71) offer cold and warm intents to the same ordered official handlers and still own secure-window behavior, edge-to-edge setup, and the shared root. The shell owns no route, back stack, model, core, or protocol fact.
 
 Batch 2 navigation is deliberately limited to opening an already-ready direct, group, or local chat through existing actions while the core is running. It adds no favorite/profile/connection mutation, search flow, composer/send flow, locale-marker route, new modal zone, new destination, or Desktop UI.
 

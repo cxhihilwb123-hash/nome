@@ -69,13 +69,55 @@ test sections below.
 
 ## Current milestone and batch
 
-- Milestone: 2 — Home and discovery.
-- Batch: merged P09 local search + P10 new-connection hub and the targeted P02–P06 onboarding
-  visual correction are closed and frozen by the local Milestone 2 checkpoint containing this
-  ledger.
-- Validation tier: milestone-concentrated — API 28/API 33/API 35, bilingual light/dark, 200%,
-  TalkBack, release-isolation, regression, and historical-manifest checks passed once across the
-  Milestone 2 surface instead of repeating the ordinary page-family checks.
+- Milestone: 3 — connections.
+- Batch: the Android one-time fresh-install locale marker is complete and
+  `READY FOR MILESTONE`. The adapter freezes package/database/preference evidence before
+  Haskell/multiplatform initialization, then uses only the official nullable `appLanguage`
+  preference. Five focused policy tests and Android compile/assemble pass. A new disposable API
+  35 client proved absent marker/preferences/databases before first process start and then
+  produced marker v1 plus `zh-CN`; official Appearance changed it to English, and process restart
+  plus same-package update retained English and both databases. The authentic v6.5.4 upgrade
+  fixture retained absent `AppLanguage`/follow-system with both databases. An unsupported
+  disposable value was preserved, emitted a fixed non-personal warning, did not crash, and was
+  restored to English. `FIRST_USE` and onboarding ownership did not change.
+- The reachable private-group creation/admin ordinary group remains
+  `READY FOR MILESTONE`. Android now presents official private-group creation, member invitation,
+  group info, and profile editing in full-page/card layouts adjacent to P20/P16 while Desktop keeps
+  the v6.5.6 composition. The production client created one real controlled private group, invited
+  no contacts, sent no messages, and invoked no destructive action. Android/Desktop compile,
+  three focused API 35 tests, production route smoke, creation/admin adjacent comparisons, 48dp/
+  Back/unchecked-contact semantics, one risk review, and screenshot-protection restoration pass.
+  Shared channel member/relay presentation is ready, but a real public channel and P20
+  create/link/delete remain producer-gated; v6.5.6 source-disabled relay Add/Remove remains absent.
+  The local legal/assets/brand/application-identity/App Links/privacy/distribution audit is now
+  complete with an explicit `NOT FOR DISTRIBUTION` verdict. The visible release label, launcher,
+  startup/about/call/notification brand assets, and packaged font notices are locally corrected;
+  the upstream application ID, unowned verified-link domains, absent production signer, publisher
+  policy/store inputs, and public corresponding-source URL remain external release blockers.
+  The concentrated Milestone 3 matrix is now green for every locally ready surface. Earlier ready
+  groups remain unchanged. The P17
+  Android-reachable media/file/call high-risk lane is locally closed
+  on API 28 and API 35, but remains `ACTIVE — TWO-CLIENT PRODUCER BLOCKED`: real file/media
+  receipt, download/save/playback, and a connected call are not inferred while the controlled
+  clients cannot exchange new traffic. P23 settings is
+  `READY FOR MILESTONE` after focused tests, Android/Desktop compile,
+  API 35 production smoke, full-screen route/back correction, affected accessibility checks, and
+  same-size visual acceptance. P24 is `READY FOR MILESTONE`: its truthful landing presentation,
+  official archive/import/migration dispatch, real disposable API 28/API 35 archive round-trip,
+  cancellation/restart, platform MIME compatibility, and migration abort/restart depth all pass.
+  P21 source/tests remain complete but production visual acceptance is producer-blocked because no
+  controlled client contains a real public channel. P20 creation/link/delete remains blocked by
+  the real relay error. P15 is now ready after a real reusable address persisted across disk reboot
+  and passed a redacted production/reference comparison. P11 produced a real persisted invitation,
+  but its safe ready-state comparison remains open; P14/P16 and the P17/P20/P21 external producer
+  gates remain open.
+- Validation tier: P17 media/file/call, P24 archive/backup/migration, and real remote
+  pair/switch/revoke events are high risk and retain real API 28/API 35 fixtures/lifecycle depth.
+  Remote unpaired presentation, unlocked intent routing, and group creation/admin presentation use
+  the ordinary tier. Each primary page still requires API 35
+  Chinese/light reference-size production comparison. The Milestone 3 API 28/33/35,
+  bilingual/theme/scaling/TalkBack/release/regression matrix is complete; exact results are in
+  `MILESTONE_3_VERIFICATION.md`.
 - Scope: Android-only, local-only; no push, release, production signing, native/core, protocol,
   database/archive, message-state-machine, or iOS changes.
 - Frozen inputs: the v6.5.6 baseline, Phase 1, Phase 2 foundation, Batch 2, and P13 checkpoint
@@ -86,14 +128,26 @@ test sections below.
   available, and the official filtered result is empty; this does not reclassify or rewrite P08.
 - Page completion matrix:
   `plans/evidence/20260718_nome_android_completion/PAGE_COMPLETION_MATRIX.md`.
+- Final pre-checkpoint reconciliation: branch `codex/nome-android-v656`, parent HEAD
+  `415375bdc8b7c392d5855f7b8fe13bf3ceddb01a`, staged paths `358`, unstaged tracked paths `0`,
+  excluded untracked paths `1`, and conflicts `0`. All staged paths are inside the explicit
+  Android/common/Desktop-fallback/product/spec/completion-evidence allowlist. Forbidden
+  Haskell/native, `Core.kt`, protocol, database-schema/semantic, archive-format, and iOS paths are
+  `0`; staged private-key/token/Bearer/temporary-passcode hits are `0`; and
+  `git diff --cached --check` passes after Markdown whitespace normalization. Five bearer-shaped
+  strings in three instrumentation files are visibly named `fixture`/`renderer-fixture` test
+  inputs, not retained production bearers. The only excluded file is the untouched
+  `apps/multiplatform/Screenshot_1784275771.png`, still SHA-256
+  `d2463deaf565b7fe11e96661a79d6e5a340a8568d86302e81f2fecc981ab5514`.
+  No remote mutation occurred.
 
 ## Repository recovery
 
 - Branch: `codex/nome-android-v656`
-- HEAD: `4260545d96d84055efb281cb5a9b3226a498cb07`
+- HEAD: `415375bdc8b7c392d5855f7b8fe13bf3ceddb01a`
 - Baseline: tag `v6.5.6` at `59fce95d3cd08897b4ef742447b785cf2e56c7ce`, an ancestor of HEAD.
 - Origin: `https://github.com/simplex-chat/simplex-chat.git`
-- HEAD commit: `checkpoint(nome-android): freeze milestone 1 startup and trust`
+- HEAD commit: `checkpoint(nome-android): freeze milestone 2 home and discovery`
 - Exact Milestone 2 checkpoint input: staged paths `42`, unstaged tracked paths `0`, conflicts `0`,
   staged forbidden paths `0`, staged sensitive-text hits `0`, and one excluded untracked unknown
   file. The input consists of the allowlisted P09/P10 Android/common/Desktop presentation seams,
@@ -101,6 +155,12 @@ test sections below.
   matrix/report files, and accepted comparison PNGs. The excluded
   `apps/multiplatform/Screenshot_1784275771.png` remains untouched and outside the checkpoint at
   SHA-256 `d2463deaf565b7fe11e96661a79d6e5a340a8568d86302e81f2fecc981ab5514`.
+- Exact Milestone 3 candidate input: `358` staged paths (`229` added, `129` modified;
+  `179` text and `179` binary), `0` unstaged tracked paths, `1` excluded unknown file, and `0`
+  conflicts. Staged forbidden paths and credential/temporary-auth hits are `0`; the five
+  bearer-shaped additions are explicit renderer/parser fixtures in three instrumentation tests.
+  The cached diff check passes, final Android/Desktop/device/manifests/artifact results are in
+  `MILESTONE_3_VERIFICATION.md`, and no producer gap is represented as passed.
 - Historical SHA manifests were independently rehashed from the P13 checkpoint without checkout:
   Phase 1 48/48, Phase 2 foundation 131/131, Batch 2 254/254, and P13 139/139.
 - Forbidden dirty-scope audit: no Haskell/native, `Core.kt`, iOS, native binary, archive/schema, or
@@ -234,12 +294,1036 @@ presentation seams needed to reuse official route/state/action owners. Any `comm
 retain an unchanged Desktop fallback and cannot add model/core/protocol/database truth. Forbidden
 native/core/`Core.kt`/protocol/database/archive/iOS paths remain outside scope.
 
+The completed local distribution-readiness lane additionally used only Android application
+label/launcher/call/notification resources and their direct presentation owners, approved external
+Nome brand inputs, an Android-packaged common font notice, the audit report, launcher smoke, and
+this ledger. It may not choose a public package/domain/publisher, create a production key, mutate a
+remote, publish, or convert compatibility/operator wording into a Nome ownership claim.
+
 The completed targeted P02–P06 recheck additionally used only
 `NomeButton.kt`, `PlatformNomeAppLockScreen.android.kt`,
 `PlatformNomeOnboardingPages.android.kt`, synchronized product/spec/CODE records, this ledger/page
 matrix, and the accepted API 35 production/comparison PNGs. It changed presentation geometry and
 the optional shared button shape only; it did not change authentication, onboarding stage,
 create-user, operator/notification, conditions, migration, or Desktop owners.
+
+The active P11/P12 lane may modify only the existing `NewChatView` Android presentation boundary,
+the smallest common `expect`/Desktop-legacy seam, Android scanner permission/presentation code,
+Nome Android connection UI/resources, focused Android/Desktop tests, synchronized product/spec/
+CODE records, this ledger/matrix, and accepted redacted-safe visual comparisons. It cannot modify
+`ChatModel`, `Core.kt`, controller/core commands, protocol, database/archive semantics, iOS, or
+Desktop UI. Invitation and QR payload bytes must not enter logs, tests, screenshots retained as
+evidence, or committed filenames/manifests.
+
+The P14/P15 lane may modify the existing contact-request and user-address presentation boundaries,
+the smallest typed client results over unchanged commands, matching Desktop legacy actuals,
+Android Nome shared page/components/resources, focused Android tests, synchronized product/spec/
+CODE records, this ledger/matrix, and redacted-safe visual comparisons. It cannot add a
+request-message producer, address transaction, rollback guarantee, core response, or persistent
+bearer.
+
+The completed P17/P18 lane may modify the existing loaded-chat, chat-item, composer, shared
+theme/app-colors, and app-bar presentation boundaries; the smallest message-action expect/actual
+container; fixed bilingual labels; focused common/Android tests; synchronized product/spec/CODE
+records; this ledger/matrix; and accepted non-bearer visual comparisons. It cannot add a message,
+delivery, encryption, file, voice, call, moderation/report, online, success, or security producer.
+Desktop must retain the official wallpaper/layout/menu behavior. High-risk file/voice/call fixture
+and lifecycle work remains outside this ordinary UI closure.
+
+The active P19/P20 lane may modify `VerifyCodeView` and `AddChannelView` presentation boundaries,
+their smallest common `expect`/Android Nome/unchanged Desktop-legacy actuals, the existing
+New Chat callback needed to reach official scan/paste from the channel setup tab, fixed bilingual
+Android resources, focused common/Android tests, synchronized product/spec/CODE records, this
+ledger/matrix, and redacted-safe visual comparisons. It cannot change verification commands or
+results, contact/member security ownership, QR payloads, relay selection or creation commands,
+channel/group-link progression, cancellation/deletion semantics, models, core/protocol/database/
+archive/native/iOS behavior, or manufacture a Nome public domain, relay health, connection,
+encryption, creation, link, or success fact. Desktop must render the official v6.5.6 layouts.
+
+The completed P21/P22 lane may modify the loaded group/channel and local-profile presentation
+boundaries, the smallest common `expect`/Android Nome/unchanged Desktop-legacy actuals, fixed
+bilingual Android resources, focused common/Android tests, synchronized product/spec/CODE records,
+this ledger/matrix, and redacted-safe visual comparisons. It cannot add or change channel/group
+commands, relay/member/moderation facts, identity/profile models, active-user/hide/delete/auth
+commands, incognito persistence, database semantics, core/protocol/archive/native/iOS behavior, or
+manufacture E2EE, relay-health, online, verified, deletion, switch, or success state. Incognito
+remains per connection.
+
+The active P23/P24 lane may modify the existing Settings, archive/export/import, database-key,
+device-migration, remote-device, appearance, notification, privacy, and network presentation
+boundaries; the smallest common `expect`/Android Nome/unchanged Desktop-legacy actuals; fixed
+bilingual Android resources; focused common/Android tests; synchronized product/spec/CODE
+records; this ledger/matrix; and redacted-safe production comparisons. It cannot add or reorder an
+archive/migration/database command, change archive or database semantics, expose a path/key/
+passphrase/bearer, infer progress/rollback/restore/success, alter notification/network/platform
+facts, or change core/protocol/native/iOS/Desktop behavior. Destructive/import/export fixtures
+must use disposable controlled data and retain API 28/API 35 lifecycle depth.
+
+## P11/P12 Milestone 3 implementation state
+
+- Shared ownership: `NewChatView` still owns `apiAddContact()`, invitation disposal,
+  `strConnectTarget`, `planAndConnect(..., Legacy)`, and navigation. The new
+  `PlatformNewChatRoute` is presentation-only; Desktop invokes the official legacy content.
+- P11 presentation: the compact identity header dispatches the existing profile callback; the
+  link/copy/share/QR regions follow the P11 visual acceptance baseline. Ready content requires a
+  real `CreatedConnLink`. Local copy/share acknowledgement does not imply peer use or connection.
+  TTL, expiry, atomic regeneration, old-link invalidation, and success claims are absent.
+- P12 presentation: camera and paste regions follow the P12 baseline. The scanner is inactive
+  until the explicit camera action; clipboard access is explicit; manual, clipboard, and scanned
+  values use the same official parser/legacy plan route and do not opt in to P13.
+- Camera/platform boundary: production camera hardware is optional; no-camera, first denial,
+  permanent denial, Settings recovery, return, analyzer-frame closure, and executor disposal are
+  handled without manufacturing connection state.
+- Focused verification:
+  - Android/Desktop compile plus debug/androidTest assembly passed:
+    `BUILD SUCCESSFUL in 28s`, 94 tasks, after the profile-header/bearer-semantics assertions and
+    camera-disposal correction;
+  - API 35 `NomeNewChatRouteComposeTest` passed `OK (2 tests)` in 2.996s against the configured
+    `.nome.dev` instrumentation package. An initial runner invocation used the stale unsuffixed
+    test package name and failed class loading; selecting the package declared by
+    `pm list instrumentation` was the safe corrective path and the current APK passed;
+  - the tests cover one-to-one local actions, explicit scanner/clipboard activation, unsupported
+    expiry/regeneration absence, bearer absence from semantics, and 48dp primary actions.
+- Single risk-oriented review:
+  - the first pass found two `HIGH` issues: the visible P11 bearer remained readable through
+    Compose semantics, and a late camera-provider listener could bind after disposal while
+    teardown synchronously called `Future.get()`;
+  - P11 now clears bearer text semantics and exposes only the generic invitation-link label, with
+    a focused assertion that the real URI is absent from the semantics tree;
+  - camera disposal is non-blocking, stores only an already-resolved provider, and guards late
+    provider/analyzer/bind work with an atomic disposed flag and executor state;
+  - the same reviewer rechecked only those corrected areas and returned `ZERO ISSUES`; the group's
+    required single review is closed without claiming the final-RC two-round review pair.
+- P12 production acceptance:
+  - production:
+    `visual-baselines/api35-zh-light/P12-production-390x844-v2.png`,
+    SHA-256 `9dfc173408a092e7515677913fd302ae7852adc09c3665788be2d805cb4d8017`;
+  - same-size reference/production comparison:
+    `visual-baselines/api35-zh-light/P12-reference-vs-production-390x844-v2.png`,
+    SHA-256 `96ca0a47be2b7966e7a860d1b285ba4c0fa804c6c8d1865fba275fb3dc446c14`;
+  - API 35 Chinese/light composition, region placement, hierarchy, density, typography, spacing,
+    corners, real icon, and action sizing were jointly inspected and corrected. Truthful
+    differences are the actual SimpleX link schema, explicit clipboard action, and official
+    parser/core-result disclosure.
+- P11 production status:
+  - after the earlier connection errors, the controlled API 35 `IncogTarget35` client produced a
+    real `CreatedConnLink`. After emulator disk reboot, Home retained the read-only
+    `已邀请连接` / `连接等待中` row;
+  - the created invitation is not peer use or connection proof. A later bounded attempt returned
+    the official `smp12.simplex.im` connection error, so no relay-health fact is inferred;
+  - no bearer is retained in logs, UI dumps, filenames, or accepted evidence. The retained
+    `P11-production-390x844-redacted-v1.png` is loading-state diagnostics only and is not visual
+    acceptance;
+  - P11 is `ACTIVE — PRODUCER PROVEN; READY VISUAL ACCEPTANCE OPEN`. A later successful producer
+    window must retain only a redacted-safe reference-size ready comparison; this external
+    availability gap is not the three-turn Goal blocker condition.
+- Controlled API 35 cleanup:
+  - camera permission flags were returned to their original denied/sensitive state;
+  - the temporary `PrivacyProtectScreen` preference key is absent, window privacy again produces
+    a one-color black screencap, and the device is back at physical 1080 × 2400 / 420 dpi;
+  - the recorded temporary preference backup was no longer present when cleanup resumed, so the
+    earlier exact pre-fixture preference hash cannot be re-proven. No other preference was
+    intentionally changed during cleanup; this controlled-device evidence discrepancy is kept
+    explicit and is not used as product acceptance.
+
+## P14/P15 Milestone 3 implementation state
+
+- Official ownership and result truth:
+  - `contactRequestAlertDialog` offers the Android P14 route from the existing request owner;
+    Desktop declines the seam and keeps the official alert;
+  - accept still uses the official API and mutates the chat list only after a real `Contact`;
+  - `APIRejectContactRequestResult.Rejected(contact?)` is distinct from `Failure`, so a failed
+    reject retains the request, including when valid success carries no contact;
+  - non-onboarding `UserAddressView` offers the Android P15 route; onboarding and `FIRST_USE`
+    continue to use official content;
+  - `APIUserAddressResult.NotFound` alone proves OFF. Failure retains any confirmed cached
+    address, and no bare null is relabelled as disabled;
+  - official short-link upgrade/share choice, post-create profile-sharing, advanced settings,
+    copy/share, confirmation setting, deletion result, and model updates remain wired.
+- P15 destructive lifecycle:
+  - replacement requires confirmation and runs delete, then create;
+  - a delete failure leaves the address intact;
+  - if create fails after confirmed deletion, the page records that phase and retries create only,
+    without a second delete, atomicity, rollback, recovery, or success claim;
+  - back and duplicate actions are blocked while an operation is in flight.
+- Visual/accessibility implementation:
+  - P14 preserves the baseline requester card, message-region position, identity disclosure,
+    current/incognito hierarchy, sender-not-notified warning, and pale destructive pill. Because
+    v6.5.6 has no request-message producer, the message region truthfully says there is no separate
+    message;
+  - P15 preserves the baseline intro, QR/address card, copy/share actions, confirmation row,
+    replace/delete hierarchy, and disclosure, while adding the official advanced settings row;
+  - the address bearer is removed from Compose accessibility semantics and replaced with a generic
+    address label; actions retain 48dp minimum targets and in-flight live-region feedback.
+- Verification:
+  - latest Android/Desktop compile plus debug/androidTest assembly:
+    `BUILD SUCCESSFUL in 32s`, 94 tasks;
+  - API 35 focused P14/P15 suite: `OK (5 tests)` in 4.672s. It covers single-submit/busy close,
+    reject failure retention/no fake success, bearer absence, toggle blocking, destructive
+    confirmation, replace create-only retry, and 48dp controls;
+  - API 35 Chinese/light renderer fixture capture: `OK (1 test)`. Final same-size comparisons:
+    `P14-reference-vs-renderer-fixture-390x844-v3.png`, SHA-256
+    `34b405d9a169b4cd881eb724b740516dcac0b3b462f1fe70803c8bbfb3116a12`, and
+    `P15-reference-vs-renderer-fixture-390x844-v3.png`, SHA-256
+    `29fcd700100838941dd3be559b922cc3556e0d8d0bff7778599e07f24c68b005`;
+  - the combined images were inspected as layout calibration. The first P14 comparison exposed a
+    solid-red reject action unlike the pale baseline; the shared destructive-secondary variant
+    and its spinner contrast were corrected before the final comparison;
+  - one risk-oriented review found missing official post-create profile sharing and reject
+    no-notify copy, then missing short-link upgrade/share choice and confirmed-address retention
+    on refresh failure. All were corrected; the final recheck returned `ZERO ISSUES`. This is the
+    ordinary group's single review, not a final-RC two-round review pair.
+- Production state and controlled-device restoration:
+  - API 35 reached the real P15 OFF route for `IncogTarget35`. The accepted diagnostic is
+    `P15-production-off-390x844-v1.png`, SHA-256
+    `354ec1b0b9ec24a88a1b93d52bb865c008ef2debd2f2300b26e03b6d2863a0fe`;
+  - a later controlled API 35 attempt produced a real `UserContactLinkCreated`. The address
+    remained available after emulator disk reboot and reopened the READY route with the real QR,
+    copy/share actions, confirmation requirement, replace/close, and advanced settings;
+  - accepted redacted READY production:
+    `P15-production-ready-390x844-redacted-v1.png`, SHA-256
+    `eb9c04445d533297cc018e3be3c05c086f8fc4ac81764f5febc8badfb54830ca`;
+  - accepted redacted READY reference/production comparison:
+    `P15-reference-vs-production-ready-780x844-redacted-v1.png`, SHA-256
+    `40eb92f0c5ba70fe7c4dd25c033f6502f018d3ffea472e078c8b760426c76777`;
+  - the raw bearer and QR were redacted before entering the evidence tree. The production result
+    proves local address creation/persistence only; it does not prove sharing, peer use, request,
+    or connection;
+  - a second API 35 client reached the official P14 confirmation using that real address, then
+    returned the official `smp9.simplex.im` connection error. No incoming request appeared on
+    `IncogTarget35`, so P14 remains without a production request state;
+  - the API 35 client is restored to `IncogTarget35`; `PrivacyProtectScreen` is checked again, and
+    the final screenshot-protection check returned a one-color capture with mean 0.25.
+- Status:
+  - P14: `ACTIVE — PRODUCER RESULT BLOCKED`;
+  - P15: `READY FOR MILESTONE`;
+  - the remaining P14 producer gap does not change P15 truth and is not the three-turn Goal blocker
+    condition.
+
+## P16 Milestone 3 implementation state
+
+- Official ownership and result truth:
+  - `acceptGroupInvitationAlertDialog` offers the Android route only from the existing
+    `GroupMemberStatus.MemInvited` owner; Desktop declines the seam and retains the official
+    alert;
+  - group name/profile/image/member count/public state/review policy/incognito state comes from
+    the current `GroupInfo`; channel type uses `GroupInfo.isChannel`, not relay use;
+  - a real `InvitedBy.IBContact` may expose its current contact name and official verification
+    fact, but the route never calls that contact an administrator or reconstructs a source;
+  - `APIJoinGroupResult.Accepted`, `Unavailable`, and `NotCompleted` project the unchanged
+    `ApiJoinGroup` result path. Accepted updates the official model, expired/not-found preserves
+    the official delete/alert path, and generic failure keeps the preview retryable;
+  - invitation deletion remains the official local chat deletion, requires confirmation, and is
+    not relabelled as cancel. Ordinary back is command-free.
+- Visual/accessibility implementation:
+  - P16 preserves the baseline warning, group/profile card, member/review chips, source and inviter
+    hierarchy, green primary action, secondary destructive action, and connection disclosure;
+  - unsupported baseline claims are replaced by typed truth: no custom Nome domain, verified
+    administrator, joined/connected state, relay health, or success inference;
+  - the first comparison exposed a mismatched fallback avatar and information icon. The final
+    renderer uses the matching group icon and warning geometry while retaining official group
+    images when present;
+  - actions retain 48dp minimum targets, single-submit behavior, busy-back blocking, destructive
+    confirmation, and live failure feedback.
+- Verification:
+  - final Android/Desktop compile plus debug/androidTest assembly:
+    `BUILD SUCCESSFUL in 31s`, 94 tasks;
+  - API 35 focused P16 suite: `OK (3 tests)` in 3.127s. It covers accepted close, one submission,
+    failure retention, busy back/secondary disable, verified-contact copy, destructive
+    confirmation, source-unavailable copy, and 48dp actions;
+  - API 35 Chinese/light renderer fixture capture passed. Final same-size comparison:
+    `P16-reference-vs-renderer-fixture-390x844-v2.png`, SHA-256
+    `3940c9c25577d34bcbc19339bb914749b55fae84d44e3bf91d394383b0a9e4fd`;
+  - the combined image was inspected at 780 × 844. It is layout calibration only and contains no
+    real invitation, bearer, join, or connection result;
+  - one risk-oriented review found relay use incorrectly mapped as channel type and a blank long
+    description suppressing the official short description. Both were corrected; the final
+    source/test/document recheck found no remaining issue in the ordinary P16 scope.
+- Production state and controlled-device restoration:
+  - the real API 35 production app reached Home as `IncogTarget35`; no `MemInvited`/P16 route is
+    present in the current chat list, so no fixture is promoted to production acceptance;
+  - one bounded invitation of the controlled `AddressSender28` contact from the real
+    `No么Group Check0718` group returned to group info, but the API 28 client received no group
+    invitation. Submission is not promoted to delivery or acceptance;
+  - the production package remains v6.5.6/358, the temporary privacy-override key is absent, and
+    the final screenshot-protection capture is one-color black;
+  - P16 is `ACTIVE — PRODUCER RESULT BLOCKED`. This external producer gap does not block P17/P18
+    and is not the three-turn Goal blocker condition.
+
+## P17/P18 Milestone 3 implementation state
+
+- Official ownership and truth:
+  - `ChatView`, `ChatItemView`, `ComposeView`, and `SendMsgView` continue to own the loaded chat,
+    official chat items, compose state, attachment/voice/live/send callbacks, delivery metadata,
+    navigation, and long-press action eligibility;
+  - `PlatformMessageActionsMenu` changes only the Android container. Desktop delegates to the
+    established anchored menu;
+  - reaction, reply, share, copy, edit, forward, information, delete, and selection callbacks are
+    the existing callbacks. Report remains behind the unchanged exact group + Reports +
+    member-role gate; the direct-chat production tree contains no report action;
+  - the fixed E2EE chip/banner is driven only by the newest actual direct E2EE timeline item and is
+    absent without such a producer. No generic security state is manufactured.
+- Visual implementation and comparison:
+  - P17 now uses the baseline's compact top toolbar, fixed green E2EE banner, flat neutral
+    conversation surface, green/neutral bordered bubbles, centered date treatment, plus
+    attachment action, 48dp pill composer, microphone, and existing send/live action;
+  - the Android timeline omits the large upstream contact-introduction card that displaced the
+    baseline conversation. Contact detail remains reachable from the official toolbar title;
+  - P18 uses the baseline scrim, rounded full-width bottom sheet, title/48dp close action, green
+    icon tiles, dividers, destructive red row, scrollable official actions, and blue selected-item
+    outline. Extra official actions remain rather than being deleted to mimic the shorter design;
+  - accepted P17 production:
+    `visual-baselines/api35-zh-light/P17-production-final-390x844.png`, SHA-256
+    `f87a2d9b3ea748896953349b47b99d4f6fc7d164116939cf502da6133436dca6`;
+  - accepted P17 same-size comparison:
+    `visual-baselines/api35-zh-light/P17-reference-vs-production-final-780x844.png`, SHA-256
+    `44bbbb47e810891c7f3b1288119bc4f0e524f2049eaa8b0a54895278edccd225`;
+  - accepted P18 production:
+    `visual-baselines/api35-zh-light/P18-production-final-390x844.png`, SHA-256
+    `dcd1f6d5f8239cd295c7ce96e8274b4974eb8d774ba7b753b1a5feb894a318d5`;
+  - accepted P18 same-size comparison:
+    `visual-baselines/api35-zh-light/P18-reference-vs-production-final-780x844.png`, SHA-256
+    `f19138265a5dabab43e9ca5a23c45b62e1abf5077827aa94522a1bac307d5661`;
+  - the controlled P17 state uses a real direct contact, the message actually received from the
+    controlled API 28 client, and four messages actually submitted through the API 35 production
+    composer. File/voice/call examples from the reference are deliberately not fabricated.
+- Verification:
+  - final focused aggregate
+    `:common:desktopTest --tests NomeConversationPresentationTest`,
+    `:common:compileKotlinDesktop`, `:android:assembleDebug`, and
+    `:android:assembleDebugAndroidTest` passed: `BUILD SUCCESSFUL in 1m 10s`, 101 tasks;
+  - the common tests cover newest actual E2EE fact and fail-closed absence;
+  - API 35 exact-class `NomeConversationActionsComposeTest` passed `OK (2 tests)` in 1.769s,
+    covering one-to-one official reply callback, dismiss-without-action, and 48dp rows;
+  - production smoke opened the real chat, submitted real controlled fixture messages, opened P18
+    by long press, invoked the real reply context exactly once, and cancelled it without sending or
+    mutating the message;
+  - P17/P18 UI trees retain labels for back, more, attach, input, voice/send, sheet close, and every
+    visible action. Compose checks prove the action/close hit targets; milestone TalkBack/200%
+    coverage remains concentrated as contracted.
+- Review and restoration:
+  - the single risk-oriented review covered official owner/callback preservation, direct-report
+    exclusion, E2EE fail-closed truth, Desktop fallback, accessibility sizing, and visual
+    comparison;
+  - visual/review findings were corrected before closure: the per-chat theme override bypassed
+    Nome colors, the upstream introduction card displaced the baseline, muted text inherited the
+    blue accent, and the selected-item outline lost the baseline blue after neutralization. The
+    final source/test/document recheck found no remaining blocking issue in the ordinary
+    P17/P18 scope;
+  - screenshot protection was restored through the official Privacy and security screen. The
+    stored preference is `<boolean name="PrivacyProtectScreen" value="true" />`, the relaunched
+    window reports `SECURE`, and the ADB screencap has one color with RGB zero (RGBA mean 0.25);
+    retained black proof:
+    `visual-baselines/api35-zh-light/P17-P18-privacy-secure-restored-api35.png`, SHA-256
+    `ccdd6c20ad38481728e810ba14df934dc2b5eca5b43713679c27cf0cb293d3ac`.
+- Status:
+  - P18: `READY FOR MILESTONE`;
+  - P17 conversation shell: `READY FOR MILESTONE`; the separate media/file/call P1 lane is
+    `ACTIVE — TWO-CLIENT PRODUCER BLOCKED` after closing all currently independent API 28/API 35
+    platform and lifecycle work below;
+  - no ordinary checkpoint is created.
+
+### P17 Android-reachable media/file/call high-risk closure
+
+- Controlled production fixtures:
+  - retained API 35 client `IncogTarget35` and API 28 client `AddressSender28` opened their real
+    matching direct chat; the earlier `Tk s` item proves the historical message direction, but no
+    new traffic is promoted from that old fact;
+  - only device-local synthetic files already created for Nome testing were selected. No personal
+    media was captured or retained as evidence.
+- API 35 media/file routes:
+  - the production attachment menu exposed Camera, Photos, Video, and File;
+  - the real Android DocumentsUI selected `nome-fixture-35.txt` (45 bytes), and the official
+    preview cancelled back to the composer;
+  - the real Google Photos picker selected one synthetic image and one synthetic video. Both
+    returned to the official image/video preview and both cancelled back to the composer;
+  - the production camera intent opened the platform camera with its real shutter control and
+    returned without capture;
+  - sending the 45-byte synthetic file created an official sender-side item with indeterminate
+    transfer progress. Neither the new file nor a new text marker arrived on API 28. The official
+    stop-file confirmation was invoked, but the item remained non-terminal. This is retained as a
+    bounded producer observation, not as send, cancel, timeout, online, or failure success.
+- Voice lifecycle:
+  - API 35 and API 28 both exercised the real microphone permission request. Denial left the
+    permission ungranted; a later request and user allow exposed the real recorder;
+  - both devices recorded synthetic emulator audio, stopped into the official duration/preview
+    state, and cancelled without sending. API 35 retained the preview across Home/background and
+    task return. Orientation remained locked while the recording preview owned the official
+    recording route;
+  - the cancelled temporary recording remained tracked until leaving the loaded chat and was then
+    removed by the official unused-file cleanup on both devices. No recording file remained after
+    route exit;
+  - the temporary microphone grants were revoked after the lifecycle checks.
+- Call lifecycle:
+  - API 35 denial produced the real full-page missing-microphone-permission state; allowing the
+    permission opened the official outgoing audio call in `waiting for answer` with mute,
+    speaker, hang-up, and video controls;
+  - mute state survived rotation and Home/background return. The call remained unanswered and the
+    emulator WebView reported `Unable to play media`; neither is reclassified as ringing or
+    connected;
+  - API 28 independently opened the outgoing `waiting for answer` call, retained its foreground
+    `CallService` and actionable notification while the main task was foregrounded, returned to
+    the call through that notification, and hung up cleanly;
+  - both calls returned to the chat, removed the active call service, restored automatic rotation,
+    and produced no Nome FATAL/ANR. API 28/35 never formed a connected two-client call.
+- Closure boundary:
+  - API 28/API 35 production pickers, preview/cancel, permission denial/recovery, local recording
+    cleanup, outgoing-call foreground/notification/lifecycle, and hang-up are closed;
+  - real two-client file/media receipt, download/open/save/playback, transfer cancellation/retry,
+    incoming ringing, answer, connected media, and reconnect remain one external producer gate.
+    A new `M3probe20260719` item was created on the API 28 sender, but it did not appear on the
+    API 35 peer; the sender-side item is not delivery proof. Continue only when controlled-client
+    traffic actually resumes.
+
+### P1 contact-detail shared-surface closure
+
+- Official ownership and presentation boundary:
+  - `ChatView` keeps the official direct-contact selection, modal owner, contact model, and action
+    callbacks. Android suppresses only the legacy modal app bar for this direct-contact route;
+    group and Desktop routes retain their existing composition;
+  - `ChatInfoView` keeps the official contact details, preferences, delivery receipts, theme,
+    delete-after, encryption, verification, call, search, video, mute, edit-name, and destructive
+    action owners. Android delegates their arrangement to `PlatformContactDetailRoute`; Desktop
+    uses the legacy layout;
+  - the Android route uses the shared Nome full-page scaffold, compact profile hierarchy, four
+    48dp-plus quick actions, and outlined rounded cards. It does not synthesize a profile photo,
+    contact status, verification result, online state, call outcome, or security claim.
+- Focused verification:
+  - Android debug APK, Android test APK, `common` Android compile, and Desktop compile passed with
+    Android Studio JBR 21;
+  - exact API 35 instrumentation
+    `NomeContactDetailComposeTest#officialContactSlotsRemainReachableInFullPagePresentation`
+    passed `OK (1 test)` after the final outlined-card correction;
+  - the controlled API 35 production client opened its real `AddressSender28` direct contact. The
+    accessibility tree retained the official search/call/video/mute, verification, preferences,
+    delivery-receipt, theme, and delete-after controls.
+- Visual acceptance:
+  - raw API 35 Chinese/light production capture:
+    `visual-baselines/api35-zh-light/P1-contact-detail-production-api35-zh-light-1080x2400-v1.png`,
+    SHA-256 `87bf299856855122d2954196d8c5660e6cf876afec6efaad11d873b157718cce`;
+  - reference-size production transform:
+    `visual-baselines/api35-zh-light/P1-contact-detail-production-390x844-v1.png`, SHA-256
+    `6bbfe560fc46a905fcddd63ab8a6085f7abf86f8090e006ccdd6eab1e8b63ea6`;
+  - same-size comparison against the adjacent accepted P19 visual-language baseline:
+    `visual-baselines/api35-zh-light/P1-contact-detail-adjacent-P19-reference-vs-production-780x844-v1.png`,
+    SHA-256 `f3ead2fe586ef57dcd212216f42065a01caea6ca8672fc55022d9c815fe4ea7d`;
+  - this adjacent comparison calibrates card, profile, action, typography, spacing, and density
+    language; it is not presented as an exact P19 state match. The production page retains the
+    denser official contact settings and real placeholder avatar.
+- Restoration:
+  - screenshot protection was restored through the official Privacy route. The switch tree reports
+    `checked=true`; the post-restoration 1080 × 2400 ADB screencap contains one RGBA color,
+    `(0,0,0,255)`. The black diagnostic remains temporary and is not added as product evidence.
+
+### P1 notification/background shared-surface closure
+
+- Official ownership and presentation boundary:
+  - `NotificationsSettingsView` still owns `notificationsMode`, `notificationPreviewMode`, the
+    official choice sets, preference writes, and
+    `platform.androidNotificationsModeChanged(mode)`. Android changes only the full-page/card
+    arrangement; Desktop delegates the legacy view;
+  - the production client reports the real current mode `OFF`, so the page states that the app
+    receives messages only while it is running. It does not infer Android notification permission,
+    a foreground service, delivery, background health, or success from that preference;
+  - the mode and preview child routes expose the official values as selected option cards with
+    48dp-plus activation and return through the custom full-page modal owner.
+- Focused verification:
+  - sequential `:android:assembleDebug :android:assembleDebugAndroidTest --no-daemon` and
+    `:common:compileKotlinDesktop --no-daemon` passed with Android Studio JBR 21;
+  - API 35 `NomeNotificationsSettingsComposeTest` passed all three tests as part of the final
+    16-test shared-group run. It verifies both official preference entries, exact selected-value
+    dispatch, selected semantics, Back, and 48dp activation;
+  - production smoke opened Notifications from P23 and its real mode child without mutating the
+    controlled `OFF` preference.
+- Visual acceptance:
+  - raw API 35 Chinese/light production:
+    `visual-baselines/api35-zh-light/P1-notifications-production-api35-zh-light-1080x2400-v1.png`,
+    SHA-256 `d72c81abc2a747a757ac417c164fadf3b6a61feb0d9b7cc70fd57dadaa529b3b`;
+  - reference-size production:
+    `visual-baselines/api35-zh-light/P1-notifications-production-390x844-v1.png`, SHA-256
+    `6121899fc1ca901ba88c4c0143b4f72e7ae775f36d5082c1c6b4abaad32c6e8a`;
+  - same-size adjacent P23 comparison:
+    `visual-baselines/api35-zh-light/P1-notifications-adjacent-P23-reference-vs-production-780x844-v1.png`,
+    SHA-256 `bb2d0803dad822b3880b0287972d022bf32267056e7f4a5f21d888053c6b2df2`.
+    Original-size inspection accepted the header, outlined grouping, icon container, hierarchy,
+    typography, spacing, corners, action geometry, and truthful density.
+
+### P1 chat-list utilities shared-surface closure
+
+- Official ownership and presentation boundary:
+  - the frozen Home projector, current-generation gate, preview privacy, read-only pending/deleted/
+    stopped rows, and `FIRST_USE`/filter ownership remain unchanged. Ready direct/group/note rows
+    now use the official open actions and expose existing official menu items through long press
+    and one TalkBack custom action;
+  - the API 35 production row exposed `标记为未读`, `最喜欢`, `静音`, `添加到列表`, `清除`, and
+    `删除`. No destructive or state-changing action was activated during smoke;
+  - Android tag selection and editor routes use the Nome full-page/list/input/button composition.
+    The live official tag list, selected tag IDs, emoji/name data, duplicate validation,
+    `apiCreateChatTag`, `apiUpdateChatTag`, and `apiSetChatTags` flows remain common-owned. Desktop
+    and reorder mode retain the official legacy composition.
+- Focused verification and review:
+  - final Android debug/test assembly passed in 1m16s; Desktop compile passed in 46s. Parallel
+    multi-target compilation had previously driven the Kotlin compiler daemon into pathological
+    CPU use, so the accepted safe alternative is sequential `--no-daemon`; no project build
+    setting changed;
+  - final API 35 shared-group instrumentation passed `OK (16 tests)`: two tag editor/list tests,
+    ten frozen Home projection/boundary tests, three notification tests, and one contact-detail
+    test. Tag selection/create/editor actions and Back retain 48dp-plus hit targets;
+  - the group's single risk-oriented review found that the first Android branch styled only the
+    empty tag editor while non-empty tag selection could still escape to the legacy modal. The
+    production branch now uses the same full-page selection seam for both empty and non-empty
+    paths; the added selection/callback test passes. Reinspection found no remaining issue.
+- Visual acceptance:
+  - production long-press menu raw/reference-size captures:
+    `visual-baselines/api35-zh-light/P1-chat-list-actions-production-api35-zh-light-1080x2400-v1.png`
+    (`e735519295f3aefeabc89e892d5087ca65dc625f75f6eb930f0d6eaa21d93c85`) and
+    `visual-baselines/api35-zh-light/P1-chat-list-actions-production-390x844-v1.png`
+    (`735222caf162410d0c64d7218b73e4b923f2479f1cf215f24bea242f72fe0bb5`);
+  - production empty tag editor raw/reference-size captures:
+    `visual-baselines/api35-zh-light/P1-chat-list-tag-editor-production-api35-zh-light-1080x2400-v1.png`
+    (`df10969c1d64939fd2902085a04e63cb9888368dd2b90ca0c2b1d88b7628f342`) and
+    `visual-baselines/api35-zh-light/P1-chat-list-tag-editor-production-390x844-v1.png`
+    (`acdf643a94b9883d4dbd380c2d06c503fc44d478e840882ff166ed598a822c89`);
+  - same-size adjacent P23 comparison:
+    `visual-baselines/api35-zh-light/P1-chat-list-tag-editor-adjacent-P23-reference-vs-production-780x844-v1.png`,
+    SHA-256 `89431843fd84e3adaea058b98ab844bb6df654f68136f46e93220ae9fd5330ea`.
+    Original-size inspection accepted the shared top bar, restrained card/input geometry,
+    typography, spacing, corners, action size, and sparse single-purpose density.
+- Restoration:
+  - the final focused activity reports window flag `SECURE`; the official privacy switch tree is
+    `checked=true`, and the settled API 35 framebuffer has exactly one RGBA color
+    `(0,0,0,255)`. No screenshot fixture remains enabled.
+
+### P1 network/appearance/help shared-surface closure
+
+- Official ownership and presentation boundary:
+  - `PlatformSettingsDetailRoute` supplies only the Android Nome full-page scaffold and optional
+    grouped surface. Desktop and calls without an explicit close owner retain the legacy
+    compositions;
+  - `NetworkAndServersView` still owns preset operators, user servers, SOCKS/proxy/Tor, advanced
+    network settings, Save, Calls, unsaved-change handling, and every preference/command. The
+    device-network status icon now announces not-observed before Android's first platform fact,
+    then connected or disconnected from `NetworkObserver.platformNetworkInfo`, and uses the theme
+    neutral/action/error color. The legacy optimistic model default cannot become visible; the row
+    does not claim relay, operator, routing, privacy, or global health;
+  - Appearance still owns language, one-hand controls, theme previews, color mode, wallpaper, and
+    icon preferences. The official language picker was used to inspect English Developer
+    production and then restore Simplified Chinese; locale initialization/persistence policy was
+    not changed;
+  - Help retains the official v6.5.6 `ChatHelpView` content. Developer retains its terminal link,
+    authenticated console, hint reset, official preferences, and deprecated options inside the
+    shared grouped surface;
+  - settings About uses the real packaged Nome wordmark, build version, official live
+    `apiGetVersion` owner, official SimpleX source URL, and exact v6.5.6 AGPL license URL. It makes
+    no core, online, update, compatibility-success, or security claim. `FIRST_USE` and onboarding
+    `SimpleXInfoLayout` remain unchanged.
+- Production defects found and corrected:
+  - the legacy settings About embedded onboarding's shrinking layout inside a vertical scroll and
+    crashed in production with an unrepresentable Compose height constraint. Only the Android
+    settings About presentation was replaced; onboarding ownership was not changed;
+  - system Back from About initially closed the settings root. The nested About route now owns
+    Back and returns to P23;
+  - system Back from an active P23 search initially closed P23. The active search now consumes
+    Back, clears query/focus, and leaves the settings root resumed.
+- Focused verification and review:
+  - final Android debug/test assembly passed with one worker and a 4GB Kotlin daemon after the
+    original combined Android/Desktop invocation was diagnosed as two concurrent IR compiles
+    exhausting the 2GB daemon rather than a source failure; sequential Desktop compile passed in
+    52s;
+  - final API 35 focused run passed `OK (7 tests)` across
+    `NomeAboutSettingsComposeTest`, `NomeNotificationsSettingsComposeTest`, and
+    `NomeSettingsBackupComposeTest`. About actions and Back are 48dp-plus and dispatch their exact
+    owners; P23 search still exposes only existing routes;
+  - the controlled API 35 client opened real configured operators/servers, Appearance, Help,
+    About, live app/core version details, and Developer with developer options still off. No
+    network command, preference, external link, reset, console, or destructive action was
+    triggered;
+  - after installing the final source, API 35 production inspection reported the actual observed
+    device network as `WiFi` with accessibility description `已连接`; the pre-observation branch
+    remains explicitly unknown and cannot expose `ChatModel`'s optimistic legacy default. P23
+    search consumed system Back and returned to the still-resumed settings root;
+  - the original-size adjacent comparisons were inspected as the visual QA input. The Android
+    pages retain the P23 title hierarchy, green accent/icon language, compact information density,
+    rounded outlined grouping, action sizing, and spacing while preserving denser official detail
+    content.
+- Lean visual evidence:
+  - Network raw/comparison:
+    `visual-baselines/api35-zh-light/P1-network-server-advanced-production-api35-zh-light-1080x2400-v1.png` /
+    `visual-baselines/api35-zh-light/P1-network-server-advanced-adjacent-P23-reference-vs-production-780x844-v1.png`,
+    SHA-256
+    `bc5da129fba86f691c75a022da31c2fece4cb7b4b2435e55223094f810ffbb73` /
+    `0ed12b994c5466bf30424cd5207a810edbf383db121acae3449c08e90d07d413`;
+  - Appearance raw/comparison:
+    `visual-baselines/api35-zh-light/P1-appearance-localization-production-api35-zh-light-1080x2400-v1.png` /
+    `visual-baselines/api35-zh-light/P1-appearance-localization-adjacent-P23-reference-vs-production-780x844-v1.png`,
+    SHA-256
+    `9485cdc6d59e42b8bde3fba3e5adb659a63b68b37209480e62289a5406cb6d0a` /
+    `ea9beec342cd5ad7ae928dec5316d8373802cf6a2fc8ac0ab89a99831aecc77f`;
+  - Help raw/comparison:
+    `visual-baselines/api35-zh-light/P1-help-feedback-production-api35-zh-light-1080x2400-v1.png` /
+    `visual-baselines/api35-zh-light/P1-help-feedback-adjacent-P23-reference-vs-production-780x844-v1.png`,
+    SHA-256
+    `98ae3439b6f152f5816fa013d51db5b29bc625c7dfe620013ae574cfe8834a9c` /
+    `52c3afbb25e6d94b54b309e854f6f3da7c5cc5aeafc57ab4f356f974ac6e8add`;
+  - About raw/comparison:
+    `visual-baselines/api35-zh-light/P1-about-production-api35-zh-light-1080x2400-v1.png` /
+    `visual-baselines/api35-zh-light/P1-about-adjacent-P23-reference-vs-production-780x844-v1.png`,
+    SHA-256
+    `448c6f1b364d415e056e4b30eaed63c5e2c0d26c545ca8f63b60067878043fa9` /
+    `9d084ac3dd4d872e1cd105c90284f4b10d0812b1854cbb9da9a3cad3607e8769`;
+  - Developer English/light raw:
+    `visual-baselines/api35-zh-light/P1-developer-tools-production-api35-en-light-1080x2400-v1.png`,
+    SHA-256
+    `47155a9f74a740103dcfc47da23a700b183735459f0ca4767e8c4fddf693c5c6`.
+    The English capture is the same production page reached through P23 search after an official
+    language change; Chinese was restored before closure.
+- Restoration:
+  - the official Privacy switch reports `checked=true`; the active production window reports
+    `SECURE`; the settled 1080 × 2400 ADB capture has exactly one color. Branch/HEAD remain
+    `codex/nome-android-v656` /
+    `415375bdc8b7c392d5855f7b8fe13bf3ceddb01a`, staged paths remain `0`, no ordinary checkpoint
+    exists, and no remote mutation occurred.
+
+### P1 remote-desktop and Android-intent shared-surface closure
+
+- Official ownership and truth:
+  - `ConnectDesktopView` retains the v6.5.6 device-name, list/discovery, address connect,
+    verification, session, switch-local, disconnect, and delete owners. Android only selects the
+    P23 full-page/grouped presentation and state-derived title; Desktop renders the exact legacy
+    modal, internal title, scrollbar, and bottom spacer;
+  - the linked-desktop destructive menu now calls the already-defined confirmation before the
+    delete owner. No delete command is run from the menu activation itself;
+  - the typed address is cleared only by an actual connect result. Existing disconnect disposal
+    stops the remote controller and either switches the official connected session to local or
+    clears the pending session. No credential, bearer, remote command, protocol, or core behavior
+    changed;
+  - the controlled client exposes only the real unpaired camera/QR scanning state. It does not
+    prove a pairing, connection, switch, or revoke;
+  - `MainActivity.onCreate` and `onNewIntent` now call the same ordered
+    `dispatchMainActivityIntent`, which delegates unchanged to notification, `ACTION_VIEW`, and
+    external-share handlers. Intent actions, payload interpretation, user/chat ownership,
+    local-auth gate, task-stack, and Back semantics remain official;
+  - while an Android fullscreen modal is open, only the underlying root semantics are cleared.
+    The active modal and switching/authentication overlays remain outside that cleared subtree;
+    Desktop is unaffected.
+- Focused build, test, production, visual, and accessibility results:
+  - Android debug plus debug-test assembly passed in 1m 09s, 93 tasks. A final sequential Desktop
+    compile after the shared-source change passed in 55s;
+  - API 35 focused instrumentation passed `OK (9 tests)` across About, Notifications,
+    Settings/Backup, the new remote frame, and the new intent dispatcher. The remote Back owner is
+    48dp-plus and the dispatcher offers the same intent to all three handlers in order;
+  - after installing the exact APK, the settled remote production tree retained Back,
+    `连接到桌面`, device name, and `从桌面扫描二维码`, while underlying `当前身份` and `新建连接`
+    node counts were both zero;
+  - warm `SHOW_CHATS` delivered to the running single-task activity returned a real open chat to
+    Home; cold `SHOW_CHATS` also reached Home. Warm and cold safe text `ACTION_SEND` intents each
+    opened the official `分享消息……` list with real controlled chats, and system Back cleared the
+    share route and finished the externally launched activity back to the prior task. No message
+    was selected or sent;
+  - the original-size adjacent input was inspected. The Android page matches the P23 top
+    hierarchy, neutral/green palette, rounded outlined grouping, spacing, action sizing, and sparse
+    single-purpose density while retaining the official device-name field and real camera preview.
+  - the group's single risk-oriented review traced hostile QR/input, untrusted explicit intent,
+    destructive unlink, modal-background accessibility, auth/task-stack, Desktop fallback, and
+    documentation/source anchors. It found one stale `NomeButton` documentation end anchor
+    (`L90` for an 89-line file), which was corrected to `L89`. The final review has zero remaining
+    source/product/spec/test/evidence issue and returns `APPROVE`; `git diff --check` passes and
+    354 local links / 179 line anchors in the changed navigation set have zero failures.
+- Lean visual evidence:
+  - production:
+    `visual-baselines/api35-zh-light/P1-remote-desktop-production-api35-zh-light-1080x2400-v1.png`,
+    SHA-256
+    `e0c974d62ea3f8e98509cecb3c3e391d3058a5e6056e37f4735bcd8de9aee1c2`;
+  - adjacent P23 reference/production:
+    `visual-baselines/api35-zh-light/P1-remote-desktop-adjacent-P23-reference-vs-production-780x844-v1.png`,
+    SHA-256
+    `e4f44541af35a4f29b8e70d641383894775e461cfdc1d2633497478f6a269c22`.
+- Restoration:
+  - the official Privacy switch again reports `checked=true`; the active
+    `MainActivity` window flags include `SECURE`; its 1080 × 2400 ADB framebuffer has one color.
+    Branch/HEAD remain `codex/nome-android-v656` /
+    `415375bdc8b7c392d5855f7b8fe13bf3ceddb01a`, staged paths are `0`, no ordinary checkpoint
+    exists, and no remote mutation occurred.
+
+### P1 group-creation/admin and channel-owner/admin shared-surface closure
+
+- Official ownership and truth:
+  - `AddGroupView` retains profile validation/image editing, incognito preference, official group
+    create command, returned-model update, chat opening, and post-create member setup. Android
+    delegates only its full-page/card presentation through `PlatformAddGroupRoute`; Desktop invokes
+    the exact legacy content;
+  - `AddGroupMembersView` retains the real eligible-contact producer, member role, admission and
+    group-preference routes, selection, invite/skip commands, returned-member updates, failures,
+    and cancellation. Android delegates only presentation through
+    `PlatformAddGroupMembersRoute`;
+  - `GroupChatInfoView` and `GroupProfileView` retain aliases, notifications, links, members,
+    moderation, preferences, image/name/description validation, save, and destructive
+    confirmations. `ChannelMembersView` and `ChannelRelaysView` retain real group/member/relay
+    list, role, status, refresh, and tap owners;
+  - the v6.5.6 relay Add/Remove source remains commented behind `TODO [relays]`; it is neither
+    re-enabled nor imitated. No private group is classified as a channel;
+  - the group-info invitation shortcut now invokes its already-owned `addMembers` callback instead
+    of the older global modal helper. This preserves the official member refresh/invite route and
+    leaves one Android top Back owner. Unchecked contacts expose no checked-contact description.
+- Focused build, test, production, visual, and accessibility results:
+  - final Android debug plus debug-test assembly passed in 1m 1s, 93 tasks; final sequential
+    Desktop compilation passed in 50s;
+  - API 35 `NomeGroupAdminComposeTest` passed `OK (3 tests)` for creation preference/submit
+    ownership, invite setup/contacts, group-info content, 48dp actions, and top Back reachability;
+  - the controlled API 35 client created the real private group `No么Group Check0718` through the
+    official create owner. No contact was selected or invited, no message was sent, and no
+    destructive action was invoked;
+  - production navigation opened group info, invitation, and profile editing. Invitation contained
+    one `邀请成员`, one `返回`, and zero false `已检查联系人` descriptions; hardware Back returned to
+    group info. Profile editing contained one Back owner and did not force the IME;
+  - the original-size adjacent creation/P20 and group-admin/P16 images were inspected together.
+    The accepted pages align baseline composition, hierarchy, rounded grouping, neutral/green
+    palette, spacing, action sizing, and density while retaining private-group truth instead of
+    custom-domain, relay-health, verified-admin, or channel-success claims;
+  - the single risk review traced create/incognito/profile validation, invite roles/admission/
+    preferences, model updates, link/member/moderation/destructive owners, Desktop fallbacks, and
+    the source-disabled relay actions. It found the quick invitation shortcut bypassed the
+    page-owned callback and produced a duplicate one-hand Back bar. The callback routing was fixed,
+    rebuilt, and reverified; zero issue remains in the ordinary-group scope.
+- Lean visual evidence:
+  - creation production / adjacent P20 comparison:
+    `P1-group-creation-production-api35-zh-light-1080x2400-v1.png` /
+    `P1-group-creation-adjacent-P20-reference-vs-production-780x844-v1.png`, SHA-256
+    `68e2f960d6a0fff8501130f4763956a3c9ab407cef3b904a0f4c4071263693d5` /
+    `f84e17c0c476661a31615cd0104ea99aeab6a1649d2aae1843467d76421676ff`;
+  - group-admin production / adjacent P16 comparison:
+    `P1-group-admin-production-api35-zh-light-1080x2400-v1.png` /
+    `P1-group-admin-adjacent-P16-reference-vs-production-780x844-v1.png`, SHA-256
+    `d0d51d5cd16fa4db2a70e945c47268331ded5956c5073fc6f42a0735edd68c46` /
+    `70561d4136db3f1abe88988c2e58019e22c724e0073c4c97c52c9794c5fd7ae0`;
+  - final invitation and profile production captures:
+    `P1-group-invite-production-api35-zh-light-1080x2400-v1.png` /
+    `P1-group-profile-production-api35-zh-light-1080x2400-v1.png`, SHA-256
+    `800936ae85b715cc4039c29ac02af46b3985dd4ed11f0e4a3ccf490bef1ed74f` /
+    `6b4f0364c3ca7690841e6efb0e5b8c582cf62a4d4fa5c486f4f961afd7cd38dd`.
+- Restoration:
+  - the official Privacy switch reports `checked=true`; the active window flags include `SECURE`;
+    `P1-group-admin-privacy-secure-restored-api35-v1.png` is the expected all-black 1080 × 2400
+    framebuffer, SHA-256
+    `c35bacdb98b522206335afa5b9baffd2e4e3352a40749bb747e469cd403af514`.
+    No ordinary checkpoint or remote mutation was created.
+
+### Android one-time locale-policy closure
+
+- Implementation boundary:
+  - `SimplexApp` now captures the marker, package install/update relation, database presence, and
+    upstream-preference presence before `initHaskell()` and `initMultiplatform()`;
+  - `NomeLocaleInitializer` evaluates those frozen facts only after the official nullable
+    `ChatController.appPrefs.appLanguage` owner is available. It writes `zh-CN` only for a jointly
+    proven clean install, commits marker version 1 after the first decision, and never introduces
+    onboarding, identity, database, Desktop, or iOS state;
+  - explicit v6.5.6 upstream languages are preserved. Unsupported stored values are not rewritten
+    and emit only the fixed non-personal warning
+    `unsupported stored language preserved without overwrite`.
+- Focused verification:
+  - `NomeLocalePolicyTest` passed 5/5 with zero failures/errors. It covers clean initialization,
+    update/existing database/preference preservation, explicit/marker idempotence,
+    pre-initialization evidence retention, and the v6.5.6 language set;
+  - `:android:testDebugUnitTest --tests chat.simplex.app.nome.NomeLocalePolicyTest
+    :android:assembleDebug` passed. The final arm64 debug APK SHA-256 is
+    `3042760f1bf002b4a2679600ad1aaff22a9d923f4ff9ebe22fedcbddff41c54f`;
+  - brand-new disposable API 35 AVD `nome-locale-api35-disposable` had no marker, upstream
+    preferences, chat database, or agent database after APK installation and before first process
+    start. Its first cold start wrote marker version 1 and `AppLanguage=zh-CN`, and the production
+    P03 route rendered Chinese;
+  - the official Appearance selector changed that synthetic client to English. A process restart
+    and same-package `install -r` retained `AppLanguage=en`, both databases, the synthetic identity,
+    and English Home. Package first-install `11:10:21` and last-update `11:17:13` differ;
+  - authentic v6.5.4-upgrade AVD `nome-p01-v654-upgrade` retained marker version 1,
+    absent `AppLanguage`/follow-system, and both databases after the latest same-package update;
+  - a disposable `not_a_locale` fixture was preserved, emitted the fixed warning, and produced no
+    target-process fatal/ANR. The fixture was restored to `AppLanguage=en` and cold-started again.
+- Review and scope:
+  - the risk review traced evidence timing, marker idempotence, explicit/follow-system behavior,
+    existing database and upstream-preference guards, unsupported-value diagnostics, process
+    restart, and same-package update. No command/core/protocol/database/archive behavior changed;
+  - no checkpoint is created for this ordinary closure, and no remote mutation occurred.
+
+## P19/P20 Milestone 3 implementation state
+
+- Official ownership and truth:
+  - `ChatInfoView`, `ChatView`, and `VerifyCodeView` retain the direct-contact route, exact security
+    code, scanner/share/mark/clear actions, returned-contact model update, and modal lifecycle;
+  - `VerifyCodeAttempt` keeps match, mismatch, and unavailable distinct. The displayed formatter
+    preserves every code character, and the QR encoder receives the unchanged code;
+  - Android direct-contact verification delegates presentation through
+    `PlatformVerifyCodeLayout`; group-member verification and Desktop keep the official layout;
+  - `AddChannelView` retains configured-relay discovery/selection, profile construction,
+    `apiNewPublicGroup`, returned `GroupInfo`/`GroupLink`/relay progression, and deletion;
+  - `PlatformChannelSetupRoute` changes only the Android profile/setup composition. Join uses the
+    existing P12 scan/paste callback and relay configuration uses the existing Settings route;
+  - cancellation finalizes local state only after `apiDeleteChat` returns true. False or exception
+    retains the created-channel state.
+- P19 high-risk production lifecycle:
+  - controlled API 28 and API 35 clients opened the real direct-contact code route and produced
+    byte-for-byte equivalent normalized security-code content, SHA-256
+    `948423fd5e74c139a05ba55257a05a9a7c9cd20b2c3a53cefcb0f078a1c7127e`;
+  - both clients completed explicit manual attestation, returned to contact info, reopened as
+    verified, explicitly cleared verification, and reopened/stayed unverified;
+  - both opened the real camera scanner after the platform permission flow and cancelled back to
+    the unverified route. No mismatch, match, verification, or security result was inferred from
+    scanner open/cancel;
+  - policy tests cover mismatch and unavailable as distinct typed outcomes. No security code,
+    bearer, profile payload, or QR bytes are retained in evidence.
+- Visual acceptance:
+  - P19 production:
+    `visual-baselines/api35-zh-light/P19-production-final-390x844.png`, SHA-256
+    `01e774c59b6ab7a38bfdb31049421112230dab06cb3ea9612a9a89f0d29aa82c`;
+  - P19 same-size comparison:
+    `visual-baselines/api35-zh-light/P19-reference-vs-production-final-780x844.png`, SHA-256
+    `f13944b4b9495ac09ad8e62043b0e1c775a237ee95e9f748eae4656928332752`;
+  - the accepted P19 production page matches the baseline contact/status/intro/QR-code/step/action
+    hierarchy while retaining the actual contact/profile fallback, complete denser code, and
+    official share action;
+  - P20 production:
+    `visual-baselines/api35-zh-light/P20-production-final-390x844.png`, SHA-256
+    `c20e8470c7bcca2344cae5d831353591d44e129e2b295d01458945e9ef64e5d3`;
+  - P20 same-size comparison:
+    `visual-baselines/api35-zh-light/P20-reference-vs-production-final-780x844.png`, SHA-256
+    `ebd9a3cf6c56c46df5371286e66d9f77f4cd382519b00fe1ce9cb69ce1e8b432`;
+  - the accepted P20 setup page matches the baseline title/tabs/name/link/relay/warning/action
+    hierarchy. The reference's custom domain and generic availability copy are replaced by a
+    truthful post-creation official-link disclosure and enabled configured-relay count.
+- P20 producer result:
+  - the real API 35 setup read three enabled configured relays;
+  - two earlier controlled create attempts with a non-sensitive local name returned the official
+    `连接超时` alert for `smp12.simplex.im` before a group or link was created;
+  - the concentrated-matrix retry again returned the official `smp12.simplex.im` connection
+    error before `PublicGroupCreationResult.Created`; no public channel, link, or delete owner
+    became available;
+  - host DNS resolved the relay and host TCP/5223 connected, while the app producer still timed
+    out. TCP reachability is not promoted to relay health;
+  - the API 28 producer attempt did not reach a created group, link, or authoritative timeout
+    marker and was stopped without claiming a result;
+  - no Nome domain, group creation, relay progression, link, cancellation, delete, connection,
+    encryption, or success fact is claimed.
+- Focused test and restoration state:
+  - common P19/P20 policy tests, Desktop compile, Android debug APK, and androidTest APK passed;
+  - the exact P19/P20 Compose class passed `OK (3 tests)` on API 28 and API 35, covering distinct
+    scan/manual/clear callbacks, 48dp actions, official join/config/create dispatch, configured
+    relay/link truth, and custom-domain absence;
+  - API 35 screenshot protection was restored through the official Privacy and security screen.
+    The UI reports the switch checked, the window reports `SECURE`, and the retained 1080 × 2400
+    ADB screencap has one color with RGBA mean `0,0,0,1`:
+    `visual-baselines/api35-zh-light/P19-P20-privacy-secure-restored-api35.png`, SHA-256
+    `c35bacdb98b522206335afa5b9baffd2e4e3352a40749bb747e469cd403af514`.
+- Closure state:
+  - the single risk-oriented review initially found one high issue: a matched QR scan closed only
+    the top scanner modal and left P19 behind with stale presentation;
+  - the fix separates scan/manual dismissal, closes scanner then verification for a match, and adds
+    `matchedScanClosesScannerBeforeVerificationPage`; targeted re-review returned
+    `ZERO ISSUES / APPROVE`;
+  - the first post-fix combined compile exhausted the Kotlin daemon (`GC overhead limit exceeded`);
+    the safe sequential in-process 6 GiB/one-worker alternative passed Desktop focused
+    tests/compile in 50s and Android debug/androidTest assembly in 1m 3s;
+  - latest installed APK/test APK exact-class runs are API 28 `OK (3 tests)` and API 35
+    `OK (3 tests)`, followed by a production `SECURE`/one-color-black restoration check;
+  - P19 is `READY FOR MILESTONE`;
+  - P20 setup is `READY FOR MILESTONE`; its creation/link/delete producer gate remains
+    `ACTIVE — PRODUCER RESULT BLOCKED`;
+  - no ordinary checkpoint is created.
+
+## P21/P22 Milestone 3 implementation state
+
+- Official ownership and truth:
+  - `ChatView` and `ComposeView` retain the loaded public-group timeline, member role, composer,
+    profile, relay, member, and moderation owners. `PlatformChannelConversationChrome` adds only
+    Android disclosure/history/observer presentation; Desktop declines it;
+  - the fixed non-E2EE disclosure is gated by the real base-channel `GroupInfo.useRelays` fact.
+    Observer read-only treatment is gated by the real current-member role. No channel, history,
+    relay, member, moderation, online, connection, encryption, or result is fabricated;
+  - `UserProfilesView` retains official users, current-user, hidden-profile authentication,
+    incognito preference, network setting, Home/Contacts/Settings routes, and all identity action
+    callbacks. `PlatformIdentityCenterRoute` changes only Android composition; Desktop invokes the
+    official list;
+  - incognito is the real per-connection default, not a persistent anonymous account. The SOCKS
+    switch reports actual configuration and opens official Network settings/confirmation; it
+    does not claim Tor, private routing, health, or connectivity.
+- P22 visual acceptance:
+  - accepted API 35 Chinese/light production:
+    `visual-baselines/api35-zh-light/P22-production-final-390x844-v2.png`, SHA-256
+    `537f2dee7ba18d1da497db4613b7d5c19aa39e6fdfaf22d49a1a00b21bbe8918`;
+  - accepted same-size comparison:
+    `visual-baselines/api35-zh-light/P22-reference-vs-production-final-780x844-v2.png`, SHA-256
+    `c44cec5eb6dfac12487a2940860de9673dad3782d999a47fe4bd026ea9ff2703`;
+  - retained 1080 × 2400 source capture:
+    `visual-baselines/api35-zh-light/P22-production-final-1080x2400-v2.png`, SHA-256
+    `7097a4057b24657b35c33b7e826f3fdb2c462feae416290ed9b93d5c6ecee9ad`;
+  - the combined image was inspected at original size after two correction passes. Header/back/add,
+    active identity card, inactive rows, actual incognito/SOCKS controls, spacing, corners,
+    hierarchy, density, and bottom navigation match the P22 baseline. Truthful production
+    differences are actual identity names/count, missing profile portraits, and SOCKS rather than
+    a false Tor label;
+  - P21 has no accepted production capture because the controlled clients contain no real public
+    channel. The Compose fixture proves presentation only and is not promoted.
+- Destructive identity lifecycle:
+  - `UserDeletionLifecycle` types `SWITCH_TO_FALLBACK`, `DELETE_TARGET`, `CLEAR_ACTIVE_USER`, and
+    `STOP_CHAT` around the unchanged official command order. Cancellation is re-thrown;
+  - local wallpaper, profile-row, and notification cleanup occurs only after confirmed target
+    deletion. Switch/delete failure leaves the target available; post-delete clear/stop failure
+    reports restart reconciliation without claiming rollback;
+  - four focused common tests prove switch failure leaves the target untouched, switch precedes
+    delete, delete failure remains retryable after a successful switch, and last-visible-user stop
+    failure is explicitly post-delete;
+  - on API 35, the production UI created controlled `P22p35`, deleted it as the active identity,
+    switched to real fallback `IncogTarget35`, retained `Nomenclature35`, and cold-started with
+    `P22p35` absent;
+  - on API 28, the production UI deleted active controlled `P22x28`, switched to
+    `AddressSender28`, then deleted inactive controlled `P22Temp28`. Cold start retained
+    `AddressSender28` and contained zero hits for both deleted names;
+  - both lifecycle runs showed zero typed deletion-failure markers and zero fatal exceptions.
+    API 28 UI animation scales, temporarily set to zero only to avoid a known UI Automator idle
+    wait during modal/IME transitions, were restored and verified as `1`.
+- Focused verification and review:
+  - the final deletion-lifecycle unit class passed 4/4;
+  - API 28 and API 35 exact `NomeChannelIdentityComposeTest` runs passed `OK (2 tests)`, covering
+    P21 disclosure/history/observer content, P22 dispatch/toggles, and 48dp controls;
+  - Android/Desktop compile and debug/debug-androidTest assembly passed before the final
+    documentation synchronization; the final post-review aggregate is recorded in Tests and
+    evidence below;
+  - the risk-oriented review corrected two lifecycle hardening issues: pre-confirmation local
+    wallpaper cleanup from the upstream non-atomic path, and overbroad `Throwable`/stack-trace
+    logging. Cleanup is now post-delete, only `Exception` is converted, cancellation is re-thrown,
+    and production logging retains only the non-sensitive stage;
+  - screenshot protection was restored through the official privacy route. The switch is checked
+    and the retained secure black proof is
+    `visual-baselines/api35-zh-light/P21-P22-privacy-secure-restored-api35.png`, SHA-256
+    `c35bacdb98b522206335afa5b9baffd2e4e3352a40749bb747e469cd403af514`.
+- Closure state:
+  - P22 is `READY FOR MILESTONE`;
+  - P21 source/tests are complete but production visual acceptance is
+    `ACTIVE — PRODUCER RESULT BLOCKED`;
+  - no ordinary checkpoint is created.
+
+## P23/P24 Milestone 3 implementation state
+
+- Official ownership and presentation boundary:
+  - `SettingsView` still owns the official notification, database/archive, device migration,
+    desktop pairing, privacy, network, language/appearance, help, about, and developer routes.
+    `PlatformSettingsHomeRoute` changes only the Android composition; Desktop renders the
+    v6.5.6 legacy content unchanged;
+  - Android settings now opens as a true full-page modal, so the P23 bottom navigation is no
+    longer overlaid by the upstream close bar. System Back closes settings; the nested P24
+    Back handler returns to P23 instead of closing the application;
+  - P23's default index matches the baseline rows and density. Appearance and developer routes
+    remain reachable through the local settings search rather than adding baseline-incompatible
+    default rows. Search dispatches only existing official routes and does not use the P09
+    producer;
+  - the displayed language is the effective current locale when the app follows the system.
+    Notification copy distinguishes the app mode from the separate system permission; server/
+    proxy copy does not claim Tor use, privacy, health, or connectivity;
+  - `PlatformBackupMigrationRoute` is a presentation-only landing over official `DatabaseView`
+    export/import/database-key ownership and authenticated `MigrateFromDeviceView` ownership.
+    It does not add or reorder an archive/database/migration command.
+- Truthful P24 state:
+  - the baseline's illustrative `68%`, completed/in-progress stages, generic cancellation, and
+    resume/restore claims are absent;
+  - before a real operation begins, the production page says that stages have not started. The
+    current stage may be shown only after the existing official operation produces it;
+  - retained-client production smoke opened the real database owner but activated no destructive
+    operation. All real archive/import/migration operations ran only on the explicitly named
+    disposable API 28/API 35 AVDs. No key, passphrase, path, archive payload, bearer, or transfer
+    link is retained in this ledger.
+- P23 visual acceptance:
+  - accepted API 35 Chinese/light production:
+    `visual-baselines/api35-zh-light/P23-production-final-390x844-v3.png`, SHA-256
+    `ed9e4f8bca2ccbe1d1ecbb99be948aba40928e5273c7751ffbc91d66bc91e52d`;
+  - accepted same-size comparison:
+    `visual-baselines/api35-zh-light/P23-reference-vs-production-final-780x844-v3.png`, SHA-256
+    `770a8862f1a0ab31a976f61b87960fe869e778fe554e13f0cc820b4f479bacd8`;
+  - retained 1080 × 2400 source:
+    `visual-baselines/api35-zh-light/P23-production-final-api35-zh-light-1080x2400-v3.png`,
+    SHA-256
+    `1e4b3cb8cd3782418ef42bcca02224c7804574a4b6f80880269fba3b6aea2553`;
+  - original-size combined inspection accepted the header wordmark/search, identity card,
+    baseline row count/order, icon accents, hierarchy, density, dividers, and bottom navigation.
+    Truthful production differences are the actual local identity, absence of a fabricated
+    desktop connection badge, and generic version text rather than invented release/core facts.
+- P24 visual acceptance for the not-started landing state:
+  - accepted API 35 Chinese/light production:
+    `visual-baselines/api35-zh-light/P24-production-final-390x844-v2.png`, SHA-256
+    `448b8e742e6ad1aec2cbd6d89d62573dad7526fcc275504a2dbe1d36e27a821e`;
+  - accepted same-size comparison:
+    `visual-baselines/api35-zh-light/P24-reference-vs-production-final-780x844-v2.png`, SHA-256
+    `a695f6541cdaaf72f1be6d99f6c3a62943fb3919f7cbba0684d071a7da075b72`;
+  - retained 1080 × 2400 source:
+    `visual-baselines/api35-zh-light/P24-production-final-api35-zh-light-1080x2400-v2.png`,
+    SHA-256
+    `0fe33010d370b163eb9c4b09297d9e4099382884cfcf1f227fa541028a8631ad`;
+  - original-size combined inspection accepted the header/info strip, archive card/button,
+    restore and migration rows, blue/green accents, and stage-card construction. The truthful
+    not-started card intentionally replaces the baseline's synthetic progress and result claims.
+- Focused verification:
+  - final Android/Desktop compile plus debug/debug-androidTest assembly passed in 1m 50s before
+    the final back-handler correction; final Android common compile/debug assembly passed in
+    1m 1s after that correction;
+  - after the archive restart and MIME corrections, Android/Desktop compilation and debug
+    assembly passed in 1m 34s; debug-androidTest assembly then passed in 9s;
+  - exact `DatabaseRecoveryRouteBoundaryTest` passed four focused JVM tests in a 12s Gradle run,
+    including ZIP MIME registration, unchanged import type, completed-snapshot restart truth, and
+    chooser-owned snapshot cleanup;
+  - after the risk-review correction, the final Android/Desktop compile plus debug and
+    debug-androidTest assembly passed (`BUILD SUCCESSFUL`, 94 tasks); exact
+    `NomeSettingsBackupComposeTest` passed `OK (3 tests)` on API 35 (2.971s) and API 28 (20.654s),
+    covering existing-route dispatch, local filtering, 48dp controls, archive/restore/migration
+    dispatch, stopped-chat outbound-migration gating, and absence of synthetic progress/resume
+    copy;
+  - API 35 production smoke opened P23 from the official profile picker, opened P24, reached the
+    official database owner, and verified system Back returns from P24 to P23;
+  - screenshot protection was restored through the official privacy route. The switch is checked
+    and the retained secure black proof is
+    `visual-baselines/api35-zh-light/P23-P24-privacy-secure-restored-api35.png`, SHA-256
+    `c35bacdb98b522206335afa5b9baffd2e4e3352a40749bb747e469cd403af514`.
+- Disposable archive and migration lifecycle:
+  - API 35 export cancellation survived four rotations, left the external archive count
+    unchanged, deleted the internal snapshot, and returned with chat running. A real saved archive
+    was 1,688,355 bytes with SHA-256
+    `e637ab5074f8740a8e091915c4362ae06739fc93f87de6a117a7cc5135146041`;
+    chat remained running after the chooser and cold start;
+  - API 35 then wrote a post-export private-note marker, imported the real saved archive after a
+    rotated destructive confirmation, required the correct unsaved database key on restart,
+    preserved the pre-export identity, removed the post-export marker, and restarted chat with
+    zero archive snapshot residue;
+  - the successful/cancelled export path originally left chat stopped because the official
+    wrapper interpreted the export block's Boolean as a failed operation. The bounded correction
+    uses that Boolean only as permission to restart the previously running chat after either
+    snapshot generation or a handled generation failure; it is not exposed as export success.
+    The chooser callback still owns copy/delete cleanup. P23 keeps the official database route
+    reachable while chat is stopped so its existing start control cannot be stranded;
+  - API 28 reproduced an Android platform boundary: an archive created with wildcard MIME was
+    disabled by the old DocumentsUI `application/zip` import picker. The Android file chooser now
+    registers database archives as `application/zip`; no bytes, filename format, archive format,
+    import order, or database semantic changed. The post-fix archive was selectable, 1,688,355
+    bytes, SHA-256
+    `af2daee8784333dad1707450f228e86a043eef0b94cb6784db66560d87f64c9e`;
+  - API 28 export cancellation/rotation, saved export, cold start, real import, key re-entry,
+    rollback-marker check, identity preservation, chat restart, and zero snapshot residue all
+    passed. Emulator animation scales were restored to `1,1,1`;
+  - outbound migration on both APIs passed real database-key verification and archive creation,
+    survived background/foreground plus rotation, and reached the official upload stage. Both
+    controlled runs remained at the exact observable result `0 bytes uploaded` / `0%`; neither is
+    recorded as online or successful. System Back aborted the flow, migration temporary-file count
+    returned to zero, cold start preserved the disposable identity/data, and chat restarted;
+  - recent fatal/ANR scan was zero on both disposable AVDs. The export and migration fixes change
+    no command order, Haskell/native core, `Core.kt`, protocol, database semantics, archive
+    format, or iOS behavior.
+- Closure state:
+  - P23 is `READY FOR MILESTONE`;
+  - P24 is `READY FOR MILESTONE`; its visual, official-owner, archive round-trip, platform-file,
+    key-reentry, migration-abort, cleanup, and restart gates are closed;
+  - the single risk-oriented review found one official-state mismatch: the Android P24 landing
+    left outbound migration actionable while chat was stopped although the official v6.5.6
+    settings route disables that action. `SettingsView` now passes the same stopped-state fact to
+    the Android presentation; only outbound migration is disabled, while archive/database
+    recovery stays reachable for its official start control. The added third Compose test passed
+    on API 28 and API 35, the final build passed, and the targeted review found zero remaining
+    P23/P24 issues (`APPROVE`);
+  - no ordinary checkpoint is created.
 
 ## P02–P06 Batch 1B result
 
@@ -438,6 +1522,26 @@ create-user, operator/notification, conditions, migration, or Desktop owners.
     The truthful P09 structural regions, real P10 profile-image path, added assertions, and
     existing projection/boundary tests resolved all three. Final resolution: zero remaining
     issues, `APPROVE`.
+- P17/P18 focused closure:
+  - final focused aggregate — pass in 1m 10s, 101 tasks;
+  - common presentation tests — 2/2 pass;
+  - API 35 message-action instrumentation — `OK (2 tests)` in 1.769s;
+  - API 35 Chinese/light P17/P18 production smoke and same-size combined-image inspection — pass
+    for the controlled primary text/action states;
+  - official reply context opened and cancelled on the real production item; direct report was
+    absent; no delivery, file, voice, call, online, or success result was inferred;
+  - final privacy restoration — preference true, window `SECURE`, one-color black screencap.
+- P19/P20 focused closure:
+  - common policy tests and Android/Desktop compilation pass through the safe sequential
+    in-process 6 GiB/one-worker path after a diagnosed combined-build daemon OOM;
+  - API 28 and API 35 exact-class instrumentation each pass `OK (3 tests)`;
+  - P19 API 28/API 35 real two-client compare/mark/reopen/clear/scanner lifecycle passes;
+  - P19/P20 API 35 Chinese/light production smoke and same-size combined-image inspection pass for
+    the accepted P19 contact-security and P20 setup states;
+  - P20 real creation returned an official relay timeout and remains an open producer gate;
+  - the single review's matched-scan modal finding was fixed; targeted re-review returned
+    `ZERO ISSUES / APPROVE`;
+  - final privacy restoration — checked true, window `SECURE`, one-color black screencap.
 - Milestone 1 concentrated closure:
   - Android unit/lint/debug/androidTest/release aggregate — `BUILD SUCCESSFUL in 3m 5s`, 196
     tasks; Desktop suite — `BUILD SUCCESSFUL in 44s`;
@@ -594,27 +1698,153 @@ create-user, operator/notification, conditions, migration, or Desktop owners.
   - standard test APK restored on API 28/API 35;
   - temporary immutable flags removed.
 
+### Concentrated Milestone 3 verification
+
+- Exact report:
+  `plans/evidence/20260718_nome_android_completion/MILESTONE_3_VERIFICATION.md`.
+- Device regression:
+  - API 28: `OK (67 tests)` in 282.987s;
+  - API 33: `OK (67 tests)` in 123.356s;
+  - API 35 complete suite: `OK (72 tests)` in 294.049s.
+- Build/host regression:
+  - final Android unit/lint/debug/androidTest/release aggregate:
+    `BUILD SUCCESSFUL in 2m 54s`, 196 tasks, serialized with `--max-workers=1`;
+  - Android JVM: 42 tests, 0 failures/errors/skips;
+  - Desktop: `BUILD SUCCESSFUL in 52s`; 35 tests, 0 failures/errors/skips;
+  - release lint: 0 errors, 68 warnings.
+- Production matrix:
+  - populated API 35 Home passed all eight Chinese/English, light/dark, 100%/200%
+    combinations through the official language owner;
+  - real TalkBack touch exploration/double-tap activated production Search and a representative
+    create-private-group route without destructive submission;
+  - the real cold app-lock/deferred-share check found fullscreen-modal semantics outside the
+    unauthorized boundary. The modal/switching-user host now shares the auth semantic isolation;
+    wrong passcode remains fail-closed, correct passcode restores the deferred Share list, Back
+    clears it, and the temporary app lock was disabled again through the official route;
+  - cleanup restored Simplified Chinese, light theme, font scale 1.0, empty per-app system locale,
+    disabled accessibility/touch exploration, the original notification permission state, and
+    checked screenshot protection.
+- Frozen-manifest rehash from the P13 checkpoint object passed 48/48, 131/131, 254/254, and
+  139/139 without checkout or evidence modification.
+- Producer retries remain truthfully scoped:
+  - P11 produced one real persisted pending invitation, but no safe ready-state reference capture
+    was retained and a later attempt returned the official relay error;
+  - P15 produced a persisted real address and passed the redacted READY comparison;
+  - P14 request confirmation ended in the official relay error with no incoming source request;
+  - P16 invitation submission was not received;
+  - P17 new text remained sender-side;
+  - P20 public-channel creation again returned the official relay error, leaving P21 without a
+    public-channel producer;
+  - remote desktop remains genuinely unpaired.
+- Gate result: every non-producer Milestone 3 gate passes. The final checkpoint input still
+  requires exact dirty/staged/forbidden/sensitive/diff reconciliation; producer gaps remain open
+  and are not checkpoint success claims.
+
+### Local distribution-readiness audit closure
+
+- Visible product identity:
+  - release manifest label is now `Nome` for every packaged locale; debug retains the explicit
+    local-only `Nome Dev` label;
+  - all default and dark launcher density families, startup/about/call lockups, notification and
+    service icons, lockscreen call logo, and Appearance icon previews now use approved Nome inputs
+    or deterministic Android-compatible derivatives;
+  - Android resource overlays replace five shared SimpleX app-brand bitmaps while Desktop and iOS
+    sources remain unchanged. Factual SimpleX protocol/link/address/source/operator wording is
+    retained and is not presented as Nome ownership or endorsement;
+  - an API 35 install/cold launch succeeded with a live process and no filtered fatal/ANR. The
+    launcher shows the approved Nome artwork and local label; in-app framebuffer capture remained
+    protected by the production `FLAG_SECURE`.
+- Build and package:
+  - final `:android:assembleDebug :android:assembleRelease` passed in 1m 16s;
+  - final ARM64/ARMv7 unsigned release SHA-256 values are
+    `490e99abba485644e59d7047001c5aad10c0d370f8ca8b2177d7088cb4e52f9c` /
+    `42e7c8886146ce4403b5f010f0ed15a22c4e26b951a64f6ae376a9a7befd7fa4`;
+  - `aapt` reports package `chat.simplex.app`, version `358` / `6.5.6`, min/target
+    API 28/API 35, label `Nome`, and no release debug flag. `apksigner` intentionally returns
+    `DOES NOT VERIFY` / missing signing manifest for the unsigned artifacts;
+  - the packaged font notice is byte-identical to source at SHA-256
+    `7c20a5c56fba5d9b9a1a02a600ba9f6cbb2f408eee56646c2303b465634d8dd2`;
+  - a static source and `releaseRuntimeClasspath` scan found no explicit analytics, advertising,
+    attribution, or crash-reporting SDK; this is not a no-collection guarantee.
+- Legal/distribution result:
+  - local AGPL, dependency, font, trademark, visible-copy, asset, manifest, permissions,
+    application-identity, App Links, privacy, Data Safety, and Fastlane review is recorded in
+    `plans/evidence/20260718_nome_android_completion/LOCAL_DISTRIBUTION_READINESS.md`;
+  - the upstream Fastlane listing is excluded. `PRIVACY.md` remains the SimpleX
+    Chat Ltd/preset-operator policy and is not represented as a Nome publisher policy;
+  - package/application identity, production signer, Nome-owned verified-link host and deployed
+    association, publisher/legal/support/privacy/terms, public exact-build source URL, store
+    declarations, operator-default decision, and final matrix/reviews remain unresolved;
+  - verdict: `NOT FOR DISTRIBUTION`. No push, signing, domain mutation, store mutation, public
+    release, or real-user-data action occurred.
+
 ## Checkpoints
 
 - Milestone 2 frozen checkpoint: the current commit containing this ledger, with subject
-  `checkpoint(nome-android): freeze milestone 2 home and discovery`.
+  `checkpoint(nome-android): freeze milestone 2 home and discovery`, exact hash
+  `415375bdc8b7c392d5855f7b8fe13bf3ceddb01a`.
 - Milestone 2 input/parent:
   `4260545d96d84055efb281cb5a9b3226a498cb07` (Milestone 1, P01–P06).
 - P13 frozen checkpoint: `b714f78efc7b3cc8c4e252d6351c4b629f60e277`.
 - Prior frozen checkpoint: `fa95d96c7c24370c01b2707b9e2b0ad52a7a5112` (Batch 2).
+- Milestone 3 checkpoint subject is reserved as
+  `checkpoint(nome-android): freeze milestone 3 product surfaces`; it remains pending the exact
+  staged-scope, secret, conflict, and diff reconciliation below and is not yet claimed as created.
 - There are no ordinary P09/P10 checkpoint commits.
 - Remote mutations: none.
 
 ## Blocker
 
 - No current P02–P10 implementation, visual, test, review, or concentrated-gate blocker.
-- The current unsigned release package/label/App Links are still the official SimpleX distribution
-  identity and are explicitly `NOT FOR DISTRIBUTION`; that is a declared downstream
-  application-identity/App Links/brand audit item for final RC.
+- P11 has a real invitation created by the official owner and persisted read-only after an emulator
+  disk reboot. This proves local invitation creation and persistence only; it does not prove peer
+  use or connection. The redacted-safe READY visual comparison remains open because no safe primary
+  production capture was retained, and the final bounded producer retry returned the official
+  `smp12.simplex.im` connection error. Retry only after external producer state changes.
+- P14 production acceptance is blocked by the absence of a controlled incoming contact request.
+  P15 READY is closed with a real reusable address, disk-reboot persistence, bearer-redacted
+  reference comparison, and restored screenshot protection. P14's bounded request attempt ended
+  in the official `smp9.simplex.im` connection error without reaching the source. P16's real group
+  invitation was submitted once but did not arrive on the controlled target; neither result is
+  inferred from a fixture.
+- P17/P18 has no ordinary UI blocker. The separate Android-reachable media/file and call P1 lane
+  has completed its independent API 28/API 35 picker, permission, recording, foreground-service,
+  notification-return, background/rotation, cleanup, and hang-up depth. Its remaining real
+  transfer/receipt/playback and connected-call results are producer-blocked because the controlled
+  clients cannot exchange new traffic; the accepted text/action comparisons do not manufacture
+  those results.
+- P19 has no remaining producer blocker. P20 setup has no ordinary UI blocker, but real
+  creation/link/delete acceptance is blocked by the controlled relay timeout before
+  `PublicGroupCreationResult.Created`. No group/link/delete result is inferred. P21 production
+  acceptance is independently blocked because no controlled client contains a real public
+  channel. Its source/tests remain available for later producer-backed capture; continue P23/P24
+  and retry P20/P21 only after producer state changes.
+- P23/P24 have no remaining implementation, visual, route, archive, migration, lifecycle,
+  concentrated language/theme/scaling/TalkBack, release, or regression blocker.
+- Network/server advanced, appearance/localization, and help/about/developer have no remaining
+  ordinary-group implementation, visual, route, Back, compile, focused-test, or restoration
+  blocker. Network facts remain scoped to the real configured/device values and are not relay
+  health claims.
+- Remote desktop has no remaining unpaired-presentation, Android/Desktop compile, focused-test,
+  modal-accessibility, locked or unlocked cold/warm notification/share, Back, fail-closed app-lock,
+  deferred-intent, or restoration blocker. Real pair/switch/revoke and
+  connected-secret-clearing evidence remains producer-gated and is not inferred from the scanner.
+- The current unsigned release label and principal app-brand resources are Nome, but the release
+  application ID remains `chat.simplex.app`, `android:autoVerify` still declares
+  SimpleX/Flux-controlled hosts, no Nome-owned domain/production signer/publisher privacy policy/
+  public corresponding-source URL/store declarations exist, and the upstream Fastlane listing is
+  excluded. The audited result is explicitly `NOT FOR DISTRIBUTION`; details are in
+  `plans/evidence/20260718_nome_android_completion/LOCAL_DISTRIBUTION_READINESS.md`.
 
 ## Unique next action
 
-Start the merged P11 one-time-invitation + P12 scan/paste production presentation group from their
-page-level visual acceptance baselines and official v6.5.6 route/action owners. Preserve exact
-created/copied/shared/connected and parser/camera/permission/duplicate evidence levels; do not
-invent expiry, connectivity, success, or safety facts.
+Perform the final Milestone 3 reconciliation: recompute branch/HEAD, dirty/staged/untracked and
+conflict counts; scan the complete intended milestone scope for forbidden platform/core changes,
+real bearer or private-key material, temporary authentication data, and diff errors; review the
+high-risk lifecycle/authentication fix and milestone truth once against the report and page matrix.
+If and only if those checks are green, stage the exact allowlisted milestone scope while excluding
+the unknown `apps/multiplatform/Screenshot_1784275771.png`, verify the staged paths and hashes, and
+create the local checkpoint `checkpoint(nome-android): freeze milestone 3 product surfaces`.
+Do not sign, publish, push, reserve a domain, or change any external producer gate's truth. After
+the checkpoint, continue from that frozen state into final RC reconciliation and the remaining
+producer-backed acceptance gates.

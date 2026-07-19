@@ -53,7 +53,10 @@ import kotlin.collections.ArrayList
 import kotlin.math.*
 
 @Composable
-expect fun AppearanceView(m: ChatModel)
+expect fun AppearanceView(
+  m: ChatModel,
+  close: (() -> Unit)? = null,
+)
 
 object AppearanceScope {
   @Composable

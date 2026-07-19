@@ -1929,18 +1929,40 @@ object ChatController {
     return null
   }
 
-  private suspend fun apiGetUserAddress(rh: Long?): UserContactLinkRec? {
-    val userId = kotlin.runCatching { currentUserId("apiGetUserAddress") }.getOrElse { return null }
+  suspend fun apiGetUserAddressResult(
+    rh: Long?,
+  ): APIUserAddressResult {
+    val userId =
+      kotlin
+        .runCatching {
+          currentUserId("apiGetUserAddress")
+        }.getOrElse {
+          return APIUserAddressResult.Failure
+        }
     val r = sendCmd(rh, CC.ApiShowMyAddress(userId))
-    if (r is API.Result && r.res is CR.UserContactLink) return r.res.contactLink
+    if (r is API.Result && r.res is CR.UserContactLink) {
+      return APIUserAddressResult.Ready(
+        r.res.contactLink,
+      )
+    }
     if (r is API.Error && r.err is ChatError.ChatErrorStore
       && r.err.storeError is StoreError.UserContactLinkNotFound
     ) {
-      return null
+      return APIUserAddressResult.NotFound
     }
     Log.e(TAG, "apiGetUserAddress bad response: ${r.responseType} ${r.details}")
-    return null
+    return APIUserAddressResult.Failure
   }
+
+  private suspend fun apiGetUserAddress(
+    rh: Long?,
+  ): UserContactLinkRec? =
+    when (val result = apiGetUserAddressResult(rh)) {
+      is APIUserAddressResult.Ready -> result.address
+      APIUserAddressResult.NotFound,
+      APIUserAddressResult.Failure,
+      -> null
+    }
 
   suspend fun apiAddMyAddressShortLink(rh: Long?): UserContactLinkRec? {
     val userId = kotlin.runCatching { currentUserId("apiAddMyAddressShortLink") }.getOrElse { return null }
@@ -1990,15 +2012,41 @@ object ChatController {
     }
   }
 
-  suspend fun apiRejectContactRequest(rh: Long?, contactReqId: Long): Contact? {
+  suspend fun apiRejectContactRequestResult(
+    rh: Long?,
+    contactReqId: Long,
+  ): APIRejectContactRequestResult {
     val r = sendCmd(rh, CC.ApiRejectContact(contactReqId))
-    if (r is API.Result && r.res is CR.ContactRequestRejected) return r.res.contact_
+    if (
+      r is API.Result &&
+        r.res is CR.ContactRequestRejected
+    ) {
+      return APIRejectContactRequestResult.Rejected(
+        r.res.contact_,
+      )
+    }
     Log.e(TAG, "apiRejectContactRequest bad response: ${r.responseType} ${r.details}")
     if (!(networkErrorAlert(r))) {
       apiErrorAlert("apiRejectContactRequest", generalGetString(MR.strings.error_rejecting_contact_request), r)
     }
-    return null
+    return APIRejectContactRequestResult.Failure
   }
+
+  suspend fun apiRejectContactRequest(
+    rh: Long?,
+    contactReqId: Long,
+  ): Contact? =
+    when (
+      val result =
+        apiRejectContactRequestResult(
+          rh,
+          contactReqId,
+        )
+    ) {
+      is APIRejectContactRequestResult.Rejected ->
+        result.contact
+      APIRejectContactRequestResult.Failure -> null
+    }
 
   suspend fun apiGetCallInvitations(rh: Long?): List<RcvCallInvitation> {
     val r = sendCmd(rh, CC.ApiGetCallInvitations())
@@ -2300,13 +2348,21 @@ object ChatController {
     return null
   }
 
-  suspend fun apiJoinGroup(rh: Long?, groupId: Long) {
+  suspend fun apiJoinGroupResult(
+    rh: Long?,
+    groupId: Long,
+  ): APIJoinGroupResult {
     val r = sendCmdWithRetry(rh, CC.ApiJoinGroup(groupId))
     when {
-      r is API.Result && r.res is CR.UserAcceptedGroupSent ->
+      r is API.Result &&
+        r.res is CR.UserAcceptedGroupSent -> {
         withContext(Dispatchers.Main) {
           chatModel.chatsContext.updateGroup(rh, r.res.groupInfo)
         }
+        return APIJoinGroupResult.Accepted(
+          r.res.groupInfo,
+        )
+      }
       r is API.Error -> {
         val e = r.err
         suspend fun deleteGroup() { if (apiDeleteChat(rh, ChatType.Group, groupId)) {
@@ -2315,15 +2371,25 @@ object ChatController {
         if (e is ChatError.ChatErrorAgent && e.agentError is AgentErrorType.SMP && e.agentError.smpErr is SMPErrorType.AUTH) {
           deleteGroup()
           AlertManager.shared.showAlertMsg(generalGetString(MR.strings.alert_title_group_invitation_expired), generalGetString(MR.strings.alert_message_group_invitation_expired))
+          return APIJoinGroupResult.Unavailable
         } else if (e is ChatError.ChatErrorStore && e.storeError is StoreError.GroupNotFound) {
           deleteGroup()
           AlertManager.shared.showAlertMsg(generalGetString(MR.strings.alert_title_no_group), generalGetString(MR.strings.alert_message_no_group))
+          return APIJoinGroupResult.Unavailable
         } else if (!(networkErrorAlert(r))) {
           apiErrorAlert("apiJoinGroup", generalGetString(MR.strings.error_joining_group), r)
         }
       }
       r != null -> apiErrorAlert("apiJoinGroup", generalGetString(MR.strings.error_joining_group), r)
     }
+    return APIJoinGroupResult.NotCompleted
+  }
+
+  suspend fun apiJoinGroup(
+    rh: Long?,
+    groupId: Long,
+  ) {
+    apiJoinGroupResult(rh, groupId)
   }
 
   suspend fun apiAcceptMember(rh: Long?, groupId: Long, groupMemberId: Long, memberRole: GroupMemberRole): Pair<GroupInfo, GroupMember>? {
@@ -7051,6 +7117,34 @@ sealed class APIConnectResult {
   data class Failure(val response: API) : APIConnectResult()
 
   data object NoCurrentUser : APIConnectResult()
+}
+
+sealed class APIRejectContactRequestResult {
+  data class Rejected(
+    val contact: Contact?,
+  ) : APIRejectContactRequestResult()
+
+  data object Failure : APIRejectContactRequestResult()
+}
+
+sealed class APIUserAddressResult {
+  data class Ready(
+    val address: UserContactLinkRec,
+  ) : APIUserAddressResult()
+
+  data object NotFound : APIUserAddressResult()
+
+  data object Failure : APIUserAddressResult()
+}
+
+sealed class APIJoinGroupResult {
+  data class Accepted(
+    val groupInfo: GroupInfo,
+  ) : APIJoinGroupResult()
+
+  data object Unavailable : APIJoinGroupResult()
+
+  data object NotCompleted : APIJoinGroupResult()
 }
 
 @Serializable

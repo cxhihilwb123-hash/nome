@@ -157,12 +157,12 @@ fun ChatInfoView(
         })
       },
       verifyClicked = {
-        ModalManager.end.showModalCloseable { close ->
+        showVerifyCodeModal { close ->
           remember { derivedStateOf { (chatModel.getContactChat(contact.contactId)?.chatInfo as? ChatInfo.Direct)?.contact } }.value?.let { ct ->
             VerifyCodeView(
-              ct.displayName,
-              connectionCode,
-              ct.verified,
+              displayName = ct.displayName,
+              connectionCode = connectionCode,
+              connectionVerified = ct.verified,
               verify = { code ->
                 chatModel.controller.apiVerifyContact(chatRh, ct.contactId, code)?.let { r ->
                   val (verified, existingCode) = r
@@ -179,7 +179,9 @@ fun ChatInfoView(
                   r
                 }
               },
-              close,
+              close = close,
+              profileImage = ct.image,
+              nomeContactPresentation = true,
             )
           }
         }
@@ -543,18 +545,17 @@ fun ChatInfoLayout(
   KeyChangeEffect(chat.id) {
     scope.launch { scrollState.scrollTo(0) }
   }
-  ColumnWithScrollBar {
+  val headerContent: @Composable () -> Unit = {
     Row(
       Modifier.fillMaxWidth(),
       horizontalArrangement = Arrangement.Center
     ) {
-      ChatInfoHeader(chat.chatInfo, contact)
+      ChatInfoHeader(chat.chatInfo, contact, compact = true)
     }
 
     LocalAliasEditor(chat.id, localAlias, updateValue = onLocalAliasChanged)
-
-    SectionSpacer()
-
+  }
+  val quickActionsContent: @Composable () -> Unit = {
     Box(
       Modifier.fillMaxWidth(),
       contentAlignment = Alignment.Center
@@ -572,9 +573,8 @@ fun ChatInfoLayout(
         MuteButton(modifier = Modifier.fillMaxWidth(1f), chat, contact)
       }
     }
-
-    SectionSpacer()
-
+  }
+  val detailsContent: @Composable () -> Unit = {
     if (customUserProfile != null) {
       SectionView(generalGetString(MR.strings.incognito).uppercase()) {
         SectionItemViewSpaceBetween {
@@ -700,15 +700,42 @@ fun ChatInfoLayout(
     }
     SectionBottomSpacer()
   }
+  val legacyContent: @Composable () -> Unit = {
+    ColumnWithScrollBar {
+      Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center
+      ) {
+        ChatInfoHeader(chat.chatInfo, contact)
+      }
+      LocalAliasEditor(chat.id, localAlias, updateValue = onLocalAliasChanged)
+      SectionSpacer()
+      quickActionsContent()
+      SectionSpacer()
+      detailsContent()
+    }
+  }
+  PlatformContactDetailRoute(
+    title = contact.displayName,
+    onClose = close,
+    headerContent = headerContent,
+    quickActionsContent = quickActionsContent,
+    detailsContent = detailsContent,
+    legacyContent = legacyContent,
+  )
 }
 
 @Composable
-fun ChatInfoHeader(cInfo: ChatInfo, contact: Contact) {
+fun ChatInfoHeader(cInfo: ChatInfo, contact: Contact, compact: Boolean = false) {
   Column(
     Modifier.padding(horizontal = DEFAULT_PADDING),
     horizontalAlignment = Alignment.CenterHorizontally
   ) {
-    ChatInfoImage(cInfo, size = 192.dp, iconColor = if (isInDarkTheme()) GroupDark else SettingsSecondaryLight)
+    ChatInfoImage(
+      cInfo,
+      size = if (compact) 88.dp else 192.dp,
+      iconColor = if (isInDarkTheme()) GroupDark else SettingsSecondaryLight
+    )
     val displayName = contact.profile.displayName.trim()
     val badge = cInfo.nameBadge
     val text = buildAnnotatedString {
@@ -721,7 +748,7 @@ fun ChatInfoHeader(cInfo: ChatInfo, contact: Contact) {
         appendInlineContent(id = "nameBadge")
       }
     }
-    val nameFontSize = MaterialTheme.typography.h1.fontSize
+    val nameFontSize = if (compact) MaterialTheme.typography.h2.fontSize else MaterialTheme.typography.h1.fontSize
     val uriHandler = LocalUriHandler.current
     val inlineContent: Map<String, InlineTextContent> = buildMap {
       put(
@@ -745,7 +772,12 @@ fun ChatInfoHeader(cInfo: ChatInfo, contact: Contact) {
     Text(
       text,
       inlineContent = inlineContent,
-      style = MaterialTheme.typography.h1.copy(fontWeight = FontWeight.Normal),
+      style =
+        if (compact) {
+          MaterialTheme.typography.h2.copy(fontWeight = FontWeight.SemiBold)
+        } else {
+          MaterialTheme.typography.h1.copy(fontWeight = FontWeight.Normal)
+        },
       textAlign = TextAlign.Center,
       maxLines = 3,
       overflow = TextOverflow.Ellipsis,

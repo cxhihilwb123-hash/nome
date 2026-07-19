@@ -1,10 +1,19 @@
 # Nome Android UI Specification
 
-> **Status:** Foundation, P07/P08, P13, and Milestone 1 P01–P06 are frozen. The targeted P02–P06
-> post-clarification visual recheck and P09/P10 ordinary UI group are closed; the Milestone 2
-> concentrated gate/checkpoint is pending. `FIRST_USE` remains official onboarding/root-owned.
+> **Status:** Foundation, P01–P10, P13, and Milestones 1–2 are frozen. Milestone 3 source is
+> implemented and its concentrated non-producer matrix is green; the exact local checkpoint input
+> is under final reconciliation.
+> P11 has a real persisted invitation but still awaits a redacted-safe reference-size ready
+> capture. P14/P16 still await received producer-backed primary states. P15 OFF and READY are
+> production-proven without claiming share, use, or connection.
+> `FIRST_USE` remains official onboarding/root-owned.
 > `FILTERED_NO_RESULT` is reachable only from P09's real nonblank query producer and is not a
-> retroactive P08 claim. P11–P12 and P14–P24 remain pending.
+> retroactive P08 claim. The P17 conversation shell and P18 action sheet are implemented; their
+> high-risk media/file/call P1 families remain open. P19 and the P20 setup surface are
+> implemented; P20 creation/link/delete remains producer-blocked. P21 presentation is implemented
+> but awaits a real channel producer. P22 is ready with API 28/API 35 destructive lifecycle proof.
+> P23/P24 have API 35 visual acceptance and disposable API 28/API 35 archive/migration
+> lifecycle proof.
 > **Product view:** [product/views/nome-android.md](../../product/views/nome-android.md)
 > **Coverage matrix:** [plans/20260716_03.md](../../../../plans/20260716_03.md)
 
@@ -37,7 +46,7 @@ Android activity, intents, services, permissions
                     |
 Nome Android shell / navigation / platform adaptation
                     |
-Nome tokens/components + bounded P01/P07–P10/P13 adapters
+Nome tokens/components + bounded P01/P07–P13 adapters
                     |
 existing Compose flows and platform adapters
                     |
@@ -51,7 +60,7 @@ Rules:
 1. The official model/API/core layers remain authoritative.
 2. Nome presenters/state adapters may combine existing facts into display state but cannot create a protocol fact. Each implemented adapter and its bounded sharing reason are recorded in §8.
 3. Root state precedence in `App.kt` remains unchanged.
-4. Android-specific presentation stays in Android-controlled paths by default. The narrow `PlatformHomeRoute`, `PlatformDatabaseRootRoute`, and P13 connection-preview seams are the recorded exceptions at existing shared route-selection points; every Desktop actual declines or invokes upstream content unchanged and has a `desktopTest` contract.
+4. Android-specific presentation stays in Android-controlled paths by default. The narrow `PlatformHomeRoute`, `PlatformDatabaseRootRoute`, `PlatformNewChatHub`, `PlatformNewChatRoute`, and P13 connection-preview seams are the recorded exceptions at existing shared route-selection points; every Desktop actual declines or invokes upstream content unchanged.
 5. Preview fixtures and screenshot fixtures stay outside production state paths.
 6. A missing capability is a documented GAP, not a reason to call or alter the native core from a new path.
 
@@ -122,7 +131,10 @@ milestones and final RC.
 
 ## 6. Locale contract
 
-The locale policy requires a versioned one-time initialization marker; implementation details must be added to `spec/state.md` when the later locale/state-adapter batch starts. The current design foundation does not read or write application language preferences.
+The locale policy uses a versioned one-time initialization marker. Its Android/client-only
+implementation and startup ordering are defined in `spec/state.md#nome-android-one-time-locale-initialization`.
+It freezes installation/data evidence before Haskell or multiplatform initialization, then applies
+the decision only through the existing nullable `ChatController.appPrefs.appLanguage` owner.
 
 Required decision table. “First Nome run” is not sufficient evidence of a fresh install because an upgraded v6.5.6 user can still have `appLanguage == null`:
 
@@ -175,7 +187,7 @@ These decisions do not change the A/B/C classification in `plans/20260716_03.md`
 
 ## 8. Implemented source placement
 
-The frozen foundation/P07–P08/P13/P01–P06 work and active P09/P10 group use these placements:
+The frozen foundation/P01–P10/P13 work and active P11/P12/P14/P15/P16 groups use these placements:
 
 | Responsibility | Source placement | Constraint |
 |---|---|---|
@@ -196,6 +208,18 @@ The frozen foundation/P07–P08/P13/P01–P06 work and active P09/P10 group use 
 | Android P07/P08 production home | `common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/{NomeHomeStateAdapter.kt,NomeHomeRoute.android.kt}` | Android-only derivation/rendering over official facts |
 | Android P09 loaded-chat search | `common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/{NomeSearchStateAdapter.kt,NomeSearchRoute.android.kt}` | groups only official filtered rows; preserves baseline regions with truthful message-scope/recent-retention policy; no recent/global-message producer |
 | P10 platform hub | `common/src/{commonMain,androidMain,desktopMain}/kotlin/chat/simplex/common/views/newchat/PlatformNewChatHub*` | Android presentation over existing callbacks; Desktop invokes legacy content |
+| P11/P12 platform route | `common/src/{commonMain,androidMain,desktopMain}/kotlin/chat/simplex/common/views/newchat/PlatformNewChatRoute*` | Android visual-acceptance presentation over official creation/parser/plan owners; Desktop invokes legacy content |
+| P12 camera lifecycle | `common/src/androidMain/kotlin/chat/simplex/common/views/newchat/QRCodeScanner.android.kt` and `android/src/main/AndroidManifest.xml` | explicit scan activation, optional hardware, denial/Settings recovery, frame/executor disposal; no connection truth |
+| P11/P12 focused tests | `android/src/androidTest/java/chat/simplex/app/nome/newchat/NomeNewChatRouteComposeTest.kt` | one-to-one profile/copy/share/scan/paste/clipboard callbacks, 48dp, and unsupported-claim absence |
+| P14 request route | `common/src/{commonMain,androidMain,desktopMain}/kotlin/chat/simplex/common/views/chatlist/PlatformContactRequestRoute*` | Android baseline presentation over official accept/incognito/reject owners; Desktop declines and keeps the legacy alert |
+| P15 address route | `common/src/{commonMain,androidMain,desktopMain}/kotlin/chat/simplex/common/views/usersettings/PlatformUserAddressRoute*` | Android baseline presentation over official address operations; Desktop renders legacy content |
+| P14/P15 shared page shell/copy | `common/src/androidMain/kotlin/chat/simplex/common/ui/nome/components/NomeFullPageScaffold.kt` and `common/src/androidMain/res/values*/nome_connections_strings.xml` | Android-only layout and fixed bilingual copy; no request message, address, success, or relay producer |
+| P14/P15 focused tests | `android/src/androidTest/java/chat/simplex/app/nome/connection/{NomeContactRequestComposeTest,NomePublicContactMethodComposeTest}.kt` | single-submit, busy-back, failure retention, destructive confirmation/retry, bearer semantics, callbacks, and 48dp |
+| P16 group-invitation route | `common/src/{commonMain,androidMain,desktopMain}/kotlin/chat/simplex/common/views/chatlist/PlatformGroupInvitationRoute*` | Android baseline presentation from the existing invited-group owner; Desktop declines and retains the legacy alert |
+| P16 focused/visual tests | `android/src/androidTest/java/chat/simplex/app/nome/connection/{NomeGroupPreviewComposeTest,NomeConnectionManagementScreenshotTest}.kt` | callback, single-submit, failure retention, busy-back, destructive confirmation, 48dp, and API 35 Chinese/light renderer calibration |
+| P1 group creation/invitation routes | `common/src/{commonMain,androidMain,desktopMain}/kotlin/chat/simplex/common/views/{newchat/PlatformAddGroupRoute*,chat/group/PlatformAddGroupMembersRoute*}` | Android page-level presentation over the official create/profile/incognito/member-role/admission/invite owners; Desktop invokes the exact legacy content |
+| P1 group/channel admin routes | `common/src/{commonMain,androidMain,desktopMain}/kotlin/chat/simplex/common/views/chat/group/PlatformGroupChatInfoRoute*`, plus `PlatformSettingsDetailRoute` for group profile/channel members/channel relays | Android full-page/card composition over official group/member/relay facts and callbacks; Desktop remains legacy; source-disabled relay Add/Remove is not re-enabled |
+| P1 group admin focused tests | `android/src/androidTest/java/chat/simplex/app/nome/connection/NomeGroupAdminComposeTest.kt` | create/invite/info content, callback ownership, one top Back owner, and 48dp reachability |
 | Desktop fallback | `common/src/desktopMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.desktop.kt` | invokes upstream `defaultContent` unchanged |
 | production bilingual copy | `common/src/androidMain/res/{values,values-zh-rCN}/nome_home_strings.xml` | English and Simplified-Chinese home copy/semantics only |
 | fixture, screenshot harness, Preview | `android/src/debug/java/chat/simplex/app/nome/` | deterministic debug-only data; never a production state source |
@@ -286,6 +310,141 @@ visual-acceptance layout; Desktop calls `legacyContent()` unchanged. The profile
 actual current user and, only when launched from Nome Home, can close the hub before opening the
 existing `UserPicker`.
 
+### P11/P12 typed truth and route boundary
+
+`NewChatView` remains the owner of invitation creation/disposal, pasted/scanned parsing, planning,
+and navigation. `PlatformNewChatRoute` changes only Android presentation; its Desktop actual
+invokes the upstream content unchanged.
+
+P11 renders a ready link/QR only from an official `CreatedConnLink`. Local copy/share actions may
+update local acknowledgement copy but cannot mark a link peer-used, connected, expired, or safely
+replaced. No invitation bearer enters saved state, semantics, logs, test fixtures, retained raw
+screenshots, or evidence filenames. The visible identity header invokes only the existing profile
+picker callback.
+
+P12 starts with the scanner inactive. Camera permission is requested only after the explicit scan
+action; missing camera, first denial, permanent denial/Settings, resume, analyzer-frame closure,
+and executor disposal remain Android platform outcomes. Clipboard text is read only after an
+explicit action. Manual, clipboard, and scanned text all enter the existing `strConnectTarget`
+and `planAndConnect(..., Legacy)` path and therefore do not broaden P13's external
+`ACTION_VIEW` opt-in.
+
+### P14/P15 typed truth and route boundary
+
+`contactRequestAlertDialog` offers `PlatformContactRequestRoute` before the legacy alert. Android
+renders the actual requester and current local identity and invokes the existing accept action.
+Only an accepted `Contact` updates/replaces the request row. The new
+`apiRejectContactRequestResult` distinguishes `Rejected(contact?)` from `Failure`; only the former
+removes the request. Desktop returns `false` and preserves the existing alert. P14 has no
+request-message field or command parameter, so the baseline message region uses fixed no-message
+copy instead of reconstructing content from a chat.
+
+Non-onboarding `UserAddressView` delegates presentation to `PlatformUserAddressRoute`; onboarding
+continues to render the official layout. `apiGetUserAddressResult` distinguishes `Ready`,
+`NotFound`, and `Failure`, so OFF requires exact `UserContactLinkNotFound`. A failure leaves any
+confirmed cached address visible. Create retains the official post-create profile-sharing
+behavior, and an address requiring short-link upgrade retains the established add/share choice.
+Delete clears the model only after `UserContactLinkDeleted`. Replace is explicitly delete then
+create; a create failure after delete exposes a create-only retry and never repeats deletion or
+claims rollback.
+
+P14/P15 share only Android layout primitives and fixed bilingual resources. Their reference-size
+Chinese/light renderer fixture comparisons calibrate composition and accessibility but are not
+production acceptance. The API 35 production OFF route is smoke-tested. A real address-create
+attempt returned the official connection-timeout alert before any created address, and no
+controlled incoming contact request exists, so the required request/READY primary-state
+comparisons remain open.
+
+### P16 typed truth and route boundary
+
+`acceptGroupInvitationAlertDialog` offers `PlatformGroupInvitationRoute` only from the existing
+`GroupMemberStatus.MemInvited` owner. The route receives the official `GroupInfo` and the actual
+inviting contact when `InvitedBy.IBContact` resolves to a current direct chat. Public/private,
+channel, member-count, review-policy, incognito, and verified-contact presentation comes from
+those typed fields; relay use is not reconstructed as channel type and no administrator
+verification is inferred.
+
+`apiJoinGroupResult` projects the existing `UserAcceptedGroupSent` response as `Accepted`, keeps
+the established expired/not-found deletion and alert path as `Unavailable`, and maps every other
+outcome to `NotCompleted`. It sends no new command and the compatibility `apiJoinGroup` wrapper
+keeps the official path. The preview closes only after accepted/unavailable terminal results;
+generic failure retains the invitation for retry. Delete uses the existing `apiDeleteChat`
+mutation only after explicit confirmation. Back is command-free, and Desktop returns `false`.
+
+The reference-size Chinese/light P16 fixture comparison calibrates layout only. It proves no real
+invitation, join, or connection state. The current API 35 production client reached the real Home
+route with screenshot protection restored but has no invited group, so primary-state production
+acceptance remains open.
+
+### P17/P18 conversation and message-action boundary
+
+[`ChatView`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chat/ChatView.kt#L98-L1713)
+continues to own the loaded chat, item list, official toolbar actions, composer, and navigation.
+Android changes the layout/background, omits the upstream timeline introduction card, and projects
+the fixed E2EE banner through
+[`nomeDirectE2EEInfo`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chat/ChatView.kt#L1700-L1713).
+That helper selects the newest actual direct E2EE item and returns `null` when no producer exists;
+the header chip and banner are therefore fail-closed rather than generic security claims.
+
+[`ChatItemView`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chat/item/ChatItemView.kt#L70-L858)
+retains all official action eligibility and callbacks. It delegates only the Android menu
+container to
+[`PlatformMessageActionsMenu`](../../common/src/androidMain/kotlin/chat/simplex/common/views/chat/item/PlatformMessageActionsMenu.android.kt#L38-L108).
+The Android actual supplies the P18 scrim, rounded full-width sheet, fixed title/close action, and
+scrollable action rows. Desktop invokes the established `DefaultDropdownMenu`. The direct-report
+gap remains closed by the existing group + Reports + member-role condition; the Android sheet adds
+no action or command.
+
+[`ItemAction`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chat/item/ChatItemView.kt#L1120-L1302)
+changes only row/icon-tile presentation while the platform sheet local is active.
+[`ComposeView`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chat/ComposeView.kt#L368-L1510)
+and
+[`SendMsgView`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chat/SendMsgView.kt#L35-L151)
+retain attachment, voice/live, input, and send owners while applying the P17 Android composer
+shape. File, voice, and call facts are never generated for visual parity and retain their
+high-risk real-fixture/lifecycle tier.
+
+The accepted API 35 Chinese/light visual input is production state, not a renderer fixture: it
+uses a real direct chat, an actually received controlled-client message, production-composer
+submissions, and a real long press. The side-by-side result accepts truthful data differences
+from the reference while matching the page composition and component hierarchy. Focused common
+tests cover E2EE fail-closed/newest-fact behavior; Android Compose tests cover one-to-one callback,
+dismiss-without-action, and 48dp sheet rows.
+
+### P19/P20 security and public-channel setup boundary
+
+`ChatInfoView` and `ChatView` retain the direct-contact route and authoritative returned `Contact`.
+`VerifyCodeView` retains the full security code, scanner, share, mark, clear, and API ownership. It
+maps the existing nullable verify response into `MATCHED`, `MISMATCH`, or `UNAVAILABLE` so failure
+cannot collapse into a wrong-code claim. Android delegates only presentation to
+`PlatformVerifyCodeLayout`; Desktop and group-member verification keep the official layout.
+
+The P19 Android actual renders the baseline contact/status/code/QR/step/action hierarchy. The
+formatter removes only existing whitespace before regrouping all characters, and the QR encoder
+receives the unchanged code. Scanner match closes through the official verify path; manual
+attestation is a separate explicit action. Both mark and clear update the model only from the
+contact returned by the existing command. A later `apiGetContactCode` result also replaces the
+current contact so stale verification state is reset authoritatively.
+
+`AddChannelView` remains the P20 state and command owner. It reads the existing configured relay
+set, selects enabled non-deleted relays through the official algorithm, invokes
+`apiNewPublicGroup`, and then stores only the returned `GroupInfo`, `GroupLink`, and relay list.
+`PlatformChannelSetupRoute` changes the Android profile/setup composition only; Desktop delegates
+the established profile step.
+
+The P20 Android actual uses the baseline create/join tabs, image/name input, link region, relay
+region, warning, current-profile disclosure, and create action. Before a real creation result it
+shows only that the official link is generated after creation and counts enabled configured
+relays. It never presents a custom Nome domain, relay availability/health, connection, encryption,
+or success. Join invokes the existing P12 scan/paste callback and relay configuration invokes the
+existing Settings route.
+
+`cancelCreatedChannel` calls the existing delete owner exactly once and runs local removal only
+for a true result. False and exception keep local state. A controlled API 35 create attempt
+returned the official relay timeout before any `GroupInfo`/`GroupLink`; therefore the accepted P20
+production comparison closes only the setup surface, not creation, progress, link, cancellation,
+or deletion.
+
 ### P13 typed truth and route boundary
 
 The only production opt-in is
@@ -320,7 +479,7 @@ group details. P10 remains a route hub and does not opt its internal actions int
 - dimensions and minimum target: [`NomeDimensionTokens`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/tokens/NomeDimensionTokens.kt#L8-L46);
 - elevation, shapes, and typography: [`NomeElevationTokens`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/tokens/NomeElevationTokens.kt#L8-L20), [`NomeShapeTokens`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/tokens/NomeShapeTokens.kt#L10-L30), [`NomeTypographyTokens`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/tokens/NomeTypographyTokens.kt#L11-L89);
 - Material 2 adapter and composition locals: [`NomeTheme` / `NomeAndroidTheme`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/theme/NomeTheme.kt#L54-L130);
-- reusable primitives: [`NomeButton`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/components/NomeButton.kt#L16-L90), including an optional page-baseline shape override while preserving the token default; [`NomeStatePanel`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/components/NomeStatePanel.kt#L28-L175); [`NomeSurface`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/components/NomeSurface.kt#L13-L31);
+- reusable primitives: [`NomeButton`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/components/NomeButton.kt#L16-L89), including an optional page-baseline shape override while preserving the token default; [`NomeStatePanel`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/components/NomeStatePanel.kt#L28-L175); [`NomeSurface`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/components/NomeSurface.kt#L13-L31);
 - accessibility modifiers: [`nomeMinimumTouchTarget` and TalkBack semantics](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/accessibility/NomeAccessibility.kt#L18-L35);
 - P01 shared root input/actions: [`PlatformDatabaseRootRoute`](../../common/src/commonMain/kotlin/chat/simplex/common/views/database/PlatformDatabaseRootRoute.kt) and the exact recovery helpers in [`DatabaseErrorView`](../../common/src/commonMain/kotlin/chat/simplex/common/views/database/DatabaseErrorView.kt);
 - P01 Android key/route/state/renderer: [`Cryptor.android.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/platform/Cryptor.android.kt), [`PlatformDatabaseRootRoute.android.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/views/database/PlatformDatabaseRootRoute.android.kt), [`NomeDatabaseRootStateAdapter.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/database/NomeDatabaseRootStateAdapter.kt), and [`NomeDatabaseRootRoute.android.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/database/NomeDatabaseRootRoute.android.kt);
@@ -333,6 +492,15 @@ group details. P10 remains a route hub and does not opt its internal actions int
 - P07/P08 adapter and renderer: [`NomeHomeStateAdapter.derive()`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeStateAdapter.kt#L49-L121) and [`NomeHomeRouteContent()`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeRoute.android.kt#L125-L280);
 - P09 search adapter/route: [`NomeSearchStateAdapter.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeSearchStateAdapter.kt) and [`NomeSearchRoute.android.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeSearchRoute.android.kt);
 - P10 shared/Android/Desktop presentation seam: [`PlatformNewChatHub.kt`](../../common/src/commonMain/kotlin/chat/simplex/common/views/newchat/PlatformNewChatHub.kt), [`PlatformNewChatHub.android.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/views/newchat/PlatformNewChatHub.android.kt), and [`PlatformNewChatHub.desktop.kt`](../../common/src/desktopMain/kotlin/chat/simplex/common/views/newchat/PlatformNewChatHub.desktop.kt);
+- P11/P12 shared/Android/Desktop presentation seam: [`PlatformNewChatRoute.kt`](../../common/src/commonMain/kotlin/chat/simplex/common/views/newchat/PlatformNewChatRoute.kt), [`PlatformNewChatRoute.android.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/views/newchat/PlatformNewChatRoute.android.kt), and [`PlatformNewChatRoute.desktop.kt`](../../common/src/desktopMain/kotlin/chat/simplex/common/views/newchat/PlatformNewChatRoute.desktop.kt);
+- P12 Android platform lifecycle and focused route test: [`QRCodeScanner.android.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/views/newchat/QRCodeScanner.android.kt) and [`NomeNewChatRouteComposeTest`](../../android/src/androidTest/java/chat/simplex/app/nome/newchat/NomeNewChatRouteComposeTest.kt);
+- P19 shared/Android/Desktop seam and owners: [`VerifyCodeView.kt`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chat/VerifyCodeView.kt), [`PlatformVerifyCodeLayout.kt`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chat/PlatformVerifyCodeLayout.kt), [`PlatformVerifyCodeLayout.android.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/views/chat/PlatformVerifyCodeLayout.android.kt), and [`PlatformVerifyCodeLayout.desktop.kt`](../../common/src/desktopMain/kotlin/chat/simplex/common/views/chat/PlatformVerifyCodeLayout.desktop.kt);
+- P20 shared/Android/Desktop seam and owner: [`AddChannelView.kt`](../../common/src/commonMain/kotlin/chat/simplex/common/views/newchat/AddChannelView.kt), [`PlatformChannelSetupRoute.kt`](../../common/src/commonMain/kotlin/chat/simplex/common/views/newchat/PlatformChannelSetupRoute.kt), [`PlatformChannelSetupRoute.android.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/views/newchat/PlatformChannelSetupRoute.android.kt), and [`PlatformChannelSetupRoute.desktop.kt`](../../common/src/desktopMain/kotlin/chat/simplex/common/views/newchat/PlatformChannelSetupRoute.desktop.kt);
+- P19/P20 focused contracts: [`NomeContactVerificationPolicyTest.kt`](../../common/src/commonTest/kotlin/chat/simplex/common/views/chat/NomeContactVerificationPolicyTest.kt), [`NomeChannelCancellationPolicyTest.kt`](../../common/src/commonTest/kotlin/chat/simplex/common/views/newchat/NomeChannelCancellationPolicyTest.kt), and [`NomeSecurityAndChannelComposeTest.kt`](../../android/src/androidTest/java/chat/simplex/app/nome/connection/NomeSecurityAndChannelComposeTest.kt);
+- P16 shared/Android/Desktop invitation seam: [`PlatformGroupInvitationRoute.kt`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformGroupInvitationRoute.kt), [`PlatformGroupInvitationRoute.android.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/views/chatlist/PlatformGroupInvitationRoute.android.kt), and [`PlatformGroupInvitationRoute.desktop.kt`](../../common/src/desktopMain/kotlin/chat/simplex/common/views/chatlist/PlatformGroupInvitationRoute.desktop.kt);
+- remote-desktop Android frame and official state/command owners: [`ConnectDesktopView()`](../../common/src/commonMain/kotlin/chat/simplex/common/views/remote/ConnectDesktopView.kt#L47-L168), [`NomeRemoteDesktopFrame()`](../../common/src/commonMain/kotlin/chat/simplex/common/views/remote/ConnectDesktopView.kt#L170-L184), and the confirmed linked-device removal path in [`LinkedDesktopsView()`](../../common/src/commonMain/kotlin/chat/simplex/common/views/remote/ConnectDesktopView.kt#L504-L540);
+- Android fullscreen-modal semantics and intent dispatch: [`MainScreen()`](../../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L181-L280), [`MainActivity.onCreate()` / `onNewIntent()`](../../android/src/main/java/chat/simplex/app/MainActivity.kt#L33-L71), and [`dispatchMainActivityIntent()`](../../android/src/main/java/chat/simplex/app/MainActivity.kt#L135-L144);
+- focused remote-frame and cold/warm-dispatch contracts: [`NomeRemoteDesktopComposeTest`](../../android/src/androidTest/java/chat/simplex/app/nome/settings/NomeRemoteDesktopComposeTest.kt#L21-L64) and [`NomeMainActivityIntentDispatchTest`](../../android/src/androidTest/java/chat/simplex/app/nome/lifecycle/NomeMainActivityIntentDispatchTest.kt#L10-L42);
 - P02/P03–P06 page-baseline production renderers: [`PlatformNomeAppLockScreen.android.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/views/localauth/PlatformNomeAppLockScreen.android.kt) and [`PlatformNomeOnboardingPages.android.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/views/onboarding/PlatformNomeOnboardingPages.android.kt);
 - Batch 2 contract tests: [`NomeHomeStateAdapterTest`](../../android/src/test/java/chat/simplex/app/nome/home/NomeHomeStateAdapterTest.kt#L16-L242), [`NomeHomeComposeTest`](../../android/src/androidTest/java/chat/simplex/app/nome/home/NomeHomeComposeTest.kt#L53-L562), [`NomeHomePackagingTest`](../../android/src/androidTest/java/chat/simplex/app/nome/home/NomeHomePackagingTest.kt#L13-L38), and [`PlatformHomeRouteDesktopTest`](../../common/src/desktopTest/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRouteDesktopTest.kt#L14-L55);
 - explicit real-core evidence gate: [`NomeHomeCoreCycleTest`](../../android/src/androidTest/java/chat/simplex/app/nome/home/NomeHomeCoreCycleTest.kt#L1-L90) runs only with `nomeCoreCycle=true`, invokes the official stop/start paths, and asserts that the exact non-empty cached chat-ID sequence survives both transitions;
@@ -429,7 +597,7 @@ Completed in frozen Phase 2 Batch 3:
 - bilingual resources, light/dark tokens, 48dp and 200% Compose coverage, nine-state/72-capture debug screenshot definition, non-exported debug host, release packaging guard, and Desktop fallback test;
 - no change to `FIRST_USE`, `FILTERED_NO_RESULT`, P09–P12, P14–P24, native core, protocol, database, message state, iOS, or Desktop UI.
 
-Implemented in the active Milestone 2 P09/P10 group:
+Implemented in the frozen Milestone 2 P09/P10 group:
 
 - P09 nonblank loaded-chat query producer, truthful unavailable/no-result separation, grouped
   official results, and guarded official chat navigation;
@@ -439,6 +607,134 @@ Implemented in the active Milestone 2 P09/P10 group:
   Chinese/light/reference-viewport side-by-side acceptance captures;
 - no persisted recent query, global message aggregation, connection-success inference, new
   command, native/core/protocol/database/archive/iOS behavior, or Desktop Nome UI.
+
+Implemented in the active Milestone 3 P11/P12 group:
+
+- Android page-baseline presentation over the official invitation creation, clipboard/share,
+  parser, scanner, and legacy plan/connect owners, with unchanged Desktop content;
+- no TTL/expiry/regeneration/peer-use/success inference and no retained invitation bearer;
+- explicit camera and clipboard activation, optional camera hardware, permanent-denial Settings
+  recovery, and frame/executor disposal;
+- focused route/48dp/callback tests and Android/Desktop compilation; P12 API 35 Chinese/light
+  production side-by-side acceptance is closed;
+- a controlled client produced a real `CreatedConnLink` and retained its read-only pending row
+  after emulator disk reboot. The safe reference-size ready capture remains open; loading/failure
+  diagnostics cannot close it, and neither the link nor pending row proves peer use or connection.
+
+Implemented in the active Milestone 3 P14/P15 group:
+
+- P14 Android request page over official current/incognito accept and typed reject results, with a
+  Desktop-declining seam and no fabricated request message;
+- P15 Android address OFF/READY/failure presentation over official lookup/create/settings/
+  short-link/share/delete/profile owners, while onboarding remains official;
+- explicit non-atomic replace phases, destructive confirmation, create-only retry after confirmed
+  deletion, cached-address retention on lookup failure, busy-back blocking, and generic bearer
+  semantics;
+- focused API 35 tests, Android/Desktop compile, one risk review, and Chinese/light renderer
+  fixture comparisons pass; P15 OFF production smoke passes;
+- a real P15 reusable address persisted across emulator disk reboot, and the redacted API 35
+  READY production/reference comparison passes without retaining the bearer or QR;
+- P14 remains open: a second controlled API 35 client reached request confirmation, then returned
+  the official relay error and produced no incoming request on the source client.
+
+Implemented in the active Milestone 3 P16 group:
+
+- Android group-invitation preview over the official invited-group owner, typed group/profile/
+  membership facts, real inviter contact when available, and unchanged join/delete commands;
+- public/private and channel presentation from the official typed fields, no verified-admin,
+  relay-health, joined, connected, or success inference;
+- accepted/unavailable/not-completed result separation, retryable generic failure, confirmed local
+  invitation deletion, command-free back, busy-back blocking, and unchanged Desktop alert;
+- focused API 35 callback/48dp/failure/destructive tests, Android/Desktop compile, one risk review,
+  and Chinese/light renderer fixture comparison pass;
+- producer-backed production visual acceptance remains open because the current API 35 client has
+  no `MemInvited` group. The fixture is not promoted to a production join state.
+
+Implemented in the active Milestone 3 P17/P18 group:
+
+- Android conversation and action-sheet composition over the official loaded chat, item,
+  composer, and callback owners, with unchanged Desktop action presentation;
+- real direct-chat E2EE-item gating, complete official action eligibility, and no fabricated
+  delivery, file, voice, call, online, report, or security fact;
+- focused common/Compose tests, Android/Desktop compile, API 35 production
+  Chinese/light/reference-viewport comparisons, 48dp checks, one review, and secure-window
+  restoration pass;
+- media/file/call lifecycle remains assigned to its separate high-risk families.
+
+Implemented in the active Milestone 3 P19/P20 group:
+
+- P19 Android contact-security page over the official code/scanner/share/verify/clear/model owners,
+  with unchanged Desktop and group-member presentation;
+- real API 28/API 35 two-client exact-code comparison, manual mark, verified reopen, clear, scanner
+  open/cancel, focused tests, 48dp checks, and API 35 production visual acceptance pass;
+- P20 Android profile/setup page over official relay configuration, public-group create,
+  progress/link, and delete owners, with official join and Settings routes;
+- P20 setup focused tests, API 35 production visual acceptance, and no custom domain, relay-health,
+  connection, encryption, or success inference;
+- P20 creation/link/delete remains open because the controlled API 35 producer returned the
+  official relay timeout before creating a group or link.
+
+Implemented in the active Milestone 3 P21/P22 group:
+
+- P21 fixed public-channel non-E2EE disclosure and observer-only composer treatment derive only
+  from the official `GroupInfo.useRelays` and current-member role facts; timeline, history,
+  profile, relay, member, moderation, and Desktop owners remain unchanged;
+- P21 focused fact/callback tests and Android/Desktop compilation pass, but production visual
+  acceptance remains open because no controlled client contains a real public channel;
+- P22 Android identity-center composition delegates add/edit/activate/hide/unhide/mute/unmute/
+  delete to the official `UserProfilesView` callbacks, reads the real incognito-default and SOCKS
+  preferences, and opens official Home/Contacts/Settings routes;
+- incognito remains a per-connection default and is never persisted as an anonymous account;
+  SOCKS state is displayed as configuration only and never becomes private-routing/health proof;
+- typed deletion stages preserve switch-before-delete and last-visible-user delete/clear/stop
+  ordering, defer local cleanup until confirmed deletion, rethrow cancellation, and distinguish
+  retryable pre-delete failure from post-delete restart reconciliation;
+- four focused deletion-lifecycle tests, API 28/API 35 exact Compose tests, API 35
+  Chinese/light/reference-viewport production comparison, and real disposable API 28/API 35
+  create/switch/delete/cold-start lifecycle pass.
+
+Implemented in the active remote-desktop and Android-intent ordinary group:
+
+- Android renders the existing `ConnectDesktopView` states inside the P23 full-page/grouped
+  settings-detail frame; the Desktop branch retains its exact legacy modal/title/scroll content;
+- device-name, discovery, address connect, verification, connected-session, switch-local,
+  disconnect, and revoke owners remain the official v6.5.6 controller/model owners; the unpaired
+  QR-camera producer is not reported as a successful pair;
+- linked-device removal routes through the already-defined destructive confirmation, the typed
+  address clears only on a real connect result, and session stop/switch behavior is unchanged;
+- when an Android fullscreen modal is open, underlying Home semantics are cleared while the
+  current modal and switching/authentication overlays remain accessible; Desktop semantics and
+  composition are unchanged;
+- cold `onCreate` and warm `onNewIntent` now use one ordered dispatcher for the existing
+  notification, `ACTION_VIEW`, and external-share handlers, restoring warm notification-action
+  ownership without changing actions or payload semantics;
+- API 35 production verifies both cold/warm show-chats and text-share routes, official external
+  share Back behavior, the remote page's isolated semantics, and the unpaired visual baseline.
+  Real pairing/switch/revoke events remain producer-gated and are not inferred.
+
+Implemented in the active group-creation/admin and channel-owner/admin ordinary group:
+
+- Android private-group creation delegates name/image validation, incognito preference, create
+  command, model update, chat opening, and post-create member setup to the official
+  `AddGroupView`; Desktop retains its exact legacy modal;
+- Android member invitation delegates the real contact producer, member role, admission and group
+  preferences, selection, invite/skip commands, and errors to `AddGroupMembersView`. The group-info
+  quick action now uses that owned callback instead of the older global modal wrapper, so the
+  Android page has one top Back owner while Desktop keeps its legacy app bar;
+- group info and group-profile editing preserve the official alias, notification, link, member,
+  moderation, preference, image, validation, save, and destructive-confirmation owners. Android
+  changes only the full-page/card composition and suppresses automatic form focus;
+- channel member and relay lists preserve the real `GroupInfo`, `GroupMember`, `GroupRelay`, role,
+  status, tap, and refresh owners. The v6.5.6 relay Add/Remove controls remain source-disabled
+  behind `TODO [relays]`; Nome does not re-enable or imitate them;
+- API 35 production used one real controlled private group, invited no contacts, sent no messages,
+  and invoked no destructive action. Creation and group-admin primary states passed adjacent
+  P20/P16 comparisons; invitation and profile routes each exposed one Back owner, and unchecked
+  contacts no longer announce the checked-contact description;
+- focused `NomeGroupAdminComposeTest` passes 3/3, Android debug/debug-androidTest and Desktop
+  compilation pass, and screenshot protection was restored to the official enabled/`SECURE`
+  state. A real public channel and P20 create/link/delete outcomes remain producer-blocked and are
+  not inferred.
 
 Implemented in active Batch 1A P01 source, with formal execution status delegated to its evidence
 root:
@@ -457,11 +753,48 @@ root:
 
 Remaining implementation/evidence gates:
 
-- implement the one-time locale marker without overwriting existing-user language behavior;
-- complete P01 deterministic/native comparison, real database/key/recovery/upgrade fixtures,
-  API 28/API 35, lifecycle, manual accessibility, release isolation, secret scans, threat delta,
-  and two final same-digest review gates;
-- complete the P09/P10 ordinary-group review and Milestone 2 concentrated gate;
-- implement P11–P12 and P14–P24 production pages in dependency-ordered merged UI groups;
+- retain a redacted-safe P11 ready production/baseline comparison from the already-proven
+  invitation producer and close the P11 visual gate without inferring peer use;
+- obtain producer-backed P14 request and P16 invited-group states for their production
+  comparisons; P15 READY is already closed;
+- obtain a real P21 channel producer for its production comparison; close P20's producer-backed
+  creation/link/delete lifecycle and the remaining high-risk P17 media/file/call P1 families with
+  real fixtures/lifecycle depth;
 - run bilingual/theme/API/accessibility/release/full regression at milestones and final RC;
 - add deeper upgrade assertions when a later batch touches identities, chats, attachments, settings, or locale persistence.
+
+### P23/P24 settings, archive, and migration contract
+
+- `SettingsView` retains all official settings owners. `PlatformSettingsHomeRoute` may change only
+  Android composition, local route indexing/search, and Home/Contacts/Settings navigation;
+  Desktop must retain the legacy layout.
+- `PlatformBackupMigrationRoute` is a truthful Android landing over `DatabaseView` and the
+  authenticated outbound migration owner. Before a real operation it may show only not-started
+  state; percentage, completion, restore, rollback, resume, connectivity, and success facts
+  require authoritative operation output.
+- `PlatformSettingsDetailRoute` may change only Android composition and nested Back ownership for
+  Network, Appearance, Help, and Developer. Their official preferences, commands, validation,
+  unsaved-close, diagnostics, and external-link owners remain unchanged; Desktop uses the legacy
+  composition.
+- Android settings About may use the packaged Nome wordmark/build version and official source/
+  exact v6.5.6 AGPL links. App/core details MUST dispatch the existing live version owner.
+  `FIRST_USE` and onboarding About remain official-owned and MUST NOT enter this settings seam.
+- Network connectivity copy MUST be unknown before Android's first platform observation and then
+  reflect that device-network value only; the legacy optimistic model default is not display
+  truth. It MUST NOT be presented as relay, operator, routing, privacy, aggregate, or global
+  health.
+- System Back from a nested settings detail returns to P23. System Back while P23 local search is
+  active clears that search and focus without closing the settings root.
+- Database export must return completed-snapshot truth to the established stop/run/start wrapper
+  so chat restarts after generation or chooser cancellation. The chooser result remains the sole
+  owner of destination copy and temporary-snapshot deletion.
+- Android database export declares `application/zip` for platform document registration. This is
+  a file-picker compatibility property only and MUST NOT change archive bytes, naming, format,
+  import ordering, database semantics, or Desktop file handling.
+- Destructive import retains the official confirmation, key-clearing/re-entry, replacement, and
+  restart behavior. Production evidence must use disposable data and verify pre/post-export data,
+  identity preservation, cold start, and zero temporary residue.
+- Outbound migration retains the official key verification, archive, upload, Back cleanup, and
+  restart owner. A visible `0 bytes uploaded` / `0%` state is neither connectivity nor success.
+  While chat is stopped, outbound migration is disabled as in the official settings route;
+  archive/database recovery remains reachable for its established start control.

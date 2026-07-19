@@ -1230,11 +1230,15 @@ fun ComposeView(
       enabled = attachmentEnabled
     ) {
       Icon(
-        painterResource(MR.images.ic_attach_file_filled_500),
+        painterResource(if (appPlatform.isAndroid) MR.images.ic_add else MR.images.ic_attach_file_filled_500),
         contentDescription = stringResource(MR.strings.attach),
-        tint = if (attachmentEnabled) MaterialTheme.colors.primary else MaterialTheme.colors.secondary,
+        tint = if (attachmentEnabled) {
+          if (appPlatform.isAndroid) MaterialTheme.colors.onBackground else MaterialTheme.colors.primary
+        } else {
+          MaterialTheme.colors.secondary
+        },
         modifier = Modifier
-          .size(28.dp)
+          .size(if (appPlatform.isAndroid) 26.dp else 28.dp)
           .clip(CircleShape)
       )
     }
@@ -1642,7 +1646,15 @@ fun ComposeView(
         Column {
           ContextSendMessageToConnect(generalGetString(MR.strings.compose_send_direct_message_to_connect))
           Divider()
-          Row(Modifier.padding(end = 8.dp), verticalAlignment = Alignment.Bottom) {
+          Row(
+            Modifier.padding(
+              start = if (appPlatform.isAndroid) 8.dp else 0.dp,
+              end = 8.dp,
+              top = if (appPlatform.isAndroid) 4.dp else 0.dp,
+              bottom = if (appPlatform.isAndroid) 4.dp else 0.dp,
+            ),
+            verticalAlignment = Alignment.Bottom,
+          ) {
             AttachmentAndCommandsButtons()
             SendMsgView_(
               disableSendButton = disableSendButton,
@@ -1697,13 +1709,32 @@ fun ComposeView(
           groupDirectInv = chat.chatInfo.contact.groupDirectInv
         )
       } else {
-        Row(Modifier.padding(end = 8.dp), verticalAlignment = Alignment.Bottom) {
-          AttachmentAndCommandsButtons()
-          val broadcastPlaceholder = (chat.chatInfo as? ChatInfo.Group)?.groupInfo?.let { gi ->
-            if (gi.useRelays && gi.membership.memberRole >= GroupMemberRole.Owner && chat.chatInfo.groupChatScope() == null) generalGetString(MR.strings.compose_view_broadcast)
-            else null
+        val channelObserver =
+          appPlatform.isAndroid &&
+            (chat.chatInfo as? ChatInfo.Group)?.groupInfo?.let { groupInfo ->
+              groupInfo.useRelays &&
+                groupInfo.membership.memberRole == GroupMemberRole.Observer &&
+                chat.chatInfo.groupChatScope() == null
+            } == true
+        if (channelObserver) {
+          PlatformChannelObserverBar(visible = true)
+        } else {
+          Row(
+            Modifier.padding(
+              start = if (appPlatform.isAndroid) 8.dp else 0.dp,
+              end = 8.dp,
+              top = if (appPlatform.isAndroid) 4.dp else 0.dp,
+              bottom = if (appPlatform.isAndroid) 4.dp else 0.dp,
+            ),
+            verticalAlignment = Alignment.Bottom,
+          ) {
+            AttachmentAndCommandsButtons()
+            val broadcastPlaceholder = (chat.chatInfo as? ChatInfo.Group)?.groupInfo?.let { gi ->
+              if (gi.useRelays && gi.membership.memberRole >= GroupMemberRole.Owner && chat.chatInfo.groupChatScope() == null) generalGetString(MR.strings.compose_view_broadcast)
+              else null
+            }
+            SendMsgView_(disableSendButton = disableSendButton, placeholder = broadcastPlaceholder)
           }
-          SendMsgView_(disableSendButton = disableSendButton, placeholder = broadcastPlaceholder)
         }
       }
     }
@@ -2034,4 +2065,3 @@ private data class OwnerRelayState(
 
 private fun relayMemberRemoved(status: GroupMemberStatus?): Boolean =
   status in listOf(GroupMemberStatus.MemLeft, GroupMemberStatus.MemRemoved, GroupMemberStatus.MemGroupDeleted)
-

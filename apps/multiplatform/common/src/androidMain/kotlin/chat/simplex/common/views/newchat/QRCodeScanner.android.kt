@@ -24,6 +24,7 @@ import boofcv.alg.color.ColorFormat
 import boofcv.android.ConvertCameraImage
 import boofcv.factory.fiducial.FactoryFiducial
 import boofcv.struct.image.GrayU8
+import chat.simplex.common.helpers.openAppSettingsInSystem
 import chat.simplex.common.platform.TAG
 import chat.simplex.common.ui.theme.DEFAULT_PADDING_HALF
 import chat.simplex.common.views.helpers.*
@@ -35,6 +36,8 @@ import dev.icerock.moko.resources.compose.painterResource
 import dev.icerock.moko.resources.compose.stringResource
 import kotlinx.coroutines.delay
 import java.util.concurrent.*
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
 // Adapted from learntodroid - https://gist.github.com/learntodroid/8f839be0b29d0378f843af70607bd7f5
 
@@ -47,16 +50,29 @@ actual fun QRCodeScanner(
   val context = LocalContext.current
   val lifecycleOwner = LocalLifecycleOwner.current
   val preview = remember { mutableStateOf<Preview?>(null) }
-  val contactLink = remember { mutableStateOf("") }
-  val checkingLink = remember { mutableStateOf(false) }
+  val contactLink = remember { AtomicReference("") }
+  val checkingLink = remember { AtomicBoolean(false) }
+  val disposed = remember(lifecycleOwner) {
+    AtomicBoolean(false)
+  }
+  val cameraProvider = remember(lifecycleOwner) {
+    AtomicReference<ProcessCameraProvider?>(null)
+  }
+  val cameraExecutor =
+    remember(lifecycleOwner) {
+      Executors.newSingleThreadExecutor()
+    }
 
   val cameraProviderFuture by produceState<ListenableFuture<ProcessCameraProvider>?>(initialValue = null) {
     value = ProcessCameraProvider.getInstance(context)
   }
 
   DisposableEffect(lifecycleOwner) {
+    disposed.set(false)
     onDispose {
-      cameraProviderFuture?.get()?.unbindAll()
+      disposed.set(true)
+      cameraProvider.getAndSet(null)?.unbindAll()
+      cameraExecutor.shutdownNow()
     }
   }
 
@@ -82,46 +98,92 @@ actual fun QRCodeScanner(
         },
         modifier = modifier
       ) { previewView ->
+        val providerFuture =
+          cameraProviderFuture ?: return@AndroidView
         val cameraSelector: CameraSelector = CameraSelector.Builder()
           .requireLensFacing(CameraSelector.LENS_FACING_BACK)
           .build()
-        val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
-        cameraProviderFuture?.addListener({
+        providerFuture.addListener({
+          if (disposed.get()) {
+            return@addListener
+          }
+          val provider =
+            try {
+              providerFuture.get()
+            } catch (e: Exception) {
+              Log.d(
+                TAG,
+                "CameraProvider: ${e.localizedMessage}",
+              )
+              return@addListener
+            }
+          if (disposed.get()) {
+            return@addListener
+          }
+          cameraProvider.set(provider)
           preview.value = Preview.Builder().build().also {
             it.setSurfaceProvider(previewView.surfaceProvider)
           }
           val detector: QrCodeDetector<GrayU8> = FactoryFiducial.qrcode(null, GrayU8::class.java)
           suspend fun getQR(imageProxy: ImageProxy) {
-            if (checkingLink.value) return
-            checkingLink.value = true
-
             detector.process(imageProxyToGrayU8(imageProxy))
             val found = detector.detections
             val qr = found.firstOrNull()
             if (qr != null) {
-              if (qr.message != contactLink.value) {
+              if (qr.message != contactLink.get()) {
                 // Make sure link is new and not a repeat if that link was handled successfully
                 if (onBarcode(qr.message)) {
-                  contactLink.value = qr.message
+                  contactLink.set(qr.message)
                 }
                 // just some delay to not spam endlessly with alert in case the user scan something wrong, and it fails fast
                 // (for example, scan user's address while verifying contact code - it prevents alert spam)
                 delay(1000)
               }
             }
-            checkingLink.value = false
-            imageProxy.close()
           }
 
-          val imageAnalyzer = ImageAnalysis.Analyzer { proxy -> withApi { getQR(proxy) } }
+          val imageAnalyzer = ImageAnalysis.Analyzer { proxy ->
+            if (disposed.get()) {
+              proxy.close()
+              return@Analyzer
+            }
+            if (!checkingLink.compareAndSet(false, true)) {
+              proxy.close()
+              return@Analyzer
+            }
+            withApi {
+              try {
+                getQR(proxy)
+              } finally {
+                checkingLink.set(false)
+                proxy.close()
+              }
+            }
+          }
           val imageAnalysis: ImageAnalysis = ImageAnalysis.Builder()
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
             .setImageQueueDepth(1)
             .build()
             .also { it.setAnalyzer(cameraExecutor, imageAnalyzer) }
           try {
-            cameraProviderFuture?.get()?.unbindAll()
-            cameraProviderFuture?.get()?.bindToLifecycle(lifecycleOwner, cameraSelector, preview.value, imageAnalysis)
+            if (
+              disposed.get() ||
+                cameraExecutor.isShutdown
+            ) {
+              imageAnalysis.clearAnalyzer()
+              return@addListener
+            }
+            provider.unbindAll()
+            if (disposed.get()) {
+              imageAnalysis.clearAnalyzer()
+              return@addListener
+            }
+            provider.bindToLifecycle(
+              lifecycleOwner,
+              cameraSelector,
+              preview.value,
+              imageAnalysis,
+            )
           } catch (e: Exception) {
             Log.d(TAG, "CameraPreview: ${e.localizedMessage}")
           }
@@ -135,18 +197,61 @@ actual fun QRCodeScanner(
         disabledContentColor = MaterialTheme.colors.primary,
       )
       var permissionRequested by rememberSaveable { mutableStateOf(false) }
+      val hasCamera =
+        context.packageManager.hasSystemFeature(
+          PackageManager.FEATURE_CAMERA_ANY,
+        )
+      val denied =
+        cameraPermissionState.status as? PermissionStatus.Denied
       when {
-        cameraPermissionState.status is PermissionStatus.Denied && !permissionRequested && showScanner.value -> {
+        !hasCamera -> {
+          Button(
+            onClick = {},
+            enabled = false,
+            modifier = modifier,
+            colors = buttonColors,
+          ) {
+            Text(
+              stringResource(
+                MR.strings.camera_not_available,
+              ),
+            )
+          }
+        }
+        denied != null && !permissionRequested && showScanner.value -> {
           LaunchedEffect(Unit) {
             permissionRequested = true
             cameraPermissionState.launchPermissionRequest()
           }
         }
-        cameraPermissionState.status is PermissionStatus.Denied -> {
-          Button({ cameraPermissionState.launchPermissionRequest() }, modifier = modifier, colors = buttonColors) {
+        denied != null -> {
+          val openSettings =
+            permissionRequested &&
+              !denied.shouldShowRationale
+          Button(
+            onClick = {
+              if (openSettings) {
+                context.openAppSettingsInSystem()
+              } else {
+                permissionRequested = true
+                cameraPermissionState
+                  .launchPermissionRequest()
+              }
+            },
+            modifier = modifier,
+            colors = buttonColors,
+          ) {
             Icon(painterResource(MR.images.ic_camera_enhance), null)
             Spacer(Modifier.width(DEFAULT_PADDING_HALF))
-            Text(stringResource(MR.strings.enable_camera_access))
+            Text(
+              stringResource(
+                if (openSettings) {
+                  MR.strings.permissions_open_settings
+                } else {
+                  MR.strings.enable_camera_access
+                },
+              ),
+            )
           }
         }
         cameraPermissionState.status == PermissionStatus.Granted -> {
@@ -154,11 +259,6 @@ actual fun QRCodeScanner(
             Icon(painterResource(MR.images.ic_qr_code), null)
             Spacer(Modifier.width(DEFAULT_PADDING_HALF))
             Text(stringResource(MR.strings.tap_to_scan))
-          }
-        }
-        !LocalContext.current.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY) -> {
-          Button({  }, enabled = false, modifier = modifier, colors = buttonColors) {
-            Text(stringResource(MR.strings.camera_not_available))
           }
         }
       }

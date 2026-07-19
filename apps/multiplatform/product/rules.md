@@ -15,6 +15,9 @@ This document specifies invariants enforced by the Android and Desktop (Kotlin/C
 7. [Nome Android Home Truth (RULE-19)](#7-nome-android-home-truth)
 8. [Nome Android External Connection Truth (RULE-20)](#8-nome-android-external-connection-truth)
 9. [Nome Android Database Root Truth (RULE-21)](#9-nome-android-database-root-truth)
+10. [Nome Android Internal Invitation and Scan Truth (RULE-22)](#10-nome-android-internal-invitation-and-scan-truth)
+11. [Nome Android Request and Public-Address Truth (RULE-23)](#11-nome-android-request-and-public-address-truth)
+12. [Nome Android Group Invitation Truth (RULE-24)](#12-nome-android-group-invitation-truth)
 
 ---
 
@@ -355,3 +358,231 @@ once and installs no Nome database behavior.
 - `common/src/commonMain/kotlin/chat/simplex/common/views/database/{DatabaseErrorView,PlatformDatabaseRootRoute}.kt`
 - `common/src/androidMain/kotlin/chat/simplex/common/{platform/Cryptor.android.kt,views/database/PlatformDatabaseRootRoute.android.kt,ui/nome/database/**}`
 - `common/src/desktopMain/kotlin/chat/simplex/common/views/database/PlatformDatabaseRootRoute.desktop.kt`
+
+---
+
+## 10. Nome Android Internal Invitation and Scan Truth
+
+### RULE-22: P11/P12 Producer, Secret, and Permission Truth
+
+**Invariant:** Nome P11/P12 may replace only Android presentation around the official
+`NewChatView` owners. Invitation creation remains `apiAddContact()`. Manual, clipboard, and
+camera input remain the existing parser plus `planAndConnect(..., Legacy)`. Internal P12 input
+MUST NOT opt in to the external-`ACTION_VIEW`-only P13 route.
+
+The Android route MUST:
+
+1. render a link or QR code only from a real `CreatedConnLink`;
+2. keep generated, copied, shared, peer-used, pending, connected, and failed as distinct facts;
+3. omit TTL, expiry, atomic replacement, invalidation, network health, and success claims without
+   an authoritative result/event;
+4. retain invitation payloads only in the existing ephemeral route/action closures and exclude
+   them from logs, saved state, semantics, filenames, and retained screenshots;
+5. read the clipboard only after an explicit user action;
+6. request camera permission only after an explicit scan action, offer Settings only after
+   permanent denial, and expose camera-unavailable as a platform fact;
+7. close every analyzer frame and dispose its executor on failure or route disposal; and
+8. preserve an unchanged Desktop legacy delegate.
+
+**Enforcement:** `PlatformNewChatRoute` owns presentation selection only. `NewChatView` retains
+creation, disposal, parsing, planning, and navigation. `QRCodeScanner.android.kt` owns the Android
+camera/permission lifecycle. Focused Compose tests assert one-to-one local callbacks, explicit
+camera/clipboard activation, 48dp actions, and absence of unsupported expiry/regeneration copy.
+
+---
+
+## 11. Nome Android Request and Public-Address Truth
+
+### RULE-23: P14/P15 Typed Result and Destructive-Phase Truth
+
+**Invariant:** Nome P14/P15 may replace only Android presentation around the official
+contact-request and user-address owners. A request row may be removed only after typed reject
+success. Address OFF, READY, lookup failure, deletion, and replacement creation are distinct
+states.
+
+The Android routes MUST:
+
+1. mutate the request row after accept only when the official API returns a real `Contact`;
+2. remove a rejected request only from `APIRejectContactRequestResult.Rejected`, including its
+   valid null-contact form, and retain it on `Failure`;
+3. omit the baseline request message because v6.5.6 has no request-message producer;
+4. derive address OFF only from exact `APIUserAddressResult.NotFound`, never from a bare null or
+   generic failure;
+5. preserve a confirmed cached address when a refresh fails;
+6. retain official short-link upgrade, copy/share, post-create profile-sharing, advanced
+   settings, and onboarding behavior;
+7. confirm delete and replacement, model replacement as delete then create, and after confirmed
+   deletion retry only create without claiming atomicity or rollback;
+8. clear the address model only after a real delete result, single-submit actions, and block back
+   while an operation is in flight; and
+9. preserve unchanged Desktop request/address presentation.
+
+**Enforcement:** `PlatformContactRequestRoute` and `PlatformUserAddressRoute` select presentation
+only. `ChatListNavLinkView` and `UserAddressView` retain model mutation and official action
+ownership. `apiRejectContactRequestResult` and `apiGetUserAddressResult` project existing core
+responses without adding commands or response types. Focused Compose tests cover failure
+retention, destructive confirmation/retry, bearer-safe semantics, 48dp targets, and busy-back
+behavior.
+
+---
+
+## 12. Nome Android Group Invitation Truth
+
+### RULE-24: P16 Typed Group, Inviter, and Join Truth
+
+**Invariant:** Nome P16 may replace only Android presentation from the existing
+`GroupMemberStatus.MemInvited` owner. Group type, profile, membership, inviter, join result, and
+deletion result MUST remain the official typed facts and commands.
+
+The Android route MUST:
+
+1. derive public/private and channel presentation from `GroupProfile.publicGroup` and
+   `GroupInfo.isChannel`, never from relay use or design copy;
+2. label an inviter as a verified contact only when `InvitedBy.IBContact` resolves to an existing
+   direct `Contact` whose official verification fact is true;
+3. never relabel that contact as a verified administrator or reconstruct an unavailable source;
+4. treat `APIJoinGroupResult.Accepted` as the only accepted join result, expired/not-found as
+   terminal unavailable, and every other response as not completed and retryable;
+5. avoid joined, connected, online, relay-health, review-approved, or success claims until their
+   official result/event/model state exists;
+6. retain the invitation on a generic join/delete failure, single-submit actions, and block back
+   while an operation is in flight;
+7. require explicit confirmation before the existing local invitation deletion and keep ordinary
+   back command-free; and
+8. preserve unchanged Desktop group-invitation presentation.
+
+**Enforcement:** `PlatformGroupInvitationRoute` selects Android presentation only.
+`ChatListNavLinkView.acceptGroupInvitationAlertDialog` retains the invited-group owner and model
+mutation. `apiJoinGroupResult` projects the existing join response without adding a command or
+response type. Focused Compose tests cover success/failure callbacks, single-submit, busy-back,
+destructive confirmation, failure retention, and 48dp actions.
+
+### RULE-25: P17/P18 Conversation Presentation and Action Eligibility
+
+**Invariant:** Nome may replace the Android conversation composition and message-action
+presentation, but the loaded chat, chat items, composer state, attachment/voice actions, delivery
+facts, and every action callback and eligibility gate MUST remain official v6.5.6 owners.
+
+The Android presentation MUST:
+
+1. show a fixed direct-chat encryption banner only when an actual
+   `SndDirectE2EEInfo` or `RcvDirectE2EEInfo` item supplies the fact, and remain fail-closed when no
+   such item exists;
+2. retain the official message list and composer callbacks while aligning the toolbar, banner,
+   message surfaces, spacing, attachment affordance, and input shape with the P17 visual baseline;
+3. open P18 from a real chat-item long press and invoke every official action callback at most
+   once;
+4. preserve the existing reaction, reply, share, copy, edit, forward, info, delete, and selection
+   eligibility rules;
+5. expose report only under the existing exact group-message Reports/member-role gate, never in a
+   direct conversation merely because the P18 baseline depicts it;
+6. keep extra official actions available in a scrollable sheet instead of deleting behavior to
+   mimic a shorter reference;
+7. keep Desktop on the established anchored action menu; and
+8. leave file transfer, voice recording/playback, and call lifecycle on their separate high-risk
+   real-fixture validation tier.
+
+**Enforcement:** `ChatView` owns the loaded timeline, composer, and real E2EE item projection.
+`ChatItemView` owns action eligibility and callbacks. `PlatformMessageActionsMenu` changes only
+the Android container; its Desktop actual delegates to the official menu. Focused common and
+Android Compose tests cover fail-closed encryption facts, one-to-one action callbacks, dismiss
+behavior, and 48dp action rows.
+
+### RULE-26: P19 Security Verification and P20 Channel Truth
+
+**Invariant:** Nome may replace the Android P19/P20 presentation, but contact verification and
+public-channel creation MUST remain owned by the official v6.5.6 codes, commands, results, models,
+relay configuration, link progression, and destructive outcomes.
+
+The Android presentation MUST:
+
+1. render and share the complete real contact security code without adding, dropping, hashing, or
+   substituting visible digits;
+2. keep scanner match, scanner mismatch, scanner/API unavailable, manual attestation, verified,
+   and cleared outcomes distinct;
+3. apply verification state only from the contact returned by the existing verify command and
+   refresh stale code/state from the existing get-code result;
+4. keep group-member verification and Desktop on their official presentation routes;
+5. create a channel only through the existing enabled-relay selection and public-group command,
+   then use its returned `GroupInfo`, `GroupLink`, and relay results;
+6. show no custom Nome slug/domain, generic relay availability/health, connection, encryption, or
+   success fact before an authoritative producer returns it;
+7. route join to the existing scan/paste flow and relay configuration to the existing Settings
+   owner;
+8. finalize local cancellation/removal only after the existing delete command returns true; false
+   or exception MUST retain local state; and
+9. keep submit/back disabled only while the official creation or cancellation action is actually
+   in flight.
+
+**Enforcement:** `VerifyCodeView` retains code/scanner/API/model ownership while
+`PlatformVerifyCodeLayout` changes only Android presentation. `AddChannelView` retains relay,
+create/progress/link/delete ownership while `PlatformChannelSetupRoute` changes only its Android
+profile/setup step. Focused common and Compose tests cover typed result separation, digit
+preservation, distinct scan/manual callbacks, 48dp actions, link/relay truth, and
+delete-confirmed-only local finalization.
+
+### RULE-27: P21 Channel Facts and P22 Identity Lifecycle
+
+**Invariant:** Nome may replace the Android P21/P22 presentation, but public-channel disclosure,
+member role, local identities, current-user selection, hidden-profile authentication, incognito
+default, network configuration, and destructive lifecycle MUST remain owned by official v6.5.6
+models, preferences, routes, commands, and returned outcomes.
+
+The Android presentation MUST:
+
+1. show the fixed public-channel non-E2EE disclosure only for a real base channel with the
+   official public-channel relay fact, never for an ordinary group or direct chat;
+2. show observer/read-only treatment only for the real current-member observer role and retain the
+   official timeline, profile, history, relay, member, and moderation behavior;
+3. render identities only from the official users list and delegate add, edit, activate,
+   hide/unhide, mute/unmute, and delete exactly once to existing callbacks;
+4. treat incognito as the actual per-connection default preference, never as a persistent
+   anonymous account;
+5. display SOCKS only as the actual stored configuration and route changes through official
+   Network settings/confirmation, without inferring private routing, Tor, health, or connectivity;
+6. preserve switch-before-delete when another visible identity exists and
+   delete/clear/Android-stop ordering when it does not;
+7. perform local wallpaper/profile/notification cleanup only after confirmed target deletion;
+8. keep switch/delete failure retryable with the target identity intact, while a post-delete
+   clear/stop failure reports restart reconciliation without claiming rollback; and
+9. rethrow coroutine cancellation rather than converting it into an identity failure.
+
+**Enforcement:** `ChatView`/`ComposeView` retain channel and member truth while
+`PlatformChannelConversationChrome` changes only Android chrome. `UserProfilesView` retains
+profile/preference/route/controller ownership while `PlatformIdentityCenterRoute` changes only
+Android composition. `UserDeletionLifecycle` types the existing non-atomic stages without adding a
+command or transaction. Focused common and Android tests cover channel chrome, one-to-one action
+dispatch, 48dp controls, and deletion ordering/failure truth; destructive lifecycle is repeated
+with disposable production identities on API 28 and API 35.
+
+### RULE-28: P23 Settings Ownership and P24 Archive/Migration Truth
+
+**Invariant:** Nome may replace the Android P23/P24 composition, but settings routes, database
+keys, archive export/import, destination copy, device migration, cleanup, and restart MUST remain
+owned by official v6.5.6 models, preferences, platform contracts, commands, and returned state.
+
+The Android presentation MUST:
+
+1. index and dispatch only existing settings routes, without inventing health, permission,
+   connectivity, version, or success facts;
+2. keep Desktop on its established settings/database presentation;
+3. show P24 not-started until a real archive or migration owner produces a later stage;
+4. omit synthetic percentage, completion, generic cancel, resume, restore, and rollback claims;
+5. restart chat after an export snapshot completes or its destination chooser is cancelled, while
+   leaving copy and snapshot deletion solely to the chooser result;
+6. register created database archives as `application/zip` on Android without changing bytes,
+   naming, archive format, import order, database semantics, or Desktop behavior;
+7. preserve the official destructive-import confirmation, key re-entry, replacement, and restart
+   lifecycle; and
+8. treat a migration upload stage with zero uploaded bytes as neither connectivity nor success,
+   and use only the existing Back cleanup/restart path; and
+9. disable outbound migration while chat is stopped, matching the official settings owner, while
+   keeping archive/database recovery reachable so its established start control is not stranded.
+
+**Enforcement:** `SettingsView` retains route ownership while `PlatformSettingsHomeRoute` and
+`PlatformBackupMigrationRoute` change only Android presentation. `DatabaseView` retains archive
+and key operations; `MigrateFromDeviceView` retains outbound transfer ownership. Focused tests
+cover existing-route dispatch, 48dp controls, stopped-chat migration gating, and forbidden
+synthetic copy. Disposable API 28/API 35 fixtures cover export cancellation/save, import
+round-trip/key re-entry, platform MIME selectability, migration abort, cleanup, and cold-start
+data preservation.

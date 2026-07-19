@@ -38,7 +38,12 @@ import dev.icerock.moko.resources.compose.painterResource
 import kotlinx.coroutines.*
 
 @Composable
-fun AddChannelView(chatModel: ChatModel, close: () -> Unit, closeAll: () -> Unit) {
+fun AddChannelView(
+  chatModel: ChatModel,
+  close: () -> Unit,
+  closeAll: () -> Unit,
+  openJoinChannel: () -> Unit,
+) {
   val view = LocalMultiplatformView()
   val bottomSheetModalState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
   val scope = rememberCoroutineScope()
@@ -53,6 +58,8 @@ fun AddChannelView(chatModel: ChatModel, close: () -> Unit, closeAll: () -> Unit
   val creationInProgress = rememberSaveable { mutableStateOf(false) }
   val showLinkStep = rememberSaveable { mutableStateOf(false) }
   val relayListExpanded = rememberSaveable { mutableStateOf(false) }
+  val cancellationInProgress =
+    rememberSaveable { mutableStateOf(false) }
 
   val gInfo = groupInfo.value
   if (showLinkStep.value && gInfo != null) {
@@ -60,6 +67,7 @@ fun AddChannelView(chatModel: ChatModel, close: () -> Unit, closeAll: () -> Unit
   } else if (gInfo != null) {
     ProgressStepView(
       chatModel, gInfo, groupRelays, relayListExpanded,
+      cancellationInProgress,
       onLinkReady = if (appPlatform.isDesktop) {
         {
           chatModel.creatingChannelId.value = null
@@ -74,18 +82,43 @@ fun AddChannelView(chatModel: ChatModel, close: () -> Unit, closeAll: () -> Unit
       } else {
         { showLinkStep.value = true }
       },
-      cancelChannelCreation = {
-        chatModel.creatingChannelId.value = null
-        ChannelRelaysModel.reset()
-        closeAll()
+      cancelChannelCreation = cancel@{
+        if (cancellationInProgress.value) {
+          return@cancel
+        }
+        cancellationInProgress.value = true
         withBGApi {
-          try {
-            chatModel.controller.apiDeleteChat(rh = null, type = ChatType.Group, id = gInfo.apiId)
-            withContext(Dispatchers.Main) {
-              chatModel.chatsContext.removeChat(null, gInfo.id)
+          val result =
+            cancelCreatedChannel(
+              delete = {
+              chatModel.controller.apiDeleteChat(
+                rh = null,
+                type = ChatType.Group,
+                id = gInfo.apiId,
+              )
+              },
+              onDeleted = {
+                withContext(Dispatchers.Main) {
+                  chatModel.creatingChannelId.value = null
+                  ChannelRelaysModel.reset()
+                  chatModel.chatsContext.removeChat(
+                    null,
+                    gInfo.id,
+                  )
+                  closeAll()
+                }
+              },
+            )
+          withContext(Dispatchers.Main) {
+            cancellationInProgress.value = false
+            if (result == ChannelCancellationResult.FAILED) {
+              AlertManager.shared.showAlertMsg(
+                title =
+                  generalGetString(
+                    MR.strings.error_deleting_group,
+                  ),
+              )
             }
-          } catch (e: Exception) {
-            Log.e(TAG, "cancelChannelCreation error: ${e.message}")
           }
         }
       }
@@ -103,6 +136,7 @@ fun AddChannelView(chatModel: ChatModel, close: () -> Unit, closeAll: () -> Unit
       scope = scope,
       view = view,
       close = close,
+      openJoinChannel = openJoinChannel,
       createChannel = {
         hideKeyboard(view)
         val trimmedName = displayName.value.trim()
@@ -215,11 +249,23 @@ private suspend fun chooseRandomRelays(): List<UserChatRelay> {
   return selected
 }
 
-private suspend fun checkHasRelays(): Boolean {
-  val servers = try { getUserServers(rh = null) } catch (_: Exception) { null } ?: return false
-  return servers.any { op ->
-    (op.operator?.enabled ?: true) &&
-    op.chatRelays.any { it.enabled && !it.deleted && it.chatRelayId != null }
+private suspend fun enabledRelayCount(): Int {
+  val servers =
+    try {
+      getUserServers(rh = null)
+    } catch (_: Exception) {
+      null
+    } ?: return 0
+  return servers.sumOf { op ->
+    if (op.operator?.enabled == false) {
+      0
+    } else {
+      op.chatRelays.count {
+        it.enabled &&
+          !it.deleted &&
+          it.chatRelayId != null
+      }
+    }
   }
 }
 
@@ -236,10 +282,19 @@ private fun ProfileStepView(
   scope: CoroutineScope,
   view: Any?,
   close: () -> Unit,
+  openJoinChannel: () -> Unit,
   createChannel: () -> Unit
 ) {
+  val relayCount = rememberSaveable {
+    mutableStateOf(0)
+  }
+  suspend fun reloadRelayCount() {
+    val count = enabledRelayCount()
+    relayCount.value = count
+    hasRelays.value = count > 0
+  }
   LaunchedEffect(Unit) {
-    hasRelays.value = checkHasRelays()
+    reloadRelayCount()
   }
 
   ModalBottomSheetLayout(
@@ -257,9 +312,54 @@ private fun ProfileStepView(
     sheetState = bottomSheetModalState,
     sheetShape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp)
   ) {
-    ModalView(close = close) {
-      ColumnWithScrollBar {
-        AppBarTitle(generalGetString(MR.strings.create_channel_title), bottomPadding = DEFAULT_PADDING_HALF)
+    val canCreate =
+      canCreateProfile(displayName.value) &&
+        hasRelays.value &&
+        !creationInProgress.value
+    PlatformChannelSetupRoute(
+      displayName = displayName,
+      profileImage = profileImage.value,
+      focusRequester = focusRequester,
+      enabledRelayCount = relayCount.value,
+      hasRelays = hasRelays.value,
+      creationInProgress = creationInProgress.value,
+      canCreate = canCreate,
+      currentProfileName =
+        chatModel.currentUser.value?.displayName
+          ?: "",
+      onEditImage = {
+        scope.launch {
+          bottomSheetModalState.show()
+        }
+      },
+      onDeleteImage = {
+        profileImage.value = null
+      },
+      onShowInvalidName = {
+        showInvalidNameAlert(
+          mkValidName(
+            displayName.value.trim(),
+          ),
+          displayName,
+        )
+      },
+      onConfigureRelays = {
+        ModalManager.start.showCustomModal { close ->
+          NetworkAndServersView {
+            close()
+            scope.launch {
+              reloadRelayCount()
+            }
+          }
+        }
+      },
+      onCreateChannel = createChannel,
+      onOpenJoinChannel = openJoinChannel,
+      onClose = close,
+    ) {
+      ModalView(close = close) {
+        ColumnWithScrollBar {
+          AppBarTitle(generalGetString(MR.strings.create_channel_title), bottomPadding = DEFAULT_PADDING_HALF)
         Row(
           Modifier
             .fillMaxWidth()
@@ -323,7 +423,6 @@ private fun ProfileStepView(
           iconColor = if (hasRelays.value) MaterialTheme.colors.primary else WarningOrange
         )
 
-        val canCreate = canCreateProfile(displayName.value) && hasRelays.value && !creationInProgress.value
         SettingsActionItem(
           painterResource(MR.images.ic_check),
           generalGetString(MR.strings.create_channel_button),
@@ -342,9 +441,10 @@ private fun ProfileStepView(
           }
         )
 
-        LaunchedEffect(Unit) {
-          delay(1000)
-          focusRequester.requestFocus()
+          LaunchedEffect(Unit) {
+            delay(1000)
+            focusRequester.requestFocus()
+          }
         }
       }
     }
@@ -357,6 +457,7 @@ private fun ProgressStepView(
   gInfo: GroupInfo,
   groupRelays: MutableState<List<GroupRelay>>,
   relayListExpanded: MutableState<Boolean>,
+  cancellationInProgress: MutableState<Boolean>,
   onLinkReady: () -> Unit,
   cancelChannelCreation: () -> Unit
 ) {
@@ -365,6 +466,9 @@ private fun ProgressStepView(
   val total = groupRelays.value.size
 
   fun showCancelAlert() {
+    if (cancellationInProgress.value) {
+      return
+    }
     val active = groupRelays.value.count { it.relayStatus == RelayStatus.Active && relayMemberConnFailed(chatModel, it) == null }
     val tot = groupRelays.value.size
     AlertManager.shared.showAlertDialog(
@@ -478,10 +582,17 @@ private fun ProgressStepView(
       SectionView {
         SettingsActionItem(
           painterResource(MR.images.ic_delete),
-          generalGetString(MR.strings.button_cancel_and_delete_channel),
+          generalGetString(
+            if (cancellationInProgress.value) {
+              MR.strings.deleting_channel
+            } else {
+              MR.strings.button_cancel_and_delete_channel
+            },
+          ),
           click = { showCancelAlert() },
           textColor = Color.Red,
           iconColor = Color.Red,
+          disabled = cancellationInProgress.value,
         )
         val enabled = activeCount > 0
         SettingsActionItem(
@@ -660,6 +771,11 @@ fun RelayProgressIndicator(active: Int, total: Int) {
 @Composable
 fun PreviewAddChannelView() {
   SimpleXTheme {
-    AddChannelView(chatModel = ChatModel, close = {}, closeAll = {})
+    AddChannelView(
+      chatModel = ChatModel,
+      close = {},
+      closeAll = {},
+      openJoinChannel = {},
+    )
   }
 }

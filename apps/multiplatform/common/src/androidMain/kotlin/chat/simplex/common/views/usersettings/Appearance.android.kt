@@ -23,8 +23,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import dev.icerock.moko.resources.compose.stringResource
 import androidx.compose.ui.unit.dp
+import chat.simplex.common.R
 import chat.simplex.common.model.*
 import chat.simplex.common.ui.theme.*
 import chat.simplex.common.views.helpers.*
@@ -34,17 +36,18 @@ import chat.simplex.common.helpers.APPLICATION_ID
 import chat.simplex.common.helpers.saveAppLocale
 import chat.simplex.common.model.ChatController.appPrefs
 import chat.simplex.res.MR
-import dev.icerock.moko.resources.ImageResource
-import dev.icerock.moko.resources.compose.painterResource
 import kotlinx.coroutines.delay
 
-enum class AppIcon(val image: ImageResource) {
-  DEFAULT(MR.images.ic_simplex_light),
-  DARK_BLUE(MR.images.ic_simplex_dark),
+enum class AppIcon(val image: Int) {
+  DEFAULT(R.drawable.icon_foreground_android_common),
+  DARK_BLUE(R.drawable.icon_foreground_android_common_dark),
 }
 
 @Composable
-actual fun AppearanceView(m: ChatModel) {
+actual fun AppearanceView(
+  m: ChatModel,
+  close: (() -> Unit)?,
+) {
   val appIcon = remember { mutableStateOf(findEnabledIcon()) }
   fun setAppIcon(newIcon: AppIcon) {
     if (appIcon.value == newIcon) return
@@ -66,6 +69,7 @@ actual fun AppearanceView(m: ChatModel) {
     appIcon,
     m.controller.appPrefs.appLanguage,
     m.controller.appPrefs.systemDarkTheme,
+    close = close,
     changeIcon = ::setAppIcon,
   )
 }
@@ -75,10 +79,11 @@ fun AppearanceScope.AppearanceLayout(
   icon: MutableState<AppIcon>,
   languagePref: SharedPreference<String?>,
   systemDarkTheme: SharedPreference<String?>,
+  close: (() -> Unit)? = null,
   changeIcon: (AppIcon) -> Unit,
 ) {
-  ColumnWithScrollBar {
-    AppBarTitle(stringResource(MR.strings.appearance_settings))
+  @Composable
+  fun Content() {
     SectionView(stringResource(MR.strings.settings_section_title_interface), contentPadding = PaddingValues()) {
       val context = LocalContext.current
       //      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -157,6 +162,17 @@ fun AppearanceScope.AppearanceLayout(
 
     SectionBottomSpacer()
   }
+  PlatformSettingsDetailRoute(
+    title = stringResource(MR.strings.appearance_settings),
+    onClose = close,
+    legacyContent = {
+      ColumnWithScrollBar {
+        AppBarTitle(stringResource(MR.strings.appearance_settings))
+        Content()
+      }
+    },
+    content = { Content() },
+  )
 }
 
 private fun findEnabledIcon(): AppIcon = AppIcon.values().firstOrNull { icon ->
@@ -173,6 +189,7 @@ fun PreviewAppearanceSettings() {
       icon = remember { mutableStateOf(AppIcon.DARK_BLUE) },
       languagePref = SharedPreference({ null }, {}),
       systemDarkTheme = SharedPreference({ null }, {}),
+      close = null,
       changeIcon = {},
     )
   }

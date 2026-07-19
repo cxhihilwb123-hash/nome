@@ -55,22 +55,43 @@ fun ModalData.NewChatSheet(
 
   val closeAll = { ModalManager.start.closeModals() }
   val addContact = {
-    ModalManager.start.showModalCloseable(endButtons = { AddContactLearnMoreButton() }) { _ ->
-      NewChatView(
-        chatModel.currentRemoteHost.value,
-        NewChatOption.INVITE,
-        close = closeAll,
-      )
+    if (appPlatform.isAndroid) {
+      ModalManager.start.showCustomModal(keyboardCoversBar = false) { _ ->
+        NewChatView(
+          chatModel.currentRemoteHost.value,
+          NewChatOption.INVITE,
+          close = closeAll,
+        )
+      }
+    } else {
+      ModalManager.start.showModalCloseable(endButtons = { AddContactLearnMoreButton() }) { _ ->
+        NewChatView(
+          chatModel.currentRemoteHost.value,
+          NewChatOption.INVITE,
+          close = closeAll,
+        )
+      }
     }
   }
   val scanPaste = {
-    ModalManager.start.showModalCloseable(endButtons = { AddContactLearnMoreButton() }) { _ ->
-      NewChatView(
-        chatModel.currentRemoteHost.value,
-        NewChatOption.CONNECT,
-        showQRCodeScanner = appPlatform.isAndroid,
-        close = closeAll,
-      )
+    if (appPlatform.isAndroid) {
+      ModalManager.start.showCustomModal(keyboardCoversBar = false) { _ ->
+        NewChatView(
+          chatModel.currentRemoteHost.value,
+          NewChatOption.CONNECT,
+          showQRCodeScanner = true,
+          close = closeAll,
+        )
+      }
+    } else {
+      ModalManager.start.showModalCloseable(endButtons = { AddContactLearnMoreButton() }) { _ ->
+        NewChatView(
+          chatModel.currentRemoteHost.value,
+          NewChatOption.CONNECT,
+          showQRCodeScanner = false,
+          close = closeAll,
+        )
+      }
     }
   }
   val createGroup = {
@@ -85,7 +106,15 @@ fun ModalData.NewChatSheet(
   }
   val createChannel = {
     ModalManager.start.showCustomModal { childClose ->
-      AddChannelView(chatModel, childClose, closeAll)
+      AddChannelView(
+        chatModel = chatModel,
+        close = childClose,
+        closeAll = closeAll,
+        openJoinChannel = {
+          childClose()
+          scanPaste()
+        },
+      )
     }
   }
 

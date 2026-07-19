@@ -1,6 +1,6 @@
 # Settings
 
-> **Related spec:** [spec/client/navigation.md](../../spec/client/navigation.md) | [spec/services/theme.md](../../spec/services/theme.md) | [spec/services/notifications.md](../../spec/services/notifications.md)
+> **Related spec:** [spec/client/navigation.md](../../spec/client/navigation.md) | [spec/client/nome-android-ui.md](../../spec/client/nome-android-ui.md) | [spec/services/theme.md](../../spec/services/theme.md) | [spec/services/notifications.md](../../spec/services/notifications.md)
 
 ## Purpose
 
@@ -21,6 +21,12 @@ Configure all aspects of app behavior including notifications, network/servers, 
 | Notifications | Full notification mode selection (instant/periodic/off) | Notification settings |
 | Use from desktop/mobile | "Use from desktop" option in UserPicker | "Link a mobile" / "Linked mobiles" option in UserPicker |
 | Database migration | "Migrate to another device" with auth | Same |
+
+Android's "Connect desktop" route uses the Nome full-page/grouped settings-detail presentation
+while retaining the official device-name, QR/address connect, discovery, verification,
+connected-session, disconnect, switch-local, and linked-device owners. Its title follows the real
+session state. The unpaired scanner state is not a paired or connected result. Removing a linked
+desktop requires destructive confirmation. Desktop keeps the established modal composition.
 
 ## Page Sections
 

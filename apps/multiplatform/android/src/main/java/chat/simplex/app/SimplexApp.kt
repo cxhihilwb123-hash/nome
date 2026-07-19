@@ -69,9 +69,10 @@ class SimplexApp: Application(), LifecycleEventObserver {
       }
     }
     context = this
+    val localeEvidence = NomeLocaleInitializer.capturePreInitializationEvidence(this)
     initHaskell(packageName)
     initMultiplatform()
-    NomeLocaleInitializer.initialize(this)
+    NomeLocaleInitializer.initialize(this, localeEvidence)
     reconfigureBroadcastReceivers()
     runMigrations()
     tmpDir.deleteRecursively()

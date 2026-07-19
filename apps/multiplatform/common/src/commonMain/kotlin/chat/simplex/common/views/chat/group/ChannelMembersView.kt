@@ -16,6 +16,7 @@ import chat.simplex.common.platform.*
 import chat.simplex.common.ui.theme.*
 import chat.simplex.common.views.chat.subscriberCountStr
 import chat.simplex.common.views.helpers.*
+import chat.simplex.common.views.usersettings.PlatformSettingsDetailRoute
 import chat.simplex.res.MR
 
 @Composable
@@ -34,50 +35,63 @@ fun ChannelMembersView(
           && m.memberRole != GroupMemberRole.Relay
     }
 
-  ColumnWithScrollBar {
-    val title = if (groupInfo.isOwner) {
+  val title = if (groupInfo.isOwner) {
       generalGetString(MR.strings.channel_members_title_subscribers)
     } else {
       generalGetString(MR.strings.channel_members_section_owners)
     }
-    AppBarTitle(title)
-
-    if (groupInfo.isOwner) {
-      val subscriberCount = groupInfo.groupSummary.publicMemberCount ?: (members.size + 1).toLong()
-      SectionView(title = subscriberCountStr(subscriberCount).uppercase()) {
-        SectionItemView(minHeight = 54.dp, padding = PaddingValues(horizontal = DEFAULT_PADDING)) {
-          ChannelMemberRow(groupInfo.membership, user = true, showRole = true)
-        }
-        members.forEachIndexed { index, member ->
-          Divider()
-          SectionItemView(
-            click = { showMemberInfo(member) },
-            minHeight = 54.dp,
-            padding = PaddingValues(horizontal = DEFAULT_PADDING)
-          ) {
-            ChannelMemberRow(member, user = false, showRole = member.memberRole >= GroupMemberRole.Owner)
+  val content: @Composable () -> Unit = {
+    Column {
+      if (groupInfo.isOwner) {
+        val subscriberCount = groupInfo.groupSummary.publicMemberCount ?: (members.size + 1).toLong()
+        SectionView(title = subscriberCountStr(subscriberCount).uppercase()) {
+          SectionItemView(minHeight = 54.dp, padding = PaddingValues(horizontal = DEFAULT_PADDING)) {
+            ChannelMemberRow(groupInfo.membership, user = true, showRole = true)
           }
-        }
-      }
-    } else {
-      val owners = members.filter { it.memberRole >= GroupMemberRole.Owner }
-      SectionView(title = generalGetString(MR.strings.channel_members_section_owners)) {
-        owners.forEachIndexed { index, member ->
-          if (index > 0) {
+          members.forEachIndexed { index, member ->
             Divider()
+            SectionItemView(
+              click = { showMemberInfo(member) },
+              minHeight = 54.dp,
+              padding = PaddingValues(horizontal = DEFAULT_PADDING)
+            ) {
+              ChannelMemberRow(member, user = false, showRole = member.memberRole >= GroupMemberRole.Owner)
+            }
           }
-          SectionItemView(
-            click = { showMemberInfo(member) },
-            minHeight = 54.dp,
-            padding = PaddingValues(horizontal = DEFAULT_PADDING)
-          ) {
-            ChannelMemberRow(member, user = false, showRole = false)
+        }
+      } else {
+        val owners = members.filter { it.memberRole >= GroupMemberRole.Owner }
+        SectionView(title = generalGetString(MR.strings.channel_members_section_owners)) {
+          owners.forEachIndexed { index, member ->
+            if (index > 0) {
+              Divider()
+            }
+            SectionItemView(
+              click = { showMemberInfo(member) },
+              minHeight = 54.dp,
+              padding = PaddingValues(horizontal = DEFAULT_PADDING)
+            ) {
+              ChannelMemberRow(member, user = false, showRole = false)
+            }
           }
         }
       }
+      SectionBottomSpacer()
     }
-    SectionBottomSpacer()
   }
+  val legacyContent: @Composable () -> Unit = {
+    ColumnWithScrollBar {
+    AppBarTitle(title)
+      content()
+    }
+  }
+  PlatformSettingsDetailRoute(
+    title = title,
+    onClose = close,
+    groupedContent = true,
+    legacyContent = legacyContent,
+    content = content,
+  )
 }
 
 @Composable

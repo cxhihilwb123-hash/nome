@@ -370,7 +370,7 @@ This is Android/client authentication behavior. It must not be implemented by ch
 **Category:** UI state / Error recovery / Permissions
 **Platform:** Android
 **Pages:** P04, P05, P06, P11, P12, P20, P22, P24
-**Decision status:** **[PARTIALLY IMPLEMENTED 2026-07-18 — P09 CLOSED; P23 PENDING]**
+**Decision status:** **[PARTIALLY IMPLEMENTED 2026-07-18 — P09, P12 CAMERA, AND P20 SETUP/CANCEL-SAFETY SUBSETS CLOSED; OTHER PAGE SUBSETS PENDING]**
 
 ### Recorded Decision
 
@@ -378,7 +378,7 @@ Add Android/client operation state around existing APIs: single submission, type
 
 ### Description
 
-The underlying create-user, notification-permission, accept-conditions, invitation-generation, QR parsing, channel deletion, user deletion, archive, and migration operations exist, but several pages lack durable page-level in-flight/failure/retry state. Android notification/camera handling also lacks consistently modelled denial/recovery behavior; camera handling specifically lacks a reachable permanent-denial/settings route and explicit camera-unavailable state. Some APIs return `null` after logging rather than a typed user-facing error (related to GAP-01). The current channel-creation cancel path ignores the Boolean delete outcome and removes local state anyway; active-user deletion is a non-atomic switch/delete/stop sequence whose failure does not necessarily preserve the previous active model. Ordinary archive export produces an internal file before opening the SAF destination chooser and does not retain a typed destination-copy result; ordinary import catches URI-copy exceptions but can let delete/import `Exception` paths escape to log-only outer handling after the destructive boundary.
+The underlying create-user, notification-permission, accept-conditions, invitation-generation, QR parsing, channel deletion, user deletion, archive, and migration operations exist, but several pages lack durable page-level in-flight/failure/retry state. P12 now keeps camera hardware optional, asks permission only after an explicit scan action, distinguishes no camera/denial/permanent denial, opens Android Settings for recovery, and closes frames/executors across failure and disposal. P20 now single-submits its setup action, retains official progress/link ownership, and finalizes local cancellation only after the existing delete command returns true; false or exception retains local state. Its real create/link/delete lifecycle remains open because the controlled producer returned a relay timeout before creation. Notification, user deletion, archive, migration, and the other listed page lifecycles remain open. Some APIs return `null` after logging rather than a typed user-facing error (related to GAP-01). Active-user deletion is a non-atomic switch/delete/stop sequence whose failure does not necessarily preserve the previous active model. Ordinary archive export produces an internal file before opening the SAF destination chooser and does not retain a typed destination-copy result; ordinary import catches URI-copy exceptions but can let delete/import `Exception` paths escape to log-only outer handling after the destructive boundary.
 
 ### Product Impact
 
@@ -402,7 +402,7 @@ Client operation state may wrap existing calls. It cannot manufacture an API res
 **Category:** Search / Information architecture
 **Platform:** Android
 **Pages:** P09, P23
-**Decision status:** **[DECIDED 2026-07-17 — RECOMMENDED ROUTE ADOPTED; IMPLEMENTATION PENDING]**
+**Decision status:** **[PARTIALLY IMPLEMENTED 2026-07-18 — ANDROID PRESENTATION/LOCAL ACTION BOUNDARY IMPLEMENTED; REAL PRODUCER ACCEPTANCE PENDING]**
 
 ### Recorded Decision
 
@@ -438,7 +438,7 @@ Local indexing and coordination are client features. They must not add a native 
 **Category:** Connection security / Product truth
 **Platform:** Android
 **Page:** P11
-**Decision status:** **[DECIDED 2026-07-17 — RECOMMENDED ROUTE ADOPTED; IMPLEMENTATION PENDING]**
+**Decision status:** **[IMPLEMENTED 2026-07-18 — PRODUCTION PRIMARY-STATE EVIDENCE OPEN]**
 
 ### Recorded Decision
 
@@ -447,6 +447,15 @@ Remove TTL, countdown, and expired claims. Keep generated, copied, shared, waiti
 ### Description
 
 v6.5.6 can create a one-time connection invitation and later receives connection events, but the client has no authoritative TTL/expiry timestamp. Current “showing invitation used” behavior can mean the user copied/shared the link, not that a remote party consumed it. Regeneration semantics are not an atomic replace guarantee.
+
+The Android P11 presentation now omits TTL and regeneration, distinguishes local copy/share from
+connection events, and continues to use the official `apiAddContact()` producer and
+`showingInvitation` lifecycle. Focused callback/truth tests and Android/Desktop compilation pass.
+The gap is not closed: one controlled API 35 client produced a real invitation and retained its
+read-only pending row after emulator disk reboot, but no bearer-safe reference-size READY capture
+was retained. A later bounded attempt returned the official relay error. The created/persisted
+local invitation is not peer use or connection, so READY visual acceptance and remote-use
+lifecycle proof remain open.
 
 ### Product Impact
 
@@ -470,15 +479,26 @@ No client timer may be presented as server/core expiry. The Android UI must cons
 **Category:** Connection state / Destructive actions
 **Platform:** Android
 **Pages:** P14, P15
-**Decision status:** **[DECIDED 2026-07-17 — RECOMMENDED ROUTE ADOPTED; IMPLEMENTATION PENDING]**
+**Decision status:** **[DECIDED 2026-07-17 — RECOMMENDED ROUTE ADOPTED; IMPLEMENTED, PRODUCER ACCEPTANCE OPEN]**
 
 ### Recorded Decision
 
 Remove the unsupported request-message control. Reject must use a discriminated Android/client result: only a typed `ContactRequestRejected` response, including its valid `contact_ == null` form, may remove the request; an API error retains it. A withdrawn/stale request is described only as unavailable after authoritative disappearance or not-found, without inventing a cause. A bare `userAddress == null` is loading/unknown; only a preserved `UserContactLinkNotFound` result is “off.” Address replacement is an explicit delete-then-create sequence with separate outcomes and recovery, never an atomic or rollback-guaranteed action.
 
+The Android presentation now implements this decision. P14 uses
+`APIRejectContactRequestResult.Rejected/Failure`, and P15 uses
+`APIUserAddressResult.Ready/NotFound/Failure`. Confirmed address state survives lookup failure;
+replace retry does not delete twice; onboarding stays on the official layout; and the existing
+short-link/profile-sharing paths remain wired. Focused tests, compilation, review, and renderer
+comparison pass. The controlled API 35 client proves P15 OFF and later created a real reusable
+address that remained available after emulator disk reboot; its redacted READY
+production/reference comparison passes. A second API 35 client reached the official P14 request
+confirmation using that address, then returned the official relay error and produced no incoming
+request on the source client. P15 READY visual acceptance is closed; P14 remains producer-blocked.
+
 ### Description
 
-Accept, incognito accept, reject, address creation, sharing, and deletion have core commands. There is no explicit stable “request withdrawn” UI state in all paths, and replacing a public contact address is not an atomic operation with a guaranteed rollback. The current `apiRejectContactRequest(): Contact?` wrapper returns null both for a successful `CR.ContactRequestRejected(contact_=null)` and for an error, while the current chat-list handler removes the request in either case; Nome therefore needs a discriminated client result before it may claim reject success. The P14 approved optional request-message field also has no `UserContactRequest` field or accept-command parameter. `CR.ReceivedContactRequest.chat_` means the request was created with an existing contact chat; it is not proof of a request message and cannot be repurposed as one.
+Accept, incognito accept, reject, address creation, sharing, and deletion have core commands. There is no explicit stable “request withdrawn” UI state in all paths, and replacing a public contact address is not an atomic operation with a guaranteed rollback. The legacy nullable reject wrapper remains for compatibility, while the Nome route consumes its discriminated result sibling and removes a request only after typed success. The P14 approved optional request-message field also has no `UserContactRequest` field or accept-command parameter. `CR.ReceivedContactRequest.chat_` means the request was created with an existing contact chat; it is not proof of a request message and cannot be repurposed as one.
 
 ### Product Impact
 
@@ -502,11 +522,29 @@ The Android shell cannot add transactional guarantees around multiple core comma
 **Category:** Safety / Moderation / Public channels
 **Platform:** Android
 **Pages:** P16, P18, P20
-**Decision status:** **[DECIDED 2026-07-17 — RECOMMENDED ROUTE ADOPTED; IMPLEMENTATION PENDING]**
+**Decision status:** **[PARTIALLY IMPLEMENTED 2026-07-18 — P16/P18 AND P20 SETUP IMPLEMENTED; P20 LINK PRODUCER PENDING]**
 
 ### Recorded Decision
 
 Remove the verified-admin-contact claim; link/owner verification is not contact security-code verification. Remove direct-chat reporting; expose reporting only under the existing exact group-message eligibility gate and route. Keep official compatible link output and do not create a Nome slug or domain until a separate ownership/release decision and capability exist.
+
+The Android P16 presentation now implements the first part of this decision. It labels only a
+real resolved inviter `Contact` with its existing verification fact, never calls that contact an
+administrator, and renders source-unavailable when no typed inviter contact can be resolved.
+Group/channel/profile/member/review facts come from `GroupInfo`; join and deletion remain the
+official commands. Its fixture comparison calibrates presentation only because the current API 35
+production client has no invited group. P18 now keeps the complete official action set but shows
+report only through the existing exact group-message Reports/member-role gate; the controlled
+direct-chat production sheet correctly contains no report action. P20 setup now truthfully says
+an official-compatible link is generated only after creation and shows no custom Nome domain. Its
+real creation attempt timed out before returning a group/link, so link lifecycle and deletion
+remain producer-pending rather than inferred.
+
+The audited v6.5.6 `ChannelRelaysView` also keeps owner-side Add and Remove relay entries behind
+commented `TODO [relays]` source. The Android reskin retains the real relay list, status, and member
+detail route only. It does not enable `AddGroupRelayView`, expose a removal action, or imply that
+relay management succeeded. Enabling those actions requires a separate official feature decision
+and producer-backed lifecycle verification.
 
 ### Description
 
@@ -534,7 +572,7 @@ This UI effort cannot change report routing, group-link metadata, relay protocol
 **Category:** Identity / Privacy wording
 **Platform:** Android
 **Page:** P22
-**Decision status:** **[DECIDED 2026-07-17 — RECOMMENDED ROUTE ADOPTED; IMPLEMENTATION PENDING]**
+**Decision status:** **[PARTIALLY CLOSED 2026-07-19 — P24 OFFICIAL-OWNER LANE VERIFIED; DEEP RECOVERY HARDENING REMAINS OPEN]**
 
 ### Recorded Decision
 
@@ -576,6 +614,14 @@ Use determinate progress only for real byte/stage events and indeterminate prese
 
 Archive export/import and device migration exist, but ordinary archive operations do not expose the determinate progress/cancel contract shown by the design. P03's migration entry/back/resume presentation inherits the same stage-specific leave/recovery boundary. Send-side process-death resume and a general rollback guarantee are not proven by the v6.5.6 client API. The v6.5.6 Kotlin flow also has safety-relevant presentation/control gaps that Nome must not inherit silently: link acceptance begins with a prefix-only test and advances even when standalone metadata is null; receiver import unconditionally deletes storage before import; the passphrase probe supplies `YesUp` before an upgrade confirmation UI; sender cancel cleanup differs by stage; corrupt persisted checkpoint JSON is not caught; sender and receiver passphrase fields use plaintext `rememberSaveable`; and receiver completion can clear the checkpoint or complete onboarding after a failed init/settings/start step.
 
+P24 now exposes only the official archive/database/migration owners and a truthful not-started
+landing. Disposable API 28/API 35 runs verify export cancellation/save/restart, real import
+round-trip with key re-entry, Android ZIP MIME compatibility, migration upload-stage abort,
+temporary cleanup, and cold-start preservation. The controlled migration producer remained at
+`0 bytes uploaded` / `0%`, so no online or success result is claimed. The broader receiver,
+process-death, checkpoint-corruption, secret-state, upgrade-confirmation, and completion-order
+issues above remain open; this bounded closure does not reclassify them.
+
 ### Product Impact
 
 An unsupported cancel, resume, or rollback promise can cause partial migration, duplicate actions, or data loss at the most sensitive point in the app.
@@ -598,7 +644,7 @@ Do not alter the archive format, migration protocol, database order, or native A
 **Category:** Network truth / Privacy wording
 **Platform:** Android
 **Pages:** P05, P06, P08, P20, P21, P23
-**Decision status:** **[DECIDED 2026-07-17 — P08 DEVICE-CONNECTIVITY SOURCE CONNECTED; OTHER PAGES AND GATES PENDING]**
+**Decision status:** **[PARTIALLY IMPLEMENTED 2026-07-18 — P08 DEVICE CONNECTIVITY AND P20 CONFIGURATION-COUNT PRESENTATION CONNECTED; OTHER PAGES/GATES PENDING]**
 
 ### Recorded Decision
 
@@ -611,6 +657,15 @@ The client can know Android connectivity, configured servers/operators, server-v
 ### Current P08 implementation boundary
 
 [`NetworkObserver.platformNetworkInfo`](../common/src/androidMain/kotlin/chat/simplex/common/helpers/NetworkObserver.kt#L16-L87) is nullable until Android connectivity is observed, and marks online only when the active network has both Internet and validated capabilities. The P08 adapter maps that fact to unknown/online/device-offline without changing `ChatModel.networkInfo` or inferring relay/server/global health. This resolves and verifies the missing first-observation source for the bounded P08 renderer only. It does not implement or validate the broader P05/P06/P20/P21/P23 evidence levels.
+
+### Current P20 implementation boundary
+
+P20 reports only the count of currently enabled, non-deleted configured chat relays returned by
+the existing server configuration owner. It labels this as configuration and routes recovery to
+the existing relay settings; it does not call the relays available, reachable, healthy, private,
+connected, or encrypted. A real public-channel creation attempt returned the official
+connection-timeout alert, which remains a failure observation and supplies no relay-health or
+link-success fact.
 
 ### Product Impact
 

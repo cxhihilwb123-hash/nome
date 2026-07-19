@@ -45,7 +45,7 @@ fun DatabaseView() {
   val chatLastStart = remember { mutableStateOf(prefs.chatLastStart.get()) }
   val chatArchiveFile = remember { mutableStateOf<String?>(null) }
   val stopped = remember { m.chatRunning }.value == false
-  val saveArchiveLauncher = rememberFileChooserLauncher(false) { to: URI? ->
+  val saveArchiveLauncher = rememberFileChooserLauncher(false, saveMimeType = "application/zip") { to: URI? ->
     val archive = chatArchiveFile.value
     if (archive != null && to != null) {
       copyFileToFile(File(archive), to) {}
@@ -577,7 +577,11 @@ private suspend fun exportArchive(
     AlertManager.shared.showAlertMsg(generalGetString(MR.strings.error_exporting_chat_database), e.toString())
     progressIndicator.value = false
   }
-  return false
+  // Export does not replace or invalidate the active database. Once the
+  // snapshot has been generated (or generation failed), the official wrapper
+  // can restart a chat that it stopped before opening the platform file
+  // chooser. The chooser result callback still owns copy/delete cleanup.
+  return true
 }
 
 suspend fun exportChatArchive(

@@ -121,7 +121,11 @@ class CallService: Service() {
   private fun createNotificationChannel(): NotificationManager? {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-      val channel = NotificationChannel(CALL_NOTIFICATION_CHANNEL_ID, CALL_NOTIFICATION_CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT)
+      val channel = NotificationChannel(
+        CALL_NOTIFICATION_CHANNEL_ID,
+        getString(R.string.nome_call_service_channel_name),
+        NotificationManager.IMPORTANCE_DEFAULT
+      )
       notificationManager.createNotificationChannel(channel)
       return notificationManager
     }
@@ -188,7 +192,6 @@ class CallService: Service() {
 companion object {
     const val TAG = "CALL_SERVICE"
     const val CALL_NOTIFICATION_CHANNEL_ID = "chat.simplex.app.CALL_SERVICE_NOTIFICATION"
-    const val CALL_NOTIFICATION_CHANNEL_NAME = "SimpleX Chat call service"
     const val CALL_SERVICE_ID = 6788
     const val WAKE_LOCK_TAG = "CallService::lock"
 

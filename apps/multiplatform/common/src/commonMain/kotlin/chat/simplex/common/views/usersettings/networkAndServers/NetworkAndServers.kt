@@ -84,7 +84,8 @@ fun ModalData.NetworkAndServersView(closeNetworkAndServers: () -> Unit) {
       onClose(close = { ModalManager.start.closeModals() })
     }
   }
-  ModalView(close = { onClose(closeNetworkAndServers) }) {
+  @Composable
+  fun Content() {
     NetworkAndServersLayout(
       currentRemoteHost = currentRemoteHost,
       networkUseSocksProxy = networkUseSocksProxy,
@@ -93,6 +94,7 @@ fun ModalData.NetworkAndServersView(closeNetworkAndServers: () -> Unit) {
       userServers = userServers,
       serverErrors = serverErrors,
       serverWarnings = serverWarnings,
+      close = { onClose(closeNetworkAndServers) },
       toggleSocksProxy = { enable ->
         val def = NetCfg.defaults
         val proxyDef = NetCfg.proxyDefaults
@@ -152,6 +154,13 @@ fun ModalData.NetworkAndServersView(closeNetworkAndServers: () -> Unit) {
       }
     )
   }
+  if (appPlatform.isAndroid) {
+    Content()
+  } else {
+    ModalView(close = { onClose(closeNetworkAndServers) }) {
+      Content()
+    }
+  }
 }
 
 @Composable fun NetworkAndServersLayout(
@@ -162,6 +171,7 @@ fun ModalData.NetworkAndServersView(closeNetworkAndServers: () -> Unit) {
   serverErrors: MutableState<List<UserServersError>>,
   serverWarnings: MutableState<List<UserServersWarning>>,
   userServers: MutableState<List<UserOperatorServers>>,
+  close: (() -> Unit)? = null,
   toggleSocksProxy: (Boolean) -> Unit,
 ) {
   val m = chatModel
@@ -203,11 +213,11 @@ fun ModalData.NetworkAndServersView(closeNetworkAndServers: () -> Unit) {
     }
   }
 
-  ColumnWithScrollBar {
+  @Composable
+  fun Content() {
     val showModal = { it: @Composable ModalData.() -> Unit -> ModalManager.start.showModal(content = it) }
     val showCustomModal = { it: @Composable (close: () -> Unit) -> Unit -> ModalManager.start.showCustomModal { close -> it(close) } }
 
-    AppBarTitle(stringResource(MR.strings.network_and_servers))
     // TODO: Review this and socks.
     if (!chatModel.desktopNoUserNoRemote) {
       SectionView(generalGetString(MR.strings.network_preset_servers_title).uppercase()) {
@@ -304,14 +314,60 @@ fun ModalData.NetworkAndServersView(closeNetworkAndServers: () -> Unit) {
     if (appPlatform.isAndroid) {
       SectionDividerSpaced()
       SectionView(generalGetString(MR.strings.settings_section_title_network_connection).uppercase()) {
-        val info = remember { chatModel.networkInfo }.value
-        SettingsActionItemWithContent(icon = null, info.networkType.text) {
-          Icon(painterResource(MR.images.ic_circle_filled), stringResource(MR.strings.icon_descr_server_status_connected), tint = if (info.online) Color.Green else MaterialTheme.colors.error)
+        val info =
+          PlatformObservedNetworkInfo(
+            remember { chatModel.networkInfo }.value,
+          )
+        SettingsActionItemWithContent(
+          icon = null,
+          info?.networkType?.text
+            ?: stringResource(
+              MR.strings.nome_device_network_status_unknown_title,
+            ),
+        ) {
+          Icon(
+            painterResource(MR.images.ic_circle_filled),
+            stringResource(
+              if (info == null) {
+                MR.strings.nome_device_network_status_unknown
+              } else if (info.online) {
+                MR.strings.icon_descr_server_status_connected
+              } else {
+                MR.strings.icon_descr_server_status_disconnected
+              },
+            ),
+            tint =
+              if (info == null) {
+                MaterialTheme.colors.secondary
+              } else if (info.online) {
+                MaterialTheme.colors.primary
+              } else {
+                MaterialTheme.colors.error
+              },
+          )
         }
       }
     }
     SectionBottomSpacer()
   }
+  PlatformSettingsDetailRoute(
+    title =
+      stringResource(
+        if (appPlatform.isAndroid) {
+          MR.strings.nome_servers_and_tor
+        } else {
+          MR.strings.network_and_servers
+        },
+      ),
+    onClose = close,
+    legacyContent = {
+      ColumnWithScrollBar {
+        AppBarTitle(stringResource(MR.strings.network_and_servers))
+        Content()
+      }
+    },
+    content = { Content() },
+  )
 }
 
 @Composable fun OnionRelatedLayout(

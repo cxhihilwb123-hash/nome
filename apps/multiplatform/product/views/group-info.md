@@ -20,6 +20,12 @@ View and manage group settings, member list, group preferences, group links, mem
   - Chat wallpaper -> wallpaper editor
   - Member support -> `MemberSupportView` (via `ModalManager.end`)
 
+On Android, the existing creation, invitation, group-info, profile, channel-member, and relay
+owners render inside Nome full-page/card presentation seams. These seams may change composition,
+density, and top-level navigation to match the adjacent P10/P16/P20/P21 visual acceptance
+baselines, but do not own group commands, model mutation, roles, validation, confirmation, or
+errors. Desktop keeps the official v6.5.6 composition.
+
 ## Page Sections
 
 ### Group Info Header
@@ -100,6 +106,11 @@ Displays `activeSortedMembers` (excluding left/removed members, sorted by role d
 | Invite button | Sends group invitations to selected contacts |
 | Group link option | Alternative to direct invitation |
 
+On Android, the group-info quick action invokes the page-owned `addMembers` callback rather than
+the older global modal helper. This preserves the same member refresh and invitation owner while
+keeping exactly one top-level Back control. Unchecked contact rows expose no checked-contact
+description; the checked description appears only after the real selection state changes.
+
 ### Group Member Info (`GroupMemberInfoView`)
 
 | Element | Description |
@@ -139,12 +150,15 @@ Accessible from channel info; shows relay members (role == `Relay`):
 | Relay list | Filtered from `chatModel.groupMembers` by `Relay` role; excludes `MemRemoved` and `MemGroupDeleted` |
 | Relay row | Profile image, relay display name, status text (`RelayStatus.text` or connection status via `relayConnStatus`) |
 | Relay tap | Navigates to `GroupMemberInfoView` with `groupRelay:` parameter |
-| Add relay entry | Owner-only "Add relay" action opens `AddGroupRelayView`; the available-to-add list excludes any `chatRelayId` already present in `groupRelays` (regardless of `relayStatus`), so inactive or rejected relays cannot be re-added without first removing them via the row's long-press menu |
-| Long-press menu | Owner-only "Remove relay" action for relays that can be removed |
 | Empty state | "No chat relays" |
 | Footer | "Chat relays forward messages to channel subscribers." |
 
 Owner sees relay status from `apiGetGroupRelays`; non-owner sees connection status only.
+
+**[GAP]** The v6.5.6 `ChannelRelaysView` keeps its Add and Remove relay UI behind
+`TODO [relays]` commented source. Nome renders only the real list/status/tap surfaces and does not
+re-enable or imitate those unavailable actions. `AddGroupRelayView` remains present in source but
+has no active route from this page.
 
 #### Channel Member Info — relay surface (in `GroupMemberInfoView`)
 
@@ -168,5 +182,9 @@ Owner sees relay status from `apiGetGroupRelays`; non-owner sees connection stat
 | `MemberAdmission.kt` | `views/chat/group/MemberAdmission.kt` |
 | `MemberSupportView.kt` | `views/chat/group/MemberSupportView.kt` |
 | `ChannelRelaysView.kt` | `views/chat/group/ChannelRelaysView.kt` |
-| `AddGroupRelayView.kt` | `views/chat/group/AddGroupRelayView.kt` |
+| `ChannelMembersView.kt` | `views/chat/group/ChannelMembersView.kt` |
+| `PlatformAddGroupMembersRoute*.kt` | `views/chat/group/` in commonMain/androidMain/desktopMain |
+| `PlatformGroupChatInfoRoute*.kt` | `views/chat/group/` in commonMain/androidMain/desktopMain |
+| `PlatformAddGroupRoute*.kt` | `views/newchat/` in commonMain/androidMain/desktopMain |
+| `AddGroupRelayView.kt` | `views/chat/group/AddGroupRelayView.kt` (source-present, not actively routed in v6.5.6) |
 | `AddChannelView.kt` (`RelayStatusIndicator`) | `views/newchat/AddChannelView.kt` |

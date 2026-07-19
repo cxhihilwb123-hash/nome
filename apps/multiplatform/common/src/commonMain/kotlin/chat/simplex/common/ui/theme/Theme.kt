@@ -848,7 +848,13 @@ fun SimpleXThemeOverride(theme: ThemeManager.ActiveTheme, content: @Composable (
         LocalContentColor provides MaterialTheme.colors.onBackground,
         LocalAppColors provides rememberedAppColors,
         LocalAppWallpaper provides rememberedWallpaper,
-        content = content)
+        content = {
+          PlatformNomeTheme(
+            darkTheme = !theme.colors.isLight,
+            content = content,
+          )
+        }
+      )
     }
   )
 }

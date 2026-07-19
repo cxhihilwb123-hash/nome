@@ -397,7 +397,12 @@ fun ChatView(
                 var preloadedLink: GroupLink? = null
                 if (chatInfo is ChatInfo.Direct) {
                   preloadedContactInfo = chatModel.controller.apiContactInfo(chatRh, chatInfo.apiId)
-                  preloadedCode = chatModel.controller.apiGetContactCode(chatRh, chatInfo.apiId)?.second
+                  chatModel.controller.apiGetContactCode(chatRh, chatInfo.apiId)?.let { (updatedContact, code) ->
+                    preloadedCode = code
+                    withContext(Dispatchers.Main) {
+                      chatModel.chatsContext.updateContact(chatRh, updatedContact)
+                    }
+                  }
                 } else if (chatInfo is ChatInfo.Group) {
                   setGroupMembers(chatRh, chatInfo.groupInfo, chatModel)
                   preloadedLink = chatModel.controller.apiGetGroupLink(chatRh, chatInfo.groupInfo.groupId)
@@ -407,7 +412,18 @@ fun ChatView(
                 val selectedItems: MutableState<Set<Long>?> = mutableStateOf(null)
                 ModalManager.end.showCustomModal { close ->
                   val appBar = remember { mutableStateOf(null as @Composable (BoxScope.() -> Unit)?) }
-                  ModalView(close, appBar = appBar.value) {
+                  ModalView(
+                    close,
+                    showAppBar =
+                      !(
+                        appPlatform.isAndroid &&
+                          (
+                            chatInfo is ChatInfo.Direct ||
+                              chatInfo is ChatInfo.Group
+                          )
+                      ),
+                    appBar = appBar.value
+                  ) {
                     val chatInfo = remember { activeChat }.value?.chatInfo
                     if (chatInfo is ChatInfo.Direct) {
                       var contactInfo: Pair<ConnectionStats?, Profile?>? by remember { mutableStateOf(preloadedContactInfo) }
@@ -415,8 +431,13 @@ fun ChatView(
                       KeyChangeEffect(chatInfo.id) {
                         contactInfo = chatModel.controller.apiContactInfo(chatRh, chatInfo.apiId)
                         preloadedContactInfo = contactInfo
-                        code = chatModel.controller.apiGetContactCode(chatRh, chatInfo.apiId)?.second
-                        preloadedCode = code
+                        chatModel.controller.apiGetContactCode(chatRh, chatInfo.apiId)?.let { (updatedContact, refreshedCode) ->
+                          code = refreshedCode
+                          preloadedCode = refreshedCode
+                          withContext(Dispatchers.Main) {
+                            chatModel.chatsContext.updateContact(chatRh, updatedContact)
+                          }
+                        }
                       }
                       ChatInfoView(chatsCtx, chatModel, chatInfo.contact, contactInfo?.first, contactInfo?.second, chatInfo.localAlias, code, close) {
                         showSearch.value = true
@@ -979,12 +1000,25 @@ fun ChatLayout(
       sheetShape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp)
     ) {
       val composeViewHeight = remember { mutableStateOf(0.dp) }
-      Box(Modifier.fillMaxSize().chatViewBackgroundModifier(MaterialTheme.colors, MaterialTheme.wallpaper, LocalAppBarHandler.current?.backgroundGraphicsLayerSize, LocalAppBarHandler.current?.backgroundGraphicsLayer, drawWallpaper = chatsCtx.secondaryContextFilter == null)) {
+      val chatBackgroundColors = if (appPlatform.isAndroid && MaterialTheme.colors.isLight) {
+        MaterialTheme.colors.copy(background = Color(0xFFF7F8FA))
+      } else {
+        MaterialTheme.colors
+      }
+      Box(Modifier.fillMaxSize().chatViewBackgroundModifier(chatBackgroundColors, MaterialTheme.wallpaper, LocalAppBarHandler.current?.backgroundGraphicsLayerSize, LocalAppBarHandler.current?.backgroundGraphicsLayer, drawWallpaper = chatsCtx.secondaryContextFilter == null && !appPlatform.isAndroid)) {
         val remoteHostId = remember { remoteHostId }.value
         val chat = remember { chat }.value
         val chatInfo = chat?.chatInfo
-        val oneHandUI = remember { appPrefs.oneHandUI.state }
+        val configuredOneHandUI = remember { appPrefs.oneHandUI.state }
+        val oneHandUI = remember(configuredOneHandUI) {
+          derivedStateOf { configuredOneHandUI.value && !appPlatform.isAndroid }
+        }
         val chatBottomBar = remember { appPrefs.chatBottomBar.state }
+        val directE2EEInfo = if (chatInfo is ChatInfo.Direct) {
+          nomeDirectE2EEInfo(chatsCtx.chatItems.value)
+        } else {
+          null
+        }
         val composeViewFocusRequester = remember { if (appPlatform.isDesktop) FocusRequester() else null }
         AdaptingBottomPaddingLayout(Modifier, CHAT_COMPOSE_LAYOUT_ID, composeViewHeight) {
           if (chat != null) {
@@ -1155,6 +1189,20 @@ fun ChatLayout(
                 }
               }
               if (
+                selectedChatItems.value == null &&
+                appPlatform.isAndroid &&
+                directE2EEInfo != null
+              ) {
+                NomeDirectE2EEBanner(directE2EEInfo)
+              }
+              PlatformChannelDisclosureBanner(
+                visible =
+                  selectedChatItems.value == null &&
+                    chatsCtx.secondaryContextFilter == null &&
+                    chatInfo is ChatInfo.Group &&
+                    chatInfo.groupInfo.useRelays,
+              )
+              if (
                 chatInfo is ChatInfo.Group
                 && (reportsCount > 0 || supportUnreadCount > 0)
                 && (!oneHandUI.value || !chatBottomBar.value)
@@ -1190,6 +1238,11 @@ fun BoxScope.ChatInfoToolbar(
   val showMenu = rememberSaveable { mutableStateOf(false) }
   val showContentFilterMenu = rememberSaveable { mutableStateOf(false) }
   val showCallMenu = rememberSaveable { mutableStateOf(false) }
+  val directE2EEInfo = if (chatInfo is ChatInfo.Direct) {
+    nomeDirectE2EEInfo(chatsCtx.chatItems.value)
+  } else {
+    null
+  }
 
   val onBackClicked = {
     if (!showSearch.value) {
@@ -1406,7 +1459,10 @@ fun BoxScope.ChatInfoToolbar(
       }
     }
   }
-  val oneHandUI = remember { appPrefs.oneHandUI.state }
+  val configuredOneHandUI = remember { appPrefs.oneHandUI.state }
+  val oneHandUI = remember(configuredOneHandUI) {
+    derivedStateOf { configuredOneHandUI.value && !appPlatform.isAndroid }
+  }
   val chatBottomBar = remember { appPrefs.chatBottomBar.state }
   val searchTrailingContent: @Composable (() -> Unit)? = if (showContentFilterButton) {{
     IconButton({ showContentFilterMenu.value = true }) {
@@ -1421,7 +1477,7 @@ fun BoxScope.ChatInfoToolbar(
 
   DefaultAppBar(
     navigationButton = { if (appPlatform.isAndroid || showSearch.value) { NavigationButtonBack(onBackClicked) }  },
-    title = { ChatInfoToolbarTitle(chatInfo) },
+    title = { ChatInfoToolbarTitle(chatInfo, e2eeInfo = directE2EEInfo) },
     onTitleClick = if (chatInfo is ChatInfo.Local) null else info,
     showSearch = showSearch.value,
     searchAlwaysVisible = contentFilter.value != null,
@@ -1429,6 +1485,7 @@ fun BoxScope.ChatInfoToolbar(
     searchPlaceholder = searchPlaceholder,
     onSearchValueChanged = onSearchValueChanged,
     searchTrailingContent = searchTrailingContent,
+    titleCentered = !appPlatform.isAndroid,
     buttons = { barButtons.forEach { it() } }
   )
   Box(Modifier.fillMaxWidth().wrapContentSize(Alignment.TopEnd)) {
@@ -1548,7 +1605,68 @@ fun subscriberCountStr(count: Long): String =
   else String.format(generalGetString(MR.strings.channel_subscriber_count_plural), count)
 
 @Composable
-fun ChatInfoToolbarTitle(cInfo: ChatInfo, imageSize: Dp = 40.dp, iconColor: Color = MaterialTheme.colors.secondaryVariant.mixWith(MaterialTheme.colors.onBackground, 0.97f)) {
+fun ChatInfoToolbarTitle(
+  cInfo: ChatInfo,
+  imageSize: Dp = 40.dp,
+  iconColor: Color = MaterialTheme.colors.secondaryVariant.mixWith(MaterialTheme.colors.onBackground, 0.97f),
+  e2eeInfo: E2EEInfo? = null,
+) {
+  if (appPlatform.isAndroid) {
+    Row(
+      horizontalArrangement = Arrangement.Start,
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      if (cInfo.incognito) {
+        IncognitoImage(size = 32.dp * fontSizeSqrtMultiplier, Indigo)
+      }
+      ChatInfoImage(cInfo, size = 36.dp * fontSizeSqrtMultiplier, iconColor)
+      Column(
+        modifier = Modifier.padding(start = 8.dp),
+        horizontalAlignment = Alignment.Start,
+      ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+          if ((cInfo as? ChatInfo.Direct)?.contact?.verified == true) {
+            ContactVerifiedShield()
+          }
+          NameWithBadge(
+            cInfo.displayName,
+            cInfo.nameBadge,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+          )
+        }
+        if (e2eeInfo != null) {
+          Surface(
+            color = MaterialTheme.colors.primary.copy(alpha = 0.10f),
+            contentColor = MaterialTheme.colors.primary,
+            shape = RoundedCornerShape(6.dp),
+            border = BorderStroke(1.dp, MaterialTheme.colors.primary.copy(alpha = 0.12f)),
+          ) {
+            Row(
+              modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.spacedBy(3.dp),
+            ) {
+              Icon(
+                painterResource(MR.images.ic_lock),
+                contentDescription = null,
+                modifier = Modifier.size(11.dp),
+                tint = MaterialTheme.colors.primary,
+              )
+              Text(
+                text = "E2EE",
+                color = MaterialTheme.colors.primary,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
+              )
+            }
+          }
+        }
+      }
+    }
+    return
+  }
   Row(
     horizontalArrangement = Arrangement.Center,
     verticalAlignment = Alignment.CenterVertically
@@ -1600,6 +1718,61 @@ fun ChatInfoToolbarTitle(cInfo: ChatInfo, imageSize: Dp = 40.dp, iconColor: Colo
         Modifier.padding(start = 10.dp)
       ) {
         SubStatusView(chatSubStatus)
+      }
+    }
+  }
+}
+
+private val NomeDirectE2EEBannerHeight = 52.dp
+
+internal fun nomeDirectE2EEInfo(chatItems: List<ChatItem>): E2EEInfo? {
+  for (item in chatItems.asReversed()) {
+    when (val content = item.content) {
+      is CIContent.SndDirectE2EEInfo -> return content.e2eeInfo
+      is CIContent.RcvDirectE2EEInfo -> return content.e2eeInfo
+      else -> Unit
+    }
+  }
+  return null
+}
+
+@Composable
+private fun NomeDirectE2EEBanner(e2eeInfo: E2EEInfo) {
+  Box(
+    modifier = Modifier
+      .fillMaxWidth()
+      .height(NomeDirectE2EEBannerHeight)
+      .padding(horizontal = 12.dp, vertical = 6.dp),
+  ) {
+    Surface(
+      modifier = Modifier.fillMaxSize(),
+      color = MaterialTheme.colors.primary.copy(alpha = 0.08f),
+      contentColor = MaterialTheme.colors.primary,
+      shape = RoundedCornerShape(12.dp),
+      border = BorderStroke(1.dp, MaterialTheme.colors.primary.copy(alpha = 0.16f)),
+      elevation = 0.dp,
+    ) {
+      Row(
+        modifier = Modifier.padding(horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+      ) {
+        Icon(
+          painter = painterResource(MR.images.ic_lock_filled),
+          contentDescription = null,
+          modifier = Modifier.size(18.dp),
+          tint = MaterialTheme.colors.primary,
+        )
+        Text(
+          text = stringResource(
+            if (e2eeInfo.pqEnabled == true) MR.strings.e2ee_info_pq_short else MR.strings.e2ee_info_no_pq_short
+          ),
+          modifier = Modifier.weight(1f),
+          color = MaterialTheme.colors.primary,
+          style = MaterialTheme.typography.body2.copy(fontWeight = FontWeight.Medium),
+          maxLines = 2,
+          overflow = TextOverflow.Ellipsis,
+        )
       }
     }
   }
@@ -1791,10 +1964,21 @@ fun BoxScope.ChatItemsList(
   val reversedChatItems = remember { derivedStateOf { chatsCtx.chatItems.value.asReversed() } }
   val reportsCount = reportsCount(chatInfo.id)
   val supportUnreadCount = supportUnreadCount(chatInfo.id)
+  val nomeDirectE2EEBannerVisible =
+    appPlatform.isAndroid &&
+      chatInfo is ChatInfo.Direct &&
+      nomeDirectE2EEInfo(chatsCtx.chatItems.value) != null
+  val nomeChannelDisclosureVisible =
+    appPlatform.isAndroid &&
+      chatsCtx.secondaryContextFilter == null &&
+      chatInfo is ChatInfo.Group &&
+      chatInfo.groupInfo.useRelays
   val topPaddingToContent = topPaddingToContent(
     chatView = chatsCtx.secondaryContextFilter == null,
     additionalTopBar = chatsCtx.secondaryContextFilter == null && (reportsCount > 0 || supportUnreadCount > 0)
-  )
+  ) +
+    (if (nomeDirectE2EEBannerVisible) NomeDirectE2EEBannerHeight else 0.dp) +
+    (if (nomeChannelDisclosureVisible) NomeChannelDisclosureHeight else 0.dp)
   val topPaddingToContentPx = rememberUpdatedState(with(LocalDensity.current) { topPaddingToContent.roundToPx() })
   val numberOfBottomAppBars = numberOfBottomAppBars()
 
@@ -1966,13 +2150,20 @@ fun BoxScope.ChatItemsList(
         fun ChatItemBox(modifier: Modifier = Modifier, content: @Composable () -> Unit = { }) {
           Box(
             modifier = modifier.padding(
-              bottom = if (itemSeparation.largeGap) {
-                if (itemAtZeroIndexInWholeList) {
-                  8.dp
-                } else {
-                  4.dp
-                }
-              } else 1.dp, top = if (previousItemSeparationLargeGap) 4.dp else 1.dp
+              bottom = if (appPlatform.isAndroid) {
+                if (itemSeparation.largeGap) 8.dp else 4.dp
+              } else if (itemSeparation.largeGap) {
+                if (itemAtZeroIndexInWholeList) 8.dp else 4.dp
+              } else {
+                1.dp
+              },
+              top = if (appPlatform.isAndroid) {
+                if (previousItemSeparationLargeGap) 6.dp else 2.dp
+              } else if (previousItemSeparationLargeGap) {
+                4.dp
+              } else {
+                1.dp
+              },
             ),
             contentAlignment = Alignment.CenterStart
           ) {
@@ -2374,14 +2565,16 @@ fun BoxScope.ChatItemsList(
 
       if (item.content is CIContent.ChatBanner) {
         Column {
-          Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-              .fillMaxSize()
-              .padding(horizontal = DEFAULT_PADDING)
-              .padding(bottom = 90.dp, top = DEFAULT_PADDING)
-          ) {
-            ChatBannerView()
+          if (!appPlatform.isAndroid) {
+            Box(
+              contentAlignment = Alignment.Center,
+              modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = DEFAULT_PADDING)
+                .padding(bottom = 90.dp, top = DEFAULT_PADDING)
+            ) {
+              ChatBannerView()
+            }
           }
 
           val prevItem = listItem.prevItem

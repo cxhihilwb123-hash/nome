@@ -81,10 +81,11 @@ fun ModalData.GroupChatInfoView(
       .filter { it.memberStatus != GroupMemberStatus.MemLeft && it.memberStatus != GroupMemberStatus.MemRemoved }
       .sortedByDescending { it.memberRole }
 
-    GroupChatInfoLayout(
-      chat,
-      groupInfo,
-      currentUser,
+    val groupInfoContent: @Composable (Boolean) -> Unit = { embeddedInNomeRoute ->
+      GroupChatInfoLayout(
+        chat,
+        groupInfo,
+        currentUser,
       sendReceipts = sendReceipts,
       setSendReceipts = { sendRcpts ->
         val chatSettings = (chat.chatInfo.chatSettings ?: ChatSettings.defaults).copy(sendRcpts = sendRcpts.bool)
@@ -113,8 +114,14 @@ fun ModalData.GroupChatInfoView(
           setGroupMembers(rhId, groupInfo, chatModel)
           if (!isActive) return@launch
 
-          ModalManager.end.showModalCloseable(true) { close ->
-            AddGroupMembersView(rhId, groupInfo, false, chatModel, close)
+          if (appPlatform.isAndroid) {
+            ModalManager.end.showCustomModal { close ->
+              AddGroupMembersView(rhId, groupInfo, false, chatModel, close)
+            }
+          } else {
+            ModalManager.end.showModalCloseable(true) { close ->
+              AddGroupMembersView(rhId, groupInfo, false, chatModel, close)
+            }
           }
         }
       },
@@ -172,7 +179,15 @@ fun ModalData.GroupChatInfoView(
           ModalManager.end.showModal { GroupLinkView(chatModel, rhId, groupInfo, groupLink, onGroupLinkUpdated, isChannel = groupInfo.useRelays, shareGroupInfo = groupInfo) }
       },
       onSearchClicked = onSearchClicked,
-      deletingItems = deletingItems
+        deletingItems = deletingItems,
+        embeddedInNomeRoute = embeddedInNomeRoute,
+      )
+    }
+    PlatformGroupChatInfoRoute(
+      title = groupInfo.groupProfile.displayName,
+      onClose = close,
+      content = { groupInfoContent(true) },
+      legacyContent = { groupInfoContent(false) },
     )
   }
 }
@@ -406,7 +421,8 @@ fun MuteButton(
 fun AddGroupMembersButton(
   modifier: Modifier,
   chat: Chat,
-  groupInfo: GroupInfo
+  groupInfo: GroupInfo,
+  addMembers: () -> Unit,
 ) {
   InfoViewActionButton(
     modifier = modifier,
@@ -418,7 +434,7 @@ fun AddGroupMembersButton(
       if (groupInfo.incognito) {
         openGroupLink(groupInfo = groupInfo, rhId = chat.remoteHostId)
       } else {
-        addGroupMembers(groupInfo = groupInfo, rhId = chat.remoteHostId)
+        addMembers()
       }
     }
   )
@@ -502,7 +518,8 @@ fun ModalData.GroupChatInfoLayout(
   manageGroupLink: () -> Unit,
   close: () -> Unit = { ModalManager.closeAllModalsEverywhere()},
   onSearchClicked: () -> Unit,
-  deletingItems: State<Boolean>
+  deletingItems: State<Boolean>,
+  embeddedInNomeRoute: Boolean = false,
 ) {
   val listState = remember { appBarHandler.listState }
   val scope = rememberCoroutineScope()
@@ -523,7 +540,9 @@ fun ModalData.GroupChatInfoLayout(
     val imePadding = WindowInsets.ime.asPaddingValues().calculateBottomPadding()
   LazyColumnWithScrollBar(
     state = listState,
-    contentPadding = if (oneHandUI.value) {
+    contentPadding = if (embeddedInNomeRoute) {
+      PaddingValues(vertical = DEFAULT_PADDING_HALF)
+    } else if (oneHandUI.value) {
       PaddingValues(
         top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + DEFAULT_PADDING + 5.dp,
         bottom = navBarPadding +
@@ -549,7 +568,11 @@ fun ModalData.GroupChatInfoLayout(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center
       ) {
-        GroupChatInfoHeader(chat.chatInfo, groupInfo)
+        GroupChatInfoHeader(
+          chat.chatInfo,
+          groupInfo,
+          compact = embeddedInNomeRoute,
+        )
       }
 
       LocalAliasEditor(chat.id, groupInfo.localAlias, isContact = false, updateValue = onLocalAliasChanged)
@@ -574,7 +597,7 @@ fun ModalData.GroupChatInfoLayout(
             MuteButton(modifier = Modifier.fillMaxWidth(1f), chat, groupInfo)
           } else if (!groupInfo.useRelays && groupInfo.canAddMembers) {
             SearchButton(modifier = Modifier.fillMaxWidth(0.33f), chat, groupInfo, close, onSearchClicked)
-            AddGroupMembersButton(modifier = Modifier.fillMaxWidth(0.5f), chat, groupInfo)
+            AddGroupMembersButton(modifier = Modifier.fillMaxWidth(0.5f), chat, groupInfo, addMembers)
             MuteButton(modifier = Modifier.fillMaxWidth(1f), chat, groupInfo)
           } else {
             SearchButton(modifier = Modifier.fillMaxWidth(0.5f), chat, groupInfo, close, onSearchClicked)
@@ -796,16 +819,28 @@ fun ModalData.GroupChatInfoLayout(
       SectionBottomSpacer()
     }
   }
-    if (!oneHandUI.value) {
+    if (!embeddedInNomeRoute && !oneHandUI.value) {
       NavigationBarBackground(oneHandUI.value, oneHandUI.value)
     }
-    SelectedItemsButtonsToolbar(chat, groupInfo, selectedItems, rememberUpdatedState(activeSortedMembers))
+    SelectedItemsButtonsToolbar(
+      chat,
+      groupInfo,
+      selectedItems,
+      rememberUpdatedState(activeSortedMembers),
+      embeddedInNomeRoute,
+    )
     SelectedItemsCounterToolbarSetter(groupInfo, selectedItems, filteredMembers, appBar)
   }
 }
 
 @Composable
-private fun BoxScope.SelectedItemsButtonsToolbar(chat: Chat, groupInfo: GroupInfo, selectedItems: MutableState<Set<Long>?>, activeMembers: State<List<GroupMember>>) {
+private fun BoxScope.SelectedItemsButtonsToolbar(
+  chat: Chat,
+  groupInfo: GroupInfo,
+  selectedItems: MutableState<Set<Long>?>,
+  activeMembers: State<List<GroupMember>>,
+  embeddedInNomeRoute: Boolean,
+) {
   val oneHandUI = remember { appPrefs.oneHandUI.state }
   Column(Modifier.align(Alignment.BottomCenter)) {
     AnimatedVisibility(selectedItems.value != null) {
@@ -838,7 +873,7 @@ private fun BoxScope.SelectedItemsButtonsToolbar(chat: Chat, groupInfo: GroupInf
         }
       )
     }
-    if (oneHandUI.value) {
+    if (!embeddedInNomeRoute && oneHandUI.value) {
       // That's placeholder to take some space for bottom app bar in oneHandUI
       Box(Modifier.height(AppBarHeight * fontSizeSqrtMultiplier))
     }
@@ -901,12 +936,25 @@ fun ChatTTLOption(chatItemTTL: State<ChatItemTTL?>, setChatItemTTL: (ChatItemTTL
 }
 
 @Composable
-private fun GroupChatInfoHeader(cInfo: ChatInfo, groupInfo: GroupInfo) {
+private fun GroupChatInfoHeader(
+  cInfo: ChatInfo,
+  groupInfo: GroupInfo,
+  compact: Boolean = false,
+) {
   Column(
     Modifier.padding(horizontal = DEFAULT_PADDING),
     horizontalAlignment = Alignment.CenterHorizontally
   ) {
-    ChatInfoImage(cInfo, size = 192.dp, iconColor = if (isInDarkTheme()) GroupDark else SettingsSecondaryLight)
+    ChatInfoImage(
+      cInfo,
+      size = if (compact) 72.dp else 192.dp,
+      iconColor =
+        if (isInDarkTheme()) {
+          GroupDark
+        } else {
+          SettingsSecondaryLight
+        },
+    )
     val clipboard = LocalClipboardManager.current
     val copyNameToClipboard = fun(name: String) {
       clipboard.setText(AnnotatedString(name))
@@ -916,7 +964,14 @@ private fun GroupChatInfoHeader(cInfo: ChatInfo, groupInfo: GroupInfo) {
     val copyDisplayName = { copyNameToClipboard(displayName) }
     Text(
       displayName,
-      style = MaterialTheme.typography.h1.copy(fontWeight = FontWeight.Normal),
+      style =
+        if (compact) {
+          MaterialTheme.typography.h2
+        } else {
+          MaterialTheme.typography.h1.copy(
+            fontWeight = FontWeight.Normal,
+          )
+        },
       color = MaterialTheme.colors.onBackground,
       textAlign = TextAlign.Center,
       maxLines = 3,
@@ -1234,8 +1289,14 @@ private fun ChannelMembersButton(rhId: Long?, groupInfo: GroupInfo, showMemberIn
     click = {
       withBGApi {
         setGroupMembers(rhId, groupInfo, chatModel)
-        ModalManager.end.showModalCloseable(true) { close ->
-          ChannelMembersView(rhId, groupInfo, chatModel, close) { member -> showMemberInfo(member, null) }
+        if (appPlatform.isAndroid) {
+          ModalManager.end.showCustomModal { close ->
+            ChannelMembersView(rhId, groupInfo, chatModel, close) { member -> showMemberInfo(member, null) }
+          }
+        } else {
+          ModalManager.end.showModalCloseable(true) { close ->
+            ChannelMembersView(rhId, groupInfo, chatModel, close) { member -> showMemberInfo(member, null) }
+          }
         }
       }
     },
@@ -1251,8 +1312,14 @@ private fun ChannelRelaysButton(rhId: Long?, groupInfo: GroupInfo, showMemberInf
     click = {
       withBGApi {
         setGroupMembers(rhId, groupInfo, chatModel)
-        ModalManager.end.showModalCloseable(true) { close ->
-          ChannelRelaysView(rhId, groupInfo, chatModel, close, showMemberInfo)
+        if (appPlatform.isAndroid) {
+          ModalManager.end.showCustomModal { close ->
+            ChannelRelaysView(rhId, groupInfo, chatModel, close, showMemberInfo)
+          }
+        } else {
+          ModalManager.end.showModalCloseable(true) { close ->
+            ChannelRelaysView(rhId, groupInfo, chatModel, close, showMemberInfo)
+          }
         }
       }
     },

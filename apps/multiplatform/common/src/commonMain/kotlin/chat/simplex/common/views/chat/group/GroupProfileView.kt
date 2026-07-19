@@ -100,109 +100,130 @@ fun GroupProfileLayout(
       sheetState = bottomSheetModalState,
       sheetShape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp)
     ) {
-      ModalView(close = closeWithAlert) {
-        ColumnWithScrollBar {
-          Column(
-            Modifier.fillMaxWidth()
-              .padding(horizontal = DEFAULT_PADDING)
+      val formContent: @Composable () -> Unit = {
+        Column(
+          Modifier.fillMaxWidth()
+            .padding(horizontal = DEFAULT_PADDING)
+        ) {
+          ReadableText(
+            if (isChannel) MR.strings.channel_profile_is_stored_on_subscribers_devices
+            else MR.strings.group_profile_is_stored_on_members_devices,
+            TextAlign.Center
+          )
+          Box(
+            Modifier
+              .fillMaxWidth()
+              .padding(bottom = 24.dp),
+            contentAlignment = Alignment.Center
           ) {
-            ReadableText(
-              if (isChannel) MR.strings.channel_profile_is_stored_on_subscribers_devices
-              else MR.strings.group_profile_is_stored_on_members_devices,
-              TextAlign.Center
-            )
-            Box(
-              Modifier
-                .fillMaxWidth()
-                .padding(bottom = 24.dp),
-              contentAlignment = Alignment.Center
-            ) {
-              Box(contentAlignment = Alignment.TopEnd) {
-                Box(contentAlignment = Alignment.Center) {
-                  ProfileImage(108.dp, profileImage.value, icon = groupInfo.chatIconName, color = MaterialTheme.colors.secondary.copy(alpha = 0.1f))
-                  EditImageButton { scope.launch { bottomSheetModalState.show() } }
-                }
-                if (profileImage.value != null) {
-                  DeleteImageButton { profileImage.value = null }
-                }
+            Box(contentAlignment = Alignment.TopEnd) {
+              Box(contentAlignment = Alignment.Center) {
+                ProfileImage(108.dp, profileImage.value, icon = groupInfo.chatIconName, color = MaterialTheme.colors.secondary.copy(alpha = 0.1f))
+                EditImageButton { scope.launch { bottomSheetModalState.show() } }
               }
-            }
-            Row(Modifier.padding(bottom = DEFAULT_PADDING_HALF).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-              Text(
-                stringResource(if (isChannel) MR.strings.channel_display_name_field else MR.strings.group_display_name_field),
-                fontSize = 16.sp
-              )
-              if (!isValidNewProfileName(displayName.value, groupProfile)) {
-                Spacer(Modifier.size(DEFAULT_PADDING_HALF))
-                IconButton({ showInvalidNameAlert(mkValidName(displayName.value), displayName) }, Modifier.size(20.dp)) {
-                  Icon(painterResource(MR.images.ic_info), null, tint = MaterialTheme.colors.error)
-                }
+              if (profileImage.value != null) {
+                DeleteImageButton { profileImage.value = null }
               }
-            }
-            ProfileNameField(displayName, "", { isValidNewProfileName(it, groupProfile) }, focusRequester)
-            if (groupProfile.fullName.trim().isNotEmpty() && groupProfile.fullName.trim() != groupProfile.displayName.trim()) {
-              Spacer(Modifier.height(DEFAULT_PADDING))
-              Text(
-                stringResource(if (isChannel) MR.strings.channel_full_name_field else MR.strings.group_full_name_field),
-                fontSize = 16.sp,
-                modifier = Modifier.padding(bottom = DEFAULT_PADDING_HALF)
-              )
-              ProfileNameField(fullName)
-            }
-
-            Spacer(Modifier.height(DEFAULT_PADDING))
-
-            Row(Modifier.padding(bottom = DEFAULT_PADDING_HALF).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-              Text(
-                stringResource(MR.strings.group_short_descr_field),
-                fontSize = 16.sp,
-              )
-              if (!bioFitsLimit(shortDescr.value)) {
-                Spacer(Modifier.size(DEFAULT_PADDING_HALF))
-                IconButton(
-                  onClick = { AlertManager.shared.showAlertMsg(title = generalGetString(MR.strings.group_descr_too_large)) },
-                  Modifier.size(20.dp)
-                ) {
-                  Icon(painterResource(MR.images.ic_info), null, tint = MaterialTheme.colors.error)
-                }
-              }
-            }
-            ProfileNameField(shortDescr, "", isValid = { bioFitsLimit(it) })
-
-            Spacer(Modifier.height(DEFAULT_PADDING))
-            val enabled = !dataUnchanged && canUpdateProfile(displayName.value, shortDescr.value, groupProfile)
-            val saveProfileLabel = if (isChannel) MR.strings.save_channel_profile else MR.strings.save_group_profile
-            if (enabled) {
-              Text(
-                stringResource(saveProfileLabel),
-                modifier = Modifier.clickable {
-                  saveProfile(
-                    groupProfile.copy(
-                      displayName = displayName.value.trim(),
-                      fullName = fullName.value.trim(),
-                      shortDescr = shortDescr.value.trim().ifEmpty { null },
-                      image = profileImage.value
-                    )
-                  )
-                },
-                color = MaterialTheme.colors.primary
-              )
-            } else {
-              Text(
-                stringResource(saveProfileLabel),
-                color = MaterialTheme.colors.secondary
-              )
             }
           }
+          Row(Modifier.padding(bottom = DEFAULT_PADDING_HALF).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(
+              stringResource(if (isChannel) MR.strings.channel_display_name_field else MR.strings.group_display_name_field),
+              fontSize = 16.sp
+            )
+            if (!isValidNewProfileName(displayName.value, groupProfile)) {
+              Spacer(Modifier.size(DEFAULT_PADDING_HALF))
+              IconButton({ showInvalidNameAlert(mkValidName(displayName.value), displayName) }, Modifier.size(20.dp)) {
+                Icon(painterResource(MR.images.ic_info), null, tint = MaterialTheme.colors.error)
+              }
+            }
+          }
+          ProfileNameField(displayName, "", { isValidNewProfileName(it, groupProfile) }, focusRequester)
+          if (groupProfile.fullName.trim().isNotEmpty() && groupProfile.fullName.trim() != groupProfile.displayName.trim()) {
+            Spacer(Modifier.height(DEFAULT_PADDING))
+            Text(
+              stringResource(if (isChannel) MR.strings.channel_full_name_field else MR.strings.group_full_name_field),
+              fontSize = 16.sp,
+              modifier = Modifier.padding(bottom = DEFAULT_PADDING_HALF)
+            )
+            ProfileNameField(fullName)
+          }
 
-          SectionBottomSpacer()
+          Spacer(Modifier.height(DEFAULT_PADDING))
 
+          Row(Modifier.padding(bottom = DEFAULT_PADDING_HALF).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(
+              stringResource(MR.strings.group_short_descr_field),
+              fontSize = 16.sp,
+            )
+            if (!bioFitsLimit(shortDescr.value)) {
+              Spacer(Modifier.size(DEFAULT_PADDING_HALF))
+              IconButton(
+                onClick = { AlertManager.shared.showAlertMsg(title = generalGetString(MR.strings.group_descr_too_large)) },
+                Modifier.size(20.dp)
+              ) {
+                Icon(painterResource(MR.images.ic_info), null, tint = MaterialTheme.colors.error)
+              }
+            }
+          }
+          ProfileNameField(shortDescr, "", isValid = { bioFitsLimit(it) })
+
+          Spacer(Modifier.height(DEFAULT_PADDING))
+          val enabled = !dataUnchanged && canUpdateProfile(displayName.value, shortDescr.value, groupProfile)
+          val saveProfileLabel = if (isChannel) MR.strings.save_channel_profile else MR.strings.save_group_profile
+          if (enabled) {
+            Text(
+              stringResource(saveProfileLabel),
+              modifier = Modifier.clickable {
+                saveProfile(
+                  groupProfile.copy(
+                    displayName = displayName.value.trim(),
+                    fullName = fullName.value.trim(),
+                    shortDescr = shortDescr.value.trim().ifEmpty { null },
+                    image = profileImage.value
+                  )
+                )
+              },
+              color = MaterialTheme.colors.primary
+            )
+          } else {
+            Text(
+              stringResource(saveProfileLabel),
+              color = MaterialTheme.colors.secondary
+            )
+          }
+        }
+
+        SectionBottomSpacer()
+
+        if (!appPlatform.isAndroid) {
           LaunchedEffect(Unit) {
             delay(300)
             focusRequester.requestFocus()
           }
         }
       }
+      val legacyContent: @Composable () -> Unit = {
+        ModalView(close = closeWithAlert) {
+          ColumnWithScrollBar {
+            formContent()
+          }
+        }
+      }
+      PlatformSettingsDetailRoute(
+        title =
+          stringResource(
+            if (isChannel) {
+              MR.strings.button_edit_channel_profile
+            } else {
+              MR.strings.button_edit_group_profile
+            },
+          ),
+        onClose = closeWithAlert,
+        groupedContent = true,
+        legacyContent = legacyContent,
+        content = formContent,
+      )
     }
 }
 

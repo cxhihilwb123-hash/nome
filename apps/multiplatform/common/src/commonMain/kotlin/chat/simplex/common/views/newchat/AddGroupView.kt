@@ -53,8 +53,14 @@ fun AddGroupView(chatModel: ChatModel, rh: RemoteHostInfo?, close: () -> Unit, c
           closeAll.invoke()
 
           if (!groupInfo.incognito) {
-            ModalManager.end.showModalCloseable(true) { close ->
-              AddGroupMembersView(rhId, groupInfo, creatingGroup = true, chatModel, close)
+            if (appPlatform.isAndroid) {
+              ModalManager.end.showCustomModal { close ->
+                AddGroupMembersView(rhId, groupInfo, creatingGroup = true, chatModel, close)
+              }
+            } else {
+              ModalManager.end.showModalCloseable(true) { close ->
+                AddGroupMembersView(rhId, groupInfo, creatingGroup = true, chatModel, close)
+              }
             }
           } else {
             ModalManager.end.showModalCloseable(true) { close ->
@@ -99,7 +105,8 @@ fun AddGroupLayout(
       sheetState = bottomSheetModalState,
       sheetShape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp)
     ) {
-      ModalView(close = close) {
+      val legacyContent: @Composable () -> Unit = {
+        ModalView(close = close) {
         ColumnWithScrollBar {
           AppBarTitle(stringResource(MR.strings.create_secret_group_title), hostDevice(rhId), bottomPadding = DEFAULT_PADDING_HALF)
           Row(
@@ -183,6 +190,52 @@ fun AddGroupLayout(
           }
         }
       }
+      }
+      PlatformAddGroupRoute(
+        displayName = displayName,
+        profileImage = profileImage.value,
+        focusRequester = focusRequester,
+        incognito = incognito,
+        canCreate = canCreateProfile(displayName.value),
+        profileDisclosure = sharedProfileInfo(chatModel, incognito.value),
+        onEditImage = {
+          scope.launch { bottomSheetModalState.show() }
+        },
+        onDeleteImage = { profileImage.value = null },
+        onShowInvalidName = {
+          showInvalidNameAlert(
+            mkValidName(displayName.value.trim()),
+            displayName,
+          )
+        },
+        onShowIncognitoInfo = {
+          ModalManager.start.showModal { IncognitoView() }
+        },
+        onIncognitoChange = {
+          incognitoPref.set(it)
+          incognito.value = it
+        },
+        onCreateGroup = {
+          createGroup(
+            incognito.value,
+            GroupProfile(
+              displayName = displayName.value.trim(),
+              fullName = "",
+              shortDescr = null,
+              image = profileImage.value,
+              groupPreferences =
+                GroupPreferences(
+                  history =
+                    GroupPreference(
+                      GroupFeatureEnabled.ON,
+                    ),
+                ),
+            ),
+          )
+        },
+        onClose = close,
+        legacyContent = legacyContent,
+      )
     }
 }
 
