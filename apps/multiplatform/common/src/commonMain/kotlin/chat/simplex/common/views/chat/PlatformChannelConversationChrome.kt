@@ -3,7 +3,14 @@ package chat.simplex.common.views.chat
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 
-internal val NomeChannelDisclosureHeight = 86.dp
+internal fun nomeChannelDisclosureHeight(
+  fontScale: Float,
+) =
+  120.dp *
+    maxOf(
+      1f,
+      fontScale,
+    )
 
 /**
  * Android-only presentation for public-channel disclosure and observer state.

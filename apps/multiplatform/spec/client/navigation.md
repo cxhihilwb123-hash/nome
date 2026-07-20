@@ -209,7 +209,7 @@ When the UserPicker is visible or a start modal is open (but no center modal), a
 
 ### StartPartOfScreen
 
-**Location:** [`StartPartOfScreen()`](../../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L366-L393)
+**Location:** [`StartPartOfScreen()`](../../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L449-L475)
 
 Routes between:
 - `SetDeliveryReceiptsView` (if `chatModel.setDeliveryReceipts` is true)
@@ -431,7 +431,7 @@ command, native core, protocol, database format, archive format, or migration op
 
 ## 11. Nome Android Production Home Seam
 
-[`StartPartOfScreen()`](../../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L366-L393) retains its existing branch ownership. Delivery-receipt setup still wins first, shared content still routes to `ShareListView`, and only the ordinary home branch runs the existing notice effect and calls [`PlatformHomeRoute()`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.kt#L16-L22). Therefore migration, database, onboarding, authentication, user-switching, call, privacy-alert, intent, modal, and share gates remain owned by the existing root.
+[`StartPartOfScreen()`](../../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L449-L475) retains its existing branch ownership. Delivery-receipt setup still wins first, shared content still routes to `ShareListView`, and only the ordinary home branch runs the existing notice effect and calls [`PlatformHomeRoute()`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.kt#L16-L22). Therefore migration, database, onboarding, authentication, user-switching, call, privacy-alert, intent, modal, and share gates remain owned by the existing root.
 
 The `commonMain` seam is the smallest sharing change that can replace the real home route without duplicating `AppScreen`, `ChatModel`, modal ownership, or navigation state:
 
@@ -467,7 +467,7 @@ Android ACTION_VIEW
   -> Android Nome P13 route
 ```
 
-[`connectIfOpenedViaUri`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatListView.kt#L738-L754)
+[`connectIfOpenedViaUri`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatListView.kt#L760-L791)
 is the only caller that passes `ExternalActionView`.
 [`planAndConnect`](../../common/src/commonMain/kotlin/chat/simplex/common/views/newchat/ConnectPlan.kt#L25-L607)
 defaults to `Legacy`, so New Chat, scan/paste, link search, message links, chat preview links, and

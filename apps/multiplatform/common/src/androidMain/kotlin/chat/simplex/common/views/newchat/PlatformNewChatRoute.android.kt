@@ -442,7 +442,6 @@ fun NomeOneTimeInvitationContent(
           SimpleXCreatedLinkQRCode(
             connLink = invitation,
             short = true,
-            modifier = Modifier.size(164.dp),
             padding = PaddingValues(0.dp),
             tintColor = NomeTheme.colors.textPrimary,
             onShare = {
@@ -450,6 +449,7 @@ fun NomeOneTimeInvitationContent(
               localAction =
                 NomeInvitationLocalAction.SHARED
             },
+            imageSize = 136.dp,
           )
         }
         Spacer(Modifier.height(4.dp))

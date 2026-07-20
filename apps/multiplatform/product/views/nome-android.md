@@ -3,16 +3,22 @@
 > **Status:** Foundation, P01–P10, P13, and the first two milestone checkpoints are frozen.
 > Milestone 3 source is implemented over official v6.5.6 owners and its concentrated
 > non-producer matrix is green; the exact local checkpoint input is under final reconciliation.
-> P11 produced and persisted a real one-time invitation, but its safe
-> reference-size ready capture remains open and a later attempt returned the official relay error.
-> P14 still has no delivered incoming request, and the API 35 P16 client has no received group
-> invitation. P15 has real OFF and READY production proof plus a redacted READY comparison.
+> P11 produced and persisted real one-time invitations and now has an accepted bearer-redacted
+> API 35 READY production/baseline comparison. P14 has a real pending request and accepted
+> API 35 production/baseline comparison.
+> P15 has real OFF and READY production proof plus a redacted READY comparison; P16 has real
+> controlled invitation/join/message proof plus API 35 private-invitation production calibration.
+> The reference's public-invitation state is terminally `NOT REACHABLE LOCALLY`, not visually
+> accepted from the private state.
 > `FIRST_USE` remains official onboarding/root-owned. `FILTERED_NO_RESULT` is reachable only from
 > the active P09 query producer and is not reclassified as P08. The P17 conversation shell and
-> P18 action sheet are implemented; their high-risk media/file/call P1 families remain open.
-> P19 is implemented with real two-client security-code lifecycle proof. P20 setup presentation is
-> implemented; its creation/link/delete producer gate remains open. P21 presentation is
-> implemented but awaits a real channel producer. P22 is implemented with API 28/API 35
+> P18 action sheet are implemented; real image-file transfer and connected audio-call lifecycle
+> pass. Fixed synthetic voice/video peer receipt, digest verification, and production playback
+> progress/termination/stop/cleanup also pass.
+> P19 is implemented with real two-client security-code lifecycle proof. P20 has a real controlled
+> create/link/populate/open/delete/absence lifecycle. P21 has a corrected API 35 owner-state
+> production comparison over that real channel; the reference's observer-only visual state remains
+> a declared external `NOT REACHABLE LOCALLY` gate and is not claimed accepted. P22 is implemented with API 28/API 35
 > destructive identity-lifecycle proof. P23/P24 are implemented with
 > API 35 visual acceptance plus disposable API 28/API 35 archive/migration lifecycle proof.
 > **Related spec:** [spec/client/nome-android-ui.md](../../spec/client/nome-android-ui.md)
@@ -132,7 +138,7 @@ presentation seams:
 
 - tokens, theme, components, and accessibility primitives: `common/src/androidMain/kotlin/chat/simplex/common/ui/nome/{tokens,theme,components,accessibility}/`;
 - Activity/window host: [`NomeProductionShell.kt`](../../android/src/main/java/chat/simplex/app/nome/NomeProductionShell.kt#L9-L23), installed around the unchanged `AppScreen` by [`MainActivity`](../../android/src/main/java/chat/simplex/app/MainActivity.kt#L60-L65);
-- shared home-selection seam only: [`PlatformHomeRoute.kt`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.kt#L8-L22), called from the existing [`StartPartOfScreen`](../../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L366-L393);
+- shared home-selection seam only: [`PlatformHomeRoute.kt`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.kt#L8-L22), called from the existing [`StartPartOfScreen`](../../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L449-L475);
 - Android P07–P09 Home renderer/adapters:
   [`NomeHomeRoute.android.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeRoute.android.kt),
   [`NomeHomeStateAdapter.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeStateAdapter.kt),
@@ -177,7 +183,7 @@ presentation seams:
 - instrumentation/device tests: `android/src/androidTest/java/chat/simplex/app/nome/`, including an explicit argument-gated real-core stop/start gate that preserves the exact non-empty cached chat-ID sequence.
 - shared P13 safe model and policy:
   [`PlatformConnectionPreview.kt`](../../common/src/commonMain/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreview.kt#L13-L292), offered only from
-  [`connectIfOpenedViaUri`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatListView.kt#L738-L754);
+  [`connectIfOpenedViaUri`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatListView.kt#L760-L791);
 - typed P13 command truth:
   [`apiConnectPlanResult` and `apiConnectResult`](../../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1571-L1647), which suppress P13 terminal command logging without changing legacy wrappers;
 - Android P13 actual, reducer, renderer, and bilingual resources:
@@ -296,14 +302,18 @@ only after the scan action. No-camera, denial, permanent denial/Settings, resume
 and executor disposal are Android platform states, not connection facts.
 
 Both production pages must match the P11/P12 visual acceptance baselines at the reference
-viewport/language. P12 has an accepted API 35 Chinese/light production comparison. P11 source and
-focused tests are implemented, but its primary production-state comparison stays open until a
-controlled client receives a real invitation result; loading/failure screenshots do not close
-that gate and no bearer-bearing raw capture is retained.
+viewport/language. P12 has an accepted API 35 Chinese/light production comparison. P11 now also
+has an accepted API 35 Chinese/light READY comparison from a real `CreatedConnLink`. The first
+comparison exposed that the shared QR default width overrode the Android size and rendered a
+216dp QR against the baseline's approximately 136dp geometry. The shared helper now accepts an
+optional explicit image size while preserving its default behavior; Android P11 uses 136dp.
+The retained production and side-by-side images redact the link and QR at capture time, and the
+semantics tree contains no bearer.
 
 ## Milestone 3 P14/P15 production boundary
 
-P14 opens from the existing contact-request owner and preserves the official current-profile,
+P14 opens from both official pending-request shapes—legacy `ContactRequest` and
+`Direct + contactRequestId`—and preserves the official current-profile,
 incognito, and reject actions. Accept mutates the chat list only after a real accepted `Contact`.
 Reject uses `APIRejectContactRequestResult`: only `Rejected`, including its valid null-contact
 form, removes the request; `Failure` retains it. The effect image's optional request message has no
@@ -319,11 +329,12 @@ address was deleted and retries only creation; it never claims rollback or atomi
 `FIRST_USE` and onboarding continue to use the official address layout unchanged.
 
 Both renderers use P14/P15 as page-level visual acceptance baselines and passed reference-size
-Chinese/light fixture comparisons plus focused API 35 tests. These fixture comparisons prove
-layout calibration only. The controlled API 35 client production-smoked P15 OFF, then the real
-create command returned the existing relay timeout alert before a `UserContactLinkCreated`
-result. P14 has no controlled incoming request. Their READY/request-primary production
-comparisons therefore remain open and no timeout, success, or online fact is synthesized.
+Chinese/light fixture comparisons plus focused API 35 tests. P15 later passed real OFF and
+bearer-redacted READY production comparison. The corrected P14 owner oracle found the official
+pending request in the real `Direct + contactRequestId` shape; Android Home now opens that real
+request, whose API 35 Chinese/light production comparison passes. The missing standalone request
+message and disabled incognito row remain truthful state differences, and no timeout, success,
+online, delivery, or security fact is synthesized.
 
 ## Milestone 3 P16 production boundary
 
@@ -340,12 +351,17 @@ invitation deletion, requires confirmation, and is not relabelled as cancel. Bac
 preview without mutating the invitation. Desktop declines the seam and retains the official
 alert.
 
-The renderer uses P16 as its visual acceptance baseline. The reference-size API 35 Chinese/light
-fixture comparison matches the baseline structure, hierarchy, warning, group card, fact rows,
-actions, and connection disclosure while retaining truthful official copy. Focused callback,
-single-submit, failure-retention, busy-back, destructive-confirmation, and 48dp checks pass. The
-fixture calibrates presentation only: the current API 35 production client has no invited group,
-so producer-backed P16 primary-state acceptance remains open.
+The renderer uses P16 as its visual acceptance baseline. A controlled real private
+`GroupMemberStatus.MemInvited` state was preserved on API 28, transferred through the official
+archive/import path with its database key crossing only an ephemeral in-memory bridge, and opened
+on a disposable API 35 client. Its reference-size Chinese/light comparison calibrates the shared
+structure, hierarchy, warning, group card, fact rows, actions, and connection disclosure while
+retaining truthful official copy. It does not close the reference's materially different public
+group, membership, and inviter state. That public-invitation visual state is terminally
+`NOT REACHABLE LOCALLY`; the private production state remains real and functionally ready.
+Focused callback, single-submit, failure-retention, busy-back, destructive-confirmation, and 48dp
+checks pass. The disposable client and archive were removed after capture. This does not claim
+that the invitation was joined or connected.
 
 ## Milestone 3 P17/P18 production boundary
 
@@ -371,9 +387,11 @@ The API 35 Chinese/light production comparison uses a real direct contact, an ac
 controlled-client message, and messages actually submitted through the production composer.
 P17 and P18 match the reference hierarchy, toolbar/banner placement, green/neutral palette,
 message surfaces, composer, scrim, sheet geometry, icon tiles, row density, and destructive color.
-The baseline's file and voice examples are not fabricated in production evidence. Their transfer,
+The baseline's file and voice examples are not fabricated in visual evidence. Their transfer,
 recording/playback, permission, and lifecycle coverage remains in the separate high-risk
-media/file P1 family; calls remain in the high-risk call family.
+media/file P1 family; that family now has controlled synthetic image, AAC, and H.264/AAC
+peer-receipt evidence with exact bytes/digest and production playback owners. Calls remain in the
+high-risk call family.
 
 ## Milestone 3 P19/P20 production boundary
 
@@ -408,22 +426,30 @@ fixed non-E2EE disclosure. Local cancellation finalization runs only after the e
 command returns true; false or exception retains local state.
 
 The API 35 Chinese/light setup page passed its production comparison with actual profile and
-configured-relay facts. A real create attempt then returned the official connection-timeout alert
-for `smp12.simplex.im` on retry, so no group, link, delete, relay-progress, or success state is
-claimed. P20 setup is ready for the milestone; creation/link/delete remains an open high-risk
-producer gate.
+configured-relay facts. Earlier controlled attempts returned official connection errors and remain
+negative evidence. A later bounded run returned a real group, non-empty official link, and three
+relay-progression results. A fresh single-process lifecycle then created, populated, opened, and
+officially deleted a controlled channel, mirrored the official UI's post-success model removal,
+and confirmed list absence. The retained local 154-byte attachment row is presentation proof only,
+not remote upload, delivery, observer receipt, or availability. P20 is ready for the milestone.
 
 ## Milestone 3 P21/P22 production boundary
 
 P21 stays inside the official loaded public-group chat. `ChatView` derives the fixed non-E2EE
 disclosure only from a real base channel whose `GroupInfo.useRelays` fact marks the public-channel
-route. `ComposeView` derives the read-only observer treatment only from the real current-member
-role. The timeline, member/history facts, composer, profile route, relay operations, and
-moderation eligibility remain official owners. Android changes the disclosure and observer
-presentation through `PlatformChannelConversationChrome`; Desktop keeps the established layout.
-No channel, history, observer, relay, online, moderation, or successful action is synthesized.
-The current controlled clients contain no real public channel, so P21 source and focused tests are
-complete but its production visual acceptance remains producer-blocked.
+route. Read-only observer treatment remains gated only by the real current-member role. On
+Android, actual simple text/file message content is projected into the P21 post-card composition;
+eligible file posts embed the official `CIFileView`, preserving its real receive, wait, progress,
+error, open, save, and callback behavior inside the Nome composition. System/lifecycle items
+retain their official legacy renderer rather than becoming fabricated posts. The timeline,
+member/history facts, composer, profile route, relay operations, and moderation eligibility
+remain official owners, while Desktop keeps the established layout. The real API 35 owner state
+was compared at the Chinese/light reference size after structure, history inset, card geometry,
+and attachment-color corrections. That comparison closes the owner presentation only:
+its official composer is intentionally not relabelled as the reference's observer-only state, so
+it does not close the observer-only visual baseline. Bounded observer attempts did not prove
+membership or receipt; that baseline remains a declared external `NOT REACHABLE LOCALLY` gate
+rather than accepted evidence.
 
 P22 keeps `UserProfilesView` and the existing users/controller preferences as the identity source.
 `PlatformIdentityCenterRoute` changes only the Android composition to match the baseline:
@@ -467,11 +493,14 @@ status, refresh, and tap owners. The v6.5.6 relay Add/Remove UI remains commente
 `TODO [relays]`, so Nome does not surface unavailable relay mutation.
 
 The controlled API 35 production client created one real private group with a synthetic local
-name. No contact was invited, no message was sent, and no destructive action was invoked.
-Creation and group-info primary states passed Chinese/light/reference-size adjacent P20/P16
-comparisons. Invitation and profile production routes each expose one top Back owner; the profile
-route does not force the IME. A real public channel and P20 channel create/link/delete results
-remain producer-blocked and are not inferred from the private-group evidence.
+name. No contact was invited, no message was sent, and no destructive action was invoked in that
+private-group capture. Creation and group-info primary states passed Chinese/light/reference-size
+adjacent P20/P16 comparisons. Invitation and profile production routes each expose one top Back
+owner; the profile route does not force the IME. A later controlled real public channel closed the
+separate P20 owner create/link/populate/open/delete/absence lifecycle and supplied a P21 owner
+presentation comparison. It does not close the observer-only baseline. Observer membership/post
+receipt remains explicitly not verified and is not inferred from either the private-group or
+owner-channel evidence.
 
 ## Milestone 3 P23/P24 production boundary
 
@@ -511,6 +540,13 @@ disconnect, and linked-device removal keep their existing owners. Linked-device 
 requires the already-defined destructive confirmation before invoking that owner. The typed
 session address is cleared only after an actual connect result, and disconnect clears or switches
 the official remote session as before.
+
+A release-isolated controlled API 28 remote-host/API 35 Android-controller lifecycle now closes
+the producer boundary without using the unpaired scanner as evidence. The official owners produced
+the invitation, matching session-code digests, connected host/controller state, local-session
+switch, stop, delete, and final absence from both official lists. The invitation crossed only an
+ephemeral host-memory relay, no code or invitation was logged or retained, temporary loopback
+forwarding was removed, and no Desktop presentation was changed.
 
 Android fullscreen modals are visually opaque routes, so the underlying Home tree is also hidden
 from accessibility while a fullscreen modal is open; the active modal, switching overlay, and
@@ -610,13 +646,15 @@ The 2026-07-17 delegated decision adopts the recommended route for GAP-08 throug
 The foundation, P01–P10, P13, and Milestones 1–2 remain frozen. First use remains
 onboarding-owned; only P09 closes the filtered-no-result producer gap. P11/P12, P14/P15, and P16
 remain in Milestone 3 with the producer boundaries recorded above; P12/P15 are ready, while P11
-still needs its safe ready-state capture and P14/P16 still lack received producer states. The P17 conversation
-shell and P18 action sheet are implemented; their separate high-risk media/file/call P1 families
-have local API 28/API 35 lifecycle proof but real transfer/playback/connected-call results remain
-producer-blocked. P19 and the P20 setup surface are implemented; P20 creation/link/delete remains
-producer-blocked. P21 presentation is implemented but awaits a real public-channel producer. The
-reachable private-group creation/admin presentation is ready for the milestone; shared channel
-admin presentation is ready but awaits that same public-channel producer. P22/P23/P24 are
+and P14 are also ready with real production states. P16 is functionally ready for its real private
+invitation state, while the reference's public-invitation visual state is `NOT REACHABLE LOCALLY`.
+The P17 conversation
+  shell and P18 action sheet are implemented; real controlled image-file transfer, connected
+  audio-call lifecycle, and fixed synthetic voice/video peer receipt plus production playback
+  pass. P19 is implemented. P20/P21 are ready with a real public-channel
+  create/link/populate/open/delete/absence lifecycle and accepted owner-state visual comparison.
+  The reachable private-group creation/admin and channel owner/admin presentations are ready for
+  the milestone. P22/P23/P24 are
 implemented and ready for the milestone.
 
 ## Current evidence
@@ -640,21 +678,32 @@ Current P02–P06 post-clarification and P09/P10 execution/visual comparisons ar
 `plans/evidence/20260718_nome_android_completion/`; no standalone ordinary-batch evidence root or
 checkpoint is created.
 
-P11/P12, P14/P15, and P16 tests are recorded in that same completion root. P12's accepted
-production comparison is closed. P11 has a real persisted invitation producer result, but its
-safe reference-size ready capture remains open. P14/P16 fixture comparisons are renderer
-calibration only. P15 has real OFF/READY production proof and a redacted READY comparison; this
-does not imply that the address was shared, used, or connected.
+P11/P12, P14/P15, and P16 tests are recorded in that same completion root. P11 and P12 production
+comparisons are closed; P11 retains only bearer-redacted READY artifacts and does not infer peer
+use. P14 has a real pending-request production comparison in addition to its renderer calibration.
+P15 has real OFF/READY production
+proof and a redacted READY comparison; this does not imply that the address was shared, used, or
+connected. P16 has real invitation/join/message proof and a private-production structural
+calibration; the reference's public-invitation visual state is not claimed as accepted.
 
 P19/P20 source, focused tests, production runs, comparison images, and privacy restoration are
 recorded in that completion root. P19 has real API 28/API 35 two-client verification lifecycle
-proof. P20 has an accepted API 35 production setup comparison only; the recorded relay timeout is
-a failure result, not channel creation or link evidence.
+proof. P20 has accepted setup visual evidence plus the later real controlled
+create/link/populate/open/delete/absence lifecycle. Earlier relay failures remain negative evidence.
 
-P21/P22 source, focused tests, P22 production comparison, identity lifecycle, and privacy
-restoration are recorded in the same completion root. P21 tests cover only real-fact projection;
-without a public-channel producer, no fixture rendering is promoted to production visual
-acceptance. P22 has real API 28/API 35 create/switch/delete/cold-start reconciliation proof.
+P21/P22 source, focused tests, production comparisons, identity lifecycle, and privacy restoration
+are recorded in the same completion root. P21 verifies the real API 35 owner route only; its local
+attachment is not remote-file proof and failed observer attempts are not promoted. The owner
+comparison is not acceptance of the reference's observer-only state, which remains externally
+`NOT REACHABLE LOCALLY`. P22 has real API 28/API 35 create/switch/delete/cold-start reconciliation
+proof.
+
+The P17 high-risk media evidence in the same completion root uses only controlled synthetic
+fixtures: a 5,413-byte AAC and a 6,016-byte H.264/AAC file. API 35 official send and API 28 peer
+receive verified exact decrypted SHA-256 and stable bytes, then the production audio/video players
+reached real progress/termination and stopped; controlled residues and temporary server selection
+were cleaned/restored. This proves only those two controlled items, not generic availability,
+delivery, network health, or online state.
 
 The private-group creation/admin ordinary group is recorded in the same completion root. Its
 focused tests, Android/Desktop compilation, real API 35 private-group production routes,

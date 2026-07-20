@@ -22,11 +22,13 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -41,6 +43,7 @@ import chat.simplex.common.ui.nome.components.NomeStatePanelState
 import chat.simplex.common.ui.nome.theme.NomeAndroidTheme
 import chat.simplex.common.ui.nome.theme.NomeTheme
 import chat.simplex.common.ui.nome.tokens.NomeColorTokens
+import chat.simplex.common.views.onboarding.SimpleXLogo
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -53,6 +56,20 @@ import kotlin.math.min
 class NomeFoundationComposeTest {
   @get:Rule
   val composeRule = createComposeRule()
+
+  @Test
+  fun onboardingBrand_usesApprovedCompactImageSlot() {
+    composeRule.setContent {
+      NomeAndroidTheme(darkTheme = false) {
+        SimpleXLogo()
+      }
+    }
+
+    composeRule.onNodeWithContentDescription(ONBOARDING_BRAND_LABEL)
+      .assertIsDisplayed()
+      .assertWidthIsEqualTo(104.dp)
+      .assertHeightIsEqualTo(44.dp)
+  }
 
   @Test
   fun nomeButton_meetsTouchTargetAndTalkBackContracts() {
@@ -506,6 +523,7 @@ class NomeFoundationComposeTest {
     val MINIMUM_TOUCH_TARGET = 48.dp
     const val MINIMUM_TEXT_AND_CONTROL_CONTRAST = 4.5
     const val MINIMUM_NON_TEXT_CONTRAST = 3.0
+    const val ONBOARDING_BRAND_LABEL = "Nome"
     const val ENABLED_BUTTON_LABEL = "Connect securely"
     const val DISABLED_BUTTON_LABEL = "Unavailable action"
     const val PRIMARY_ACTION_LABEL = "Open settings primary action"

@@ -29,6 +29,7 @@ fun SimpleXCreatedLinkQRCode(
   tintColor: Color = Color(0xff062d56),
   withLogo: Boolean = true,
   onShare: (() -> Unit)? = null,
+  imageSize: Dp? = null,
 ) {
   QRCode(
     connLink.simplexChatUri(short),
@@ -38,6 +39,7 @@ fun SimpleXCreatedLinkQRCode(
     tintColor,
     withLogo,
     onShare,
+    imageSize,
   )
 }
 

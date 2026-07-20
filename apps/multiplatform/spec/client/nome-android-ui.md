@@ -3,15 +3,18 @@
 > **Status:** Foundation, P01–P10, P13, and Milestones 1–2 are frozen. Milestone 3 source is
 > implemented and its concentrated non-producer matrix is green; the exact local checkpoint input
 > is under final reconciliation.
-> P11 has a real persisted invitation but still awaits a redacted-safe reference-size ready
-> capture. P14/P16 still await received producer-backed primary states. P15 OFF and READY are
-> production-proven without claiming share, use, or connection.
+> P11 has a real persisted invitation and accepted bearer-redacted API 35 READY comparison.
+> P14 has a real pending-request API 35 production/baseline comparison. P15 OFF and READY are
+> production-proven without claiming share, use, or connection; P16 has real controlled
+> invitation/join/message proof and private-invitation production calibration. The reference's
+> public-invitation visual state is `NOT REACHABLE LOCALLY`.
 > `FIRST_USE` remains official onboarding/root-owned.
 > `FILTERED_NO_RESULT` is reachable only from P09's real nonblank query producer and is not a
-> retroactive P08 claim. The P17 conversation shell and P18 action sheet are implemented; their
-> high-risk media/file/call P1 families remain open. P19 and the P20 setup surface are
-> implemented; P20 creation/link/delete remains producer-blocked. P21 presentation is implemented
-> but awaits a real channel producer. P22 is ready with API 28/API 35 destructive lifecycle proof.
+> retroactive P08 claim. The P17 conversation shell and P18 action sheet are implemented; real
+> image-file transfer, connected audio-call lifecycle, and fixed synthetic voice/video peer
+> receipt/digest/production-playback lifecycle pass. P19 is implemented. P20/P21 have a real controlled
+> create/link/populate/open/delete/absence lifecycle and accepted API 35 owner-state comparison.
+> P22 is ready with API 28/API 35 destructive lifecycle proof.
 > P23/P24 have API 35 visual acceptance and disposable API 28/API 35 archive/migration
 > lifecycle proof.
 > **Product view:** [product/views/nome-android.md](../../product/views/nome-android.md)
@@ -320,7 +323,9 @@ P11 renders a ready link/QR only from an official `CreatedConnLink`. Local copy/
 update local acknowledgement copy but cannot mark a link peer-used, connected, expired, or safely
 replaced. No invitation bearer enters saved state, semantics, logs, test fixtures, retained raw
 screenshots, or evidence filenames. The visible identity header invokes only the existing profile
-picker callback.
+picker callback. The shared QR helper's optional `imageSize` parameter defaults to the upstream
+responsive behavior for every existing caller; Android P11 alone requests 136dp so its production
+geometry matches the page-level baseline instead of inheriting the generic 63%-width QR.
 
 P12 starts with the scanner inactive. Camera permission is requested only after the explicit scan
 action; missing camera, first denial, permanent denial/Settings, resume, analyzer-frame closure,
@@ -333,6 +338,8 @@ and `planAndConnect(..., Legacy)` path and therefore do not broaden P13's extern
 
 `contactRequestAlertDialog` offers `PlatformContactRequestRoute` before the legacy alert. Android
 renders the actual requester and current local identity and invokes the existing accept action.
+The owner accepts both official pending shapes: legacy `ChatInfo.ContactRequest` and
+`ChatInfo.Direct` with `nextAcceptContactRequest` plus a non-null `contactRequestId`.
 Only an accepted `Contact` updates/replaces the request row. The new
 `apiRejectContactRequestResult` distinguishes `Rejected(contact?)` from `Failure`; only the former
 removes the request. Desktop returns `false` and preserves the existing alert. P14 has no
@@ -349,11 +356,11 @@ create; a create failure after delete exposes a create-only retry and never repe
 claims rollback.
 
 P14/P15 share only Android layout primitives and fixed bilingual resources. Their reference-size
-Chinese/light renderer fixture comparisons calibrate composition and accessibility but are not
-production acceptance. The API 35 production OFF route is smoke-tested. A real address-create
-attempt returned the official connection-timeout alert before any created address, and no
-controlled incoming contact request exists, so the required request/READY primary-state
-comparisons remain open.
+Chinese/light renderer fixture comparisons calibrate composition and accessibility. P15 later
+passed real OFF and bearer-redacted READY production acceptance. The corrected P14 owner oracle
+found a real pending `Direct + contactRequestId`; Home opened the production request route, whose
+same-size API 35 comparison passes. The absent standalone message and disabled incognito option
+are truthful state differences, not synthesized capabilities.
 
 ### P16 typed truth and route boundary
 
@@ -371,10 +378,14 @@ keeps the official path. The preview closes only after accepted/unavailable term
 generic failure retains the invitation for retry. Delete uses the existing `apiDeleteChat`
 mutation only after explicit confirmation. Back is command-free, and Desktop returns `false`.
 
-The reference-size Chinese/light P16 fixture comparison calibrates layout only. It proves no real
-invitation, join, or connection state. The current API 35 production client reached the real Home
-route with screenshot protection restored but has no invited group, so primary-state production
-acceptance remains open.
+A controlled real private `GroupMemberStatus.MemInvited` state was preserved on API 28 and transferred
+through the official archive/import path to a disposable API 35 client; the database key crossed
+only an ephemeral in-memory bridge. The reference-size Chinese/light comparison calibrates shared
+P16 composition but does not close the reference's materially different public-group,
+membership, and inviter facts. The public-invitation visual state is terminally
+`NOT REACHABLE LOCALLY`; the private production route remains real and functionally ready. The
+disposable client and archive were removed after capture and screenshot protection was restored.
+This does not claim join or connection success.
 
 ### P17/P18 conversation and message-action boundary
 
@@ -382,7 +393,7 @@ acceptance remains open.
 continues to own the loaded chat, item list, official toolbar actions, composer, and navigation.
 Android changes the layout/background, omits the upstream timeline introduction card, and projects
 the fixed E2EE banner through
-[`nomeDirectE2EEInfo`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chat/ChatView.kt#L1700-L1713).
+[`nomeDirectE2EEInfo`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chat/ChatView.kt#L1748-L1757).
 That helper selects the newest actual direct E2EE item and returns `null` when no producer exists;
 the header chip and banner are therefore fail-closed rather than generic security claims.
 
@@ -440,15 +451,17 @@ or success. Join invokes the existing P12 scan/paste callback and relay configur
 existing Settings route.
 
 `cancelCreatedChannel` calls the existing delete owner exactly once and runs local removal only
-for a true result. False and exception keep local state. A controlled API 35 create attempt
-returned the official relay timeout before any `GroupInfo`/`GroupLink`; therefore the accepted P20
-production comparison closes only the setup surface, not creation, progress, link, cancellation,
-or deletion.
+for a true result. False and exception keep local state. Earlier controlled API 35 attempts ended
+with official relay errors. A later bounded producer returned a real `GroupInfo`, non-empty
+`GroupLink`, and three relay-progression results. A fresh single-process lifecycle then created,
+populated, opened, and officially deleted a controlled channel, performed the same post-success
+model removal as the official UI, and confirmed absence. Its 154-byte local attachment row is not
+remote upload, delivery, observer receipt, or availability evidence.
 
 ### P13 typed truth and route boundary
 
 The only production opt-in is
-[`connectIfOpenedViaUri`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatListView.kt#L738-L754).
+[`connectIfOpenedViaUri`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatListView.kt#L760-L791).
 [`planAndConnect`](../../common/src/commonMain/kotlin/chat/simplex/common/views/newchat/ConnectPlan.kt#L25-L607)
 defaults every other caller to `Legacy`. The safe adapter normalizes all 21 current plan branches
 and marks exactly seven eligible: invitation fresh/own, address fresh/own/repeat-request, and group
@@ -487,7 +500,7 @@ group details. P10 remains a route hub and does not opt its internal actions int
 - P01 affected renderer reference and packaging guard: [`NomeDatabaseRootEvidenceActivity`](../../android/src/debug/java/chat/simplex/app/nome/database/NomeDatabaseRootEvidenceActivity.kt), [`NomeDatabaseRootScreenshotTest`](../../android/src/androidTest/java/chat/simplex/app/nome/database/NomeDatabaseRootScreenshotTest.kt), and [`NomeDatabaseRootPackagingTest`](../../android/src/androidTest/java/chat/simplex/app/nome/database/NomeDatabaseRootPackagingTest.kt);
 - deterministic debug entry: [`NomeFixtureSpec`](../../android/src/debug/java/chat/simplex/app/nome/fixtures/NomeFixtureSpec.kt#L7-L93), [`NomeFoundationFixture`](../../android/src/debug/java/chat/simplex/app/nome/fixtures/NomeFoundationFixtures.kt#L54-L822), [`NomeFoundationActivity`](../../android/src/debug/java/chat/simplex/app/nome/harness/NomeFoundationActivity.kt#L23-L76), and [`NomeDesignSystemPreviews`](../../android/src/debug/java/chat/simplex/app/nome/preview/NomeDesignSystemPreviews.kt#L20-L111);
 - contract/device evidence: [`NomeFoundationContractTest`](../../android/src/test/java/chat/simplex/app/nome/NomeFoundationContractTest.kt#L8-L20), [`NomeAndroidPackagingTest`](../../android/src/androidTest/java/chat/simplex/app/nome/NomeAndroidPackagingTest.kt#L15-L47), [`NomeFoundationComposeTest`](../../android/src/androidTest/java/chat/simplex/app/nome/NomeFoundationComposeTest.kt#L53-L513), and [`NomeFoundationScreenshotTest`](../../android/src/androidTest/java/chat/simplex/app/nome/NomeFoundationScreenshotTest.kt#L20-L267).
-- shared/host split: [`StartPartOfScreen()`](../../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L366-L393), [`PlatformHomeRoute()`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.kt#L16-L22), [`NomeProductionShell()`](../../android/src/main/java/chat/simplex/app/nome/NomeProductionShell.kt#L17-L23), [Android actual](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeRoute.android.kt#L63-L123), and [Desktop fallback](../../common/src/desktopMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.desktop.kt#L9-L17);
+- shared/host split: [`StartPartOfScreen()`](../../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L449-L475), [`PlatformHomeRoute()`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.kt#L16-L22), [`NomeProductionShell()`](../../android/src/main/java/chat/simplex/app/nome/NomeProductionShell.kt#L17-L23), [Android actual](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeRoute.android.kt#L63-L123), and [Desktop fallback](../../common/src/desktopMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.desktop.kt#L9-L17);
 - typed load/connectivity facts: [`ChatListLoadGeneration`, `ChatListLoadState`, and `ChatListLoadResult`](../../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L81-L106), [`applyChatListLoadResult()`](../../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L264-L311), [`apiGetChatsResult()`](../../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1054-L1081), and [`platformNetworkInfo`](../../common/src/androidMain/kotlin/chat/simplex/common/helpers/NetworkObserver.kt#L18-L24);
 - P07/P08 adapter and renderer: [`NomeHomeStateAdapter.derive()`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeStateAdapter.kt#L49-L121) and [`NomeHomeRouteContent()`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeRoute.android.kt#L125-L280);
 - P09 search adapter/route: [`NomeSearchStateAdapter.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeSearchStateAdapter.kt) and [`NomeSearchRoute.android.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeSearchRoute.android.kt);
@@ -499,7 +512,7 @@ group details. P10 remains a route hub and does not opt its internal actions int
 - P19/P20 focused contracts: [`NomeContactVerificationPolicyTest.kt`](../../common/src/commonTest/kotlin/chat/simplex/common/views/chat/NomeContactVerificationPolicyTest.kt), [`NomeChannelCancellationPolicyTest.kt`](../../common/src/commonTest/kotlin/chat/simplex/common/views/newchat/NomeChannelCancellationPolicyTest.kt), and [`NomeSecurityAndChannelComposeTest.kt`](../../android/src/androidTest/java/chat/simplex/app/nome/connection/NomeSecurityAndChannelComposeTest.kt);
 - P16 shared/Android/Desktop invitation seam: [`PlatformGroupInvitationRoute.kt`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformGroupInvitationRoute.kt), [`PlatformGroupInvitationRoute.android.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/views/chatlist/PlatformGroupInvitationRoute.android.kt), and [`PlatformGroupInvitationRoute.desktop.kt`](../../common/src/desktopMain/kotlin/chat/simplex/common/views/chatlist/PlatformGroupInvitationRoute.desktop.kt);
 - remote-desktop Android frame and official state/command owners: [`ConnectDesktopView()`](../../common/src/commonMain/kotlin/chat/simplex/common/views/remote/ConnectDesktopView.kt#L47-L168), [`NomeRemoteDesktopFrame()`](../../common/src/commonMain/kotlin/chat/simplex/common/views/remote/ConnectDesktopView.kt#L170-L184), and the confirmed linked-device removal path in [`LinkedDesktopsView()`](../../common/src/commonMain/kotlin/chat/simplex/common/views/remote/ConnectDesktopView.kt#L504-L540);
-- Android fullscreen-modal semantics and intent dispatch: [`MainScreen()`](../../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L181-L280), [`MainActivity.onCreate()` / `onNewIntent()`](../../android/src/main/java/chat/simplex/app/MainActivity.kt#L33-L71), and [`dispatchMainActivityIntent()`](../../android/src/main/java/chat/simplex/app/MainActivity.kt#L135-L144);
+- Android fullscreen-modal semantics and intent dispatch: [`MainScreen()`](../../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L92-L446), [`MainActivity.onCreate()` / `onNewIntent()`](../../android/src/main/java/chat/simplex/app/MainActivity.kt#L33-L71), and [`dispatchMainActivityIntent()`](../../android/src/main/java/chat/simplex/app/MainActivity.kt#L135-L144);
 - focused remote-frame and cold/warm-dispatch contracts: [`NomeRemoteDesktopComposeTest`](../../android/src/androidTest/java/chat/simplex/app/nome/settings/NomeRemoteDesktopComposeTest.kt#L21-L64) and [`NomeMainActivityIntentDispatchTest`](../../android/src/androidTest/java/chat/simplex/app/nome/lifecycle/NomeMainActivityIntentDispatchTest.kt#L10-L42);
 - P02/P03–P06 page-baseline production renderers: [`PlatformNomeAppLockScreen.android.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/views/localauth/PlatformNomeAppLockScreen.android.kt) and [`PlatformNomeOnboardingPages.android.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/views/onboarding/PlatformNomeOnboardingPages.android.kt);
 - Batch 2 contract tests: [`NomeHomeStateAdapterTest`](../../android/src/test/java/chat/simplex/app/nome/home/NomeHomeStateAdapterTest.kt#L16-L242), [`NomeHomeComposeTest`](../../android/src/androidTest/java/chat/simplex/app/nome/home/NomeHomeComposeTest.kt#L53-L562), [`NomeHomePackagingTest`](../../android/src/androidTest/java/chat/simplex/app/nome/home/NomeHomePackagingTest.kt#L13-L38), and [`PlatformHomeRouteDesktopTest`](../../common/src/desktopTest/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRouteDesktopTest.kt#L14-L55);
@@ -618,8 +631,9 @@ Implemented in the active Milestone 3 P11/P12 group:
 - focused route/48dp/callback tests and Android/Desktop compilation; P12 API 35 Chinese/light
   production side-by-side acceptance is closed;
 - a controlled client produced a real `CreatedConnLink` and retained its read-only pending row
-  after emulator disk reboot. The safe reference-size ready capture remains open; loading/failure
-  diagnostics cannot close it, and neither the link nor pending row proves peer use or connection.
+  after emulator disk reboot. A later bearer-redacted reference-size READY production/baseline
+  comparison closed the page visual after its QR geometry correction. Neither the link nor pending
+  row proves peer use or connection.
 
 Implemented in the active Milestone 3 P14/P15 group:
 
@@ -634,8 +648,10 @@ Implemented in the active Milestone 3 P14/P15 group:
   fixture comparisons pass; P15 OFF production smoke passes;
 - a real P15 reusable address persisted across emulator disk reboot, and the redacted API 35
   READY production/reference comparison passes without retaining the bearer or QR;
-- P14 remains open: a second controlled API 35 client reached request confirmation, then returned
-  the official relay error and produced no incoming request on the source client.
+- the old P14 oracle inspected only `ChatInfo.ContactRequest` and therefore missed the official
+  pending `Direct + contactRequestId` shape already present on the API 35 owner. The corrected Home
+  route and producer oracle preserve the same IDs/actions, and real API 35 production comparison,
+  privacy restoration, focused tests, and one risk review with final `ZERO ISSUES` pass.
 
 Implemented in the active Milestone 3 P16 group:
 
@@ -647,8 +663,12 @@ Implemented in the active Milestone 3 P16 group:
   invitation deletion, command-free back, busy-back blocking, and unchanged Desktop alert;
 - focused API 35 callback/48dp/failure/destructive tests, Android/Desktop compile, one risk review,
   and Chinese/light renderer fixture comparison pass;
-- producer-backed production visual acceptance remains open because the current API 35 client has
-  no `MemInvited` group. The fixture is not promoted to a production join state.
+- a real private `MemInvited` state was transferred through official archive/import into a
+  disposable API 35 client. It closes private production/function proof and calibrates shared
+  structure only. Because the reference is a materially different public invitation, that
+  reference visual state is terminally `NOT REACHABLE LOCALLY`, not visually accepted from the
+  retained comparison. The state is not promoted to a join or connected result, and the
+  disposable client/archive were removed.
 
 Implemented in the active Milestone 3 P17/P18 group:
 
@@ -671,16 +691,38 @@ Implemented in the active Milestone 3 P19/P20 group:
   progress/link, and delete owners, with official join and Settings routes;
 - P20 setup focused tests, API 35 production visual acceptance, and no custom domain, relay-health,
   connection, encryption, or success inference;
-- P20 creation/link/delete remains open because the controlled API 35 producer returned the
-  official relay timeout before creating a group or link.
+- P20 real controlled create/link/populate/open/delete/absence lifecycle passes; earlier official
+  relay failures remain negative evidence and no remote-file or observer result is inferred;
+- controlled public-channel androidTests may mutate only a channel identified by a test-written
+  record whose active user, remote host, group id, and caller-supplied canonical per-run UUID all
+  match exactly. Missing, malformed, or mismatched nonces fail closed. They have no display-name
+  fallback, and their read-only status exposes only counts and controlled record/channel
+  booleans;
+- API-35-only screenshot evidence tests fail on another API by default. The lower-API full
+  regression uses the explicit `nomeCrossApiScreenshotSkip=true` instrumentation argument to
+  skip only those capture bodies, so a misrouted standalone evidence run cannot pass silently.
+- Argument-driven controlled producer/lifecycle tests likewise fail when their required primary
+  action or role is absent or invalid. The general device regression may bypass those separately
+  verified bodies only with `nomeControlledProducerSkip=true`; that matrix is not producer
+  execution evidence, and each database/security/backup/file/media/call/remote/two-client result
+  remains owned by its focused real-fixture run.
+- The guarded P14 production capture also fails closed on API 35 without its exact fixed-fixture
+  token. Only the explicit `nomeControlledProducerSkip=true` general-regression invocation may
+  bypass it, and that bypass is not capture evidence.
 
 Implemented in the active Milestone 3 P21/P22 group:
 
 - P21 fixed public-channel non-E2EE disclosure and observer-only composer treatment derive only
-  from the official `GroupInfo.useRelays` and current-member role facts; timeline, history,
-  profile, relay, member, moderation, and Desktop owners remain unchanged;
-- P21 focused fact/callback tests and Android/Desktop compilation pass, but production visual
-  acceptance remains open because no controlled client contains a real public channel;
+  from the official `GroupInfo.useRelays` and current-member role facts; actual Android text/file
+  message content is projected into baseline post cards, and eligible file posts embed the
+  official `CIFileView` so receive, wait, progress, error, open, save, and `receiveFile` behavior
+  remain unchanged; non-message timeline items and the history, profile, relay, member,
+  moderation, and Desktop owners remain unchanged;
+- P21 focused fact/presentation tests, Android/Desktop compilation, real API 35 owner production
+  smoke, and Chinese/light same-size owner comparison pass. The official owner composer remains
+  visible, so this comparison does not close the reference's observer-only visual baseline;
+  bounded observer attempts did not prove membership or receipt, and that state is declared
+  externally `NOT REACHABLE LOCALLY`;
 - P22 Android identity-center composition delegates add/edit/activate/hide/unhide/mute/unmute/
   delete to the official `UserProfilesView` callbacks, reads the real incognito-default and SOCKS
   preferences, and opens official Home/Contacts/Settings routes;
@@ -710,7 +752,10 @@ Implemented in the active remote-desktop and Android-intent ordinary group:
   ownership without changing actions or payload semantics;
 - API 35 production verifies both cold/warm show-chats and text-share routes, official external
   share Back behavior, the remote page's isolated semantics, and the unpaired visual baseline.
-  Real pairing/switch/revoke events remain producer-gated and are not inferred.
+  A controlled API 28 remote-host/API 35 Android-controller run later passes the official
+  invitation, matching-session-code verification, connected, switch-local, stop, delete, and both-
+  list-absence lifecycle. The invitation remains ephemeral, loopback routes are removed, and the
+  scanner/unpaired page is not inferred as connected.
 
 Implemented in the active group-creation/admin and channel-owner/admin ordinary group:
 
@@ -733,8 +778,10 @@ Implemented in the active group-creation/admin and channel-owner/admin ordinary 
   contacts no longer announce the checked-contact description;
 - focused `NomeGroupAdminComposeTest` passes 3/3, Android debug/debug-androidTest and Desktop
   compilation pass, and screenshot protection was restored to the official enabled/`SECURE`
-  state. A real public channel and P20 create/link/delete outcomes remain producer-blocked and are
-  not inferred.
+  state. A later controlled real public channel closed P20 owner create/link/populate/open/delete/
+  absence and supplied the P21 owner presentation comparison. It did not close the reference's
+  observer-only visual baseline. Observer membership/post receipt remains explicitly not verified
+  and is not inferred.
 
 Implemented in active Batch 1A P01 source, with formal execution status delegated to its evidence
 root:
@@ -751,17 +798,17 @@ root:
 - additive reducer, boundary, attempt, Compose, and Desktop fallback tests, with no new command,
   native/core/protocol/database/archive/iOS behavior.
 
-Remaining implementation/evidence gates:
+Final concentrated verification status:
 
-- retain a redacted-safe P11 ready production/baseline comparison from the already-proven
-  invitation producer and close the P11 visual gate without inferring peer use;
-- obtain producer-backed P14 request and P16 invited-group states for their production
-  comparisons; P15 READY is already closed;
-- obtain a real P21 channel producer for its production comparison; close P20's producer-backed
-  creation/link/delete lifecycle and the remaining high-risk P17 media/file/call P1 families with
-  real fixtures/lifecycle depth;
-- run bilingual/theme/API/accessibility/release/full regression at milestones and final RC;
-- add deeper upgrade assertions when a later batch touches identities, chats, attachments, settings, or locale persistence.
+- P14, remote pair/switch/revoke, fixed synthetic voice/video peer receipt, exact digest,
+  production playback progress/termination, stop, cleanup, and P20/P21 owner-state production are
+  closed. Two-client public-channel Observer membership/receipt and the observer-only P21
+  reference visual state are terminally classified as the declared external
+  `NOT REACHABLE LOCALLY` local-RC gap, not as a success or pending product implementation;
+- bilingual/theme/API/accessibility/release/full regression is concentrated at milestones and
+  final RC;
+- deeper upgrade assertions remain required if a future change touches identities, chats,
+  attachments, settings, or locale persistence.
 
 ### P23/P24 settings, archive, and migration contract
 

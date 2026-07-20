@@ -29,7 +29,17 @@ class NomeConnectionManagementScreenshotTest {
 
   @Test
   fun captureP14P15AndP16RendererFixtures() {
-    assertEquals(35, Build.VERSION.SDK_INT)
+    if (Build.VERSION.SDK_INT != EVIDENCE_API_LEVEL) {
+      assertEquals(
+        "API 35 screenshot evidence may be skipped only by an explicit cross-API matrix",
+        "true",
+        InstrumentationRegistry.getArguments()
+          .getString(
+            CROSS_API_SCREENSHOT_SKIP_ARGUMENT,
+          ),
+      )
+      return
+    }
     val instrumentation =
       InstrumentationRegistry.getInstrumentation()
     val target = instrumentation.targetContext
@@ -191,5 +201,11 @@ class NomeConnectionManagementScreenshotTest {
     P14,
     P15,
     P16,
+  }
+
+  private companion object {
+    const val EVIDENCE_API_LEVEL = 35
+    const val CROSS_API_SCREENSHOT_SKIP_ARGUMENT =
+      "nomeCrossApiScreenshotSkip"
   }
 }

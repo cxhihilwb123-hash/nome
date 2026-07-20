@@ -234,7 +234,7 @@ Lifecycle callbacks in `SimplexApp` (implements `LifecycleEventObserver`):
 - `ON_START`: if chat is running, begin a generation-scoped load, request a typed result, preserve current-chat stats, then apply the result only if it still belongs to the active user/host generation ([`SimplexApp.onStateChanged()`](../android/src/main/java/chat/simplex/app/SimplexApp.kt#L89-L120))
 - `ON_RESUME`: show background service notice, start `SimplexService` if configured
 
-[`NomeProductionShell`](../android/src/main/java/chat/simplex/app/nome/NomeProductionShell.kt#L17-L23) does not replace the application root. It synchronizes Android system-bar appearance and delegates immediately to `AppScreen`. The shared root still owns authentication, onboarding, calls, overlays, safe-area behavior, back dispatch, the delivery-receipts gate, and share-intent routing. Inside that root, [`StartPartOfScreen`](../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L366-L393) selects the narrow `PlatformHomeRoute` seam only where the ordinary chat-list route was already selected.
+[`NomeProductionShell`](../android/src/main/java/chat/simplex/app/nome/NomeProductionShell.kt#L17-L23) does not replace the application root. It synchronizes Android system-bar appearance and delegates immediately to `AppScreen`. The shared root still owns authentication, onboarding, calls, overlays, safe-area behavior, back dispatch, the delivery-receipts gate, and share-intent routing. Inside that root, [`StartPartOfScreen`](../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L449-L475) selects the narrow `PlatformHomeRoute` seam only where the ordinary chat-list route was already selected.
 
 ### Desktop
 

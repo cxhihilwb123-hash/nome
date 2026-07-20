@@ -283,6 +283,7 @@ or real-user-data operation occurred.
 ## Audit closure
 
 The local legal/assets/brand/application-identity/App Links/privacy/distribution audit is complete
-as a technical gate with the explicit `NOT FOR DISTRIBUTION` result. The next unblocked execution
-action is the concentrated Milestone 3 verification matrix for all locally ready Android surfaces,
-while producer-gated P11/P14/P15/P16/P17/P20/P21 states remain open and truthful.
+as a technical gate with the explicit `NOT FOR DISTRIBUTION` result. The later concentrated
+Milestone 3 and final-RC matrices close the locally approved P11/P14/P15/P16/P17/P20/P21 owner
+states. Public-channel Observer membership/post receipt remains explicitly not verified and is
+carried as the declared external validation gap; it is not a distribution or success claim.

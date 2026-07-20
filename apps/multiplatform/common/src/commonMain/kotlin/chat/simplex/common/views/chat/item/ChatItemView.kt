@@ -118,7 +118,25 @@ fun ChatItemView(
   val cInfo = chat.chatInfo
   val uriHandler = LocalUriHandler.current
   val sent = cItem.chatDir.sent
-  val alignment = if (sent) Alignment.CenterEnd else Alignment.CenterStart
+  val nomeChannelPost =
+    appPlatform.isAndroid &&
+      cInfo is ChatInfo.Group &&
+      cInfo.groupInfo.useRelays &&
+      nomeChannelUsesPostCard(
+        cItem.content.msgContent,
+      ) &&
+      cItem.meta.itemDeleted == null &&
+      cItem.quotedItem == null &&
+      cItem.meta.itemForwarded == null &&
+      !cItem.meta.isLive
+  val alignment =
+    if (nomeChannelPost) {
+      Alignment.CenterStart
+    } else if (sent) {
+      Alignment.CenterEnd
+    } else {
+      Alignment.CenterStart
+    }
   val showMenu = remember { mutableStateOf(false) }
   val fullDeleteAllowed = remember(cInfo) { cInfo.featureEnabled(ChatFeature.FullDelete) }
   val onLinkLongClick = { _: String -> showMenu.value = true }
@@ -302,7 +320,16 @@ fun ChatItemView(
       }
     }
 
-    Column(horizontalAlignment = if (cItem.chatDir.sent) Alignment.End else Alignment.Start) {
+    Column(
+      horizontalAlignment =
+        if (nomeChannelPost) {
+          Alignment.Start
+        } else if (cItem.chatDir.sent) {
+          Alignment.End
+        } else {
+          Alignment.Start
+        },
+    ) {
       val canReply = (cItem.content is CIContent.SndMsgContent || cItem.content is CIContent.RcvMsgContent) &&
           cInfo !is ChatInfo.Local && !cItem.isReport && !cItem.meta.isLive && cItem.meta.itemDeleted == null
       Box {
@@ -323,7 +350,21 @@ fun ChatItemView(
           }
           Column(
             Modifier
-              .clipChatItem(cItem, itemSeparation.largeGap, revealed.value)
+              .then(
+                if (nomeChannelPost) {
+                  Modifier.clip(
+                    RoundedCornerShape(
+                      14.dp,
+                    ),
+                  )
+                } else {
+                  Modifier.clipChatItem(
+                    cItem,
+                    itemSeparation.largeGap,
+                    revealed.value,
+                  )
+                },
+              )
               .then(
                 if (appPlatform.isAndroid && showMenu.value) {
                   Modifier.border(
@@ -601,7 +642,61 @@ fun ChatItemView(
                 } else if (mc is MsgContent.MCVoice && cItem.content.text.isEmpty()) {
                   CIVoiceView(mc.duration, cItem.file, cItem.meta.itemEdited, cItem.chatDir.sent, hasText = false, cItem, cInfo.timedMessagesTTL, showViaProxy = showViaProxy, showTimestamp = showTimestamp, longClick = { onLinkLongClick("") }, receiveFile = receiveFile)
                 } else {
-                  framedItemView()
+                  PlatformChannelPostCard(
+                    visible = nomeChannelPost,
+                    authorName =
+                      (cInfo as? ChatInfo.Group)
+                        ?.groupInfo
+                        ?.chatViewName
+                        .orEmpty(),
+                    authorImage =
+                      (cInfo as? ChatInfo.Group)
+                        ?.groupInfo
+                        ?.image,
+                    timestamp =
+                      cItem.timestampText,
+                    text =
+                      nomeChannelPostText(
+                        cItem.content.text,
+                      ),
+                    fileName =
+                      cItem.file?.fileName,
+                    fileSize =
+                      cItem.file
+                        ?.fileSize
+                        ?.let {
+                          formatBytes(it)
+                        },
+                    fileContent =
+                      if (
+                        nomeChannelUsesOfficialFileRenderer(
+                          mc,
+                        )
+                      ) {
+                        {
+                          CIFileView(
+                            file = cItem.file,
+                            edited =
+                              cItem.meta
+                                .itemEdited,
+                            showMenu = showMenu,
+                            smallView = false,
+                            senderProfile =
+                              ciSenderProfile(
+                                cItem,
+                                cInfo,
+                              ),
+                            receiveFile =
+                              receiveFile,
+                          )
+                        }
+                      } else {
+                        null
+                      },
+                    legacyContent = {
+                      framedItemView()
+                    },
+                  )
                 }
               } else {
                 framedItemView()

@@ -20,17 +20,28 @@ import org.junit.runner.RunWith
 class NomeFoundationScreenshotTest {
   @Test
   fun captureRequestedEvidenceSuite() {
+    val arguments =
+      InstrumentationRegistry.getArguments()
+    if (Build.VERSION.SDK_INT != EVIDENCE_API_LEVEL) {
+      assertEquals(
+        "API 35 screenshot evidence may be skipped only by an explicit cross-API matrix",
+        "true",
+        arguments.getString(
+          CROSS_API_SCREENSHOT_SKIP_ARGUMENT,
+        ),
+      )
+      return
+    }
     val instrumentation = InstrumentationRegistry.getInstrumentation()
     val targetContext = instrumentation.targetContext
     val suite = EvidenceSuite.from(
-      InstrumentationRegistry.getArguments().getString(ARGUMENT_SUITE),
+      arguments.getString(ARGUMENT_SUITE),
     )
     val captureCases = captureCases(suite)
     val evidenceDirectory = requireNotNull(
       targetContext.getExternalFilesDir(EVIDENCE_DIRECTORY),
     ) { "External files directory is unavailable" }
 
-    assertEquals("Evidence filenames are API-specific", EVIDENCE_API_LEVEL, Build.VERSION.SDK_INT)
     assertEquals("Unexpected screenshot count for ${suite.argumentValue}", suite.expectedCount, captureCases.size)
     assertEquals(
       "Screenshot filenames must be unique for ${suite.argumentValue}",
@@ -233,6 +244,8 @@ class NomeFoundationScreenshotTest {
 
   private companion object {
     const val ARGUMENT_SUITE = "suite"
+    const val CROSS_API_SCREENSHOT_SKIP_ARGUMENT =
+      "nomeCrossApiScreenshotSkip"
     const val EVIDENCE_DIRECTORY = "nome-evidence"
     const val EVIDENCE_API_LEVEL = 35
     const val PNG_QUALITY = 100

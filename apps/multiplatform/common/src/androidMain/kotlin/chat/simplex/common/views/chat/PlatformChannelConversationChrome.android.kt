@@ -19,6 +19,7 @@ import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.unit.dp
 import chat.simplex.common.R
@@ -36,11 +37,15 @@ internal actual fun PlatformChannelDisclosureBanner(
 
 @Composable
 fun NomeChannelDisclosureContent() {
+  val disclosureHeight =
+    nomeChannelDisclosureHeight(
+      LocalDensity.current.fontScale,
+    )
   Column(
     modifier =
       Modifier
         .fillMaxWidth()
-        .height(NomeChannelDisclosureHeight),
+        .height(disclosureHeight),
     horizontalAlignment = Alignment.CenterHorizontally,
   ) {
     NomeSurface(

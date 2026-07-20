@@ -36,7 +36,6 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import chat.simplex.common.R
-import chat.simplex.common.model.ChatInfo
 import chat.simplex.common.model.User
 import chat.simplex.common.platform.BackHandler
 import chat.simplex.common.ui.nome.accessibility.nomeMinimumTouchTarget
@@ -61,7 +60,9 @@ private enum class NomeContactRequestAction {
 }
 
 internal actual fun showPlatformContactRequestRoute(
-  contactRequest: ChatInfo.ContactRequest,
+  requestName: String,
+  requestFullName: String,
+  requestImage: String?,
   currentUser: User?,
   canAcceptIncognito: Boolean,
   onAccept: suspend (incognito: Boolean) -> Boolean,
@@ -71,7 +72,9 @@ internal actual fun showPlatformContactRequestRoute(
     keyboardCoversBar = false,
   ) { close ->
     NomeContactRequestRoute(
-      contactRequest = contactRequest,
+      requestName = requestName,
+      requestFullName = requestFullName,
+      requestImage = requestImage,
       currentUser = currentUser,
       canAcceptIncognito = canAcceptIncognito,
       onAccept = onAccept,
@@ -84,7 +87,9 @@ internal actual fun showPlatformContactRequestRoute(
 
 @Composable
 private fun NomeContactRequestRoute(
-  contactRequest: ChatInfo.ContactRequest,
+  requestName: String,
+  requestFullName: String,
+  requestImage: String?,
   currentUser: User?,
   canAcceptIncognito: Boolean,
   onAccept: suspend (incognito: Boolean) -> Boolean,
@@ -95,9 +100,9 @@ private fun NomeContactRequestRoute(
     !CurrentColors.collectAsState().value.colors.isLight
   NomeAndroidTheme(darkTheme = darkTheme) {
     NomeContactRequestContent(
-      requestName = contactRequest.displayName,
-      requestFullName = contactRequest.fullName,
-      requestImage = contactRequest.image,
+      requestName = requestName,
+      requestFullName = requestFullName,
+      requestImage = requestImage,
       currentProfileName =
         currentUser?.displayName.orEmpty(),
       currentProfileImage = currentUser?.image,
@@ -265,36 +270,43 @@ fun NomeContactRequestContent(
       },
     )
     Divider(color = NomeTheme.colors.divider)
-    if (canAcceptIncognito) {
-      NomeContactRequestChoice(
-        title =
-          androidx.compose.ui.res.stringResource(
-            R.string.nome_p14_accept_incognito,
-          ),
-        body =
-          androidx.compose.ui.res.stringResource(
-            R.string.nome_p14_accept_incognito_body,
-          ),
-        enabled = !busy,
-        loading =
-          action ==
-            NomeContactRequestAction.ACCEPT_INCOGNITO,
-        image = {
-          IncognitoImage(
-            size = 46.dp,
-            iconColor = NomeTheme.colors.textSecondary,
-          )
-        },
-        onClick = {
-          runAction(
-            NomeContactRequestAction.ACCEPT_INCOGNITO,
-          ) {
-            onAccept(true)
-          }
-        },
-      )
-      Divider(color = NomeTheme.colors.divider)
-    }
+    NomeContactRequestChoice(
+      title =
+        androidx.compose.ui.res.stringResource(
+          R.string.nome_p14_accept_incognito,
+        ),
+      body =
+        androidx.compose.ui.res.stringResource(
+          if (canAcceptIncognito) {
+            R.string.nome_p14_accept_incognito_body
+          } else {
+            R.string.nome_p14_accept_incognito_unavailable_body
+          },
+        ),
+      enabled = canAcceptIncognito && !busy,
+      loading =
+        action ==
+          NomeContactRequestAction.ACCEPT_INCOGNITO,
+      image = {
+        IncognitoImage(
+          size = 46.dp,
+          iconColor =
+            if (canAcceptIncognito && !busy) {
+              NomeTheme.colors.textSecondary
+            } else {
+              NomeTheme.colors.disabledContent
+            },
+        )
+      },
+      onClick = {
+        runAction(
+          NomeContactRequestAction.ACCEPT_INCOGNITO,
+        ) {
+          onAccept(true)
+        }
+      },
+    )
+    Divider(color = NomeTheme.colors.divider)
 
     Text(
       text =
@@ -418,7 +430,12 @@ private fun NomeContactRequestChoice(
       Text(
         text = body,
         style = NomeTheme.typography.supporting,
-        color = NomeTheme.colors.textSecondary,
+        color =
+          if (enabled) {
+            NomeTheme.colors.textSecondary
+          } else {
+            NomeTheme.colors.disabledContent
+          },
       )
     }
     if (loading) {
@@ -432,7 +449,12 @@ private fun NomeContactRequestChoice(
         imageVector =
           Icons.AutoMirrored.Rounded.KeyboardArrowRight,
         contentDescription = null,
-        tint = NomeTheme.colors.textTertiary,
+        tint =
+          if (enabled) {
+            NomeTheme.colors.textTertiary
+          } else {
+            NomeTheme.colors.disabledContent
+          },
       )
     }
   }

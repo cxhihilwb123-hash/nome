@@ -146,7 +146,7 @@ Common Module (commonMain)
 | Chat List Result Application | [`ChatModel.kt`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L264-L311) | `beginChatListLoad`, `applyChatListLoadResult` |
 | P13 Typed Delegates | [`SimpleXAPI.kt`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1571-L1647) | `apiConnectPlanResult`, `apiConnectResult` |
 | Shared P13 Policy/Seam | [`PlatformConnectionPreview.kt`](../common/src/commonMain/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreview.kt#L13-L292) | safe UI model, exhaustive branch policy, `presentPlatformConnectionPreview` |
-| P13 Production Opt-in | [`ChatListView.kt`](../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatListView.kt#L738-L754) | `connectIfOpenedViaUri` |
+| P13 Production Opt-in | [`ChatListView.kt`](../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatListView.kt#L760-L791) | `connectIfOpenedViaUri` |
 | Nome Android P13 Route | [`NomeConnectionPreviewRoute.android.kt`](../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/connection/NomeConnectionPreviewRoute.android.kt#L65-L742) | fullscreen route and content |
 | Nome Android P13 Reducer | [`NomeConnectionPreviewStateAdapter.kt`](../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/connection/NomeConnectionPreviewStateAdapter.kt#L6-L99) | single-submit presentation state |
 | Desktop P13 Fallback | [`PlatformConnectionPreview.desktop.kt`](../common/src/desktopMain/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreview.desktop.kt#L3-L6) | declines Nome presentation |

@@ -19,11 +19,23 @@ import org.junit.runner.RunWith
 class NomeHomeScreenshotTest {
   @Test
   fun captureProductionRendererMatrix() {
+    val arguments =
+      InstrumentationRegistry.getArguments()
+    if (Build.VERSION.SDK_INT != EVIDENCE_API_LEVEL) {
+      assertEquals(
+        "API 35 screenshot evidence may be skipped only by an explicit cross-API matrix",
+        "true",
+        arguments.getString(
+          CROSS_API_SCREENSHOT_SKIP_ARGUMENT,
+        ),
+      )
+      return
+    }
     val instrumentation = InstrumentationRegistry.getInstrumentation()
     val targetContext = instrumentation.targetContext
     if (
-      InstrumentationRegistry.getArguments()
-        .getString(TALKBACK_HOLD_ARGUMENT) == "true"
+      arguments.getString(TALKBACK_HOLD_ARGUMENT) ==
+      "true"
     ) {
       holdPopulatedHomeForTalkBack(instrumentation)
       return
@@ -33,7 +45,6 @@ class NomeHomeScreenshotTest {
     )
     val cases = captureCases()
 
-    assertEquals(EVIDENCE_API_LEVEL, Build.VERSION.SDK_INT)
     assertEquals(EVIDENCE_TIME_ZONE, TimeZone.getDefault().id)
     assertTrue(Calendar.getInstance().get(Calendar.YEAR) > EVIDENCE_TIMESTAMP_YEAR)
     assertEquals(EXPECTED_CAPTURE_COUNT, cases.size)
@@ -169,6 +180,8 @@ class NomeHomeScreenshotTest {
     const val PNG_QUALITY = 100
     const val STABLE_FRAME_DELAY_MILLIS = 750L
     const val TALKBACK_HOLD_ARGUMENT = "nomeTalkBackHold"
+    const val CROSS_API_SCREENSHOT_SKIP_ARGUMENT =
+      "nomeCrossApiScreenshotSkip"
     const val TALKBACK_DONE_SETTING = "nome_batch2_talkback_done"
     const val TALKBACK_HOLD_TIMEOUT_MILLIS = 600_000L
     const val TALKBACK_HOLD_POLL_MILLIS = 250L

@@ -1,6 +1,5 @@
 package chat.simplex.common.views.chatlist
 
-import chat.simplex.common.model.ChatInfo
 import chat.simplex.common.model.User
 
 /**
@@ -10,7 +9,9 @@ import chat.simplex.common.model.User
  * the P14 page; Desktop returns false and keeps the official alert.
  */
 internal expect fun showPlatformContactRequestRoute(
-  contactRequest: ChatInfo.ContactRequest,
+  requestName: String,
+  requestFullName: String,
+  requestImage: String?,
   currentUser: User?,
   canAcceptIncognito: Boolean,
   onAccept: suspend (incognito: Boolean) -> Boolean,

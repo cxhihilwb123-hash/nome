@@ -10,6 +10,7 @@
     <string name="nome_p14_accept_current_body">本次连接显示 %1$s 的名称和头像</string>
     <string name="nome_p14_accept_incognito">使用隐身身份接受</string>
     <string name="nome_p14_accept_incognito_body">为本次连接创建独立资料</string>
+    <string name="nome_p14_accept_incognito_unavailable_body">此请求当前无法使用隐身身份</string>
     <string name="nome_p14_reject_note">拒绝此请求不会通知发送者。</string>
     <string name="nome_p14_reject">拒绝请求</string>
     <string name="nome_p14_action_failed">请求已不可用或操作失败。请刷新聊天列表后重试。</string>

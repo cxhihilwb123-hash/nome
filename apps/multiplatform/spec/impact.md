@@ -215,8 +215,11 @@ Desktop declines the Nome seam and preserves the legacy alert.
 | `android/src/androidTest/java/chat/simplex/app/nome/connection/NomeConnectionManagementScreenshotTest.kt` | PC14, PC16, PC24, PC29, PC32 | Low | API 35 Chinese/light P14/P15/P16 renderer calibration only; not a production invitation producer. |
 
 P16 adds no command, protocol/event type, database/archive behavior, native/core change, iOS
-behavior, or Desktop Nome UI. Its fixture comparison cannot satisfy producer-backed production
-acceptance, and the current API 35 client has no invited group.
+behavior, or Desktop Nome UI. A real controlled `MemInvited` state passed through the official
+archive/import owner to disposable API 35. It closes private production/function proof and
+calibrates shared structure only. The reference is a materially different public invitation, so
+that reference visual state is terminally `NOT REACHABLE LOCALLY`, not accepted from the retained
+comparison. This does not manufacture join or connection success.
 
 ### PC32 Milestone 3 P17/P18 exact production sources
 
@@ -245,7 +248,8 @@ depth remains assigned to the separate high-risk Android-reachable P1 families.
 
 This group changes Android contact-verification and public-channel setup presentation around the
 existing security-code, scanner, relay, public-group, link, and delete owners. Desktop keeps the
-official layouts, and P20 creation/link/delete remains producer-gated after a real relay timeout.
+official layouts. Earlier relay-timeout attempts remain historical; the later controlled P20
+owner create/link/populate/open/delete/post-delete-absence lifecycle is verified.
 
 | Exact source or test path | Product concepts | Risk | P19/P20 responsibility |
 |---|---|---|---|
@@ -260,18 +264,32 @@ official layouts, and P20 creation/link/delete remains producer-gated after a re
 | `common/src/commonTest/kotlin/chat/simplex/common/views/chat/NomeContactVerificationPolicyTest.kt` | PC13, PC32 | High | Proves all code characters are retained and unavailable is distinct from mismatch/match. |
 | `common/src/commonTest/kotlin/chat/simplex/common/views/newchat/NomeChannelCancellationPolicyTest.kt` | PC14, PC31, PC32 | High | Proves local finalization occurs only after a true delete result and false/exception retain state. |
 | `android/src/androidTest/java/chat/simplex/app/nome/connection/NomeSecurityAndChannelComposeTest.kt` | PC13, PC14, PC24, PC31, PC32 | Medium | Proves distinct scan/manual/clear callbacks, 48dp controls, official join/config/create dispatch, configured-relay/link truth, and no custom Nome domain. |
+| `android/src/androidTest/java/chat/simplex/app/nome/lifecycle/{NomePublicChannelProducerTest.kt,NomeTwoClientPublicChannelTest.kt}` | PC14, PC31, PC32 | High | Real controlled lifecycle/observer diagnostics may mutate only when a caller-supplied canonical per-run UUID exactly matches the stored test-written nonce together with active user, remote host, and group id. Missing, malformed, or mismatched nonces fail closed. No display-name fallback exists; status exposes counts and controlled-record/channel booleans only. |
+
+All API-35-only screenshot tests in the active review scope fail on a different API by default.
+Only the explicit `nomeCrossApiScreenshotSkip=true` lower-API full-regression invocation skips
+their capture bodies; standalone evidence commands remain fail-closed on a misrouted device.
+Argument-driven controlled producer, bridge, network, archive, call, file, media, group,
+public-channel, and remote lifecycle tests also fail when their primary action/role is absent or
+invalid. Only the explicit `nomeControlledProducerSkip=true` general-regression invocation
+bypasses those separately verified bodies. The resulting device matrix is ordinary UI/device and
+fail-closed-boundary evidence, not proof that a controlled producer lifecycle executed.
+The guarded P14 production capture separately fails closed on API 35 without its exact
+fixed-fixture token. Only the explicit `nomeControlledProducerSkip=true` general-regression
+invocation may bypass it, and that bypass is not capture evidence.
 
 P19/P20 add no command, protocol/event type, database/archive behavior, native/core change, iOS
 behavior, or Desktop Nome UI. P19 high-risk verification lifecycle is producer-backed on API 28
-and API 35. P20 setup is visually accepted; creation, returned link, relay progression,
-cancellation, and deletion still require a real successful producer.
+and API 35. P20 setup and the controlled real owner create/link/populate/open/delete/absence
+lifecycle are accepted. They do not prove relay health or public-channel Observer receipt.
 
 ### PC32 Milestone 3 P21/P22 exact production sources
 
 This group changes Android public-channel chrome and local-identity-center presentation around the
 existing loaded-chat, group, profile, preference, route, and controller owners. Desktop keeps the
-official layouts. P21 production visual acceptance remains producer-gated because the controlled
-clients have no real public channel.
+official layouts. P21 owner-presentation comparison is backed by the controlled real public
+channel; it does not accept the reference's observer-only state. Observer membership and peer
+receipt remain explicitly not verified.
 
 | Exact source or test path | Product concepts | Risk | P21/P22 responsibility |
 |---|---|---|---|
@@ -288,7 +306,10 @@ clients have no real public channel.
 
 P21/P22 add no command, protocol/event type, database/archive/message-state-machine behavior,
 native/core change, iOS behavior, or Desktop Nome UI. P22 destructive lifecycle is producer-backed
-on API 28 and API 35. P21 remains open until a real channel supplies its primary production state.
+on API 28 and API 35. P21's real owner primary production state is functionally ready and retained
+for owner-presentation comparison only. The reference's observer-only visual state and the
+Observer membership/post-receipt result are a declared external validation gap and are not
+inferred.
 
 ### PC32 Milestone 3 P23/P24 exact production sources
 

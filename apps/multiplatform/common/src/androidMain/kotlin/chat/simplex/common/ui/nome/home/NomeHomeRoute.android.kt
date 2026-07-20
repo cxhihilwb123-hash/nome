@@ -125,12 +125,27 @@ actual fun PlatformHomeRoute(
     resolveOpenableNomeHomeChat(chatModel, capturedChat)?.let { currentChat ->
       when (val info = currentChat.chatInfo) {
         is ChatInfo.Direct ->
-          scope.launch {
-            directChatAction(
+          if (
+            info.contact.nextAcceptContactRequest &&
+              info.contact.contactRequestId != null
+          ) {
+            contactRequestAlertDialog(
               currentChat.remoteHostId,
               info.contact,
               chatModel,
-            )
+            ) {
+              onRequestAccepted(it)
+            }
+          } else {
+            // groupDirectInv acceptance is owned by the official in-chat
+            // ComposeContextMemberContactActionsView, not by the standalone P14 request route.
+            scope.launch {
+              directChatAction(
+                currentChat.remoteHostId,
+                info.contact,
+                chatModel,
+              )
+            }
           }
         is ChatInfo.Group ->
           scope.launch {
@@ -237,12 +252,26 @@ fun NomeHomeRouteContent(
         onOpenChat(currentChat)
       } else when (val info = currentChat.chatInfo) {
         is ChatInfo.Direct ->
-          scope.launch {
-            directChatAction(
+          if (
+            info.contact.nextAcceptContactRequest &&
+              info.contact.contactRequestId != null
+          ) {
+            contactRequestAlertDialog(
               currentChat.remoteHostId,
               info.contact,
               chatModel,
-            )
+            ) {
+              onRequestAccepted(it)
+            }
+          } else {
+            // Keep groupDirectInv on the official in-chat member-invitation acceptance owner.
+            scope.launch {
+              directChatAction(
+                currentChat.remoteHostId,
+                info.contact,
+                chatModel,
+              )
+            }
           }
         is ChatInfo.Group ->
           scope.launch {
@@ -508,16 +537,25 @@ internal fun resolveOpenableNomeHomeChat(chatModel: ChatModel, capturedChat: Cha
   } ?: return null
   if (
     chatModel.deletedChats.value.contains(currentChat.remoteHostId to currentChat.chatInfo.id) ||
-    currentChat.chatInfo.chatDeleted ||
-    !currentChat.chatInfo.ready
+    currentChat.chatInfo.chatDeleted
   ) {
     return null
   }
   return when (val info = currentChat.chatInfo) {
-    is ChatInfo.Direct -> currentChat.takeUnless { info.contactCard }
+    is ChatInfo.Direct ->
+      currentChat.takeIf {
+        !info.contactCard &&
+          (
+            info.ready ||
+              (
+                info.contact.nextAcceptContactRequest &&
+                  info.contact.contactRequestId != null
+              )
+          )
+      }
     is ChatInfo.Group,
-    is ChatInfo.Local -> currentChat
-    is ChatInfo.ContactRequest,
+    is ChatInfo.Local -> currentChat.takeIf { info.ready }
+    is ChatInfo.ContactRequest -> currentChat
     is ChatInfo.ContactConnection,
     is ChatInfo.InvalidJSON -> null
   }
@@ -706,12 +744,19 @@ private fun NomeChatRow(
   val info = chat.chatInfo
   val canOpen = coreState == NomeHomeCoreState.RUNNING &&
     !pendingDeletion &&
-    info.ready &&
     when (info) {
-      is ChatInfo.Direct -> !info.contactCard
+      is ChatInfo.Direct ->
+        !info.contactCard &&
+          (
+            info.ready ||
+              (
+                info.contact.nextAcceptContactRequest &&
+                  info.contact.contactRequestId != null
+              )
+          )
       is ChatInfo.Group,
-      is ChatInfo.Local -> true
-      is ChatInfo.ContactRequest,
+      is ChatInfo.Local -> info.ready
+      is ChatInfo.ContactRequest -> true
       is ChatInfo.ContactConnection,
       is ChatInfo.InvalidJSON -> false
     }
@@ -968,7 +1013,15 @@ private fun NomeChatDropdownMenu(
 private fun nomeChatTypeDescription(info: ChatInfo): String =
   stringResource(
     when (info) {
-      is ChatInfo.Direct -> R.string.nome_home_direct_chat
+      is ChatInfo.Direct ->
+        if (
+          info.contact.nextAcceptContactRequest &&
+          info.contact.contactRequestId != null
+        ) {
+          R.string.nome_home_contact_request
+        } else {
+          R.string.nome_home_direct_chat
+        }
       is ChatInfo.Group -> R.string.nome_home_group_chat
       is ChatInfo.Local -> R.string.nome_home_notes_chat
       is ChatInfo.ContactRequest -> R.string.nome_home_contact_request

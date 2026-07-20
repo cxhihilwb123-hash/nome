@@ -96,7 +96,7 @@ Users may tap actions multiple times, causing duplicate requests, or assume the 
 
 ### Nome P07/P08 bounded mitigation
 
-Batch 2 mitigates and verifies the stale-home subset without closing this general gap. [`beginChatListLoad` and `applyChatListLoadResult`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L264-L311) bind chat-list loads to an attempt ID and `(remoteHostId, userId)`, rejecting a result after a newer attempt or active-identity change. [`changeActiveUser_` and `getUserChatData`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L643-L678), plus [`switchUIRemoteHost`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L3527-L3555), begin row-hiding load state before replacement data is applied, while the Android home adapter also hides rows on switching or generation mismatch. The profile-switch control itself and the broader operations listed above remain outside Batch 2.
+Batch 2 mitigates and verifies the stale-home subset without closing this general gap. [`beginChatListLoad` and `applyChatListLoadResult`](../common/src/commonMain/kotlin/chat/simplex/common/model/ChatModel.kt#L264-L311) bind chat-list loads to an attempt ID and `(remoteHostId, userId)`, rejecting a result after a newer attempt or active-identity change. [`changeActiveUser_` and `getUserChatData`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L643-L678), plus [`switchUIRemoteHost`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L3661-L3689), begin row-hiding load state before replacement data is applied, while the Android home adapter also hides rows on switching or generation mismatch. The profile-switch control itself and the broader operations listed above remain outside Batch 2.
 
 ---
 
@@ -338,7 +338,7 @@ This Android effort must not add a native progress API or alter migration orderi
 **Category:** Security / Authentication
 **Platform:** Android
 **Page:** P02
-**Decision status:** **[DECIDED 2026-07-17 — P09 LOADED-CHAT SCOPE IMPLEMENTED; P23 SETTINGS INDEX PENDING]**
+**Decision status:** **[CLOSED FOR LOCAL RC 2026-07-20 — P02 FAIL-CLOSED ROUTES VERIFIED; NO INVENTED LOCKOUT COUNTDOWN]**
 
 ### Recorded Decision
 
@@ -370,7 +370,7 @@ This is Android/client authentication behavior. It must not be implemented by ch
 **Category:** UI state / Error recovery / Permissions
 **Platform:** Android
 **Pages:** P04, P05, P06, P11, P12, P20, P22, P24
-**Decision status:** **[PARTIALLY IMPLEMENTED 2026-07-18 — P09, P12 CAMERA, AND P20 SETUP/CANCEL-SAFETY SUBSETS CLOSED; OTHER PAGE SUBSETS PENDING]**
+**Decision status:** **[CLOSED FOR THE APPROVED LOCAL-RC SURFACES 2026-07-20 — REAL RESULT OWNERS AND DESTRUCTIVE BOUNDARIES RETAINED]**
 
 ### Recorded Decision
 
@@ -378,7 +378,7 @@ Add Android/client operation state around existing APIs: single submission, type
 
 ### Description
 
-The underlying create-user, notification-permission, accept-conditions, invitation-generation, QR parsing, channel deletion, user deletion, archive, and migration operations exist, but several pages lack durable page-level in-flight/failure/retry state. P12 now keeps camera hardware optional, asks permission only after an explicit scan action, distinguishes no camera/denial/permanent denial, opens Android Settings for recovery, and closes frames/executors across failure and disposal. P20 now single-submits its setup action, retains official progress/link ownership, and finalizes local cancellation only after the existing delete command returns true; false or exception retains local state. Its real create/link/delete lifecycle remains open because the controlled producer returned a relay timeout before creation. Notification, user deletion, archive, migration, and the other listed page lifecycles remain open. Some APIs return `null` after logging rather than a typed user-facing error (related to GAP-01). Active-user deletion is a non-atomic switch/delete/stop sequence whose failure does not necessarily preserve the previous active model. Ordinary archive export produces an internal file before opening the SAF destination chooser and does not retain a typed destination-copy result; ordinary import catches URI-copy exceptions but can let delete/import `Exception` paths escape to log-only outer handling after the destructive boundary.
+The underlying create-user, notification-permission, accept-conditions, invitation-generation, QR parsing, channel deletion, user deletion, archive, and migration operations remain the official owners. P12 keeps camera hardware optional, asks permission only after an explicit scan action, distinguishes no camera/denial/permanent denial, opens Android Settings for recovery, and closes frames/executors across failure and disposal. P20 single-submits its setup action, retains official progress/link ownership, and finalizes local cancellation only after the existing delete command returns true; false or exception retains local state. An earlier controlled producer returned a relay timeout before creation; a later controlled run completed the real create/link/populate/open/delete/post-delete-absence lifecycle. Notification, identity deletion, archive/import, and bounded migration-abort/restart lanes have concentrated production/lifecycle evidence on their applicable API 28/API 35 devices. Some upstream APIs still return `null` after logging rather than a typed user-facing error (related to GAP-01), so Nome does not manufacture a more specific fact. Active-user deletion remains a non-atomic switch/delete/stop sequence; the Android lifecycle reports the exact pre-delete or post-delete phase instead of claiming rollback. Ordinary archive export/import still retain their official SAF and command semantics; the UI claims completion only from the completed owner result.
 
 ### Product Impact
 
@@ -402,7 +402,7 @@ Client operation state may wrap existing calls. It cannot manufacture an API res
 **Category:** Search / Information architecture
 **Platform:** Android
 **Pages:** P09, P23
-**Decision status:** **[PARTIALLY IMPLEMENTED 2026-07-18 — ANDROID PRESENTATION/LOCAL ACTION BOUNDARY IMPLEMENTED; REAL PRODUCER ACCEPTANCE PENDING]**
+**Decision status:** **[IMPLEMENTED AND PRODUCTION ACCEPTED 2026-07-20 — P09 LOADED-CHAT SCOPE AND P23 ALLOWLISTED ROUTE INDEX]**
 
 ### Recorded Decision
 
@@ -410,7 +410,8 @@ Use an explicitly scoped client search coordinator. Contacts, groups, and channe
 
 P09 now groups only the official loaded-chat filter result. Its message-region copy explicitly
 states that incomplete global message results are not shown, and its recent-search region states
-that the device does not store recent queries. P23's allowlisted settings-route index remains open.
+that the device does not store recent queries. P23 uses an allowlisted local settings-route index
+with stable existing-route owners and no persisted query history.
 
 ### Description
 
@@ -438,7 +439,7 @@ Local indexing and coordination are client features. They must not add a native 
 **Category:** Connection security / Product truth
 **Platform:** Android
 **Page:** P11
-**Decision status:** **[IMPLEMENTED 2026-07-18 — PRODUCTION PRIMARY-STATE EVIDENCE OPEN]**
+**Decision status:** **[IMPLEMENTED AND PRODUCTION ACCEPTED 2026-07-20 — READY VISUAL CLOSED; PEER USE NOT INFERRED]**
 
 ### Recorded Decision
 
@@ -448,14 +449,14 @@ Remove TTL, countdown, and expired claims. Keep generated, copied, shared, waiti
 
 v6.5.6 can create a one-time connection invitation and later receives connection events, but the client has no authoritative TTL/expiry timestamp. Current “showing invitation used” behavior can mean the user copied/shared the link, not that a remote party consumed it. Regeneration semantics are not an atomic replace guarantee.
 
-The Android P11 presentation now omits TTL and regeneration, distinguishes local copy/share from
+The Android P11 presentation omits TTL and regeneration, distinguishes local copy/share from
 connection events, and continues to use the official `apiAddContact()` producer and
 `showingInvitation` lifecycle. Focused callback/truth tests and Android/Desktop compilation pass.
-The gap is not closed: one controlled API 35 client produced a real invitation and retained its
-read-only pending row after emulator disk reboot, but no bearer-safe reference-size READY capture
-was retained. A later bounded attempt returned the official relay error. The created/persisted
-local invitation is not peer use or connection, so READY visual acceptance and remote-use
-lifecycle proof remain open.
+A controlled API 35 client produced a real invitation, retained its read-only pending row after
+emulator disk reboot, and later supplied a bearer-redacted reference-size READY
+production/baseline comparison after the QR geometry correction. The created/persisted local
+invitation is still not peer use or connection; only the separately observed official peer events
+can establish those facts.
 
 ### Product Impact
 
@@ -479,7 +480,7 @@ No client timer may be presented as server/core expiry. The Android UI must cons
 **Category:** Connection state / Destructive actions
 **Platform:** Android
 **Pages:** P14, P15
-**Decision status:** **[DECIDED 2026-07-17 — RECOMMENDED ROUTE ADOPTED; IMPLEMENTED, PRODUCER ACCEPTANCE OPEN]**
+**Decision status:** **[DECIDED 2026-07-17 — RECOMMENDED ROUTE ADOPTED; IMPLEMENTED, PRODUCTION ACCEPTED]**
 
 ### Recorded Decision
 
@@ -492,9 +493,13 @@ replace retry does not delete twice; onboarding stays on the official layout; an
 short-link/profile-sharing paths remain wired. Focused tests, compilation, review, and renderer
 comparison pass. The controlled API 35 client proves P15 OFF and later created a real reusable
 address that remained available after emulator disk reboot; its redacted READY
-production/reference comparison passes. A second API 35 client reached the official P14 request
-confirmation using that address, then returned the official relay error and produced no incoming
-request on the source client. P15 READY visual acceptance is closed; P14 remains producer-blocked.
+production/reference comparison passes. The corrected P14 owner oracle recognizes that
+`CR.ReceivedContactRequest.chat_` is represented as a pending `ChatInfo.Direct` with the real
+`contactRequestId`; only the null-chat form remains `ChatInfo.ContactRequest`. Android Home now
+opens either official shape through the same accept/reject owners. A real API 35 pending request
+passed focused tests, privacy restoration, risk review, and same-size production/reference visual
+acceptance. P14 and P15 READY visual acceptance are closed without inferring delivery, online,
+security, or success beyond the observed pending request.
 
 ### Description
 
@@ -522,7 +527,7 @@ The Android shell cannot add transactional guarantees around multiple core comma
 **Category:** Safety / Moderation / Public channels
 **Platform:** Android
 **Pages:** P16, P18, P20
-**Decision status:** **[PARTIALLY IMPLEMENTED 2026-07-18 — P16/P18 AND P20 SETUP IMPLEMENTED; P20 LINK PRODUCER PENDING]**
+**Decision status:** **[IMPLEMENTED 2026-07-20 — P16 PRIVATE OWNER STATE READY / PUBLIC REFERENCE VISUAL NOT REACHABLE LOCALLY; P18/P20 OWNER STATES CLOSED; OBSERVER RECEIPT DECLARED EXTERNAL GAP]**
 
 ### Recorded Decision
 
@@ -532,13 +537,18 @@ The Android P16 presentation now implements the first part of this decision. It 
 real resolved inviter `Contact` with its existing verification fact, never calls that contact an
 administrator, and renders source-unavailable when no typed inviter contact can be resolved.
 Group/channel/profile/member/review facts come from `GroupInfo`; join and deletion remain the
-official commands. Its fixture comparison calibrates presentation only because the current API 35
-production client has no invited group. P18 now keeps the complete official action set but shows
+official commands. A controlled real `MemInvited` state was transferred through the official
+archive/import owner to a disposable API 35 client. Its P16 comparison is retained as structural
+calibration only because the production state is private while the reference is public; the
+public-invitation visual state is `NOT REACHABLE LOCALLY`, and no joined or connected result is
+invented. P18 now keeps the complete official action set but shows
 report only through the existing exact group-message Reports/member-role gate; the controlled
 direct-chat production sheet correctly contains no report action. P20 setup now truthfully says
-an official-compatible link is generated only after creation and shows no custom Nome domain. Its
-real creation attempt timed out before returning a group/link, so link lifecycle and deletion
-remain producer-pending rather than inferred.
+an official-compatible link is generated only after creation and shows no custom Nome domain.
+Earlier relay-timeout attempts remain historical; a later controlled run completed real
+create/link/populate/open/delete/post-delete-absence owner lifecycle. Public-channel Observer
+membership and peer post receipt remain explicitly not verified and are carried only as the
+declared external validation gap, never as success.
 
 The audited v6.5.6 `ChannelRelaysView` also keeps owner-side Add and Remove relay entries behind
 commented `TODO [relays]` source. The Android reskin retains the real relay list, status, and member
@@ -572,7 +582,7 @@ This UI effort cannot change report routing, group-link metadata, relay protocol
 **Category:** Identity / Privacy wording
 **Platform:** Android
 **Page:** P22
-**Decision status:** **[PARTIALLY CLOSED 2026-07-19 — P24 OFFICIAL-OWNER LANE VERIFIED; DEEP RECOVERY HARDENING REMAINS OPEN]**
+**Decision status:** **[CLOSED FOR LOCAL RC 2026-07-20 — P22 IDENTITY OWNERS/LIFECYCLE VERIFIED; NO PERSISTENT ANONYMOUS ACCOUNT CLAIM]**
 
 ### Recorded Decision
 
@@ -604,7 +614,7 @@ The Android shell must not simulate a new user/profile type or silently persist 
 **Category:** Data safety / Migration
 **Platform:** Android
 **Pages:** P03, P24
-**Decision status:** **[DECIDED 2026-07-17 — RECOMMENDED ROUTE ADOPTED; IMPLEMENTATION PENDING]**
+**Decision status:** **[CLOSED FOR BOUNDED LOCAL RC 2026-07-20 — REAL ARCHIVE/IMPORT AND MIGRATION-ABORT OWNERS VERIFIED]**
 
 ### Recorded Decision
 
@@ -644,7 +654,7 @@ Do not alter the archive format, migration protocol, database order, or native A
 **Category:** Network truth / Privacy wording
 **Platform:** Android
 **Pages:** P05, P06, P08, P20, P21, P23
-**Decision status:** **[PARTIALLY IMPLEMENTED 2026-07-18 — P08 DEVICE CONNECTIVITY AND P20 CONFIGURATION-COUNT PRESENTATION CONNECTED; OTHER PAGES/GATES PENDING]**
+**Decision status:** **[IMPLEMENTED FOR APPROVED LOCAL-RC PRESENTATION 2026-07-20 — EVIDENCE LEVELS REMAIN SEPARATE]**
 
 ### Recorded Decision
 
@@ -663,9 +673,10 @@ The client can know Android connectivity, configured servers/operators, server-v
 P20 reports only the count of currently enabled, non-deleted configured chat relays returned by
 the existing server configuration owner. It labels this as configuration and routes recovery to
 the existing relay settings; it does not call the relays available, reachable, healthy, private,
-connected, or encrypted. A real public-channel creation attempt returned the official
-connection-timeout alert, which remains a failure observation and supplies no relay-health or
-link-success fact.
+connected, or encrypted. Earlier public-channel creation attempts returned official connection
+errors and remain failure observations. A later controlled owner lifecycle created and deleted a
+real channel/link, but that result still supplies no global relay-health, online, or Observer
+membership fact.
 
 ### Product Impact
 

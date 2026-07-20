@@ -316,7 +316,7 @@ The preview MUST:
 7. re-plan against the current user/host before retrying; and
 8. make cancel, back, dismiss, and handoff cleanup idempotent and command-free.
 
-**Enforcement:** [`connectIfOpenedViaUri`](../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatListView.kt#L738-L754) is the only opt-in. [`planAndConnect`](../common/src/commonMain/kotlin/chat/simplex/common/views/newchat/ConnectPlan.kt#L25-L607) retains a `Legacy` default and guards context/single-submit/cleanup. [`apiConnectPlanResult` and `apiConnectResult`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1571-L1647) preserve typed core truth with P13 command logging disabled. [`ConnectionPreviewPlanBranch`](../common/src/commonMain/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreview.kt#L91-L187) exhaustively defines the seven eligible and fourteen fallback branches.
+**Enforcement:** [`connectIfOpenedViaUri`](../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatListView.kt#L760-L791) is the only opt-in. [`planAndConnect`](../common/src/commonMain/kotlin/chat/simplex/common/views/newchat/ConnectPlan.kt#L25-L607) retains a `Legacy` default and guards context/single-submit/cleanup. [`apiConnectPlanResult` and `apiConnectResult`](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1571-L1647) preserve typed core truth with P13 command logging disabled. [`ConnectionPreviewPlanBranch`](../common/src/commonMain/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreview.kt#L91-L187) exhaustively defines the seven eligible and fourteen fallback branches.
 
 **Protected boundary:** P13 does not own the P10 entry or its internal actions, does not implement
 scanner/paste behavior, and does not change P14–P24. P09/P10 do not broaden P13's external
@@ -512,14 +512,33 @@ The Android presentation MUST:
 8. finalize local cancellation/removal only after the existing delete command returns true; false
    or exception MUST retain local state; and
 9. keep submit/back disabled only while the official creation or cancellation action is actually
-   in flight.
+   in flight; and
+10. allow controlled `androidTest` channel mutation only when the caller supplies a canonical
+    per-run UUID and a test-written fixture record matches that UUID exactly together with the
+    active user, remote host, and group id. Tests MUST NOT fall back to display-name matching,
+    accept a missing/malformed/mismatched nonce, or expose arbitrary channel names through
+    read-only status output; status may expose only counts and controlled-record/channel
+    booleans; and
+11. fail API-35-only screenshot evidence tests on every other API by default. A lower-API full
+    regression may skip those capture bodies only through the explicit
+    `nomeCrossApiScreenshotSkip=true` instrumentation argument; and
+12. fail argument-driven controlled producer, bridge, network, archive, call, file, media, group,
+    public-channel, and remote lifecycle tests when their primary action/role is absent or invalid.
+    A general device regression may bypass those separately verified harness bodies only through
+    the explicit `nomeControlledProducerSkip=true` instrumentation argument. Such a regression
+    proves the ordinary UI/device suite and the fail-closed bypass boundary; it MUST NOT be cited
+    as execution evidence for the controlled producer lifecycle itself; and
+13. fail the guarded P14 production capture on API 35 when its exact fixed-fixture token is absent
+    or invalid. Only the explicit `nomeControlledProducerSkip=true` general-regression invocation
+    may bypass that capture body, and that bypass MUST NOT be cited as capture evidence.
 
 **Enforcement:** `VerifyCodeView` retains code/scanner/API/model ownership while
 `PlatformVerifyCodeLayout` changes only Android presentation. `AddChannelView` retains relay,
 create/progress/link/delete ownership while `PlatformChannelSetupRoute` changes only its Android
 profile/setup step. Focused common and Compose tests cover typed result separation, digit
 preservation, distinct scan/manual callbacks, 48dp actions, link/relay truth, and
-delete-confirmed-only local finalization.
+delete-confirmed-only local finalization. The controlled public-channel producer and two-client
+tests persist and resolve only the exact test-owned fixture record described above.
 
 ### RULE-27: P21 Channel Facts and P22 Identity Lifecycle
 

@@ -10,6 +10,7 @@
     <string name="nome_p14_accept_current_body">Show the name and image of %1$s for this connection</string>
     <string name="nome_p14_accept_incognito">Use incognito identity</string>
     <string name="nome_p14_accept_incognito_body">Create an independent profile for this connection</string>
+    <string name="nome_p14_accept_incognito_unavailable_body">This request cannot currently use an incognito identity</string>
     <string name="nome_p14_reject_note">The sender will not be notified if you reject this request.</string>
     <string name="nome_p14_reject">Reject request</string>
     <string name="nome_p14_action_failed">The request is no longer available or the action failed. Refresh the chat list and try again.</string>

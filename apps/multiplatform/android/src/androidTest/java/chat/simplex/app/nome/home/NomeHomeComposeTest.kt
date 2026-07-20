@@ -15,6 +15,7 @@ import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onAllNodesWithText
@@ -308,7 +309,7 @@ class NomeHomeComposeTest {
   }
 
   @Test
-  fun contactCardRequestAndConnectionRowsExposeNoNavigationAction() {
+  fun contactCardAndConnectionRowsExposeNoNavigationAction() {
     val target = InstrumentationRegistry.getInstrumentation().targetContext
     val direct = Chat.sampleData.chatInfo as ChatInfo.Direct
     val contactCard = Chat(
@@ -323,11 +324,6 @@ class NomeHomeComposeTest {
       ),
       chatItems = emptyList(),
     )
-    val contactRequest = Chat(
-      remoteHostId = null,
-      chatInfo = ChatInfo.ContactRequest.sampleData,
-      chatItems = emptyList(),
-    )
     val contactConnection = Chat(
       remoteHostId = null,
       chatInfo = ChatInfo.ContactConnection.getSampleData(),
@@ -335,7 +331,6 @@ class NomeHomeComposeTest {
     )
     val cases = listOf(
       contactCard to R.string.nome_home_direct_chat,
-      contactRequest to R.string.nome_home_contact_request,
       contactConnection to R.string.nome_home_connection_pending,
     )
 
@@ -364,6 +359,75 @@ class NomeHomeComposeTest {
         .assertHeightIsAtLeast(48.dp)
         .assert(SemanticsMatcher.keyNotDefined(SemanticsActions.OnClick))
         .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Role))
+    }
+  }
+
+  @Test
+  fun legacyAndDirectPendingContactRequestsExposeNavigationAction() {
+    val target = InstrumentationRegistry.getInstrumentation().targetContext
+    val direct = Chat.sampleData.chatInfo as ChatInfo.Direct
+    val pendingDirect = Chat(
+      remoteHostId = null,
+      chatInfo = direct.copy(
+        contact = direct.contact.copy(
+          activeConn = null,
+          contactRequestId = 101L,
+        ),
+      ),
+      chatItems = emptyList(),
+    )
+    val contactRequest = Chat(
+      remoteHostId = null,
+      chatInfo = ChatInfo.ContactRequest.sampleData,
+      chatItems = emptyList(),
+    )
+    val cases = listOf(
+      pendingDirect to R.string.nome_home_contact_request,
+      contactRequest to R.string.nome_home_contact_request,
+    )
+
+    composeRule.setContent {
+      NomeAndroidTheme(darkTheme = false) {
+        NomeHomeRouteContent(
+          chatModel = ChatModel,
+          state = state(
+            content = NomeHomeContentState.POPULATED,
+            chats = cases.map { it.first },
+          ),
+          showChatPreviews = true,
+        )
+      }
+    }
+
+    val expectedDescriptions =
+      cases.map { (chat, previewResource) ->
+        target.getString(
+          R.string.nome_home_open_chat,
+          chat.chatInfo.chatViewName,
+          target.getString(previewResource),
+          getTimestampText(chat.chatInfo.chatTs),
+        )
+      }
+    for (
+      (description, count) in
+      expectedDescriptions.groupingBy { it }.eachCount()
+    ) {
+      val matchingNodes =
+        composeRule.onAllNodesWithContentDescription(
+          description,
+        )
+      matchingNodes.assertCountEquals(count)
+      repeat(count) { index ->
+        matchingNodes[index]
+          .assertHeightIsAtLeast(48.dp)
+          .assertHasClickAction()
+          .assert(
+            SemanticsMatcher.expectValue(
+              SemanticsProperties.Role,
+              Role.Button,
+            ),
+          )
+      }
     }
   }
 

@@ -18,6 +18,17 @@ import org.junit.runner.RunWith
 class NomeConnectionPreviewScreenshotTest {
   @Test
   fun captureRendererMatrix() {
+    if (Build.VERSION.SDK_INT != EVIDENCE_API_LEVEL) {
+      assertEquals(
+        "API 35 screenshot evidence may be skipped only by an explicit cross-API matrix",
+        "true",
+        InstrumentationRegistry.getArguments()
+          .getString(
+            CROSS_API_SCREENSHOT_SKIP_ARGUMENT,
+          ),
+      )
+      return
+    }
     val instrumentation = InstrumentationRegistry.getInstrumentation()
     val targetContext = instrumentation.targetContext
     val evidenceDirectory = requireNotNull(
@@ -25,7 +36,6 @@ class NomeConnectionPreviewScreenshotTest {
     )
     val cases = captureCases()
 
-    assertEquals(EVIDENCE_API_LEVEL, Build.VERSION.SDK_INT)
     assertEquals(EVIDENCE_TIME_ZONE, TimeZone.getDefault().id)
     assertTrue(Calendar.getInstance().get(Calendar.YEAR) > 2000)
     assertEquals(EXPECTED_CAPTURE_COUNT, cases.size)
@@ -113,6 +123,8 @@ class NomeConnectionPreviewScreenshotTest {
 
   private companion object {
     const val EVIDENCE_API_LEVEL = 35
+    const val CROSS_API_SCREENSHOT_SKIP_ARGUMENT =
+      "nomeCrossApiScreenshotSkip"
     const val EVIDENCE_TIME_ZONE = "Asia/Shanghai"
     const val EVIDENCE_DIRECTORY = "nome-batch3-p13-evidence"
     const val EXPECTED_CAPTURE_COUNT = 72

@@ -712,9 +712,44 @@ fun markChatUnread(chat: Chat, chatModel: ChatModel) {
 }
 
 fun contactRequestAlertDialog(rhId: Long?, contactRequest: ChatInfo.ContactRequest, chatModel: ChatModel, onSucess: ((chat: Chat) -> Unit)? = null) {
+  contactRequestAlertDialog(
+    rhId = rhId,
+    requestId = contactRequest.apiId,
+    requestName = contactRequest.displayName,
+    requestFullName = contactRequest.fullName,
+    requestImage = contactRequest.image,
+    chatModel = chatModel,
+    onSucess = onSucess,
+  )
+}
+
+fun contactRequestAlertDialog(rhId: Long?, contact: Contact, chatModel: ChatModel, onSucess: ((chat: Chat) -> Unit)? = null) {
+  val requestId = contact.contactRequestId ?: return
+  contactRequestAlertDialog(
+    rhId = rhId,
+    requestId = requestId,
+    requestName = contact.profile.displayName,
+    requestFullName = contact.profile.fullName,
+    requestImage = contact.profile.image,
+    chatModel = chatModel,
+    onSucess = onSucess,
+  )
+}
+
+private fun contactRequestAlertDialog(
+  rhId: Long?,
+  requestId: Long,
+  requestName: String,
+  requestFullName: String,
+  requestImage: String?,
+  chatModel: ChatModel,
+  onSucess: ((chat: Chat) -> Unit)?,
+) {
   if (
     showPlatformContactRequestRoute(
-      contactRequest = contactRequest,
+      requestName = requestName,
+      requestFullName = requestFullName,
+      requestImage = requestImage,
       currentUser = chatModel.currentUser.value,
       canAcceptIncognito =
         !chatModel.addressShortLinkDataSet(),
@@ -723,7 +758,7 @@ fun contactRequestAlertDialog(rhId: Long?, contactRequest: ChatInfo.ContactReque
           acceptContactRequestNow(
             rhId = rhId,
             incognito = incognito,
-            contactRequestId = contactRequest.apiId,
+            contactRequestId = requestId,
             isCurrentUser = true,
             chatModel = chatModel,
           )
@@ -737,7 +772,7 @@ fun contactRequestAlertDialog(rhId: Long?, contactRequest: ChatInfo.ContactReque
       onReject = {
         rejectContactRequestNow(
           rhId = rhId,
-          contactRequestId = contactRequest.apiId,
+          contactRequestId = requestId,
           chatModel = chatModel,
           dismissToChatList = false,
         )
@@ -753,21 +788,21 @@ fun contactRequestAlertDialog(rhId: Long?, contactRequest: ChatInfo.ContactReque
       Column {
         SectionItemView({
           AlertManager.shared.hideAlert()
-          acceptContactRequest(rhId, incognito = false, contactRequest.apiId, true, chatModel, onSucess)
+          acceptContactRequest(rhId, incognito = false, requestId, true, chatModel, onSucess)
         }) {
           Text(generalGetString(MR.strings.accept_contact_button), Modifier.fillMaxWidth(), textAlign = TextAlign.Center, color = MaterialTheme.colors.primary)
         }
         if (!chatModel.addressShortLinkDataSet()) {
           SectionItemView({
             AlertManager.shared.hideAlert()
-            acceptContactRequest(rhId, incognito = true, contactRequest.apiId, true, chatModel, onSucess)
+            acceptContactRequest(rhId, incognito = true, requestId, true, chatModel, onSucess)
           }) {
             Text(generalGetString(MR.strings.accept_contact_incognito_button), Modifier.fillMaxWidth(), textAlign = TextAlign.Center, color = MaterialTheme.colors.primary)
           }
         }
         SectionItemView({
           AlertManager.shared.hideAlert()
-          rejectContactRequest(rhId, contactRequest.apiId, chatModel)
+          rejectContactRequest(rhId, requestId, chatModel)
         }) {
           Text(generalGetString(MR.strings.reject_contact_button), Modifier.fillMaxWidth(), textAlign = TextAlign.Center, color = Color.Red)
         }

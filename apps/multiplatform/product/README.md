@@ -31,7 +31,7 @@ source connections. [`MainActivity`](../android/src/main/java/chat/simplex/app/M
 installs a thin Activity/window
 [`NomeProductionShell`](../android/src/main/java/chat/simplex/app/nome/NomeProductionShell.kt#L9-L23)
 around the unchanged shared root. Inside that root,
-[`StartPartOfScreen`](../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L366-L393)
+[`StartPartOfScreen`](../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L449-L475)
 preserves the original home notice effect and selects a narrow
 [`PlatformHomeRoute`](../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.kt#L8-L22):
 Android renders the Nome P07/P08 home, while Desktop delegates the official chat list unchanged.

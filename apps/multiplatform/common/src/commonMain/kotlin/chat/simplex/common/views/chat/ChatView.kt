@@ -1238,6 +1238,10 @@ fun BoxScope.ChatInfoToolbar(
   val showMenu = rememberSaveable { mutableStateOf(false) }
   val showContentFilterMenu = rememberSaveable { mutableStateOf(false) }
   val showCallMenu = rememberSaveable { mutableStateOf(false) }
+  val nomeChannelToolbar =
+    appPlatform.isAndroid &&
+      chatInfo is ChatInfo.Group &&
+      chatInfo.groupInfo.useRelays
   val directE2EEInfo = if (chatInfo is ChatInfo.Direct) {
     nomeDirectE2EEInfo(chatsCtx.chatItems.value)
   } else {
@@ -1368,7 +1372,7 @@ fun BoxScope.ChatInfoToolbar(
   // Content filter button: always in bar on desktop and for groups; on Android for direct chats it
   // goes into the three-dots menu UNLESS calls are unavailable, in which case it appears in the bar.
   // Must be after chat-type buttons so call buttons appear before filter during active call.
-  if (showContentFilterButton && (appPlatform.isDesktop || chatInfo is ChatInfo.Group ||
+  if (showContentFilterButton && (appPlatform.isDesktop || (chatInfo is ChatInfo.Group && !nomeChannelToolbar) ||
       (appPlatform.isAndroid && chatInfo is ChatInfo.Direct && !canStartCall && activeCall == null))) {
     val enabled = chatInfo !is ChatInfo.Local || chatInfo.noteFolder.ready
     barButtons.add {
@@ -1406,7 +1410,7 @@ fun BoxScope.ChatInfoToolbar(
   }
 
   // Android only: for direct/local chats where the filter bar button is NOT shown, filter options go in the three-dots menu separated by a divider
-  if (appPlatform.isAndroid && chatInfo !is ChatInfo.Group && showContentFilterButton &&
+  if (appPlatform.isAndroid && (chatInfo !is ChatInfo.Group || nomeChannelToolbar) && showContentFilterButton &&
       !(chatInfo is ChatInfo.Direct && !canStartCall && activeCall == null)) {
     menuItems.add { Divider() }
     availableContent.value.forEach { filter ->
@@ -1612,16 +1616,26 @@ fun ChatInfoToolbarTitle(
   e2eeInfo: E2EEInfo? = null,
 ) {
   if (appPlatform.isAndroid) {
+    val nomeChannel =
+      cInfo is ChatInfo.Group &&
+        cInfo.groupInfo.useRelays
     Row(
       horizontalArrangement = Arrangement.Start,
       verticalAlignment = Alignment.CenterVertically,
     ) {
-      if (cInfo.incognito) {
-        IncognitoImage(size = 32.dp * fontSizeSqrtMultiplier, Indigo)
+      if (!nomeChannel) {
+        if (cInfo.incognito) {
+          IncognitoImage(size = 32.dp * fontSizeSqrtMultiplier, Indigo)
+        }
+        ChatInfoImage(cInfo, size = 36.dp * fontSizeSqrtMultiplier, iconColor)
       }
-      ChatInfoImage(cInfo, size = 36.dp * fontSizeSqrtMultiplier, iconColor)
       Column(
-        modifier = Modifier.padding(start = 8.dp),
+        modifier =
+          if (nomeChannel) {
+            Modifier
+          } else {
+            Modifier.padding(start = 8.dp)
+          },
         horizontalAlignment = Alignment.Start,
       ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1725,6 +1739,12 @@ fun ChatInfoToolbarTitle(
 
 private val NomeDirectE2EEBannerHeight = 52.dp
 
+internal fun nomeDirectE2EEBannerHeight(
+  fontScale: Float,
+): Dp =
+  NomeDirectE2EEBannerHeight *
+    fontScale.coerceAtLeast(1f)
+
 internal fun nomeDirectE2EEInfo(chatItems: List<ChatItem>): E2EEInfo? {
   for (item in chatItems.asReversed()) {
     when (val content = item.content) {
@@ -1738,10 +1758,14 @@ internal fun nomeDirectE2EEInfo(chatItems: List<ChatItem>): E2EEInfo? {
 
 @Composable
 private fun NomeDirectE2EEBanner(e2eeInfo: E2EEInfo) {
+  val bannerHeight =
+    nomeDirectE2EEBannerHeight(
+      LocalDensity.current.fontScale,
+    )
   Box(
     modifier = Modifier
       .fillMaxWidth()
-      .height(NomeDirectE2EEBannerHeight)
+      .height(bannerHeight)
       .padding(horizontal = 12.dp, vertical = 6.dp),
   ) {
     Surface(
@@ -1973,12 +1997,25 @@ fun BoxScope.ChatItemsList(
       chatsCtx.secondaryContextFilter == null &&
       chatInfo is ChatInfo.Group &&
       chatInfo.groupInfo.useRelays
+  val nomeChannelFeed =
+    appPlatform.isAndroid &&
+      chatsCtx.secondaryContextFilter == null &&
+      chatInfo is ChatInfo.Group &&
+      chatInfo.groupInfo.useRelays
+  val nomeDirectE2EEBannerHeight =
+    nomeDirectE2EEBannerHeight(
+      LocalDensity.current.fontScale,
+    )
+  val nomeChannelDisclosureBannerHeight =
+    nomeChannelDisclosureHeight(
+      LocalDensity.current.fontScale,
+    )
   val topPaddingToContent = topPaddingToContent(
     chatView = chatsCtx.secondaryContextFilter == null,
     additionalTopBar = chatsCtx.secondaryContextFilter == null && (reportsCount > 0 || supportUnreadCount > 0)
   ) +
-    (if (nomeDirectE2EEBannerVisible) NomeDirectE2EEBannerHeight else 0.dp) +
-    (if (nomeChannelDisclosureVisible) NomeChannelDisclosureHeight else 0.dp)
+    (if (nomeDirectE2EEBannerVisible) nomeDirectE2EEBannerHeight else 0.dp) +
+    (if (nomeChannelDisclosureVisible) nomeChannelDisclosureBannerHeight else 0.dp)
   val topPaddingToContentPx = rememberUpdatedState(with(LocalDensity.current) { topPaddingToContent.roundToPx() })
   val numberOfBottomAppBars = numberOfBottomAppBars()
 
@@ -1997,8 +2034,11 @@ fun BoxScope.ChatItemsList(
   }
   val highlightedItems = remember { mutableStateOf(setOf<Long>()) }
   val hoveredItemId = remember { mutableStateOf(null as Long?) }
-  val listState = rememberUpdatedState(rememberSaveable(chatInfo.id, searchValueIsEmpty.value, resetListState.value, saver = LazyListState.Saver) {
+  val listState = rememberUpdatedState(rememberSaveable(chatInfo.id, searchValueIsEmpty.value, resetListState.value, nomeChannelFeed, saver = LazyListState.Saver) {
     val openAroundItemId = chatModel.openAroundItemId.value
+    if (nomeChannelFeed && openAroundItemId == null) {
+      return@rememberSaveable LazyListState(0, 0)
+    }
     val index = mergedItems.value.indexInParentItems[openAroundItemId] ?: run {
       // scroll to first unread after last viewed item (items reversed: 0 = newest)
       val viewedIdx = mergedItems.value.items.indexOfFirst { !it.hasUnread() }
@@ -2019,6 +2059,10 @@ fun BoxScope.ChatItemsList(
     if (reportsState != null) {
       reportsListState = null
       reportsState
+    } else if (nomeChannelFeed) {
+      val (initialIndex, initialOffset) =
+        nomeChannelInitialListPosition(openAroundItemId, index)
+      LazyListState(initialIndex, initialOffset)
     } else if (index <= 0 || !searchValueIsEmpty.value) {
       LazyListState(0, 0)
     } else {
@@ -2145,6 +2189,18 @@ fun BoxScope.ChatItemsList(
           swipeDistance = with(LocalDensity.current) { 30.dp.toPx() },
         )
         val sent = cItem.chatDir.sent
+        val nomeChannelPost =
+          appPlatform.isAndroid &&
+            chatInfo is ChatInfo.Group &&
+            chatInfo.groupInfo.useRelays &&
+            with(cItem.content.msgContent) {
+              this is MsgContent.MCText ||
+                this is MsgContent.MCFile
+            } &&
+            cItem.meta.itemDeleted == null &&
+            cItem.quotedItem == null &&
+            cItem.meta.itemForwarded == null &&
+            !cItem.meta.isLive
 
         @Composable
         fun ChatItemBox(modifier: Modifier = Modifier, content: @Composable () -> Unit = { }) {
@@ -2186,7 +2242,42 @@ fun BoxScope.ChatItemsList(
           val selectionOffset by animateDpAsState(if (selectionVisible && !sent) 4.dp + 22.dp * fontSizeMultiplier else 0.dp)
           val swipeableOrSelectionModifier = (if (selectionVisible) Modifier else swipeableModifier).graphicsLayer { translationX = selectionOffset.toPx() }
           if (chatInfo is ChatInfo.Group) {
-            if (cItem.chatDir is CIDirection.GroupRcv) {
+            if (nomeChannelPost) {
+              ChatItemBox {
+                androidx.compose.animation.AnimatedVisibility(
+                  selectionVisible,
+                  enter = fadeIn(),
+                  exit = fadeOut(),
+                ) {
+                  SelectedListItem(
+                    Modifier.padding(
+                      start = 8.dp,
+                    ),
+                    cItem.id,
+                    selectedChatItems,
+                  )
+                }
+                Box(
+                  Modifier
+                    .fillMaxWidth()
+                    .padding(
+                      horizontal = 12.dp,
+                    )
+                    .then(
+                      swipeableOrSelectionModifier,
+                    ),
+                ) {
+                  ChatItemViewShortHand(
+                    cItem,
+                    itemSeparation,
+                    range,
+                    fillMaxWidth = true,
+                    swipeOffset =
+                      dismissState.offset.value,
+                  )
+                }
+              }
+            } else if (cItem.chatDir is CIDirection.GroupRcv) {
               if (showAvatar) {
                 Column(
                   Modifier
@@ -2547,13 +2638,19 @@ fun BoxScope.ChatItemsList(
   val modifier = if (appPlatform.isDesktop && manager != null) SelectionHandler(manager, listState, mergedItems, revealedItems, linkMode) else Modifier
 
   LazyColumnWithScrollBar(
-    modifier.align(Alignment.BottomCenter),
+    modifier.align(
+      if (nomeChannelFeed) {
+        Alignment.TopCenter
+      } else {
+        Alignment.BottomCenter
+      },
+    ),
     state = listState.value,
     contentPadding = PaddingValues(
       top = topPaddingToContent,
       bottom = composeViewHeight.value
     ),
-    reverseLayout = true,
+    reverseLayout = !nomeChannelFeed,
     additionalBarOffset = composeViewHeight,
     additionalTopBar = rememberUpdatedState(chatsCtx.secondaryContextFilter == null && (reportsCount > 0 || supportUnreadCount > 0)),
     chatBottomBar = remember { appPrefs.chatBottomBar.state }
@@ -2603,13 +2700,19 @@ fun BoxScope.ChatItemsList(
           itemSeparation = getItemSeparation(item, null)
           prevItemSeparationLargeGap = false
         }
+        val presentedItemSeparation =
+          if (nomeChannelFeed) {
+            itemSeparation.copy(date = null)
+          } else {
+            itemSeparation
+          }
         CompositionLocalProvider(LocalItemContext provides ItemContext(selectionIndex = index)) {
-          ChatViewListItem(index == 0, rememberUpdatedState(range), showAvatar, item, itemSeparation, prevItemSeparationLargeGap, isRevealed) {
+          ChatViewListItem(index == 0, rememberUpdatedState(range), showAvatar, item, presentedItemSeparation, prevItemSeparationLargeGap, isRevealed) {
             if (merged is MergedItem.Grouped) merged.reveal(it, revealedItems)
           }
         }
 
-        if (last != null) {
+        if (last != null && !nomeChannelFeed) {
           // no using separate item(){} block in order to have total number of items in LazyColumn match number of merged items
           DateSeparator(last.meta.itemTs)
         }

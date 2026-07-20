@@ -138,6 +138,21 @@ class NomeContactRequestComposeTest {
     composeRule
       .onNodeWithText(
         target.getString(
+          R.string.nome_p14_accept_incognito,
+        ),
+      )
+      .assertIsDisplayed()
+      .assertIsNotEnabled()
+    composeRule
+      .onNodeWithText(
+        target.getString(
+          R.string.nome_p14_accept_incognito_unavailable_body,
+        ),
+      )
+      .assertIsDisplayed()
+    composeRule
+      .onNodeWithText(
+        target.getString(
           R.string.nome_p14_action_failed,
         ),
       )
