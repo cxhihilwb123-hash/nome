@@ -552,7 +552,8 @@ Validation follows the active completion ledger. Ordinary UI groups include:
 High-risk database, authentication, security verification, backup/migration, files, and calls
 retain real fixtures, lifecycle, and API 28/API 35 depth. Full API 28/33/35, bilingual light/dark,
 200%, TalkBack, historical-manifest, release, and regression matrices run at milestones/final.
-Only final RC requires two consecutive same-summary zero-issue reviews.
+Only final RC requires two consecutive zero-issue reviews against the same self-verifying
+`REVIEW_INPUT_SHA256SUMS`; verdicts are recorded only in `FINAL_REVIEW_VERDICTS.md`.
 
 The same `.nome.dev` package and debug signing identity covered this foundation's upgrade smoke: a non-empty v6.5.6 snapshot was restored, the minSdk 28 build installed with `-r`, the chat database and preferences remained byte-identical at the immediate checkpoint, and the real core cold-started into the existing Chinese connection flow. The agent database is runtime-mutable and is not claimed byte-identical. Later production adapters must add deeper identity/chat/attachment/settings/language assertions proportional to what they change.
 

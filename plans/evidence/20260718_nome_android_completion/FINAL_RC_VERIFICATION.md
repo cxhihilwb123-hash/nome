@@ -4,8 +4,7 @@ Date: 2026-07-20
 Branch: `codex/nome-android-v656`
 Frozen input: `3fa40fc8677ea894a80693d576caffd178275b80`
 Distribution boundary: `NOT FOR DISTRIBUTION`
-Status: local release-candidate freeze represented by the commit containing this report;
-`NOT FOR DISTRIBUTION`
+Status: determined by the committed `FINAL_REVIEW_VERDICTS.md`; `NOT FOR DISTRIBUTION`
 
 This report is the concentrated final verification record permitted by the user's amended
 execution contract. It reuses the frozen Foundation, P01–P10, P13, and Milestone 3 evidence and
@@ -45,9 +44,9 @@ last adjacent text-only onboarding wordmark seam with the approved compact image
 | 14 | `COMPLETE` | Retained evidence and release scans found no real bearer, token, private key, QR, signature, identity, or server credential. The P14 production-capture harness fails closed on API 35 without the fixed opt-in token unless the explicit general-regression producer bypass is present; an actual capture remains restricted to the fixed controlled identities and exact token, redacts both identity regions in memory before the first file write, and emits only the redacted filename. |
 | 15 | `COMPLETE — CURRENT SOURCE` | The final serialized Android unit/lint/debug/androidTest/release/bundle aggregate, separate Desktop suite, and exact current main/test APK API 28/API 33/API 35 88-test general-regression matrix all pass. Its explicit controlled-producer bypass means it is not producer-execution evidence; all 13 argument-driven producer/lifecycle harnesses and the separate P14 guarded capture fail closed without their required inputs, and real producer/lifecycle/capture claims remain tied to focused controlled runs. Release lint has 0 fatal / 0 errors; release-isolation, artifact, document, manifest, and restoration checks are current. |
 | 16 | `COMPLETE — CURRENT SOURCE` | Product/spec/source/tests/ledger are synchronized through the current change; 44 documents / 1,209 local links / 884 heading and line anchors have zero findings. |
-| 17 | `COMPLETE` | Independent Round 1 code/product/spec/test/evidence review and independent Round 2 security/release/privacy/evidence review both returned `ZERO ISSUES` against the exact same 70-entry review manifest digest `109d094e913a751fca7370cde366da3132ef46ebf3f1e4cd06f216fbfbe1b4a4`; both verified 70/70, with no reviewed byte changed between rounds. |
-| 18 | `COMPLETE` | Current-source unsigned APK/AAB hashes, badging, native ABIs, unsigned truth, isolation, device results, and the final post-review `SHA256SUMS` freeze payload are audited and reproducible. The review manifest remains frozen to the exact reviewed bytes; final verdict/closure records are covered by the final manifest. |
-| 19 | `COMPLETE — LOCAL CHECKPOINT` | Foundation/P13/Milestones 1–3 checkpoints remain local with no push. The final local RC checkpoint is the commit that contains this report; its exact hash is reported by Git after creation. |
+| 17 | `FINALIZED BY COMMITTED VERDICT RECORD` | This immutable review-input report does not embed its own mutable final verdicts. Criterion 17 is complete only when the committed `FINAL_REVIEW_VERDICTS.md` records independent code/product/spec/test/evidence Round 1 and security/release/privacy/evidence Round 2 `ZERO ISSUES` against the exact same self-verifying 71-entry `REVIEW_INPUT_SHA256SUMS`, with no manifest-listed byte changed between or after rounds. |
+| 18 | `FINALIZED BY COMMITTED MANIFEST` | Current-source unsigned APK/AAB hashes, badging, native ABIs, unsigned truth, isolation, and device results are audited and reproducible. Criterion 18 is complete only when the committed final `SHA256SUMS` verifies every frozen payload file, the self-verifying review manifest, and `FINAL_REVIEW_VERDICTS.md`. |
+| 19 | `FINALIZED BY CONTAINING LOCAL CHECKPOINT` | Foundation/P13/Milestones 1–3 checkpoints remain local with no push. Criterion 19 is complete when the local commit containing this report also contains the verified final manifest and completed verdict record; its exact hash is reported by Git after creation. |
 | 20 | `COMPLETE — DECLARED NON-BLOCKING GAP` | Ledger, matrix, and this report agree that public-channel Observer membership/post receipt is not verified. On the third consecutive turn the exact current test APK found both actual short-link relays failing observer-side official tests at `Connect`, before prepare/connect, while source membership and target model/core state stayed unchanged and clean. The user's 2026-07-20 completion amendment authorizes local-RC closure with this result declared consistently and without a success claim. |
 | 21 | `COMPLETE — NOT FOR DISTRIBUTION` | AGPL/asset/brand/application identity/App Links/privacy/store-material local audit is complete; missing external publication inputs are explicitly declared. |
 | 22 | `COMPLETE` | Populated API 35 production Home/Settings/Privacy/direct-chat passed English 1.3 expansion with animation scales zero at 360×640dp small portrait, 411×914dp long portrait, and 640×360dp small landscape; P0 routes had no blocking break at 800×1280dp tablet and 674×841dp foldable-inner bounds. The discovered P17 expanded E2EE-banner clipping was fixed and focused-tested; exact display/language/motion/privacy settings were restored. |
@@ -368,7 +367,7 @@ selection and restoration assertions; logcat contains only operator/protocol cou
 booleans, validation totals, and sanitized failure classes. The focused androidTest compile,
 source scan, and current rebuilt verification include this correction.
 
-The next same-summary review pair did not close. Round 1 returned `ZERO ISSUES`, but Round 2 found
+The next same-digest review pair did not close. Round 1 returned `ZERO ISSUES`, but Round 2 found
 that the public-channel producer and observer fixtures selected their mutation target through a
 broad display-name heuristic and that the status action emitted unrelated channel names. Both
 verdicts are invalid. Both fixtures now require the exact test-written user/remote-host/group-id/
@@ -427,7 +426,8 @@ test class/tag, evidence path, unknown screenshot, or final-report leakage.
 
 ## Final freeze boundary
 
-The final review input, two consecutive same-summary `ZERO ISSUES` rounds, final manifest, and
+The final review input, two consecutive `ZERO ISSUES` rounds against the same self-verifying
+71-entry `REVIEW_INPUT_SHA256SUMS`, verdict-only `FINAL_REVIEW_VERDICTS.md`, final manifest, and
 local release-candidate checkpoint may be created only after every `OPEN` row above is closed with
 reproducible evidence or a plan-authorized `NOT REACHABLE` / `TRUTHFULLY UNSUPPORTED` result.
 External production signing, domain verification, store mutation, publication, and push remain

@@ -36,8 +36,9 @@ create its own checkpoint.
   full regression are concentrated at milestones and final RC.
 - Ordinary batches do not create large evidence roots or checkpoints. This ledger, the page
   completion matrix, and milestone/final verification reports are the durable records.
-- Local checkpoint commits are milestone-owned. Final RC alone receives the final same-summary two
-  consecutive `ZERO ISSUES` reviews.
+- Local checkpoint commits are milestone-owned. Final RC alone receives two consecutive
+  `ZERO ISSUES` reviews against the same self-verifying review manifest; verdicts are written only
+  to `FINAL_REVIEW_VERDICTS.md`.
 - Unsupported percentage, restore, timeout, online, security, or success facts remain forbidden.
 - No push, release, production signing, real-user-data destruction, Haskell/native core, `Core.kt`,
   protocol, database semantics, archive format, or iOS change is authorized.
@@ -112,8 +113,9 @@ external validation gap:
 - No product/core/database/protocol workaround is authorized. The final RC may close only with
   the gap stated consistently in the ledger, matrix, verification report, manifest, and handoff.
 - The remaining required work is the current-source host aggregate, concentrated API 28/33/35
-  device rerun, final same-summary two-round `ZERO ISSUES` review, final manifest, and local RC
-  checkpoint. All other completion boundaries remain unchanged.
+  device rerun, two consecutive `ZERO ISSUES` reviews against one self-verifying review manifest,
+  verdict-only `FINAL_REVIEW_VERDICTS.md`, final manifest, and local RC checkpoint. All other
+  completion boundaries remain unchanged.
 
 ## Final-RC producer recovery — 2026-07-19
 
@@ -341,7 +343,8 @@ external validation gap:
 - Milestone: 9 — final local release-candidate hardening.
 - Batch: no ordinary page batch is active. P14 is closed after correcting its official request
   shape oracle and production route. The active lane is final current-source host/device
-  verification, two same-summary reviews, manifest generation, and the local RC checkpoint.
+  verification, two consecutive same-self-verifying-manifest reviews, verdict-only
+  `FINAL_REVIEW_VERDICTS.md`, manifest generation, and the local RC checkpoint.
 - Current workspace reconciliation: branch `codex/nome-android-v656`, HEAD
   `3fa40fc8677ea894a80693d576caffd178275b80`, tag `v6.5.6` ancestor confirmed, only the unchanged
   GitHub `origin`, staged paths `0`, tracked dirty paths `33`, untracked paths `33`, conflicts `0`,
@@ -2481,7 +2484,7 @@ must use disposable controlled data and retain API 28/API 35 lifecycle depth.
 - Final pre-review reconciliation is green: 44 Markdown documents / 1,209 local links / 884
   heading-or-line anchors / zero findings; historical manifests independently pass 48/48,
   131/131, 254/254, and P13 139/139 from checkpoint
-  `b714f78efc7b3cc8c4e252d6351c4b629f60e277`. The active review scope is exactly 70 files with
+  `b714f78efc7b3cc8c4e252d6351c4b629f60e277`. The active review scope is exactly 71 files with
   zero path delta, zero staged paths, zero conflicts, zero forbidden-path hits, zero added
   sensitive-pattern hits, and a clean `git diff --check`. The one complete SimpleX contact bearer
   remains the unchanged official `QRCode.kt` preview fixture (current 1 / baseline 1 / added 0).
@@ -2671,19 +2674,28 @@ The final current-source host aggregate, release-isolation checks, exact main/te
 API 28/API 33/API 35 matrix, cold starts, crash audit, device restoration, and the latest
 file-interaction, hostname-log privacy, and sensitive-buffer corrections are green.
 Documentation, historical-manifest, forbidden/sensitive-scope, and exact-path reconciliation are
-complete. Independent final Round 1 and Round 2 both returned `ZERO ISSUES` against the exact same
-70-entry `REVIEW_INPUT_SHA256SUMS` digest
-`109d094e913a751fca7370cde366da3132ef46ebf3f1e4cd06f216fbfbe1b4a4`, and each verified 70/70.
-No reviewed byte changed between the rounds. The review manifest remains frozen to preserve that
-exact reviewed-byte identity; the final `SHA256SUMS` covers the permitted post-review
-verdict/closure records.
+complete. Two reviews returned `ZERO ISSUES` against the former 70-entry digest
+`109d094e913a751fca7370cde366da3132ef46ebf3f1e4cd06f216fbfbe1b4a4`, but a post-checkpoint
+review found that the allowed verdict/closure edits left three stale entries in
+`REVIEW_INPUT_SHA256SUMS`. The final manifest remained correct, but the review manifest did not
+self-verify. That evidence-structure finding invalidates the former rounds for the reproducible
+checkpoint; it does not change product source, test, device, visual, or artifact truth.
 
-The only pre-checkpoint action is to generate and verify that final manifest, stage only the
-authorized project scope while excluding the unknown
-`apps/multiplatform/Screenshot_1784275771.png`, and create the local release-candidate checkpoint.
-Once the commit containing this ledger exists, no further authorized local delivery action
-remains. Do not sign, publish, push, reserve a domain, mutate a store, or change the external gap's
-truth.
+This ledger, `FINAL_REVIEW_SUMMARY.md`, and `FINAL_RC_VERIFICATION.md` are now frozen before the
+replacement reviews. The only pre-checkpoint sequence is:
+
+1. regenerate and verify the 71-entry `REVIEW_INPUT_SHA256SUMS` against these exact bytes;
+2. complete independent consecutive Round 1 and Round 2 against the same digest without changing
+   any review-input byte;
+3. write only `FINAL_REVIEW_VERDICTS.md`, which is excluded from review input but included in the
+   final manifest;
+4. regenerate and verify `SHA256SUMS`, stage only the authorized evidence correction while
+   excluding `.gradle-review/` and the unknown
+   `apps/multiplatform/Screenshot_1784275771.png`, and create the local evidence-fix checkpoint.
+
+Once the commit containing a two-`ZERO ISSUES` verdict record and verified final manifest exists,
+no further authorized local delivery action remains. Do not sign, publish, push, reserve a domain,
+mutate a store, or change the external gap's truth.
 
 An initial pre-freeze reviewer requested changes because current product/spec prose still described
 the earlier P11/P16/P20/P21 producer state and the page matrix still quoted the prior 81/81/86

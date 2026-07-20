@@ -622,7 +622,8 @@ affected 48dp/accessibility inspection, and one risk-oriented review. Database, 
 security verification, backup/migration, file, and call groups retain real fixtures, lifecycle
 checks, and API 28/API 35 depth. Full API 28/33/35, bilingual light/dark, 200%, TalkBack,
 historical-manifest, release, and regression matrices run at milestones/final. Only final RC
-requires two consecutive same-summary zero-issue reviews.
+requires two consecutive zero-issue reviews against the same self-verifying
+`REVIEW_INPUT_SHA256SUMS`; verdicts are recorded only in `FINAL_REVIEW_VERDICTS.md`.
 
 Preview fixtures can demonstrate visual variants, but only device runs against production state paths satisfy real-behavior evidence.
 

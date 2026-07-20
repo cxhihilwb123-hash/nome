@@ -8,9 +8,10 @@ Distribution boundary: `NOT FOR DISTRIBUTION`
 
 This is the immutable summary for both consecutive final review rounds. Reviewers must verify the
 same `REVIEW_INPUT_SHA256SUMS` before reviewing. No reviewed source, test, product, spec, ledger,
-report, or visual-baseline file may change between the two verdicts. Post-review additions are
-limited to recording the two verdicts, the mechanically generated final manifest, and the final
-checkpoint identity.
+report, or visual-baseline file may change between or after the two reviews. The only post-review
+addition is `FINAL_REVIEW_VERDICTS.md` outside review input, followed by regeneration of the final
+`SHA256SUMS`; the containing local commit supplies the checkpoint identity without changing any
+manifest-listed review-input byte.
 
 ## Delivery result
 
@@ -224,19 +225,26 @@ health, delivery, timeout, or success.
   capture still requires the exact fixed fixture and remains supported only by its focused guarded
   run.
 
-## Final same-summary reviews
+## Final review freeze protocol
 
-- Final Round 1 — independent code/product/spec/test/evidence review:
-  `ZERO ISSUES`.
-- Final Round 2 — independent security/release/privacy/evidence review:
-  `ZERO ISSUES`.
-- Both rounds independently verified all 70 entries of the exact same frozen
-  `REVIEW_INPUT_SHA256SUMS`, whose SHA-256 is
+- Two independent reviews returned `ZERO ISSUES` against the former 70-entry
+  `REVIEW_INPUT_SHA256SUMS` digest
   `109d094e913a751fca7370cde366da3132ef46ebf3f1e4cd06f216fbfbe1b4a4`.
-- No manifest-listed byte changed between the two reviews. The only permitted post-review changes
-  are these verdict/closure records, the final manifest, and the checkpoint identity represented
-  by the commit containing this report. `REVIEW_INPUT_SHA256SUMS` remains frozen to preserve the
-  exact reviewed-byte identity; the final `SHA256SUMS` covers the post-review freeze payload.
+  A post-checkpoint review then found that the permitted verdict/closure edits had changed this
+  summary, `FINAL_RC_VERIFICATION.md`, and the completion ledger without updating their three
+  review-manifest hashes. The final `SHA256SUMS` verified, but the review manifest itself no
+  longer did. That evidence-structure finding invalidates the former rounds for the reproducible
+  checkpoint and requires a new consecutive pair.
+- This summary, `FINAL_RC_VERIFICATION.md`, and the completion ledger are now frozen before the
+  replacement reviews. Their current hashes MUST be present in a self-verifying
+  `REVIEW_INPUT_SHA256SUMS`, and no manifest-listed byte may change between or after the reviews.
+- The replacement review digest and verdicts are recorded only in
+  `FINAL_REVIEW_VERDICTS.md`. That file is deliberately outside the review-input manifest so
+  writing the reviewers' outcomes cannot invalidate reviewed bytes; it is included in the final
+  `SHA256SUMS` and checkpoint.
+- The local RC is accepted only when `FINAL_REVIEW_VERDICTS.md` records two independent,
+  consecutive `ZERO ISSUES` results against the same self-verifying 71-entry review manifest and
+  the final `SHA256SUMS` verifies the complete post-review freeze payload.
 
 ## Unsigned local artifacts
 

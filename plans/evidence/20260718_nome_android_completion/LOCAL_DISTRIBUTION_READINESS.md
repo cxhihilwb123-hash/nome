@@ -27,8 +27,9 @@ the authorized local implementation scope:
    corresponding-source URL, or store-account declarations exist;
 5. the checked-in Fastlane listing is the official SimpleX listing and is explicitly excluded;
 6. the final relay/operator defaults and public compatibility wording require an owner decision;
-7. the final device/accessibility/regression gates and the two final same-summary `ZERO ISSUES`
-   reviews have not run.
+7. the final device/accessibility/regression gates and two consecutive `ZERO ISSUES` reviews
+   against the same self-verifying 71-entry `REVIEW_INPUT_SHA256SUMS` must close; verdicts belong
+   only in `FINAL_REVIEW_VERDICTS.md` before the final manifest.
 
 No percentage, restoration, uptime, security, privacy, online, timeout, or success claim is
 inferred from this audit.
@@ -262,7 +263,8 @@ available, restored, successful, or complete.
 - [ ] final visual-asset/trademark review of all reachable states;
 - [ ] final API 28/33/35, bilingual, light/dark, scaling, TalkBack, upgrade, release, and regression
       evidence;
-- [ ] final same-summary two consecutive `ZERO ISSUES` reviews.
+- [ ] two consecutive `ZERO ISSUES` reviews against the same self-verifying 71-entry
+      `REVIEW_INPUT_SHA256SUMS`, with verdicts written only to `FINAL_REVIEW_VERDICTS.md`.
 
 ## Verification record
 
