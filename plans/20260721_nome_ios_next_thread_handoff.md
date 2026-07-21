@@ -22,7 +22,8 @@ git status --short
 - Xcode 26.6 signed simulator build：PASS。
 - iPhone 17 Pro / iOS 26.5 install + launch：PASS。
 - UI smoke：14/14 PASS；当前证据位于 `design/migration/smoke-20260721/`。
-- 没有 commit，没有 push。
+- 迁移基线已本地提交：`3edd26fcd`；没有 push。
+- 浅色与深色可读性收口见 `plans/20260721_04.md`，两种外观均有独立 14 状态证据。
 
 ## Build command
 
@@ -48,4 +49,4 @@ xcodebuild -project apps/ios/SimpleX.xcodeproj \
 
 ## Recommended next batch
 
-先以当前 14 状态为视觉回归基线，同步推进 iOS 的 Nome 设计批次；随后单独开真实核心/真机批次，获取与 v6.5.6 匹配的可信 simulator/device archives，再做双账号通信、通知、分享扩展、迁移数据、可访问性和发布身份验证。
+视觉主体和浅色/深色可读性已经完成收口。下一批不再做大范围页面重设计；应单独获取与 v6.5.6 匹配的可信 simulator/device archives，再做双账号通信、通知、分享扩展、迁移数据、Dynamic Type/VoiceOver 和发布身份验证。

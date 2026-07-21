@@ -81,7 +81,7 @@ XcodeBuildMCP 已按要求先检查 session defaults，但系统 `xcode-select` 
 - 没有恢复旧 Android/共享 Kotlin 改动。
 - 没有修改 Haskell/native core、`Core.kt`、协议、数据库或消息状态机。
 - 没有修改最终 Bundle ID、App Group、钥匙串组、域名或签名策略。
-- 没有 commit，没有 push。
+- 已创建本地迁移检查点 `3edd26fcd`；没有 push。
 
 ## Remaining release blockers
 
@@ -93,4 +93,4 @@ XcodeBuildMCP 已按要求先检查 session defaults，但系统 `xcode-select` 
 
 ## Safe next step
 
-在 `/Users/forkman03/project/nome/simplex-chat-ios` 内继续 iOS-only 换皮开发；每个批次只修改 `apps/ios/**`、`scripts/ios/**`、`design/**` 和对应 iOS 文档。真实通信阶段必须先取得与 `v6.5.6` 匹配的可信 arm64 simulator/device core，再执行真机和双账号证据门禁。
+在 `/Users/forkman03/project/nome/simplex-chat-ios` 内继续 iOS-only 收口；每个批次只修改 `apps/ios/**`、`scripts/ios/**`、`design/**` 和对应 iOS 文档。深色模式可读性后续见 `plans/20260721_04.md`。真实通信阶段必须先取得与 `v6.5.6` 匹配的可信 arm64 simulator/device core，再执行真机和双账号证据门禁。

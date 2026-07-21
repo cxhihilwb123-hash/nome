@@ -5,7 +5,7 @@
 > Related specs: [Architecture](../architecture.md) | [Navigation](navigation.md) | [Chat List](chat-list.md) | [Chat View](chat-view.md) | [Compose](compose.md)
 > Related product: [Nome Product Experience](../../product/views/nome-experience.md)
 
-**Source:** [`SimpleXApp.swift`](../../Shared/SimpleXApp.swift#L16-L246) | [`ChatListView.swift`](../../Shared/Views/ChatList/ChatListView.swift#L169-L1870) | [`NewChatView.swift`](../../Shared/Views/NewChat/NewChatView.swift#L16-L1498) | [`ChatView.swift`](../../Shared/Views/Chat/ChatView.swift#L17-L3790) | [`SettingsView.swift`](../../Shared/Views/UserSettings/SettingsView.swift#L274-L1192) | [`UserProfilesView.swift`](../../Shared/Views/UserSettings/UserProfilesView.swift#L10-L624) | [`UserAddressView.swift`](../../Shared/Views/UserSettings/UserAddressView.swift#L13-L951)
+**Source:** [`SimpleXApp.swift`](../../Shared/SimpleXApp.swift#L16-L246) | [`ChatListView.swift`](../../Shared/Views/ChatList/ChatListView.swift#L169-L1875) | [`NewChatView.swift`](../../Shared/Views/NewChat/NewChatView.swift#L16-L1502) | [`ChatView.swift`](../../Shared/Views/Chat/ChatView.swift#L17-L3794) | [`SettingsView.swift`](../../Shared/Views/UserSettings/SettingsView.swift#L274-L1196) | [`UserProfilesView.swift`](../../Shared/Views/UserSettings/UserProfilesView.swift#L10-L629) | [`UserAddressView.swift`](../../Shared/Views/UserSettings/UserAddressView.swift#L13-L956)
 
 ## 1. Scope
 
@@ -30,13 +30,13 @@ Preview launch argument
 | Module | Primary source | Responsibility |
 |---|---|---|
 | Brand assets | `Shared/Assets.xcassets` | App icons, light/dark logos and in-app marks |
-| Onboarding | [`SimpleXInfo.swift`](../../Shared/Views/Onboarding/SimpleXInfo.swift#L13-L269) | Nome palette, privacy explanation and local-identity introduction |
-| Home | [`ChatListView.swift`](../../Shared/Views/ChatList/ChatListView.swift#L169-L1870) | Inbox, contacts, settings tab routing and preview host |
-| Connection | [`NewChatView.swift`](../../Shared/Views/NewChat/NewChatView.swift#L16-L1498) | One-time invitation, scan/paste, group and public-contact presentation |
-| Conversation | [`ChatView.swift`](../../Shared/Views/Chat/ChatView.swift#L17-L3790) | Header, trust banner, status chips and preview host |
-| Identity | [`UserProfilesView.swift`](../../Shared/Views/UserSettings/UserProfilesView.swift#L10-L624) | Identity center and deterministic preview host |
-| Public address | [`UserAddressView.swift`](../../Shared/Views/UserSettings/UserAddressView.swift#L13-L951) | Address state, actions and trust explanation |
-| Settings | [`SettingsView.swift`](../../Shared/Views/UserSettings/SettingsView.swift#L274-L1192) | Simplified sections, backup/migration, help and about presentation |
+| Onboarding | [`SimpleXInfo.swift`](../../Shared/Views/Onboarding/SimpleXInfo.swift#L13-L273) | Nome palette, privacy explanation and local-identity introduction |
+| Home | [`ChatListView.swift`](../../Shared/Views/ChatList/ChatListView.swift#L169-L1875) | Inbox, contacts, settings tab routing and preview host |
+| Connection | [`NewChatView.swift`](../../Shared/Views/NewChat/NewChatView.swift#L16-L1502) | One-time invitation, scan/paste, group and public-contact presentation |
+| Conversation | [`ChatView.swift`](../../Shared/Views/Chat/ChatView.swift#L17-L3794) | Header, trust banner, status chips and preview host |
+| Identity | [`UserProfilesView.swift`](../../Shared/Views/UserSettings/UserProfilesView.swift#L10-L629) | Identity center and deterministic preview host |
+| Public address | [`UserAddressView.swift`](../../Shared/Views/UserSettings/UserAddressView.swift#L13-L956) | Address state, actions and trust explanation |
+| Settings | [`SettingsView.swift`](../../Shared/Views/UserSettings/SettingsView.swift#L274-L1196) | Simplified sections, backup/migration, help and about presentation |
 
 ## 4. Core and Data Invariants
 
@@ -46,6 +46,14 @@ Preview launch argument
 - Existing `simplex:` URL handling remains compatible.
 - Bundle IDs, App Group and keychain groups remain at the compatibility identifiers in the migrated batch.
 - Notification and share extensions keep the official data-sharing identifiers while changing visible display names.
+
+### 4.1 Appearance and Contrast Invariant
+
+- Each local Nome palette separates adaptive foreground ink from fixed brand fills.
+- Foreground `navy` resolves to `#0E1B2D` in light appearance and to the resolved system `label` color in dark appearance.
+- Fixed `brandNavy` remains `#0E1B2D` and is only used behind a contrasting white foreground.
+- [GAP resolved 2026-07-21] Fixed brand navy is no longer used for dark-appearance titles, labels or functional icons.
+- This presentation-only resolution does not read or mutate chat, identity, address, settings or message state.
 
 ## 5. Build and Verification Boundary
 

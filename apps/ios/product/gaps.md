@@ -76,4 +76,10 @@ The migrated source retains compatibility Bundle IDs, App Group and keychain ide
 
 **REC:** Treat release identity as a separate migration with data-access, extension, associated-domain and rollback testing.
 
+### GAP (resolved 2026-07-21): Fixed brand navy reduced dark-appearance readability
+**Source:** [spec/client/nome-brand-overlay.md](../spec/client/nome-brand-overlay.md)
+The migrated Nome overlay originally reused fixed deep navy for both brand fills and text. A complete dark-appearance smoke exposed low-contrast titles, labels and icons on black or dark-gray surfaces.
+
+**Resolution:** Nome palettes now resolve foreground navy to the system label color in dark appearance while retaining fixed deep navy only for brand fills with a contrasting white foreground. Light and dark 14-state smoke remain separate evidence gates.
+
 ---

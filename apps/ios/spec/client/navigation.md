@@ -152,7 +152,7 @@ Sheets are presented modally on top of the navigation stack:
 | Sheet | Trigger | Content |
 |-------|---------|---------|
 | UserPicker | Tap user avatar in nav bar | User list, settings shortcuts |
-| [`NewChatView`](../../Shared/Views/NewChat/NewChatView.swift#L86) | Tap FAB / "+" button | Create link, scan QR, paste link, new group |
+| [`NewChatView`](../../Shared/Views/NewChat/NewChatView.swift#L90) | Tap FAB / "+" button | Create link, scan QR, paste link, new group |
 | WhatsNew | App update detected | Release notes |
 | AddGroupView | "New Group" action | Group creation wizard |
 | ConnectDesktopView | Settings > Desktop | Remote desktop pairing |
@@ -199,7 +199,7 @@ SimpleX links (`simplex:/chat#...`) are handled via [`connectViaUrl()`](../../Sh
 }
 ```
 
-URL processing routes to the appropriate connection flow (join group, add contact, etc.) via [`planAndConnect()`](../../Shared/Views/NewChat/NewChatView.swift#L2073).
+URL processing routes to the appropriate connection flow (join group, add contact, etc.) via [`planAndConnect()`](../../Shared/Views/NewChat/NewChatView.swift#L2077).
 
 ### Call Deep Link
 

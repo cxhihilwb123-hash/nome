@@ -97,11 +97,11 @@
 |-------------|--------------------------|------------|-------|
 | Shared/SimpleXApp.swift | PC1 through PC32 | High | Normal lifecycle plus explicit Nome preview routing; preview state must remain isolated |
 | Shared/ContentView.swift | PC1, PC22, PC32 | High | Root navigation, authentication copy and release-note presentation |
-| Shared/Views/Onboarding/ | PC1, PC19, PC25, PC32 | High | First-run identity, network and conditions presentation |
-| Shared/Views/ChatList/ChatListView.swift | PC1, PC12, PC19, PC28, PC32 | High | Nome home, contacts/settings tabs and preview host |
-| Shared/Views/NewChat/ | PC12, PC14, PC29, PC32 | High | Invitation, scan/paste, group and public-address entry points |
-| Shared/Views/Chat/ChatView.swift | PC2 through PC11, PC13, PC17, PC32 | High | Conversation rendering, trust presentation and preview host |
-| Shared/Views/UserSettings/ | PC18 through PC29, PC32 | High | Identity, public address, settings, backup and network presentation |
+| Shared/Views/Onboarding/ | PC1, PC19, PC24, PC25, PC32 | High | First-run identity, network and conditions presentation; adaptive Nome foreground ink |
+| Shared/Views/ChatList/ChatListView.swift | PC1, PC12, PC19, PC24, PC28, PC32 | High | Nome home, contacts/settings tabs, preview host and adaptive foreground ink |
+| Shared/Views/NewChat/ | PC12, PC14, PC24, PC29, PC32 | High | Invitation, scan/paste, group and public-address entry points; adaptive foreground ink |
+| Shared/Views/Chat/ChatView.swift | PC2 through PC11, PC13, PC17, PC24, PC32 | High | Conversation rendering, trust presentation, preview host and adaptive foreground ink |
+| Shared/Views/UserSettings/ | PC18 through PC29, PC32 | High | Identity, public address, settings, backup and network presentation; adaptive foreground ink |
 | Shared/Model/SimpleXAPI.swift | PC12, PC14, PC29, PC32 | High | Explicit unavailable-core/database copy; no synthesized success allowed |
 | Shared/Model/NtfManager.swift and extension localizations | PC18, PC32 | Medium | Nome-visible notification and extension display copy |
 | Shared/Assets.xcassets and SimpleX.xcodeproj/project.pbxproj | PC32 | High | Brand assets and visible product names while compatibility IDs remain unchanged |
