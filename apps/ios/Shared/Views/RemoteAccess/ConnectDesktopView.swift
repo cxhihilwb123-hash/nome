@@ -153,15 +153,33 @@ struct ConnectDesktopView: View {
             Section(header: Text("This device name").foregroundColor(theme.colors.secondary)) {
                 devicesView()
             }
-            if showScanner {
+            if let readinessError = realChatCoreReadinessError() {
+                desktopCoreUnavailableView(readinessError)
+            } else if showScanner {
                 scanDesctopAddressView()
             }
-            if developerTools {
+            if developerTools && realChatCoreReadinessError() == nil {
                 desktopAddressView()
             }
         }
         .navigationTitle("Connect to desktop")
         .modifier(ThemedBackground(grouped: true))
+    }
+
+    private func desktopCoreUnavailableView(_ message: String) -> some View {
+        Section {
+            VStack(alignment: .leading, spacing: 12) {
+                Label("桌面连接暂不可用", systemImage: "desktopcomputer.trianglebadge.exclamationmark")
+                    .font(.headline)
+                    .foregroundColor(theme.colors.onBackground)
+                Text("当前构建只能预览 Nome 界面，还不能建立真实的手机与桌面连接。")
+                    .foregroundColor(theme.colors.secondary)
+                Text(message)
+                    .font(.footnote)
+                    .foregroundColor(theme.colors.secondary)
+            }
+            .padding(.vertical, 8)
+        }
     }
 
     private func connectingDesktopView(_ session: RemoteCtrlSession, _ rc: RemoteCtrlInfo?) -> some View {
@@ -388,6 +406,7 @@ struct ConnectDesktopView: View {
 
 
     private func setDeviceName(_ name: String) {
+        if realChatCoreReadinessError() != nil { return }
         do {
             try setLocalDeviceName(deviceName)
         } catch let e {
@@ -396,6 +415,10 @@ struct ConnectDesktopView: View {
     }
 
     private func updateRemoteCtrls() {
+        if realChatCoreReadinessError() != nil {
+            remoteCtrls = []
+            return
+        }
         do {
             remoteCtrls = try listRemoteCtrls()
         } catch let e {
@@ -411,6 +434,7 @@ struct ConnectDesktopView: View {
     }
 
     private func findKnownDesktop() {
+        if showRealCoreErrorIfNeeded(title: "桌面连接暂不可用") { return }
         Task {
             do {
                 try await findKnownRemoteCtrl()
@@ -431,12 +455,14 @@ struct ConnectDesktopView: View {
     }
 
     private func confirmKnownDesktop(_ rc: RemoteCtrlInfo) {
+        if showRealCoreErrorIfNeeded(title: "桌面连接暂不可用") { return }
         connectDesktop_ {
             try await confirmRemoteCtrl(rc.remoteCtrlId)
         }
     }
 
     private func connectDesktopAddress(_ addr: String) {
+        if showRealCoreErrorIfNeeded(title: "桌面连接暂不可用") { return }
         connectDesktop_ {
             try await connectRemoteCtrl(desktopAddress: addr)
         }
@@ -470,6 +496,7 @@ struct ConnectDesktopView: View {
     }
 
     private func verifyDesktopSessionCode(_ sessCode: String) {
+        if showRealCoreErrorIfNeeded(title: "桌面连接暂不可用") { return }
         Task {
             do {
                 let rc = try await verifyRemoteCtrlSession(sessCode)
@@ -496,6 +523,11 @@ struct ConnectDesktopView: View {
     }
 
     private func disconnectDesktop(_ action: UserDisconnectAction? = nil) {
+        if realChatCoreReadinessError() != nil {
+            if action != nil { dismiss() }
+            m.remoteCtrlSession = nil
+            return
+        }
         Task {
             do {
                 try await stopRemoteCtrl()
@@ -520,6 +552,7 @@ struct ConnectDesktopView: View {
     }
 
     private func unlinkDesktop(_ rc: RemoteCtrlInfo) {
+        if showRealCoreErrorIfNeeded(title: "桌面连接暂不可用") { return }
         Task {
             do {
                 try await deleteRemoteCtrl(rc.remoteCtrlId)
@@ -534,7 +567,14 @@ struct ConnectDesktopView: View {
         }
     }
 
+    private func showRealCoreErrorIfNeeded(title: LocalizedStringKey) -> Bool {
+        guard let error = realChatCoreReadinessError() else { return false }
+        alert = .error(title: title, error: LocalizedStringKey(error))
+        return true
+    }
+
     private func errorAlert(_ error: Error) {
+        if showRealCoreErrorIfNeeded(title: "桌面连接暂不可用") { return }
         let a = getErrorAlert(error, "Error")
         alert = .error(title: a.title, error: a.message)
     }

@@ -62,3 +62,18 @@ The Haskell Store modules (`Store/Direct.hs`, `Store/Groups.hs`, `Store/Messages
 
 ---
 
+## Nome Product Overlay
+
+### GAP: Preview UI is not real-core communication evidence
+**Source:** [spec/client/nome-brand-overlay.md](../spec/client/nome-brand-overlay.md)
+Nome preview hosts can render deterministic invitation, group, conversation and identity states without proving a production Haskell core, signed-device execution or message delivery.
+
+**REC:** Keep preview, simulator, generic-device, physical-device, real-communication and distribution evidence in separate gates and never promote an earlier gate to a later claim.
+
+### GAP: Nome release identity is not established
+**Source:** [product/views/nome-experience.md](views/nome-experience.md)
+The migrated source retains compatibility Bundle IDs, App Group and keychain identifiers. Nome-owned signing, domains, support/legal pages and store identity remain unresolved.
+
+**REC:** Treat release identity as a separate migration with data-access, extension, associated-domain and rollback testing.
+
+---

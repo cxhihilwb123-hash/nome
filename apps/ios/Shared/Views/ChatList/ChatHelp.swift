@@ -19,11 +19,11 @@ struct ChatHelp: View {
 
     func chatHelp() -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Thank you for installing SimpleX Chat!")
+            Text("Thank you for installing Nome!")
 
             VStack(alignment: .leading, spacing: 0) {
                 Text("To ask any questions and to receive updates:")
-                Button("connect to SimpleX Chat developers.") {
+                Button("connect to community support.") {
                     dismissSettingsSheet()
                     DispatchQueue.main.async {
                         // simplexTeamURL targets this same app; route to the in-app connect flow
@@ -45,8 +45,8 @@ struct ChatHelp: View {
                     Text("above, then choose:")
                 }
 
-                Text("**Create 1-time link**: to create and share a new invitation link.")
-                Text("**Scan / Paste link**: to connect via a link you received.")
+                Text("**Create one-time friend link**: to create and share a link that works once.")
+                Text("**Scan or paste link**: to connect via a link you received.")
                 Text("**Create group**: to create a new group.")
             }
             .padding(.top, 24)

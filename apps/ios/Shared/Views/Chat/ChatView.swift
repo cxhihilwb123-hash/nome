@@ -14,6 +14,393 @@ import Combine
 
 private let memberImageSize: CGFloat = 34
 
+private enum NomeChatPalette {
+    static let navy = Color(red: 14.0 / 255.0, green: 27.0 / 255.0, blue: 45.0 / 255.0)
+    static let green = Color(red: 22.0 / 255.0, green: 174.0 / 255.0, blue: 102.0 / 255.0)
+    static let blue = Color(red: 39.0 / 255.0, green: 107.0 / 255.0, blue: 255.0 / 255.0)
+    static let purple = Color(red: 116.0 / 255.0, green: 89.0 / 255.0, blue: 238.0 / 255.0)
+    static let border = Color.black.opacity(0.06)
+}
+
+private struct NomeChatDefaultBackground: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    private let columns = 4
+    private let rows = 8
+    private let symbols = ["shield", "lock", "link"]
+
+    var body: some View {
+        ZStack {
+            baseColor
+
+            GeometryReader { proxy in
+                ForEach(0..<(columns * rows), id: \.self) { index in
+                    Image(systemName: symbols[index % symbols.count])
+                        .font(.system(size: symbolSize(index), weight: .regular))
+                        .foregroundColor(symbolColor(index))
+                        .opacity(colorScheme == .dark ? 0.03 : 0.045)
+                        .rotationEffect(.degrees(index.isMultiple(of: 2) ? -10 : 12))
+                        .position(
+                            x: xPosition(index, width: proxy.size.width),
+                            y: yPosition(index, height: proxy.size.height)
+                        )
+                }
+            }
+        }
+        .ignoresSafeArea(.all)
+    }
+
+    private var baseColor: Color {
+        colorScheme == .dark
+        ? Color(red: 9.0 / 255.0, green: 18.0 / 255.0, blue: 31.0 / 255.0)
+        : Color(red: 246.0 / 255.0, green: 250.0 / 255.0, blue: 248.0 / 255.0)
+    }
+
+    private func symbolColor(_ index: Int) -> Color {
+        switch index % 3 {
+        case 0: NomeChatPalette.navy
+        case 1: NomeChatPalette.green
+        default: NomeChatPalette.blue
+        }
+    }
+
+    private func symbolSize(_ index: Int) -> CGFloat {
+        index % 3 == 0 ? 28 : 22
+    }
+
+    private func xPosition(_ index: Int, width: CGFloat) -> CGFloat {
+        let column = index % columns
+        let row = index / columns
+        let base = width * (CGFloat(column) + 0.5) / CGFloat(columns)
+        let offset = row.isMultiple(of: 2) ? 0 : width / CGFloat(columns * 3)
+        return min(width - 18, max(18, base + offset))
+    }
+
+    private func yPosition(_ index: Int, height: CGFloat) -> CGFloat {
+        let row = index / columns
+        return height * (CGFloat(row) + 0.5) / CGFloat(rows)
+    }
+}
+
+private struct NomeChatSecurityBanner: View {
+    let chatInfo: ChatInfo
+    let chatTTL: ChatTTL
+    let openDetails: (() -> Void)?
+
+    var body: some View {
+        if let openDetails {
+            Button(action: openDetails) {
+                content(showChevron: true)
+            }
+            .buttonStyle(.plain)
+        } else {
+            content(showChevron: false)
+        }
+    }
+
+    private func content(showChevron: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            header(showChevron: showChevron)
+            statusChips
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color(uiColor: .systemBackground).opacity(0.96))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(NomeChatPalette.border, lineWidth: 1)
+        )
+        .shadow(color: NomeChatPalette.navy.opacity(0.06), radius: 10, x: 0, y: 5)
+        .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+
+    private func header(showChevron: Bool) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(width: 30, height: 30)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(tint)
+                )
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundColor(NomeChatPalette.navy)
+                    .lineLimit(1)
+                Text(subtitle)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+            }
+
+            Spacer(minLength: 0)
+
+            NomeChatStatusChip(icon: verificationIcon, title: verificationTitle, tint: verificationTint)
+
+            if showChevron {
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(.secondary)
+            }
+        }
+    }
+
+    private var statusChips: some View {
+        HStack(spacing: 6) {
+            ForEach(statusItems) { item in
+                NomeChatStatusChip(icon: item.icon, title: item.title, tint: item.tint)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    private var statusItems: [NomeChatStatusItem] {
+        switch chatInfo {
+        case .direct, .group:
+            var items = [
+                NomeChatStatusItem(icon: "lock.fill", title: "端到端加密", tint: NomeChatPalette.green)
+            ]
+            if let ttlText = chatTTLText {
+                items.append(NomeChatStatusItem(icon: "timer", title: "自动删除 \(ttlText)", tint: .orange))
+            } else if chatInfo.featureEnabled(.timedMessages) {
+                items.append(NomeChatStatusItem(icon: "stopwatch", title: "限时消息可用", tint: NomeChatPalette.blue))
+            } else {
+                items.append(NomeChatStatusItem(icon: "tray.full", title: "消息保留", tint: NomeChatPalette.navy.opacity(0.72)))
+            }
+            return items
+        case .local:
+            return [
+                NomeChatStatusItem(icon: "iphone", title: "本机保存", tint: NomeChatPalette.navy),
+                NomeChatStatusItem(icon: "tray.full", title: "消息保留", tint: NomeChatPalette.navy.opacity(0.72))
+            ]
+        case .contactRequest:
+            return [
+                NomeChatStatusItem(icon: "person.badge.plus", title: "等待确认", tint: NomeChatPalette.purple),
+                NomeChatStatusItem(icon: "lock.open", title: "尚未建立会话", tint: .secondary)
+            ]
+        case .contactConnection:
+            return [
+                NomeChatStatusItem(icon: "link", title: "邀请已发送", tint: NomeChatPalette.purple),
+                NomeChatStatusItem(icon: "clock", title: "等待对方接受", tint: .secondary)
+            ]
+        case .invalidJSON:
+            return [
+                NomeChatStatusItem(icon: "exclamationmark.triangle", title: "需要检查", tint: .orange)
+            ]
+        }
+    }
+
+    private var icon: String {
+        switch chatInfo {
+        case .local: "note.text"
+        case .direct: "lock.shield"
+        case .group: "person.2.fill"
+        case .contactRequest: "person.crop.circle.badge.questionmark"
+        case .contactConnection: "link"
+        case .invalidJSON: "exclamationmark.triangle"
+        }
+    }
+
+    private var tint: Color {
+        switch chatInfo {
+        case .local: NomeChatPalette.navy
+        case .direct: NomeChatPalette.green
+        case .group: NomeChatPalette.blue
+        case .contactRequest, .contactConnection: NomeChatPalette.purple
+        case .invalidJSON: .orange
+        }
+    }
+
+    private var title: LocalizedStringKey {
+        switch chatInfo {
+        case .local: "本地笔记"
+        case .direct, .group: "已加密"
+        case .contactRequest: "等待确认"
+        case .contactConnection: "正在连接"
+        case .invalidJSON: "会话异常"
+        }
+    }
+
+    private var subtitle: LocalizedStringKey {
+        switch chatInfo {
+        case .local:
+            "仅保存在你的设备上。"
+        case .direct:
+            "端到端加密保护中，可核对安全码。"
+        case .group:
+            "群消息端到端加密保护中，成员安全码可核对。"
+        case .contactRequest:
+            "确认后才会建立联系人。"
+        case .contactConnection:
+            "对方接受邀请后会出现在会话列表。"
+        case .invalidJSON:
+            "部分会话数据无法显示。"
+        }
+    }
+
+    private var verificationIcon: String {
+        switch chatInfo {
+        case let .direct(contact): contact.verified ? "checkmark.shield.fill" : "shield"
+        case .group: "person.2.badge.key"
+        case .local: "iphone"
+        case .contactRequest: "person.crop.circle.badge.questionmark"
+        case .contactConnection: "link"
+        case .invalidJSON: "exclamationmark.triangle"
+        }
+    }
+
+    private var verificationTitle: String {
+        switch chatInfo {
+        case let .direct(contact): contact.verified ? "安全码已核对" : "安全码可核对"
+        case .group: "成员可核对"
+        case .local: "本机保存"
+        case .contactRequest: "需要确认"
+        case .contactConnection: "等待接受"
+        case .invalidJSON: "需要检查"
+        }
+    }
+
+    private var verificationTint: Color {
+        switch chatInfo {
+        case let .direct(contact): contact.verified ? NomeChatPalette.green : NomeChatPalette.blue
+        case .group: NomeChatPalette.blue
+        case .local: NomeChatPalette.navy
+        case .contactRequest, .contactConnection: NomeChatPalette.purple
+        case .invalidJSON: .orange
+        }
+    }
+
+    private var chatTTLText: String? {
+        switch chatTTL {
+        case let .chat(ttl), let .userDefault(ttl):
+            ttl.seconds == 0 ? nil : ttl.deleteAfterText
+        }
+    }
+}
+
+private struct NomeChatStatusItem: Identifiable {
+    let icon: String
+    let title: String
+    let tint: Color
+
+    var id: String { "\(icon)-\(title)" }
+}
+
+private struct NomeChatStatusChip: View {
+    let icon: String
+    let title: String
+    let tint: Color
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.system(size: 10, weight: .semibold))
+            Text(title)
+                .font(.caption2.weight(.medium))
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+        }
+        .foregroundColor(tint)
+        .padding(.horizontal, 8)
+        .frame(height: 24)
+        .background(Capsule().fill(tint.opacity(0.1)))
+    }
+}
+
+private struct NomeChatDisappearingPrompt: View {
+    let openSettings: () -> Void
+    let dismiss: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "flame.fill")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(NomeChatPalette.green)
+
+            Button(action: openSettings) {
+                HStack(spacing: 6) {
+                    Text("阅后即焚")
+                    Text("·")
+                        .foregroundColor(.secondary)
+                    Text("设置")
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundColor(NomeChatPalette.green)
+            }
+            .buttonStyle(.plain)
+
+            Spacer(minLength: 0)
+
+            Button(action: dismiss) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.secondary)
+                    .frame(width: 28, height: 28)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.leading, 14)
+        .padding(.trailing, 8)
+        .frame(height: 44)
+        .background(
+            Capsule()
+                .fill(Color(uiColor: .secondarySystemBackground).opacity(0.92))
+        )
+        .overlay(
+            Capsule()
+                .stroke(NomeChatPalette.border, lineWidth: 1)
+        )
+    }
+}
+
+private struct NomeConversationPreviewDetailsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationView {
+            List {
+                Section {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label("安全和消息保留", systemImage: "lock.shield")
+                            .font(.headline)
+                            .foregroundColor(NomeChatPalette.navy)
+                        Text("这是对话页预览。真实聊天中，这里会打开联系人或群组详情，用来核对安全码、管理限时消息和查看会话设置。")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.vertical, 6)
+                }
+
+                Section(header: Text("阅后即焚")) {
+                    Label("可以为真实会话设置自动删除时间", systemImage: "timer")
+                    Text("自动删除只控制 Nome 中的消息保留时间，不等于撤回对方已经保存、截图或导出的内容。")
+                        .foregroundColor(.secondary)
+                }
+
+                Section(header: Text("安全码")) {
+                    Label("真实会话可核对安全码", systemImage: "checkmark.shield")
+                    Text("安全码用于确认端到端加密连接没有被替换。预览模式不会调用真实聊天 core。")
+                        .foregroundColor(.secondary)
+                }
+            }
+            .navigationTitle("安全设置")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("关闭") { dismiss() }
+                }
+            }
+            .modifier(ThemedBackground(grouped: true))
+        }
+    }
+}
+
 // Spec: spec/client/chat-view.md#ChatView
 struct ChatView: View {
     @EnvironmentObject var chatModel: ChatModel
@@ -30,7 +417,9 @@ struct ChatView: View {
     @State var floatingButtonModel: FloatingButtonModel
     @Binding var scrollToItemId: ChatItem.ID?
     @State private var showChatInfoSheet: Bool = false
+    @State private var showNomePreviewConversationDetails = false
     @State private var showAddMembersSheet: Bool = false
+    @State private var hideNomeDisappearingPrompt = false
     @State private var composeState = ComposeState()
     @State private var selectedRange = NSRange()
     @State private var keyboardVisible = false
@@ -92,17 +481,32 @@ struct ChatView: View {
                 }
         let userMemberKnockingChat = memberSupportChat?.groupInfo.membership.memberPending == true
         return ZStack {
-            let wallpaperImage = theme.wallpaper.type.image
             let wallpaperType = theme.wallpaper.type
+            let useNomeDefaultBackground = wallpaperType.samePreset(other: .school)
+            let wallpaperImage: Image? = useNomeDefaultBackground ? nil : wallpaperType.image
             let backgroundColor = theme.wallpaper.background ?? wallpaperType.defaultBackgroundColor(theme.base, theme.colors.background)
             let tintColor = theme.wallpaper.tint ?? wallpaperType.defaultTintColor(theme.base)
-            Color.clear.ignoresSafeArea(.all)
-                .if(wallpaperImage != nil && im.secondaryIMFilter == nil) { view in
-                    view.modifier(
-                        ChatViewBackground(image: wallpaperImage!, imageType: wallpaperType, background: backgroundColor, tint: tintColor)
-                    )
+            if useNomeDefaultBackground && im.secondaryIMFilter == nil {
+                NomeChatDefaultBackground()
+            } else {
+                Color.clear.ignoresSafeArea(.all)
+                    .if(wallpaperImage != nil && im.secondaryIMFilter == nil) { view in
+                        view.modifier(
+                            ChatViewBackground(image: wallpaperImage!, imageType: wallpaperType, background: backgroundColor, tint: tintColor)
+                        )
+                }
             }
             VStack(spacing: 0) {
+                if selectedChatItems == nil && !showSearch {
+                    NomeChatSecurityBanner(
+                        chatInfo: chat.chatInfo,
+                        chatTTL: chat.chatInfo.ttl(chatModel.chatItemTTL),
+                        openDetails: nomeSecurityBannerDetailsAction
+                    )
+                        .padding(.horizontal, 12)
+                        .padding(.top, 8)
+                        .padding(.bottom, 6)
+                }
                 ZStack(alignment: .bottomTrailing) {
                     if userMemberKnockingChat {
                         ZStack(alignment: .top) {
@@ -134,6 +538,14 @@ struct ChatView: View {
                         .padding(.top)
                 }
                 if selectedChatItems == nil {
+                    if showNomeDisappearingPrompt {
+                        NomeChatDisappearingPrompt(
+                            openSettings: openChatDetailsFromSecurityBanner,
+                            dismiss: { hideNomeDisappearingPrompt = true }
+                        )
+                        .padding(.horizontal, 28)
+                        .padding(.vertical, 6)
+                    }
                     ComposeView(
                         chat: chat,
                         im: im,
@@ -297,6 +709,9 @@ struct ChatView: View {
                 )
             }
         }
+        .appSheet(isPresented: $showNomePreviewConversationDetails) {
+            NomeConversationPreviewDetailsSheet()
+        }
         .onAppear {
             ConnectProgressManager.shared.cancelConnectProgress()
             scrollView.listState.onUpdateListener = onChatItemsUpdated
@@ -313,6 +728,13 @@ struct ChatView: View {
                     }
                 }
             }
+            #if DEBUG
+            if nomeConversationPreviewAutoOpenDetails {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                    showNomePreviewConversationDetails = true
+                }
+            }
+            #endif
             // if this is the main chat of the group with the pending member (knocking)
             if case let .group(groupInfo, nil) = chat.chatInfo,
                groupInfo.membership.memberPending {
@@ -334,6 +756,7 @@ struct ChatView: View {
             showChatInfoSheet = false
             selectedChatItems = nil
             revealedItems = Set()
+            hideNomeDisappearingPrompt = false
             stopAudioPlayer()
             if let cId {
                 if let c = chatModel.getChat(cId) {
@@ -466,6 +889,37 @@ struct ChatView: View {
             .frame(minHeight: 54)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(ToolbarMaterial.material(toolbarMaterial))
+        }
+    }
+
+    private var nomeSecurityBannerDetailsAction: (() -> Void)? {
+        switch chat.chatInfo {
+        case .direct, .group:
+            return { openChatDetailsFromSecurityBanner() }
+        default:
+            return nil
+        }
+    }
+
+    private var showNomeDisappearingPrompt: Bool {
+        selectedChatItems == nil
+        && !hideNomeDisappearingPrompt
+        && chat.chatInfo.featureEnabled(.timedMessages)
+        && chat.chatInfo.ttl(chatModel.chatItemTTL).neverExpires
+    }
+
+    private func openChatDetailsFromSecurityBanner() {
+        if nomeConversationPreviewMode {
+            showNomePreviewConversationDetails = true
+            return
+        }
+        switch chat.chatInfo {
+        case .direct:
+            showChatInfoSheet = true
+        case let .group(groupInfo, _):
+            Task { await chatModel.loadGroupMembers(groupInfo) { showChatInfoSheet = true } }
+        default:
+            break
         }
     }
 
@@ -708,6 +1162,7 @@ struct ChatView: View {
 
     // Spec: spec/client/chat-view.md#initChatView
     private func initChatView() {
+        if nomeConversationPreviewMode { return }
         let cInfo = chat.chatInfo
         // This check prevents the call to apiContactInfo after the app is suspended, and the database is closed.
         if case .active = scenePhase {
@@ -769,7 +1224,27 @@ struct ChatView: View {
         floatingButtonModel.updateOnListChange(scrollView.listState)
     }
 
+    private var nomeConversationPreviewMode: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-NomeConversationPreview")
+        #else
+        false
+        #endif
+    }
+
+    private var nomeConversationPreviewAutoOpenDetails: Bool {
+        #if DEBUG
+        nomeConversationPreviewMode && ProcessInfo.processInfo.arguments.contains("-NomeConversationPreviewOpenDetails")
+        #else
+        false
+        #endif
+    }
+
     private func updateAvailableContent() {
+        if nomeConversationPreviewMode {
+            availableContent = ContentFilter.allCases
+            return
+        }
         Task {
             let content: [ContentFilter]
             do {
@@ -1044,7 +1519,7 @@ struct ChatView: View {
                         contact.profile.contactLink
                     }
                     if let connLink {
-                        return ("SimpleX address", connLink)
+                        return ("Contact address", connLink)
                     }
                 }
             case let .group(groupInfo, _):
@@ -1592,6 +2067,7 @@ struct ChatView: View {
 
     // Spec: spec/client/chat-view.md#loadChatItems
     private func loadChatItems(_ chat: Chat, _ pagination: ChatPagination) async -> Bool {
+        if nomeConversationPreviewMode { return false }
         if loadingMoreItems { return false }
         await MainActor.run {
             loadingMoreItems = true
@@ -1614,6 +2090,7 @@ struct ChatView: View {
     }
 
     private func loadChatItemsUnchecked(_ chat: Chat, _ pagination: ChatPagination) async -> Bool {
+        if nomeConversationPreviewMode { return false }
         await apiLoadMessages(
             chat.chatInfo.id,
             im,
@@ -1638,6 +2115,7 @@ struct ChatView: View {
             return
         }
         floatingButtonModel.updateOnListChange(scrollView.listState)
+        if nomeConversationPreviewMode { return }
         preloadIfNeeded(
             im,
             $allowLoadMoreItems,
@@ -3307,6 +3785,80 @@ enum ContentFilter: CaseIterable {
         }
     }
 }
+
+#if DEBUG
+struct NomeConversationPreviewHost: View {
+    @EnvironmentObject var chatModel: ChatModel
+    @State private var scrollToItemId: ChatItem.ID?
+    private let chat: Chat
+    private let im: ItemsModel
+
+    init() {
+        let seededChat = Self.makePreviewChat()
+        let seededItems = Self.makePreviewItems()
+        let itemsModel = ItemsModel.shared
+        itemsModel.reversedChatItems = seededItems
+        self.chat = seededChat
+        self.im = itemsModel
+    }
+
+    var body: some View {
+        NavigationView {
+            ChatView(
+                chat: chat,
+                im: im,
+                mergedItems: BoxedValue(MergedItems.create(im, [])),
+                floatingButtonModel: FloatingButtonModel(im: im),
+                scrollToItemId: $scrollToItemId
+            )
+        }
+        .navigationViewStyle(.stack)
+        .onAppear {
+            chatModel.currentUser = User.sampleData
+            chatModel.chatId = chat.id
+            chatModel.chatItemTTL = .none
+        }
+    }
+
+    private static func makePreviewChat() -> Chat {
+        var contact = Contact.sampleData
+        contact.profile.displayName = "林晓"
+        contact.profile.fullName = "Lin Xiao"
+        contact.activeConn?.connectionCode = SecurityCode(
+            securityCode: "12345 67890 12345 67890",
+            verifiedAt: .now
+        )
+        contact.mergedPreferences.timedMessages = ContactUserPreference<TimedMessagesPreference>(
+            enabled: FeatureEnabled(forUser: true, forContact: true),
+            userPreference: .user(preference: TimedMessagesPreference(allow: .yes, ttl: nil)),
+            contactPreference: TimedMessagesPreference(allow: .yes, ttl: nil)
+        )
+        return Chat(chatInfo: .direct(contact: contact), chatItems: makePreviewItems())
+    }
+
+    private static func makePreviewItems() -> [ChatItem] {
+        let base = Date.now
+        return [
+            ChatItem.getSample(5, .directRcv, base.addingTimeInterval(-60), "收到，辛苦了 🙏", .rcvRead),
+            ChatItem(
+                chatDir: .directSnd,
+                meta: CIMeta.getSample(4, base.addingTimeInterval(-120), "", .sndSent(sndProgress: .complete)),
+                content: .sndMsgContent(msgContent: .voice(text: "", duration: 18)),
+                file: CIFile.getSample(fileId: 4, fileName: "voice.m4a", fileSize: 65536, fileStatus: .sndComplete)
+            ),
+            ChatItem.getFileMsgContentSample(
+                id: 3,
+                text: "",
+                fileName: "项目计划.pdf",
+                fileSize: 1_200_000,
+                fileStatus: .rcvComplete
+            ),
+            ChatItem.getSample(2, .directSnd, base.addingTimeInterval(-240), "谢谢！我再调整一下细节。", .sndSent(sndProgress: .complete)),
+            ChatItem.getSample(1, .directRcv, base.addingTimeInterval(-300), "早上好！\n这个方案看起来很不错。", .rcvRead)
+        ]
+    }
+}
+#endif
 
 struct ChatView_Previews: PreviewProvider {
     static var previews: some View {

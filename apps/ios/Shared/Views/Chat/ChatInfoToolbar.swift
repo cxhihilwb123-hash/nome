@@ -47,28 +47,23 @@ struct ChatInfoToolbar: View {
             }
             .padding(.trailing, 4)
             let t = Text(cInfo.displayName).font(.headline)
-            NameWithBadge((cInfo.contact?.verified == true ? contactVerifiedShield + t : t), cInfo.nameBadge, .headline)
-                .lineLimit(1)
-                .if (cInfo.fullName != "" && cInfo.displayName != cInfo.fullName) { v in
-                    VStack(spacing: 0) {
-                        v
-                        Text(cInfo.fullName).font(.subheadline)
-                            .lineLimit(1)
-                            .padding(.top, -2)
-                    }
+            VStack(spacing: 0) {
+                NameWithBadge((cInfo.contact?.verified == true ? contactVerifiedShield + t : t), cInfo.nameBadge, .headline)
+                    .lineLimit(1)
+                if let count = channelSubscriberCount {
+                    Text(subscriberCountStr(count))
+                        .font(.caption)
+                        .foregroundColor(theme.colors.secondary)
+                        .lineLimit(1)
+                        .padding(.top, -2)
+                } else if let subtitle = nomeSubtitle {
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundColor(theme.colors.secondary)
+                        .lineLimit(1)
+                        .padding(.top, -2)
                 }
-                .if (channelSubscriberCount != nil) { v in
-                    VStack(spacing: 0) {
-                        v
-                        if let count = channelSubscriberCount {
-                            Text(subscriberCountStr(count))
-                                .font(.caption)
-                                .foregroundColor(theme.colors.secondary)
-                                .lineLimit(1)
-                                .padding(.top, -2)
-                        }
-                    }
-                }
+            }
             if let contact = chat.chatInfo.contact,
                contact.ready && contact.active,
                let chatSubStatus = m.chatSubStatus,
@@ -89,6 +84,23 @@ struct ChatInfoToolbar: View {
             count
         } else {
             nil
+        }
+    }
+
+    private var nomeSubtitle: LocalizedStringKey? {
+        switch chat.chatInfo {
+        case .direct:
+            "安全会话"
+        case let .group(groupInfo, _):
+            groupInfo.useRelays ? "安全频道" : "安全群组"
+        case .local:
+            "本地笔记"
+        case .contactRequest:
+            "等待确认"
+        case .contactConnection:
+            "正在连接"
+        case .invalidJSON:
+            "会话异常"
         }
     }
 

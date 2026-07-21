@@ -4,6 +4,7 @@
 >
 > Related specs: [Architecture](../architecture.md) | [API Reference](../api.md) | [Navigation](../client/navigation.md) | [README](../README.md)
 > Related product: [Product Overview](../../product/README.md)
+> Nome overlay: [Nome Brand and Product Overlay](../client/nome-brand-overlay.md)
 
 **Source:** [`NtfManager.swift`](../../Shared/Model/NtfManager.swift) | [`BGManager.swift`](../../Shared/Model/BGManager.swift) | [`Notifications.swift`](../../SimpleXChat/Notifications.swift) | [`NotificationService.swift`](../../SimpleX NSE/NotificationService.swift)
 
@@ -240,7 +241,7 @@ Called when:
 
 ## 6. Notification Categories & Actions
 
-Registered in [`NtfManager.registerCategories()`](../../Shared/Model/NtfManager.swift#L156):
+Registered in [`NtfManager.registerCategories()`](../../Shared/Model/NtfManager.swift#L27):
 
 ### Contact Request Category
 

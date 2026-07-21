@@ -4,6 +4,7 @@
 >
 > Related specs: [Chat View](chat-view.md) | [Navigation](navigation.md) | [State Management](../state.md) | [README](../README.md)
 > Related product: [Chat List View](../../product/views/chat-list.md)
+> Nome overlay: [Nome Brand and Product Overlay](nome-brand-overlay.md)
 
 **Source:** [`ChatListView.swift`](../../Shared/Views/ChatList/ChatListView.swift)
 
@@ -53,7 +54,7 @@ ChatListView
 
 ---
 
-## 2. [`ChatListView`](../../Shared/Views/ChatList/ChatListView.swift#L142) {#2-chatlistview}
+## 2. [`ChatListView`](../../Shared/Views/ChatList/ChatListView.swift#L152) {#2-chatlistview}
 
 **File**: `Shared/Views/ChatList/ChatListView.swift`
 
@@ -62,7 +63,7 @@ The root list view. Key responsibilities:
 ### Data Source
 - Reads `ChatModel.shared.chats` (all conversations)
 - Applies active filter from `ChatTagsModel.shared.activeFilter`
-- Applies search query filtering via [`filteredChats()`](../../Shared/Views/ChatList/ChatListView.swift#L480)
+- Applies search query filtering via [`filteredChats()`](../../Shared/Views/ChatList/ChatListView.swift#L682)
 - Sorts by last activity (most recent first), with pinned chats at top
 
 ### Layout
@@ -79,11 +80,11 @@ The root list view. Key responsibilities:
 
 | Function | Line | Description |
 |----------|------|-------------|
-| [`body`](../../Shared/Views/ChatList/ChatListView.swift#L168) | 163 | Main view body |
-| [`filteredChats()`](../../Shared/Views/ChatList/ChatListView.swift#L480) | 472 | Applies active filter and search to chat list |
-| [`searchString()`](../../Shared/Views/ChatList/ChatListView.swift#L523) | 514 | Normalizes search text for comparison |
-| [`unreadBadge()`](../../Shared/Views/ChatList/ChatListView.swift#L454) | 448 | Renders unread count circle badge |
-| [`stopAudioPlayer()`](../../Shared/Views/ChatList/ChatListView.swift#L474) | 467 | Stops any playing voice message |
+| [`body`](../../Shared/Views/ChatList/ChatListView.swift#L191) | 163 | Main view body |
+| [`filteredChats()`](../../Shared/Views/ChatList/ChatListView.swift#L682) | 472 | Applies active filter and search to chat list |
+| [`searchString()`](../../Shared/Views/ChatList/ChatListView.swift#L725) | 514 | Normalizes search text for comparison |
+| [`unreadBadge()`](../../Shared/Views/ChatList/ChatListView.swift#L641) | 448 | Renders unread count circle badge |
+| [`stopAudioPlayer()`](../../Shared/Views/ChatList/ChatListView.swift#L676) | 467 | Stops any playing voice message |
 
 ---
 
@@ -171,7 +172,7 @@ Horizontal scrolling tab bar below the navigation bar. Tabs:
 | Group Reports | `.presetTag(.groupReports)` | Groups with pending reports |
 | User tags | `.userTag(ChatTag)` | User-defined custom tags |
 
-Filter matching is handled by [`presetTagMatchesChat()`](../../Shared/Views/ChatList/ChatListView.swift#L910) (L910) and the in-view [`TagsView`](../../Shared/Views/ChatList/ChatListView.swift#L705) struct (L705).
+Filter matching is handled by [`presetTagMatchesChat()`](../../Shared/Views/ChatList/ChatListView.swift#L1806) (L910) and the in-view [`TagsView`](../../Shared/Views/ChatList/ChatListView.swift#L1600) struct (L705).
 
 ### ChatTagsModel State
 
@@ -195,8 +196,8 @@ class ChatTagsModel: ObservableObject {
 | Type | File | Line | Description |
 |------|------|------|-------------|
 | [`PresetTag`](../../Shared/Views/ChatList/ChatListView.swift#L36) | ChatListView.swift | 34 | Enum of built-in filter categories |
-| [`ActiveFilter`](../../Shared/Views/ChatList/ChatListView.swift#L52) | ChatListView.swift | 49 | Enum wrapping preset, user-tag, or unread filter |
-| [`setActiveFilter()`](../../Shared/Views/ChatList/ChatListView.swift#L889) | ChatListView.swift | 878 | Applies a filter and persists selection |
+| [`ActiveFilter`](../../Shared/Views/ChatList/ChatListView.swift#L53) | ChatListView.swift | 49 | Enum wrapping preset, user-tag, or unread filter |
+| [`setActiveFilter()`](../../Shared/Views/ChatList/ChatListView.swift#L1785) | ChatListView.swift | 878 | Applies a filter and persists selection |
 
 ### Tag Management Commands
 - `apiCreateChatTag(tag: ChatTagData)` -- create tag
@@ -211,7 +212,7 @@ class ChatTagsModel: ObservableObject {
 
 Search is available via pull-down gesture or search button in the navigation bar.
 
-**Search bar UI:** [`ChatListSearchBar`](../../Shared/Views/ChatList/ChatListView.swift#L587) (ChatListView.swift L578)
+**Search bar UI:** [`ChatListSearchBar`](../../Shared/Views/ChatList/ChatListView.swift#L1451) (ChatListView.swift L578)
 
 ### Filtering Logic
 - Filters `ChatModel.chats` by matching search text against:
@@ -219,7 +220,7 @@ Search is available via pull-down gesture or search button in the navigation bar
   - `chatInfo.localAlias` (local alias)
   - `chatInfo.fullName` (full name)
 - For deeper message content search, uses `apiGetChat(chatId:, search:)` parameter
-- Core logic in [`filteredChats()`](../../Shared/Views/ChatList/ChatListView.swift#L480) (L480) and [`searchString()`](../../Shared/Views/ChatList/ChatListView.swift#L523) (L523)
+- Core logic in [`filteredChats()`](../../Shared/Views/ChatList/ChatListView.swift#L682) (L480) and [`searchString()`](../../Shared/Views/ChatList/ChatListView.swift#L725) (L523)
 
 ### Search Results
 - Matching chats are displayed in the same list format
@@ -283,7 +284,7 @@ The FAB (floating action button) in the bottom-right corner opens the new chat f
 
 | File | Path | Key struct | Line |
 |------|------|------------|------|
-| Chat list view | [`ChatListView.swift`](../../Shared/Views/ChatList/ChatListView.swift) | `ChatListView` | [138](../../Shared/Views/ChatList/ChatListView.swift#L142) |
+| Chat list view | [`ChatListView.swift`](../../Shared/Views/ChatList/ChatListView.swift) | `ChatListView` | [138](../../Shared/Views/ChatList/ChatListView.swift#L150) |
 | Chat preview row | [`ChatPreviewView.swift`](../../Shared/Views/ChatList/ChatPreviewView.swift) | `ChatPreviewView` | [12](../../Shared/Views/ChatList/ChatPreviewView.swift#L13) |
 | Navigation link wrapper | [`ChatListNavLink.swift`](../../Shared/Views/ChatList/ChatListNavLink.swift) | `ChatListNavLink` | [43](../../Shared/Views/ChatList/ChatListNavLink.swift#L44) |
 | Tag filter tabs | [`TagListView.swift`](../../Shared/Views/ChatList/TagListView.swift) | `TagListView` | [19](../../Shared/Views/ChatList/TagListView.swift#L20) |

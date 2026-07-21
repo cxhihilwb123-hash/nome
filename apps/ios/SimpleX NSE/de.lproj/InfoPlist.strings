@@ -1,8 +1,8 @@
 /* Bundle display name */
-"CFBundleDisplayName" = "SimpleX NSE";
+"CFBundleDisplayName" = "Nome Notifications";
 
 /* Bundle name */
-"CFBundleName" = "SimpleX NSE";
+"CFBundleName" = "Nome Notifications";
 
 /* Copyright (human-readable) */
 "NSHumanReadableCopyright" = "Copyright © 2025 SimpleX Chat. All rights reserved.";

@@ -1,6 +1,7 @@
 # Chat View (Conversation)
 
 > **Related spec:** [spec/client/chat-view.md](../../spec/client/chat-view.md) | [spec/client/compose.md](../../spec/client/compose.md)
+> **Nome overlay:** [Nome Product Experience](nome-experience.md)
 
 ## Purpose
 

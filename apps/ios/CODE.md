@@ -162,6 +162,7 @@ After completing all changes (code + documentation), you MUST run an adversarial
 
 | Source Location | Spec Document | Product Document |
 |----------------|---------------|-----------------|
+| Nome product overlay (`Shared/SimpleXApp.swift`, `Shared/ContentView.swift`, `Shared/Views/Onboarding/`, `Shared/Views/ChatList/ChatListView.swift`, `Shared/Views/NewChat/`, `Shared/Views/Chat/ChatView.swift`, `Shared/Views/UserSettings/`) | spec/client/nome-brand-overlay.md | product/views/nome-experience.md |
 | Shared/ContentView.swift | spec/client/navigation.md | product/views/chat-list.md |
 | Shared/SimpleXApp.swift | spec/architecture.md | product/flows/onboarding.md |
 | Shared/AppDelegate.swift | spec/services/notifications.md | product/flows/onboarding.md |

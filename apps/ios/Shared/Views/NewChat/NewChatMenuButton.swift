@@ -9,6 +9,14 @@
 import SwiftUI
 import SimpleXChat
 
+private enum NomeSheetPalette {
+    static let navy = Color(red: 14.0 / 255.0, green: 27.0 / 255.0, blue: 45.0 / 255.0)
+    static let green = Color(red: 22.0 / 255.0, green: 174.0 / 255.0, blue: 102.0 / 255.0)
+    static let blue = Color(red: 39.0 / 255.0, green: 107.0 / 255.0, blue: 255.0 / 255.0)
+    static let purple = Color(red: 116.0 / 255.0, green: 89.0 / 255.0, blue: 238.0 / 255.0)
+    static let surface = Color(uiColor: .secondarySystemGroupedBackground)
+}
+
 struct NewChatMenuButton: View {
     // do not use chatModel here because it prevents showing AddGroupMembersView after group creation and QR code after link creation on iOS 16
 //    @EnvironmentObject var chatModel: ChatModel
@@ -20,11 +28,14 @@ struct NewChatMenuButton: View {
             ConnectProgressManager.shared.cancelConnectProgress()
             showNewChatSheet = true
         } label: {
-            Image(systemName: "square.and.pencil")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 24, height: 24)
+            Image(systemName: "plus")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(width: 34, height: 34)
+                .background(Circle().fill(NomeSheetPalette.green))
+                .shadow(color: NomeSheetPalette.green.opacity(0.22), radius: 8, x: 0, y: 4)
         }
+        .buttonStyle(.plain)
         .alert(item: $alert) { a in
             return a.alert
         }
@@ -33,7 +44,20 @@ struct NewChatMenuButton: View {
 
 private var indent: CGFloat = 36
 
+enum NewChatSheetInitialDestination {
+    case menu
+    case oneTimeLink
+    case scanOrPasteInvite
+    case joinGroup
+}
+
+enum NewChatConnectMode {
+    case general
+    case group
+}
+
 struct NewChatSheet: View {
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var theme: AppTheme
     @EnvironmentObject var chatModel: ChatModel
     @State private var searchMode = false
@@ -46,18 +70,37 @@ struct NewChatSheet: View {
     // Sheet height management
     @State private var isAddContactActive = false
     @State private var isScanPasteLinkActive = false
+    @State private var scanPasteMode: NewChatConnectMode = .general
     @State private var isLargeSheet = false
     @State private var allowSmallSheet = true
 
     @AppStorage(GROUP_DEFAULT_ONE_HAND_UI, store: groupDefaults) private var oneHandUI = true
 
+    init(initialDestination: NewChatSheetInitialDestination = .menu) {
+        let opensScanPaste = initialDestination == .scanOrPasteInvite || initialDestination == .joinGroup
+        _isAddContactActive = State(initialValue: initialDestination == .oneTimeLink)
+        _isScanPasteLinkActive = State(initialValue: opensScanPaste)
+        _scanPasteMode = State(initialValue: initialDestination == .joinGroup ? .group : .general)
+        _isLargeSheet = State(initialValue: initialDestination != .menu)
+        _allowSmallSheet = State(initialValue: initialDestination == .menu)
+    }
+
     var body: some View {
         let showArchive = chatModel.chats.contains { $0.chatInfo.contact?.chatDeleted == true }
         let v = NavigationView {
             viewBody(showArchive)
-                .navigationTitle("New chat")
+                .navigationTitle("添加")
                 .navigationBarTitleDisplayMode(.large)
                 .navigationBarHidden(searchMode)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("关闭") {
+                            dismiss()
+                        }
+                        .opacity(searchMode ? 0 : 1)
+                        .disabled(searchMode)
+                    }
+                }
                 .modifier(ThemedBackground(grouped: true))
                 .alert(item: $alert) { a in
                     return a.alert
@@ -66,7 +109,7 @@ struct NewChatSheet: View {
             ConnectProgressManager.shared.cancelConnectProgress()
         }
         if #available(iOS 16.0, *), oneHandUI {
-            let sheetHeight: CGFloat = showArchive ? 575 : 500
+            let sheetHeight: CGFloat = showArchive ? 640 : 570
             v.presentationDetents(
                 allowSmallSheet ? [.height(sheetHeight), .large] : [.large],
                 selection: Binding(
@@ -81,6 +124,11 @@ struct NewChatSheet: View {
 
     private func viewBody(_ showArchive: Bool) -> some View {
         List {
+            NomeSheetIntroCard()
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 10, trailing: 16))
+
             HStack {
                 ContactsListSearchBar(
                     searchMode: $searchMode,
@@ -101,35 +149,71 @@ struct NewChatSheet: View {
                         NewChatView(selection: .invite)
                             .modifier(ThemedBackground(grouped: true))
                             .navigationBarTitleDisplayMode(.inline)
+                            .navigationTitle("添加朋友")
                     } label: {
-                        navigateOnTap(Label("Create 1-time link", systemImage: "link.badge.plus")) {
+                        navigateOnTap(NomeSheetActionRow(
+                            icon: "link.badge.plus",
+                            title: "添加朋友",
+                            subtitle: "生成一次性链接或二维码，连接后失效",
+                            tint: NomeSheetPalette.green
+                        )) {
                             isAddContactActive = true
                         }
                     }
                     NavigationLink(isActive: $isScanPasteLinkActive) {
-                        NewChatView(selection: .connect, showQRCodeScanner: true)
+                        NewChatView(selection: .connect, showQRCodeScanner: scanPasteMode == .general, connectMode: scanPasteMode)
                             .modifier(ThemedBackground(grouped: true))
                             .navigationBarTitleDisplayMode(.inline)
+                            .navigationTitle(scanPasteMode == .group ? "加入群组" : "扫码或粘贴邀请")
                     } label: {
-                        navigateOnTap(Label("Scan / Paste link", systemImage: "qrcode")) {
+                        navigateOnTap(NomeSheetActionRow(
+                            icon: "qrcode.viewfinder",
+                            title: "加入群组或连接朋友",
+                            subtitle: "扫描二维码，或粘贴收到的邀请链接",
+                            tint: NomeSheetPalette.blue
+                        )) {
+                            scanPasteMode = .general
                             isScanPasteLinkActive = true
                         }
                     }
                     NavigationLink {
-                        AddGroupView()
-                            .navigationTitle("Create group")
+                        UserAddressView(shareViaProfile: chatModel.currentUser?.addressShared ?? false)
+                            .navigationTitle("公开联系方式")
                             .modifier(ThemedBackground(grouped: true))
                             .navigationBarTitleDisplayMode(.large)
                     } label: {
-                        Label("Create group", systemImage: "person.2.circle.fill")
+                        NomeSheetActionRow(
+                            icon: "globe",
+                            title: "公开联系方式",
+                            subtitle: "创建可重复分享、需要确认的联系地址",
+                            tint: NomeSheetPalette.purple
+                        )
+                    }
+                    NavigationLink {
+                        AddGroupView()
+                            .navigationTitle("创建群组")
+                            .modifier(ThemedBackground(grouped: true))
+                            .navigationBarTitleDisplayMode(.large)
+                    } label: {
+                        NomeSheetActionRow(
+                            icon: "person.2.circle.fill",
+                            title: "创建群组",
+                            subtitle: "建立群聊，再邀请成员加入",
+                            tint: NomeSheetPalette.navy
+                        )
                     }
                     NavigationLink {
                         AddChannelView()
-                            .navigationTitle("Create public channel")
+                            .navigationTitle("创建公开频道")
                             .modifier(ThemedBackground(grouped: true))
                             .navigationBarTitleDisplayMode(.large)
                     } label: {
-                        Label("Create public channel (BETA)", systemImage: "antenna.radiowaves.left.and.right")
+                        NomeSheetActionRow(
+                            icon: "antenna.radiowaves.left.and.right",
+                            title: "创建公开频道",
+                            subtitle: "面向更多人的发布型空间",
+                            tint: NomeSheetPalette.navy.opacity(0.72)
+                        )
                     }
                 }
                 
@@ -138,7 +222,7 @@ struct NewChatSheet: View {
                         NavigationLink {
                             DeletedChats()
                         } label: {
-                            newChatActionButton("archivebox", color: theme.colors.secondary) { Text("Archived contacts") }
+                            newChatActionButton("archivebox", color: theme.colors.secondary) { Text("归档联系人") }
                         }
                     }
                 }
@@ -148,7 +232,7 @@ struct NewChatSheet: View {
                 chatPredicate: contactListChatPredicate,
                 searchMode: $searchMode,
                 searchText: $searchText,
-                header: "Your Contacts",
+                header: "联系人",
                 searchFocussed: $searchFocussed,
                 searchShowingSimplexLink: $searchShowingSimplexLink,
                 searchChatFilteredBySimplexLink: $searchChatFilteredBySimplexLink,
@@ -191,6 +275,75 @@ struct NewChatSheet: View {
                 .foregroundColor(color)
             content().foregroundColor(theme.colors.onBackground).padding(.leading, indent)
         }
+    }
+}
+
+private struct NomeSheetIntroCard: View {
+    @Environment(\.colorScheme) var colorScheme
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(colorScheme == .light ? "icon-light" : "icon-dark")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 54, height: 54)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 5) {
+                Text("下一步做什么？")
+                    .font(.headline)
+                    .foregroundColor(NomeSheetPalette.navy)
+                Text("用一次性邀请开始私聊，或通过邀请链接加入群组。")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color(uiColor: .systemBackground))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(Color.black.opacity(0.06), lineWidth: 1)
+        )
+    }
+}
+
+private struct NomeSheetActionRow: View {
+    let icon: String
+    let title: LocalizedStringKey
+    let subtitle: LocalizedStringKey
+    let tint: Color
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundColor(tint)
+                .frame(width: 36, height: 36)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(tint.opacity(0.12))
+                )
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.body.weight(.semibold))
+                    .foregroundColor(NomeSheetPalette.navy)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 4)
     }
 }
 
@@ -248,9 +401,9 @@ struct ContactsList: View {
         }
         
         if filteredContactChats.isEmpty && !contactChats.isEmpty {
-            noResultSection(text: "No filtered contacts")
+            noResultSection(text: "没有匹配的联系人")
         } else if contactChats.isEmpty {
-            noResultSection(text: "No contacts")
+            noResultSection(text: "还没有联系人")
         }
     }
     
@@ -339,7 +492,7 @@ struct ContactsListSearchBar: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: 16, height: 16)
-                TextField("Search or paste SimpleX link", text: $searchText)
+                TextField("搜索联系人或粘贴邀请链接", text: $searchText)
                     .foregroundColor(searchShowingSimplexLink ? theme.colors.secondary : theme.colors.onBackground)
                     .disabled(searchShowingSimplexLink)
                     .focused($searchFocussed)
@@ -465,7 +618,7 @@ struct DeletedChats: View {
                 showDeletedChatIcon: false
             )
         }
-        .navigationTitle("Archived contacts")
+        .navigationTitle("归档联系人")
         .navigationBarTitleDisplayMode(.large)
         .navigationBarHidden(searchMode)
         .modifier(ThemedBackground(grouped: true))

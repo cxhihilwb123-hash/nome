@@ -1006,7 +1006,10 @@ func apiVerifyGroupMember(_ groupId: Int64, _ groupMemberId: Int64, connectionCo
 func apiAddContact(incognito: Bool) async -> ((CreatedConnLink, PendingContactConnection)?, Alert?) {
     guard let userId = ChatModel.shared.currentUser?.userId else {
         logger.error("apiAddContact: no current user")
-        return (nil, nil)
+        return (nil, mkAlert(
+            title: "Profile not ready",
+            message: "Create or unlock your local profile before adding friends."
+        ))
     }
     let r: APIResult<ChatResponse1>? = await chatApiSendCmdWithRetry(.apiAddContact(userId: userId, incognito: incognito), bgTask: false)
     if case let .result(.invitation(_, connLinkInv, connection)) = r { return ((connLinkInv, connection), nil) }
@@ -2103,6 +2106,17 @@ private func currentUserId(_ funcName: String) throws -> Int64 {
         return userId
     }
     throw RuntimeError("\(funcName): no current user")
+}
+
+func realChatCoreReadinessError() -> String? {
+    let m = ChatModel.shared
+    if m.currentUser?.agentUserId == "preview-agent" {
+        return "当前模拟器连接的是预览 core，只能预览 Nome 界面，不能生成真实邀请链接或加入群组。安装真实 iOS core 库后再测试。"
+    }
+    if m.currentUser != nil && !hasDatabase() {
+        return "本地聊天数据库还没有准备好。请重新打开 Nome，或安装真实 iOS core 库后再测试。"
+    }
+    return nil
 }
 
 func initializeChat(start: Bool, confirmStart: Bool = false, dbKey: String? = nil, refreshInvitations: Bool = true, confirmMigrations: MigrationConfirmation? = nil) throws {
