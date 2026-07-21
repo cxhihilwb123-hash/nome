@@ -53,6 +53,16 @@ Normal launches do not use these preview routes and continue through the officia
 - Fixed deep navy is reserved for brand fills that carry a contrasting white symbol; it must not be used as dark-appearance body text.
 - Light and dark screenshot smoke are separate visual gates. Passing either appearance does not imply real-core or distribution readiness.
 
+## Accessibility Contract
+
+- Nome titles, explanations and primary actions must remain readable and reachable at iOS accessibility Dynamic Type sizes.
+- Large-text validation uses the system content-size category names rather than claiming a single percentage for every text style.
+- Light and dark accessibility-size previews are separate layout gates; deterministic preview fixtures remain distinct from real communication.
+- At accessibility sizes, onboarding trust pills stack vertically, conversation trust/status chips use intrinsic multi-line height, and the message viewport clips content to its own layout slot rather than drawing over the safety card or composer.
+- The disappearing-message prompt keeps a 44-point dismiss target with an explicit accessibility label and allows its visible action copy to wrap.
+- The accepted simulator evidence covers all 14 preview fixtures in light and dark at `accessibility-large`, plus seven critical fixtures and the corrected conversation in both appearances at `accessibility-extra-extra-extra-large`.
+- Screenshot review can prove visible layout and contrast. VoiceOver focus order, announcements and activation still require assistive-technology evidence on a live device or supported runtime.
+
 ## Related Product Views
 
 - [Onboarding](onboarding.md)
@@ -74,3 +84,4 @@ Normal launches do not use these preview routes and continue through the officia
 - `Shared/Views/UserSettings/` -- identity, address and settings presentation
 - `Shared/Assets.xcassets/` -- Nome application and in-app brand assets
 - `SimpleX.xcodeproj/project.pbxproj` -- product display name and compatible build identifiers
+- `../../scripts/ios/capture-nome-accessibility-previews.sh` -- reversible installed-app Dynamic Type preview evidence

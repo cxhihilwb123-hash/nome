@@ -38,6 +38,25 @@ have_cmd() {
   command -v "$1" >/dev/null 2>&1
 }
 
+parse_xctrace_devices() {
+  awk '
+    /^== Devices ==$/ {in_devices=1; next}
+    /^== .* ==$/ {in_devices=0; next}
+    in_devices && NF {
+      device_id = $0
+      sub(/^.*\(/, "", device_id)
+      sub(/\)$/, "", device_id)
+      if (length(device_id) == 36 && device_id ~ /^[[:xdigit:]-]+$/) next
+      print
+    }
+  '
+}
+
+if [ "${1:-}" = "--parse-xctrace-devices" ]; then
+  parse_xctrace_devices
+  exit 0
+fi
+
 first_setting() {
   local settings="$1"
   local key="$2"
@@ -166,11 +185,7 @@ fi
 
 if have_cmd xcrun; then
   xctrace_devices="$(DEVELOPER_DIR="$developer_dir" /usr/bin/xcrun xctrace list devices 2>/dev/null || true)"
-  physical_devices="$(printf '%s\n' "$xctrace_devices" | awk '
-    /^== Devices ==/ {in_devices=1; next}
-    /^== Simulators ==/ {in_devices=0}
-    in_devices && NF && $0 !~ /Mac/ {print}
-  ')"
+  physical_devices="$(printf '%s\n' "$xctrace_devices" | parse_xctrace_devices)"
 
   if [ -n "$physical_devices" ]; then
     ok "Connected physical iOS/iPadOS device(s):"

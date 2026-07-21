@@ -55,9 +55,19 @@ Preview launch argument
 - [GAP resolved 2026-07-21] Fixed brand navy is no longer used for dark-appearance titles, labels or functional icons.
 - This presentation-only resolution does not read or mutate chat, identity, address, settings or message state.
 
+### 4.2 Dynamic Type and Accessibility Invariant
+
+- Nome-facing copy and primary actions must remain readable and reachable at accessibility Dynamic Type categories in both appearances.
+- [`NomeOnboardingHeroCard`](../../Shared/Views/Onboarding/SimpleXInfo.swift#L41-L110) changes trust pills from a horizontal row to a vertical stack at accessibility sizes, while [`NomeOnboardingPill`](../../Shared/Views/Onboarding/SimpleXInfo.swift#L151-L176) uses intrinsic multi-line height instead of a fixed one-line frame.
+- [`NomeChatSecurityBanner`](../../Shared/Views/Chat/ChatView.swift#L89-L202) stacks verification/status chips and keeps intrinsic vertical height at accessibility sizes. The containing conversation [`VStack`](../../Shared/Views/Chat/ChatView.swift#L550-L603) preserves that height and clips the custom message viewport to its allocated slot.
+- [`NomeChatDisappearingPrompt`](../../Shared/Views/Chat/ChatView.swift#L362-L410) preserves a 44-point dismiss target, explicit accessibility label and multi-line visible action copy.
+- The reversible capture matrix is defined by [`emit_cases()`](../../../../scripts/ios/capture-nome-accessibility-previews.sh#L36-L68), and screenshots are produced by [`run_case()`](../../../../scripts/ios/capture-nome-accessibility-previews.sh#L229-L265) from an already installed preview app. The `conversation` case set supports focused corrective rechecks without overwriting failed intermediate evidence.
+- [`restore_simulator_settings()`](../../../../scripts/ios/capture-nome-accessibility-previews.sh#L172-L208) restores the original appearance, content-size and increased-contrast values; restoration failure invalidates the batch.
+- Screenshot and static-label evidence do not prove VoiceOver focus order, announcements or activation. Those remain separate runtime gates.
+
 ## 5. Build and Verification Boundary
 
-The repository includes `scripts/ios/` checks for brand copy, design coverage, preview tooling, simulator screenshots, generic-device binaries, real-core routing, release identity and physical-device readiness. Verification reports MUST distinguish:
+The repository includes `scripts/ios/` checks for brand copy, design coverage, preview tooling, normal and accessibility-size simulator screenshots, generic-device binaries, real-core routing, release identity and physical-device readiness. Verification reports MUST distinguish:
 
 1. source/static audit;
 2. deterministic preview UI;

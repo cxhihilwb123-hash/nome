@@ -37,6 +37,10 @@ Current status: visual simulator QA is available, but real invitation, group, da
 - [x] Current real-core route readiness can be exported with `scripts/ios/export-real-core-route-state.sh`; it records arm64 simulator blocked, x86_64 simulator build-only, physical device blocked, and local Nix build blocked as separate routes.
 - [x] Nome-facing brand copy can be checked with `scripts/ios/check-nome-brand-copy.sh`, and the check is included in the combined readiness gate.
 - [x] Approved `pages-v2` mockup coverage can be checked with `scripts/ios/check-nome-design-coverage.sh`, and the check is included in the combined readiness gate.
+- [x] All 14 deterministic Nome preview states pass light and dark `accessibility-large` screenshot validation with consistent dimensions, unique hashes and simulator-setting restoration.
+- [x] Seven critical preview states pass light and dark `accessibility-extra-extra-extra-large` stress capture; the accepted conversation evidence has no safety-card/message overlap.
+- [x] The accessibility capture helper supports full, critical and focused-conversation case sets and restores appearance, content size and increased contrast through its exit trap.
+- [ ] Physical-device VoiceOver focus order, announcements and activation are verified for onboarding, conversation safety controls and the disappearing-message prompt.
 - [ ] The app installs and launches on a physical iPhone, if available.
 - [ ] Two independent accounts/devices are available for end-to-end messaging.
 - [ ] SMP/XFTP server access is reachable under the selected network settings.

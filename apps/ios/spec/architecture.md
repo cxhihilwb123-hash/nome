@@ -19,6 +19,8 @@
 5. [App Lifecycle](#5-app-lifecycle)
 6. [Extension Architecture](#6-extension-architecture)
 7. [Remote Desktop Control](#7-remote-desktop-control)
+8. [Chat Relay Management](#8-chat-relay-management)
+9. [Device Readiness Evidence](#9-device-readiness-evidence)
 
 ---
 
@@ -313,6 +315,24 @@ Chat relays are SMP servers that forward messages to channel subscribers. They a
 ### serverWarnings Plumbing
 
 `Binding<[UserServersWarning]>` is threaded through: `NetworkAndServers` -> `OperatorView` -> `ProtocolServersView` -> `ProtocolServerView` / `NewServerView` / `ScanProtocolServer`. All `validateServers_` calls pass the warnings binding.
+
+---
+
+## 9. Device Readiness Evidence
+
+Physical-device readiness is a separate evidence gate from generic device
+builds and simulator execution. The read-only
+[`parse_xctrace_devices()`](../../../scripts/ios/check-ios-device-readiness.sh#L41-L53)
+parser accepts only rows inside the exact `== Devices ==` section and stops at
+the next `xctrace` section header. The local Mac host is excluded by its
+UUID-shaped trailing identifier rather than user-controlled device names. Rows
+under `== Devices Offline ==` must never be promoted to connected-device
+evidence. Fixture coverage is provided by
+[`test-check-ios-device-readiness.sh`](../../../scripts/ios/test-check-ios-device-readiness.sh#L1).
+
+This gate does not prove real-core compatibility, signing correctness,
+installation, launch, or communication. Those claims require their own
+artifact and runtime evidence.
 
 ---
 

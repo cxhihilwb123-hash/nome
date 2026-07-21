@@ -39,6 +39,8 @@ struct NomeOnboardingLogoHeader: View {
 }
 
 struct NomeOnboardingHeroCard: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     let symbol: String
     let title: String
     let subtitle: String
@@ -79,9 +81,13 @@ struct NomeOnboardingHeroCard: View {
             }
 
             if !pills.isEmpty {
-                HStack(spacing: 8) {
-                    ForEach(pills, id: \.0) { pill in
-                        NomeOnboardingPill(icon: pill.0, text: pill.1, tint: tint)
+                if dynamicTypeSize.isAccessibilitySize {
+                    VStack(spacing: 8) {
+                        pillViews
+                    }
+                } else {
+                    HStack(spacing: 8) {
+                        pillViews
                     }
                 }
             }
@@ -95,6 +101,12 @@ struct NomeOnboardingHeroCard: View {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .stroke(NomeOnboardingPalette.border, lineWidth: 1)
         )
+    }
+
+    @ViewBuilder private var pillViews: some View {
+        ForEach(pills, id: \.0) { pill in
+            NomeOnboardingPill(icon: pill.0, text: pill.1, tint: tint)
+        }
     }
 }
 
@@ -137,6 +149,8 @@ struct NomeOnboardingFeatureRow: View {
 }
 
 struct NomeOnboardingPill: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     let icon: String
     let text: String
     let tint: Color
@@ -145,13 +159,15 @@ struct NomeOnboardingPill: View {
         HStack(spacing: 4) {
             Image(systemName: icon)
             Text(text)
-                .lineLimit(1)
-                .minimumScaleFactor(0.72)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+                .minimumScaleFactor(dynamicTypeSize.isAccessibilitySize ? 1 : 0.72)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .font(.caption2.weight(.medium))
         .foregroundColor(NomeOnboardingPalette.navy)
         .padding(.horizontal, 8)
-        .frame(height: 28)
+        .padding(.vertical, dynamicTypeSize.isAccessibilitySize ? 7 : 0)
+        .frame(minHeight: 28)
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
