@@ -1,0 +1,16 @@
+{
+  "score": 67,
+  "verdict": "revise",
+  "category_match": true,
+  "differences": [
+    "Onboarding trust pills collapse into ellipses at accessibility-large and lose their distinguishing copy.",
+    "The conversation safety card compresses while its chip content and the custom message viewport paint over each other.",
+    "The disappearing-message prompt truncates its visible action and exposes only a 28-point unlabeled close target."
+  ],
+  "suggestions": [
+    "Stack onboarding pills and use intrinsic multi-line height at accessibility Dynamic Type sizes.",
+    "Give the safety card intrinsic vertical height and prevent the custom message viewport from drawing outside its assigned slot.",
+    "Allow the prompt copy to wrap and expose a labeled 44-point dismiss target."
+  ],
+  "reasoning": "The intended native Nome conversation and onboarding style is recognizable, but large-text layout defects hide meaning and create destructive overlap."
+}

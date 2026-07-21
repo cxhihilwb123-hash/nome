@@ -87,6 +87,8 @@ private struct NomeChatDefaultBackground: View {
 }
 
 private struct NomeChatSecurityBanner: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     let chatInfo: ChatInfo
     let chatTTL: ChatTTL
     let openDetails: (() -> Void)?
@@ -118,49 +120,84 @@ private struct NomeChatSecurityBanner: View {
         )
         .shadow(color: NomeChatPalette.navy.opacity(0.06), radius: 10, x: 0, y: 5)
         .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .fixedSize(horizontal: false, vertical: true)
     }
 
-    private func header(showChevron: Bool) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: icon)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundColor(.white)
-                .frame(width: 30, height: 30)
-                .background(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(tint)
-                )
+    @ViewBuilder private func header(showChevron: Bool) -> some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .top, spacing: 10) {
+                    securityIcon
+                    headerCopy
+                    Spacer(minLength: 0)
+                    disclosureChevron(show: showChevron)
+                }
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundColor(NomeChatPalette.navy)
-                    .lineLimit(1)
-                Text(subtitle)
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.82)
+                NomeChatStatusChip(icon: verificationIcon, title: verificationTitle, tint: verificationTint)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-
-            Spacer(minLength: 0)
-
-            NomeChatStatusChip(icon: verificationIcon, title: verificationTitle, tint: verificationTint)
-
-            if showChevron {
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundColor(.secondary)
+        } else {
+            HStack(spacing: 10) {
+                securityIcon
+                headerCopy
+                Spacer(minLength: 0)
+                NomeChatStatusChip(icon: verificationIcon, title: verificationTitle, tint: verificationTint)
+                disclosureChevron(show: showChevron)
             }
         }
     }
 
-    private var statusChips: some View {
-        HStack(spacing: 6) {
-            ForEach(statusItems) { item in
-                NomeChatStatusChip(icon: item.icon, title: item.title, tint: item.tint)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+    private var securityIcon: some View {
+        Image(systemName: icon)
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundColor(.white)
+            .frame(width: 30, height: 30)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(tint)
+            )
+    }
+
+    private var headerCopy: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundColor(NomeChatPalette.navy)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(subtitle)
+                .font(.caption2)
+                .foregroundColor(.secondary)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
+                .minimumScaleFactor(dynamicTypeSize.isAccessibilitySize ? 1 : 0.82)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    @ViewBuilder private func disclosureChevron(show: Bool) -> some View {
+        if show {
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.semibold))
+                .foregroundColor(.secondary)
+        }
+    }
+
+    @ViewBuilder private var statusChips: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 6) {
+                statusChipViews
             }
+        } else {
+            HStack(spacing: 6) {
+                statusChipViews
+            }
+        }
+    }
+
+    @ViewBuilder private var statusChipViews: some View {
+        ForEach(statusItems) { item in
+            NomeChatStatusChip(icon: item.icon, title: item.title, tint: item.tint)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -297,6 +334,8 @@ private struct NomeChatStatusItem: Identifiable {
 }
 
 private struct NomeChatStatusChip: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     let icon: String
     let title: String
     let tint: Color
@@ -307,17 +346,22 @@ private struct NomeChatStatusChip: View {
                 .font(.system(size: 10, weight: .semibold))
             Text(title)
                 .font(.caption2.weight(.medium))
-                .lineLimit(1)
-                .minimumScaleFactor(0.72)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+                .minimumScaleFactor(dynamicTypeSize.isAccessibilitySize ? 1 : 0.72)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .foregroundColor(tint)
         .padding(.horizontal, 8)
-        .frame(height: 24)
+        .padding(.vertical, dynamicTypeSize.isAccessibilitySize ? 6 : 0)
+        .frame(minHeight: 24)
         .background(Capsule().fill(tint.opacity(0.1)))
+        .accessibilityElement(children: .combine)
     }
 }
 
 private struct NomeChatDisappearingPrompt: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     let openSettings: () -> Void
     let dismiss: () -> Void
 
@@ -326,18 +370,19 @@ private struct NomeChatDisappearingPrompt: View {
             Image(systemName: "flame.fill")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(NomeChatPalette.green)
+                .accessibilityHidden(true)
 
             Button(action: openSettings) {
-                HStack(spacing: 6) {
-                    Text("阅后即焚")
-                    Text("·")
-                        .foregroundColor(.secondary)
-                    Text("设置")
-                }
+                Text("阅后即焚 · 设置")
                 .font(.subheadline.weight(.semibold))
                 .foregroundColor(NomeChatPalette.green)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+                .minimumScaleFactor(dynamicTypeSize.isAccessibilitySize ? 1 : 0.82)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(minHeight: 44, alignment: .leading)
             }
             .buttonStyle(.plain)
+            .layoutPriority(1)
 
             Spacer(minLength: 0)
 
@@ -345,13 +390,15 @@ private struct NomeChatDisappearingPrompt: View {
                 Image(systemName: "xmark")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.secondary)
-                    .frame(width: 28, height: 28)
+                    .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("关闭阅后即焚提示")
         }
         .padding(.leading, 14)
-        .padding(.trailing, 8)
-        .frame(height: 44)
+        .padding(.trailing, 2)
+        .padding(.vertical, dynamicTypeSize.isAccessibilitySize ? 4 : 0)
+        .frame(minHeight: 44)
         .background(
             Capsule()
                 .fill(Color(uiColor: .secondarySystemBackground).opacity(0.92))
@@ -510,6 +557,7 @@ struct ChatView: View {
                         .padding(.horizontal, 12)
                         .padding(.top, 8)
                         .padding(.bottom, 6)
+                        .layoutPriority(1)
                 }
                 ZStack(alignment: .bottomTrailing) {
                     if userMemberKnockingChat {
@@ -532,6 +580,7 @@ struct ChatView: View {
                         }
                     )
                 }
+                .clipped()
                 if let connectInProgressText = connectProgressManager.showConnectProgress {
                     connectInProgressView(connectInProgressText)
                 }
@@ -549,6 +598,8 @@ struct ChatView: View {
                         )
                         .padding(.horizontal, 28)
                         .padding(.vertical, 6)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .layoutPriority(1)
                     }
                     ComposeView(
                         chat: chat,
