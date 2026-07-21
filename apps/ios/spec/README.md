@@ -43,6 +43,7 @@ SimpleXApp (root entry point)
 | [Chat List](client/chat-list.md) | Conversation list, filtering, search, swipe actions |
 | [Message Composition](client/compose.md) | Compose bar, attachments, reply/edit/forward modes, voice recording |
 | [Navigation](client/navigation.md) | Navigation stack, deep linking, sheet presentation, call overlay |
+| [Nome Brand and Product Overlay](client/nome-brand-overlay.md) | Nome presentation modules, preview boundary, compatibility invariants and migration provenance |
 | [Push Notifications](services/notifications.md) | NtfManager, NSE, notification modes, token lifecycle |
 | [WebRTC Calling](services/calls.md) | CallController, WebRTCClient, CallKit, signaling via SMP |
 | [File Transfer](services/files.md) | Inline/XFTP transfer, auto-receive, CryptoFile, file constants |
@@ -58,6 +59,7 @@ SimpleXApp (root entry point)
 - [Glossary](../product/glossary.md)
 - [Chat List View](../product/views/chat-list.md)
 - [Chat View](../product/views/chat.md)
+- [Nome Product Experience](../product/views/nome-experience.md)
 
 ## Source Code Entry Points
 

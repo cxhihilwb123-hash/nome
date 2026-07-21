@@ -1,8 +1,8 @@
 /* Bundle display name */
-"CFBundleDisplayName" = "SimpleX SE";
+"CFBundleDisplayName" = "Nome Share";
 
 /* Bundle name */
-"CFBundleName" = "SimpleX SE";
+"CFBundleName" = "Nome Share";
 
 /* Copyright (human-readable) */
 "NSHumanReadableCopyright" = "Telif Hakkı © 2024 SimpleX Chat. Tüm hakları saklıdır.";

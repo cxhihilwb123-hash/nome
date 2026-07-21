@@ -1,6 +1,7 @@
 # User Profiles
 
 > **Related spec:** [spec/client/navigation.md](../../spec/client/navigation.md) | [spec/state.md](../../spec/state.md)
+> **Nome overlay:** [Nome Product Experience](nome-experience.md)
 
 ## Purpose
 

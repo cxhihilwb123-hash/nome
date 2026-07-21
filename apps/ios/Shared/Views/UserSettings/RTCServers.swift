@@ -38,7 +38,7 @@ struct RTCServers: View {
                     }
                     .alert(isPresented: $showResetServersAlert) {
                         Alert(
-                            title: Text("Use SimpleX Chat servers?"),
+                            title: Text("Use default call servers?"),
                             message: Text("Saved WebRTC ICE servers will be removed"),
                             primaryButton: .destructive(Text("Confirm")) {
                                 resetRTCServers()
@@ -53,7 +53,7 @@ struct RTCServers: View {
                 Text("")
             } footer: {
                 if !isUserRTCServers {
-                    Text("Using SimpleX Chat servers.")
+                    Text("Using default call servers.")
                         .foregroundColor(theme.colors.secondary)
                 }
             }

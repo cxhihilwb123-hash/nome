@@ -7,6 +7,14 @@
 import SwiftUI
 import SimpleXChat
 
+private enum NomeIdentityPalette {
+    static let navy = Color(red: 14.0 / 255.0, green: 27.0 / 255.0, blue: 45.0 / 255.0)
+    static let green = Color(red: 22.0 / 255.0, green: 174.0 / 255.0, blue: 102.0 / 255.0)
+    static let blue = Color(red: 39.0 / 255.0, green: 107.0 / 255.0, blue: 255.0 / 255.0)
+    static let purple = Color(red: 116.0 / 255.0, green: 89.0 / 255.0, blue: 238.0 / 255.0)
+    static let border = Color.black.opacity(0.06)
+}
+
 struct UserProfilesView: View {
     @EnvironmentObject private var m: ChatModel
     @EnvironmentObject private var theme: AppTheme
@@ -62,9 +70,18 @@ struct UserProfilesView: View {
                 Button {
                     withAnimation { profileHidden = false }
                 } label: {
-                    Label("Enter password above to show!", systemImage: "lock.open")
+                    Label("在上方输入密码后可显示隐藏身份", systemImage: "lock.open")
                 }
             }
+            NomeIdentityHero(
+                activeName: m.currentUser?.chatViewName ?? "Nome",
+                totalCount: m.users.count,
+                visibleCount: visibleUsersCount
+            )
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 12, trailing: 16))
+
             Section {
                 let users = filteredUsers()
                 let v = ForEach(users) { u in
@@ -87,7 +104,12 @@ struct UserProfilesView: View {
                         destination: CreateProfile(),
                         isActive: $navigateToProfileCreate
                     ) {
-                        Label("Add profile", systemImage: "plus")
+                        NomeIdentityActionLabel(
+                            icon: "plus",
+                            title: "添加身份",
+                            subtitle: "为不同场景创建独立资料",
+                            tint: NomeIdentityPalette.green
+                        )
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .frame(height: 38)
                             .padding(.leading, 16).padding(.vertical, 8).padding(.trailing, 32)
@@ -101,7 +123,7 @@ struct UserProfilesView: View {
                     }
                 }
             } footer: {
-                Text("Tap to activate profile.")
+                Text("点按可切换当前身份。向右滑动可隐藏或静音，向左滑动可删除。")
                     .foregroundColor(theme.colors.secondary)
                     .font(.body)
                     .padding(.top, 8)
@@ -113,9 +135,9 @@ struct UserProfilesView: View {
                 EditButton()
             }
         }
-        .navigationTitle("Your chat profiles")
+        .navigationTitle("身份中心")
         .modifier(ThemedBackground(grouped: true))
-        .searchable(text: $searchTextOrPassword, placement: .navigationBarDrawer(displayMode: .always))
+        .searchable(text: $searchTextOrPassword, placement: .navigationBarDrawer(displayMode: .always), prompt: "搜索身份或输入隐藏身份密码")
         .autocorrectionDisabled(true)
         .textInputAutocapitalization(.never)
         .onAppear {
@@ -124,8 +146,8 @@ struct UserProfilesView: View {
             }
         }
         .confirmationDialog("Delete chat profile?", isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
-            deleteModeButton("Profile and server connections", true)
-            deleteModeButton("Local profile data only", false)
+            deleteModeButton("身份和服务器连接", true)
+            deleteModeButton("仅本地身份数据", false)
         }
         .appSheet(item: $selectedUser) { user in
             HiddenProfileView(user: user, profileHidden: $profileHidden)
@@ -142,34 +164,34 @@ struct UserProfilesView: View {
             switch alert {
             case let .deleteUser(user, delSMPQueues):
                 return Alert(
-                    title: Text("Delete user profile?"),
-                    message: Text("All chats and messages will be deleted - this cannot be undone!"),
-                    primaryButton: .destructive(Text("Delete")) {
+                    title: Text("删除身份？"),
+                    message: Text("这个身份下的聊天和消息都会被删除，无法撤销。"),
+                    primaryButton: .destructive(Text("删除")) {
                         Task { await removeUser(user, delSMPQueues, viewPwd: userViewPassword(user)) }
                     },
                     secondaryButton: .cancel()
                 )
             case .hiddenProfilesNotice:
                 return Alert(
-                    title: Text("Make profile private!"),
-                    message: Text("You can hide or mute a user profile - swipe it to the right."),
-                    primaryButton: .default(Text("Don't show again")) {
+                    title: Text("你可以把身份设为私密"),
+                    message: Text("向右滑动身份，可以隐藏或静音这个身份。"),
+                    primaryButton: .default(Text("不再提示")) {
                         showHiddenProfilesNotice = false
                     },
-                    secondaryButton: .default(Text("Ok"))
+                    secondaryButton: .default(Text("知道了"))
                 )
             case .muteProfileAlert:
                 return Alert(
-                    title: Text("Muted when inactive!"),
-                    message: Text("You will still receive calls and notifications from muted profiles when they are active."),
-                    primaryButton: .default(Text("Don't show again")) {
+                    title: Text("非当前身份已静音"),
+                    message: Text("当这个身份处于当前使用状态时，仍会收到它的通话和通知。"),
+                    primaryButton: .default(Text("不再提示")) {
                         showMuteProfileAlert = false
                     },
-                    secondaryButton: .default(Text("Ok"))
+                    secondaryButton: .default(Text("知道了"))
                 )
             case let .activateUserError(error: err):
                 return Alert(
-                    title: Text("Error switching profile!"),
+                    title: Text("切换身份失败"),
                     message: Text(err)
                 )
             case let .error(title, error):
@@ -224,16 +246,16 @@ struct UserProfilesView: View {
 
     private func profileActionView(_ action: UserProfileAction) -> some View {
         let passwordValid = actionPassword == actionPassword.trimmingCharacters(in: .whitespaces)
-        let passwordField = PassphraseField(key: $actionPassword, placeholder: "Profile password", valid: passwordValid)
+        let passwordField = PassphraseField(key: $actionPassword, placeholder: "身份密码", valid: passwordValid)
         let actionEnabled: (User) -> Bool = { user in actionPassword != "" && passwordValid && correctPassword(user, actionPassword) }
         return List {
             switch action {
             case let .deleteUser(user, delSMPQueues):
-                actionHeader("Delete profile", user)
+                actionHeader("删除身份", user)
                 Section {
                     passwordField
                     settingsRow("trash", color: theme.colors.secondary) {
-                        Button("Delete chat profile", role: .destructive) {
+                        Button("删除身份", role: .destructive) {
                             withAuth {
                                 profileAction = nil
                                 Task { await removeUser(user, delSMPQueues, viewPwd: actionPassword) }
@@ -243,17 +265,17 @@ struct UserProfilesView: View {
                     }
                 } footer: {
                     if actionEnabled(user) {
-                        Text("All chats and messages will be deleted - this cannot be undone!")
+                        Text("这个身份下的聊天和消息都会被删除，无法撤销。")
                             .foregroundColor(theme.colors.secondary)
                             .font(.callout)
                     }
                 }
             case let .unhideUser(user):
-                actionHeader("Unhide profile", user)
+                actionHeader("取消隐藏身份", user)
                 Section {
                     passwordField
                     settingsRow("lock.open", color: theme.colors.secondary) {
-                        Button("Unhide chat profile") {
+                        Button("取消隐藏身份") {
                             withAuth{
                                 profileAction = nil
                                 setUserPrivacy(user) { try await apiUnhideUser(user.userId, viewPwd: actionPassword) }
@@ -345,10 +367,24 @@ struct UserProfilesView: View {
             HStack {
                 ProfileImage(imageStr: user.image, size: 38)
                     .padding(.trailing, 12)
-                Text(user.chatViewName)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(user.chatViewName)
+                        .font(.body.weight(.semibold))
+                    HStack(spacing: 6) {
+                        if user.activeUser {
+                            NomeIdentityStatusPill(icon: "checkmark.shield", text: "当前身份", tint: NomeIdentityPalette.green)
+                        } else if user.hidden {
+                            NomeIdentityStatusPill(icon: "lock", text: "已隐藏", tint: NomeIdentityPalette.purple)
+                        } else if !user.showNtfs {
+                            NomeIdentityStatusPill(icon: "speaker.slash", text: "已静音", tint: .secondary)
+                        } else {
+                            NomeIdentityStatusPill(icon: "person", text: "可切换", tint: NomeIdentityPalette.blue)
+                        }
+                    }
+                }
                 Spacer()
                 if user.activeUser {
-                    Image(systemName: "checkmark").foregroundColor(theme.colors.onBackground)
+                    Image(systemName: "checkmark.circle.fill").foregroundColor(NomeIdentityPalette.green)
                 } else {
                     if userInfo.unreadCount > 0 {
                         userUnreadBadge(userInfo, theme: theme)
@@ -368,7 +404,7 @@ struct UserProfilesView: View {
         .foregroundColor(theme.colors.onBackground)
         .swipeActions(edge: .leading, allowsFullSwipe: true) {
             if user.hidden {
-                Button("Unhide") {
+                Button("取消隐藏") {
                     withAuth {
                         if passwordEntryRequired(user) {
                             profileAction = .unhideUser(user: user)
@@ -380,7 +416,7 @@ struct UserProfilesView: View {
                 .tint(.green)
             } else {
                 if visibleUsersCount > 1 {
-                    Button("Hide") {
+                    Button("隐藏") {
                         withAuth {
                             selectedUser = user
                         }
@@ -389,7 +425,7 @@ struct UserProfilesView: View {
                 }
                 Group {
                     if user.showNtfs {
-                        Button("Mute") {
+                        Button("静音") {
                             withAuth {
                                 setUserPrivacy(user, successAlert: showMuteProfileAlert ? .muteProfileAlert : nil) {
                                     try await apiMuteUser(user.userId)
@@ -397,7 +433,7 @@ struct UserProfilesView: View {
                             }
                         }
                     } else {
-                        Button("Unmute") {
+                        Button("取消静音") {
                             withAuth {
                                 setUserPrivacy(user) { try await apiUnmuteUser(user.userId) }
                             }
@@ -411,7 +447,7 @@ struct UserProfilesView: View {
             v
         } else {
             v.swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                Button("Delete", role: .destructive) {
+                Button("删除", role: .destructive) {
                     withAuth {
                         confirmDeleteUser(user)
                     }
@@ -443,6 +479,126 @@ struct UserProfilesView: View {
     }
 }
 
+private struct NomeIdentityHero: View {
+    let activeName: String
+    let totalCount: Int
+    let visibleCount: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                Image(systemName: "person.crop.circle.badge.checkmark")
+                    .font(.system(size: 19, weight: .semibold))
+                    .foregroundColor(.white)
+                    .frame(width: 42, height: 42)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(NomeIdentityPalette.navy)
+                    )
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("身份中心")
+                        .font(.headline)
+                        .foregroundColor(NomeIdentityPalette.navy)
+                    Text("当前使用：\(activeName)")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 0)
+            }
+
+            Text("每个身份可以拥有独立资料、联系人和通知状态。隐藏身份需要密码显示，适合把不同社交场景分开管理。")
+                .font(.subheadline)
+                .lineSpacing(2)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 8) {
+                NomeIdentityMetric(value: "\(totalCount)", label: "总身份")
+                NomeIdentityMetric(value: "\(visibleCount)", label: "可见")
+                NomeIdentityMetric(value: "\(max(totalCount - visibleCount, 0))", label: "隐藏")
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color(uiColor: .systemBackground))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(NomeIdentityPalette.border, lineWidth: 1)
+        )
+    }
+}
+
+private struct NomeIdentityMetric: View {
+    let value: String
+    let label: LocalizedStringKey
+
+    var body: some View {
+        HStack(spacing: 5) {
+            Text(value)
+                .font(.caption.weight(.bold))
+            Text(label)
+                .font(.caption2.weight(.medium))
+        }
+        .foregroundColor(NomeIdentityPalette.navy)
+        .padding(.horizontal, 9)
+        .frame(height: 26)
+        .background(Capsule().fill(NomeIdentityPalette.green.opacity(0.1)))
+    }
+}
+
+private struct NomeIdentityActionLabel: View {
+    let icon: String
+    let title: LocalizedStringKey
+    let subtitle: LocalizedStringKey
+    let tint: Color
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundColor(tint)
+                .frame(width: 36, height: 36)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(tint.opacity(0.12))
+                )
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.body.weight(.semibold))
+                    .foregroundColor(NomeIdentityPalette.navy)
+                    .lineLimit(1)
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 0)
+        }
+    }
+}
+
+private struct NomeIdentityStatusPill: View {
+    let icon: String
+    let text: LocalizedStringKey
+    let tint: Color
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+            Text(text)
+        }
+        .font(.caption2.weight(.medium))
+        .foregroundColor(tint)
+        .padding(.horizontal, 7)
+        .frame(height: 22)
+        .background(Capsule().fill(tint.opacity(0.12)))
+    }
+}
+
 public func chatPasswordHash(_ pwd: String, _ salt: String) -> String {
     var cPwd = pwd.cString(using: .utf8)!
     var cSalt = salt.cString(using: .utf8)!
@@ -463,3 +619,23 @@ struct UserProfilesView_Previews: PreviewProvider {
         UserProfilesView()
     }
 }
+
+#if DEBUG
+struct NomeIdentityCenterPreviewHost: View {
+    @EnvironmentObject private var chatModel: ChatModel
+
+    var body: some View {
+        NavigationView {
+            UserProfilesView()
+        }
+        .navigationViewStyle(.stack)
+        .onAppear {
+            chatModel.currentUser = User.sampleData
+            chatModel.users = [UserInfo.sampleData]
+            chatModel.chatRunning = true
+            chatModel.chatInitialized = true
+            chatModel.onboardingStage = nil
+        }
+    }
+}
+#endif

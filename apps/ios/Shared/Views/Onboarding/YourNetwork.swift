@@ -33,62 +33,45 @@ struct YourNetworkView: View {
 
     var body: some View {
         GeometryReader { g in
-            VStack(alignment: .center, spacing: 10) {
-                Spacer(minLength: 0)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    NomeOnboardingLogoHeader()
+                        .padding(.top, 10)
 
-                #if SIMPLEX_ASSETS
-                Image(colorScheme == .light ? "your-network" : "your-network-light")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxWidth: .infinity)
-                #else
-                ZStack {
-                    let gp = OnboardingCardView.gradientPoints(aspectRatio: 1.0, scale: colorScheme == .light ? 1.2 : 1.5)
-                    LinearGradient(
-                        stops: colorScheme == .light ? OnboardingCardView.lightStops : OnboardingCardView.darkStops,
-                        startPoint: gp.start,
-                        endPoint: gp.end
+                    NomeOnboardingHeroCard(
+                        symbol: "network.badge.shield.half.filled",
+                        title: "设置网络与通知",
+                        subtitle: "Nome 会通过消息服务器转发加密消息。你可以选择运营商和通知方式，之后也能在设置里调整。",
+                        tint: NomeOnboardingPalette.green,
+                        pills: [
+                            ("server.rack", "可选运营商"),
+                            ("bell.badge", "通知模式"),
+                            ("gearshape", "之后可改")
+                        ]
                     )
-                    Image(systemName: "network")
-                        .font(.system(size: 72))
-                        .foregroundColor(theme.colors.primary)
+
+                    VStack(spacing: 10) {
+                        configureRoutersButton()
+                        configureNotificationsButton()
+                    }
+
+                    NomeOnboardingFeatureRow(
+                        icon: "info.circle",
+                        title: "身份隐私和网络隐私分开",
+                        text: "匿名资料控制别人看到的身份；服务器和 Tor 控制网络路径。两者不是同一个开关。",
+                        tint: NomeOnboardingPalette.purple
+                    )
+
+                    Spacer(minLength: 0)
+
+                    continueButton()
+                        .padding(.bottom, g.safeAreaInsets.bottom == 0 ? 20 : 0)
                 }
-                .aspectRatio(1.0, contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: 24))
                 .padding(.horizontal, 25)
-                .frame(maxWidth: .infinity)
-                #endif
-
-                Text("Your network")
-                    .font(.largeTitle)
-                    .bold()
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, 15)
-
-                Text("Network routers cannot know\nwho talks to whom")
-                    .font(.title3)
-                    .fontWeight(.medium)
-                    .foregroundColor(theme.colors.secondary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                VStack(alignment: .leading, spacing: 20) {
-                    configureRoutersButton()
-                    configureNotificationsButton()
-                }
-                .padding(.top, 15)
-                .padding(.bottom, 15)
-
-                Spacer(minLength: 0)
-
-                continueButton()
-                    .padding(.bottom, g.safeAreaInsets.bottom == 0 ? 20 : 0)
+                .padding(.top, 8)
+                .padding(.bottom, 20)
+                .frame(minHeight: g.size.height)
             }
-            .padding(.horizontal, 25)
-            .padding(.top, 8)
-            .padding(.bottom, 20)
-            .frame(minHeight: g.size.height)
         }
         .onAppear {
             if justOpened {
@@ -115,30 +98,88 @@ struct YourNetworkView: View {
         Button {
             sheetItem = .configureOperators
         } label: {
-            HStack(spacing: 6) {
-                Text("Setup routers")
-                    .fontWeight(.medium)
-                ForEach(serverOperators.reversed()) { op in
-                    Image(op.logo(colorScheme))
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 22, height: 22)
-                        .grayscale(selectedOperatorIds.contains(op.operatorId) ? 0.0 : 1.0)
+            HStack(spacing: 12) {
+                Image(systemName: "server.rack")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(NomeOnboardingPalette.green)
+                    .frame(width: 36, height: 36)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(NomeOnboardingPalette.green.opacity(0.12))
+                    )
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("消息服务器")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundColor(NomeOnboardingPalette.navy)
+                    Text(selectedOperatorIds.isEmpty ? "使用默认设置" : "已选择 \(selectedOperatorIds.count) 个运营商")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
+
+                Spacer(minLength: 0)
+
+                HStack(spacing: -4) {
+                    ForEach(serverOperators.prefix(3).reversed()) { op in
+                        Image(op.logo(colorScheme))
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 22, height: 22)
+                            .padding(4)
+                            .background(Circle().fill(Color(uiColor: .systemBackground)))
+                            .grayscale(selectedOperatorIds.contains(op.operatorId) ? 0.0 : 1.0)
+                    }
+                }
+
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(.secondary)
             }
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(NomeOnboardingPalette.surface)
+            )
         }
+        .buttonStyle(.plain)
     }
 
     private func configureNotificationsButton() -> some View {
         Button {
             sheetItem = .configureNotifications
         } label: {
-            HStack(spacing: 4) {
-                Text("Setup notifications")
-                    .fontWeight(.medium)
+            HStack(spacing: 12) {
                 Image(systemName: notificationMode.icon)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(NomeOnboardingPalette.blue)
+                    .frame(width: 36, height: 36)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(NomeOnboardingPalette.blue.opacity(0.12))
+                    )
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("通知方式")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundColor(NomeOnboardingPalette.navy)
+                    Text("选择提醒强度和隐私级别")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(.secondary)
             }
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(NomeOnboardingPalette.surface)
+            )
         }
+        .buttonStyle(.plain)
     }
 
     private func continueButton() -> some View {
@@ -148,7 +189,7 @@ struct YourNetworkView: View {
                 onboardingStageDefault.set(.step4_NetworkCommitments)
                 nextStepNavLinkActive = true
             } label: {
-                Text("Continue")
+                Text("继续")
             }
             .buttonStyle(OnboardingButtonStyle())
 

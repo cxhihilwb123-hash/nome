@@ -151,10 +151,14 @@ struct NetworkAndServers: View {
                     validateServers_($ss.servers.userServers, $ss.servers.serverErrors, $ss.servers.serverWarnings)
                 } catch let error {
                     await MainActor.run {
-                        showAlert(
-                            NSLocalizedString("Error loading servers", comment: "alert title"),
-                            message: responseError(error)
-                        )
+                        if let readinessError = realChatCoreReadinessError() {
+                            showAlert("真实聊天 core 尚未可用", message: readinessError)
+                        } else {
+                            showAlert(
+                                NSLocalizedString("Error loading servers", comment: "alert title"),
+                                message: responseError(error)
+                            )
+                        }
                     }
                 }
                 justOpened = false

@@ -46,6 +46,7 @@ struct ContentView: View {
     @AppStorage(DEFAULT_NOTIFICATION_ALERT_SHOWN) private var notificationAlertShown = false
     @State private var noticesShown = false
     @State private var noticesSheetItem: NoticesSheet? = nil
+    @State private var ntfAuthorizationRequested = false
     @State private var showChooseLAMode = false
     @State private var showSetPasscode = false
     @State private var waitingForOrPassedAuth = true
@@ -114,7 +115,7 @@ struct ContentView: View {
             }
         }
         .alert(isPresented: $alertManager.presentAlert) { alertManager.alertView! }
-        .confirmationDialog("SimpleX Lock mode", isPresented: $showChooseLAMode, titleVisibility: .visible) {
+        .confirmationDialog("Nome Lock mode", isPresented: $showChooseLAMode, titleVisibility: .visible) {
             Button("System authentication") { initialEnableLA() }
             Button("Passcode entry") { showSetPasscode = true }
         }
@@ -171,6 +172,9 @@ struct ContentView: View {
             DatabaseErrorView(status: status)
         } else if !chatModel.v3DBMigration.startChat {
             MigrateToAppGroupView()
+        } else if chatModel.chatDbStatus == .ok,
+                  chatModel.currentUser == nil {
+            OnboardingView(onboarding: .step1_SimpleXInfo)
         } else if let step = chatModel.onboardingStage {
             if case .onboardingComplete = step,
                chatModel.currentUser != nil {
@@ -257,7 +261,7 @@ struct ContentView: View {
             ChatListView(activeUserPickerSheet: $chatListUserPickerSheet)
                 .redacted(reason: appSheetState.redactionReasons(protectScreen))
             .onAppear {
-                requestNtfAuthorization()
+                requestNtfAuthorizationWhenReady()
                 // Local Authentication notice is to be shown on next start after onboarding is complete
                 if (!prefLANoticeShown && prefShowLANotice && chatModel.chats.count > 2) {
                     prefLANoticeShown = true
@@ -265,7 +269,8 @@ struct ContentView: View {
                 } else if !chatModel.showCallView && CallController.shared.activeCallInvitation == nil {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                         if !noticesShown {
-                            let showWhatsNew = shouldShowWhatsNew()
+                            // Nome should not interrupt first launch with upstream SimpleX release notes.
+                            let showWhatsNew = false
                             let showUpdatedConditions = chatModel.conditions.conditionsAction?.showNotice ?? false
                             noticesShown = showWhatsNew || showUpdatedConditions
                             if showWhatsNew || showUpdatedConditions {
@@ -280,6 +285,11 @@ struct ContentView: View {
             }
             .onChange(of: chatModel.appOpenUrl) { _ in connectViaUrl() }
             .onChange(of: chatModel.reRegisterTknStatus) { _ in showReRegisterTokenAlert() }
+            .onChange(of: chatModel.setDeliveryReceipts) { needsDecision in
+                if !needsDecision {
+                    requestNtfAuthorization()
+                }
+            }
             .sheet(item: $noticesSheetItem) { item in
                 switch item {
                 case let .whatsNew(updatedConditions):
@@ -384,6 +394,8 @@ struct ContentView: View {
     }
 
     func requestNtfAuthorization() {
+        guard !ntfAuthorizationRequested else { return }
+        ntfAuthorizationRequested = true
         NtfManager.shared.requestAuthorization(
             onDeny: {
                 if (!notificationAlertShown) {
@@ -395,10 +407,18 @@ struct ContentView: View {
         )
     }
 
+    func requestNtfAuthorizationWhenReady() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            if !chatModel.setDeliveryReceipts && noticesSheetItem == nil {
+                requestNtfAuthorization()
+            }
+        }
+    }
+
     func laNoticeAlert() -> Alert {
         Alert(
-            title: Text("SimpleX Lock"),
-            message: Text("To protect your information, turn on SimpleX Lock.\nYou will be prompted to complete authentication before this feature is enabled."),
+            title: Text("Nome Lock"),
+            message: Text("To protect your information, turn on Nome Lock.\nYou will be prompted to complete authentication before this feature is enabled."),
             primaryButton: .default(Text("Turn on")) { showChooseLAMode = true },
             secondaryButton: .cancel()
          )
@@ -406,7 +426,7 @@ struct ContentView: View {
 
     private func initialEnableLA () {
         privacyLocalAuthModeDefault.set(.system)
-        authenticate(reason: NSLocalizedString("Enable SimpleX Lock", comment: "authentication reason")) { laResult in
+        authenticate(reason: NSLocalizedString("Enable Nome Lock", comment: "authentication reason")) { laResult in
             switch laResult {
             case .success:
                 chatModel.contentViewAccessAuthenticated = true
