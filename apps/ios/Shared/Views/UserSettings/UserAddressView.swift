@@ -11,7 +11,12 @@ import MessageUI
 @preconcurrency import SimpleXChat
 
 private enum NomeAddressPalette {
-    static let navy = Color(red: 14.0 / 255.0, green: 27.0 / 255.0, blue: 45.0 / 255.0)
+    static let navy = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor.label.resolvedColor(with: traits)
+            : UIColor(red: 14.0 / 255.0, green: 27.0 / 255.0, blue: 45.0 / 255.0, alpha: 1)
+    })
+    static let brandNavy = Color(red: 14.0 / 255.0, green: 27.0 / 255.0, blue: 45.0 / 255.0)
     static let green = Color(red: 22.0 / 255.0, green: 174.0 / 255.0, blue: 102.0 / 255.0)
     static let blue = Color(red: 39.0 / 255.0, green: 107.0 / 255.0, blue: 255.0 / 255.0)
     static let purple = Color(red: 116.0 / 255.0, green: 89.0 / 255.0, blue: 238.0 / 255.0)
@@ -872,7 +877,7 @@ private struct NomeAddressHero: View {
                     .frame(width: 42, height: 42)
                     .background(
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(hasAddress ? NomeAddressPalette.green : NomeAddressPalette.navy)
+                            .fill(hasAddress ? NomeAddressPalette.green : NomeAddressPalette.brandNavy)
                     )
 
                 VStack(alignment: .leading, spacing: 4) {

@@ -802,7 +802,12 @@ struct ChatListView: View {
 }
 
 private enum NomeHomePalette {
-    static let navy = Color(red: 14.0 / 255.0, green: 27.0 / 255.0, blue: 45.0 / 255.0)
+    static let navy = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor.label.resolvedColor(with: traits)
+            : UIColor(red: 14.0 / 255.0, green: 27.0 / 255.0, blue: 45.0 / 255.0, alpha: 1)
+    })
+    static let brandNavy = Color(red: 14.0 / 255.0, green: 27.0 / 255.0, blue: 45.0 / 255.0)
     static let green = Color(red: 22.0 / 255.0, green: 174.0 / 255.0, blue: 102.0 / 255.0)
     static let blue = Color(red: 39.0 / 255.0, green: 107.0 / 255.0, blue: 255.0 / 255.0)
     static let purple = Color(red: 116.0 / 255.0, green: 89.0 / 255.0, blue: 238.0 / 255.0)
@@ -1092,7 +1097,7 @@ private struct NomeEmptyInboxCard: View {
                     .font(.system(size: 21, weight: .semibold))
                     .foregroundColor(.white)
                     .frame(width: 46, height: 46)
-                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(NomeHomePalette.navy))
+                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(NomeHomePalette.brandNavy))
                 VStack(alignment: .leading, spacing: 5) {
                     Text("开始第一段私密对话")
                         .font(.title3.weight(.bold))
@@ -1318,7 +1323,7 @@ private struct NomeContactsEmptyCard: View {
                     .frame(width: 36, height: 36)
                     .background(
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(NomeHomePalette.navy)
+                            .fill(NomeHomePalette.brandNavy)
                     )
 
                 VStack(alignment: .leading, spacing: 3) {

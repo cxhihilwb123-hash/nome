@@ -47,6 +47,12 @@ Normal launches do not use these preview routes and continue through the officia
 - A simulator UI build and an unsigned generic-device build are engineering gates, not distribution approval.
 - Real communication claims require a compatible real core and device/account evidence.
 
+## Appearance Contract
+
+- Nome foreground ink keeps the approved deep navy in light appearance and resolves to the system label color in dark appearance.
+- Fixed deep navy is reserved for brand fills that carry a contrasting white symbol; it must not be used as dark-appearance body text.
+- Light and dark screenshot smoke are separate visual gates. Passing either appearance does not imply real-core or distribution readiness.
+
 ## Related Product Views
 
 - [Onboarding](onboarding.md)

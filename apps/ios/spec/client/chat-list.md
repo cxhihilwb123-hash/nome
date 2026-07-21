@@ -172,7 +172,7 @@ Horizontal scrolling tab bar below the navigation bar. Tabs:
 | Group Reports | `.presetTag(.groupReports)` | Groups with pending reports |
 | User tags | `.userTag(ChatTag)` | User-defined custom tags |
 
-Filter matching is handled by [`presetTagMatchesChat()`](../../Shared/Views/ChatList/ChatListView.swift#L1806) (L910) and the in-view [`TagsView`](../../Shared/Views/ChatList/ChatListView.swift#L1600) struct (L705).
+Filter matching is handled by [`presetTagMatchesChat()`](../../Shared/Views/ChatList/ChatListView.swift#L1811) (L910) and the in-view [`TagsView`](../../Shared/Views/ChatList/ChatListView.swift#L1605) struct (L705).
 
 ### ChatTagsModel State
 
@@ -197,7 +197,7 @@ class ChatTagsModel: ObservableObject {
 |------|------|------|-------------|
 | [`PresetTag`](../../Shared/Views/ChatList/ChatListView.swift#L36) | ChatListView.swift | 34 | Enum of built-in filter categories |
 | [`ActiveFilter`](../../Shared/Views/ChatList/ChatListView.swift#L53) | ChatListView.swift | 49 | Enum wrapping preset, user-tag, or unread filter |
-| [`setActiveFilter()`](../../Shared/Views/ChatList/ChatListView.swift#L1785) | ChatListView.swift | 878 | Applies a filter and persists selection |
+| [`setActiveFilter()`](../../Shared/Views/ChatList/ChatListView.swift#L1790) | ChatListView.swift | 878 | Applies a filter and persists selection |
 
 ### Tag Management Commands
 - `apiCreateChatTag(tag: ChatTagData)` -- create tag
@@ -212,7 +212,7 @@ class ChatTagsModel: ObservableObject {
 
 Search is available via pull-down gesture or search button in the navigation bar.
 
-**Search bar UI:** [`ChatListSearchBar`](../../Shared/Views/ChatList/ChatListView.swift#L1451) (ChatListView.swift L578)
+**Search bar UI:** [`ChatListSearchBar`](../../Shared/Views/ChatList/ChatListView.swift#L1456) (ChatListView.swift L578)
 
 ### Filtering Logic
 - Filters `ChatModel.chats` by matching search text against:
