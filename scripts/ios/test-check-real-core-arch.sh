@@ -34,6 +34,21 @@ esac
 SH
   chmod +x "$bin_dir/lipo"
 
+  cat > "$bin_dir/otool" <<'SH'
+#!/bin/sh
+
+for arg do
+  lib="$arg"
+done
+
+case "$lib" in
+  *sim-macos-platform*) echo " platform 1" ;;
+  */ios/*) echo " platform 2" ;;
+  *) echo " platform 7" ;;
+esac
+SH
+  chmod +x "$bin_dir/otool"
+
   cat > "$bin_dir/mac2ios" <<'SH'
 #!/bin/sh
 exit 0
@@ -103,6 +118,7 @@ run_case() {
 
 run_case "arm64-simulator-core" "sim-arm64" 0 "Simulator library supports required architecture arm64"
 run_case "x86_64-simulator-core" "sim-x86_64" 1 "Simulator library architecture mismatch"
+run_case "macos-platform-simulator-core" "sim-macos-platform" 1 "Simulator library platform mismatch"
 run_case "physical-device-target" "sim-x86_64" 0 "Check target: physical-device" "physical-device"
 
 echo "[PASS] check-real-core architecture tests passed"

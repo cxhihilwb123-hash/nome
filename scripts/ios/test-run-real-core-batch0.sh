@@ -7,6 +7,13 @@ work_dir="$(mktemp -d "${TMPDIR:-/tmp}/nome-run-real-core-batch0-test.XXXXXX")"
 restricted_path="/usr/bin:/bin:/usr/sbin:/sbin"
 trap 'rm -rf "$work_dir"' EXIT
 
+run_batch0() {
+  IOS_LIB_DIR="$work_dir/missing-installed-ios" \
+    SIM_LIB_DIR="$work_dir/missing-installed-sim" \
+    DOWNLOADS_DIR="$work_dir/missing-installed-downloads" \
+    "$root_dir/scripts/ios/run-real-core-batch0.sh" "$@"
+}
+
 fail() {
   echo "[FAIL] $1" >&2
   exit 1
@@ -24,7 +31,7 @@ complete_source="$work_dir/complete-source"
 staged_output="$work_dir/staged-output"
 make_pair "$complete_source"
 
-"$root_dir/scripts/ios/run-real-core-batch0.sh" \
+run_batch0 \
   --source "$complete_source" \
   --output "$staged_output" \
   --force > "$work_dir/complete.log" 2>&1
@@ -33,7 +40,7 @@ make_pair "$complete_source"
 [ -f "$staged_output/pkg-ios-x86_64-swift-json.zip" ] || fail "missing staged x86_64 zip"
 grep -Fq "[PASS] Batch 0 artifact staging is ready" "$work_dir/complete.log" || fail "complete staging did not report pass"
 
-"$root_dir/scripts/ios/run-real-core-batch0.sh" \
+run_batch0 \
   --source "$staged_output" \
   --output "$staged_output" > "$work_dir/same-source-output.log" 2>&1
 
@@ -41,7 +48,7 @@ grep -Fq "Source and output are the same staged artifact directory" "$work_dir/s
 
 missing_source="$work_dir/missing-source"
 mkdir -p "$missing_source"
-if "$root_dir/scripts/ios/run-real-core-batch0.sh" \
+if run_batch0 \
   --source "$missing_source" \
   --output "$work_dir/missing-output" > "$work_dir/missing.log" 2>&1; then
   fail "missing artifacts unexpectedly passed"
@@ -81,7 +88,7 @@ SH
 chmod +x "$fake_bin/curl"
 
 hydra_output="$work_dir/hydra-output"
-PATH="$fake_bin:$restricted_path" REQUIRED_SIM_ARCH=x86_64 "$root_dir/scripts/ios/run-real-core-batch0.sh" \
+PATH="$fake_bin:$restricted_path" REQUIRED_SIM_ARCH=x86_64 run_batch0 \
   --job-repo "https://hydra.complete/job/stable" \
   --output "$hydra_output" \
   --force > "$work_dir/hydra.log" 2>&1

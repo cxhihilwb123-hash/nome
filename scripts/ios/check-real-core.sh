@@ -108,12 +108,26 @@ arch_list_contains() {
   printf ' %s ' "$archs" | grep -Fq " $required_arch "
 }
 
+library_platforms() {
+  local lib="$1"
+
+  if ! have_cmd otool; then
+    return 1
+  fi
+
+  otool -l "$lib" 2>/dev/null |
+    awk '$1 == "platform" { print $2 }' |
+    sort -u
+}
+
 check_library_archs() {
   local label="$1"
   local dir="$2"
   local required_arch="$3"
+  local required_platform="$4"
   local lib
   local archs
+  local platforms
   local checked=0
 
   if [ ! -d "$dir" ]; then
@@ -129,6 +143,14 @@ check_library_archs() {
     else
       fail_core "$label library architecture mismatch: $(basename "$lib") has [$archs], requires $required_arch"
     fi
+
+    if ! platforms="$(library_platforms "$lib")" || [ -z "$platforms" ]; then
+      fail_core "$label library platform metadata could not be inspected with otool: $(basename "$lib")"
+    elif [ "$platforms" = "$required_platform" ]; then
+      ok "$label library uses required platform $required_platform: $(basename "$lib")"
+    else
+      fail_core "$label library platform mismatch: $(basename "$lib") has [$platforms], requires $required_platform"
+    fi
   done < <(find "$dir" -maxdepth 1 -type f -name '*.a' 2>/dev/null | sort)
 
   if [ "$checked" -eq 0 ]; then
@@ -140,6 +162,7 @@ check_core_dir() {
   local label="$1"
   local dir="$2"
   local required_arch="$3"
+  local required_platform="$4"
   local core_lib
   local core_size
 
@@ -167,7 +190,7 @@ check_core_dir() {
     ok "$label core library has no preview-core markers"
   fi
 
-  check_library_archs "$label" "$dir" "$required_arch"
+  check_library_archs "$label" "$dir" "$required_arch" "$required_platform"
 }
 
 check_download_artifacts() {
@@ -259,13 +282,13 @@ info "Required simulator architecture: $required_sim_arch"
 
 case "$target" in
   all|physical-device)
-    check_core_dir "Device" "$ios_dir" "arm64"
+    check_core_dir "Device" "$ios_dir" "arm64" "2"
     ;;
 esac
 
 case "$target" in
   all|simulator)
-    check_core_dir "Simulator" "$sim_dir" "$required_sim_arch"
+    check_core_dir "Simulator" "$sim_dir" "$required_sim_arch" "7"
     ;;
 esac
 

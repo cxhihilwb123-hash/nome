@@ -5,6 +5,7 @@ set -euo pipefail
 root_dir="$(cd "$(dirname "$0")/../.." && pwd -P)"
 project_file="${PROJECT_FILE:-$root_dir/apps/ios/SimpleX.xcodeproj/project.pbxproj}"
 ios_lib_dir="${IOS_LIB_DIR:-$root_dir/apps/ios/Libraries/ios}"
+min_core_bytes="${MIN_REAL_CORE_LIB_BYTES:-1000000}"
 prepare=0
 force=0
 
@@ -87,11 +88,11 @@ project_ref() {
   case "$kind" in
     ghc)
       single_match "project GHC libHS reference" \
-        grep -Eoh 'libHSsimplex-chat-[^ ";/]+-ghc9\.6\.3\.a' "$project_file"
+        grep -Eoh 'libHSsimplex-chat-[^ ";/]+-ghc[^ ";/]+\.a' "$project_file"
       ;;
     plain)
       single_match "project plain libHS reference" \
-        sh -c "grep -Eoh 'libHSsimplex-chat-[^ \" ;/]+\\.a' \"\$1\" | grep -v -- '-ghc9\\.6\\.3\\.a'" sh "$project_file"
+        sh -c "grep -Eoh 'libHSsimplex-chat-[^ \" ;/]+\\.a' \"\$1\" | grep -v -- '-ghc[^ \";/]*\\.a'" sh "$project_file"
       ;;
     *)
       fail "Unknown project ref kind: $kind"
@@ -103,14 +104,19 @@ installed_lib() {
   local kind="$1"
   local project_name="$2"
 
+  if [ -f "$ios_lib_dir/$project_name" ]; then
+    printf '%s\n' "$project_name"
+    return
+  fi
+
   case "$kind" in
     ghc)
       single_match "installed device GHC libHS archive that is not already the project alias" \
-        find "$ios_lib_dir" -maxdepth 1 -type f -name 'libHSsimplex-chat-*-ghc9.6.3.a' ! -name "$project_name" -exec basename '{}' ';'
+        find "$ios_lib_dir" -maxdepth 1 -type f -name 'libHSsimplex-chat-*-ghc*.a' ! -name "$project_name" -exec basename '{}' ';'
       ;;
     plain)
       single_match "installed device plain libHS archive that is not already the project alias" \
-        find "$ios_lib_dir" -maxdepth 1 -type f -name 'libHSsimplex-chat-*.a' ! -name '*-ghc9.6.3.a' ! -name "$project_name" -exec basename '{}' ';'
+        find "$ios_lib_dir" -maxdepth 1 -type f -name 'libHSsimplex-chat-*.a' ! -name '*-ghc*.a' ! -name "$project_name" -exec basename '{}' ';'
       ;;
     *)
       fail "Unknown installed lib kind: $kind"
@@ -138,6 +144,7 @@ verify_source() {
   local path="$1"
   local archs
   local bytes
+  local platforms
 
   if [ ! -f "$path" ]; then
     fail "Missing installed device library: $path"
@@ -151,12 +158,20 @@ verify_source() {
   fi
 
   bytes="$(wc -c < "$path" | tr -d ' ')"
-  if [ "$bytes" -lt 1000000 ]; then
+  if [ "$bytes" -lt "$min_core_bytes" ]; then
     fail "Installed device library is too small for a real core alias: $(basename "$path") is ${bytes} bytes"
   fi
 
   if strings "$path" 2>/dev/null | grep -Eq 'preview-agent|preview-token|simplex:/contact#preview|nome\.local/preview'; then
     fail "Installed device library contains preview-core markers: $(basename "$path")"
+  fi
+
+  if ! command -v otool >/dev/null 2>&1; then
+    fail "otool is required to verify installed device library platform metadata"
+  fi
+  platforms="$(otool -l "$path" 2>/dev/null | awk '$1 == "platform" { print $2 }' | sort -u)"
+  if [ "$platforms" != "2" ] && [ "$platforms" != "IOS" ]; then
+    fail "Installed device library must use IOS platform metadata: $(basename "$path") has [${platforms:-unknown}]"
   fi
 }
 
@@ -167,12 +182,12 @@ ensure_alias() {
   local target="$ios_lib_dir/$project_name"
   local source="$source_name"
 
+  verify_source "$ios_lib_dir/$source_name"
+
   if [ "$project_name" = "$source_name" ]; then
     ok "$label already uses the project archive name: $project_name"
     return
   fi
-
-  verify_source "$ios_lib_dir/$source_name"
 
   if [ -L "$target" ]; then
     current_target="$(readlink "$target")"

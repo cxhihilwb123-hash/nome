@@ -19,11 +19,12 @@ pass() {
 make_project() {
   local file="$1"
   local stem="$2"
+  local ghc_version="${3:-9.6.3}"
 
   cat > "$file" <<EOF
-64C8299F /* libHSsimplex-chat-$stem-ghc9.6.3.a in Frameworks */;
+64C8299F /* libHSsimplex-chat-$stem-ghc$ghc_version.a in Frameworks */;
 64C829A0 /* libHSsimplex-chat-$stem.a in Frameworks */;
-64C8299A /* libHSsimplex-chat-$stem-ghc9.6.3.a */;
+64C8299A /* libHSsimplex-chat-$stem-ghc$ghc_version.a */;
 64C8299B /* libHSsimplex-chat-$stem.a */;
 EOF
 }
@@ -31,9 +32,10 @@ EOF
 make_lib_pair() {
   local dir="$1"
   local stem="$2"
+  local ghc_version="${3:-9.6.3}"
 
   mkdir -p "$dir"
-  printf 'ghc\n' > "$dir/libHSsimplex-chat-$stem-ghc9.6.3.a"
+  printf 'ghc\n' > "$dir/libHSsimplex-chat-$stem-ghc$ghc_version.a"
   printf 'plain\n' > "$dir/libHSsimplex-chat-$stem.a"
 }
 
@@ -121,5 +123,20 @@ run_case \
   --sim-dir "$matching_sim" \
   --ios-dir "$work_dir/missing-ios" \
   --device-source "$source_mismatch"
+
+ghc810_project="$work_dir/project-ghc810.pbxproj"
+ghc810_sim="$work_dir/matching-sim-ghc810"
+ghc810_ios="$work_dir/matching-ios-ghc810"
+make_project "$ghc810_project" "project810" "8.10.7"
+make_lib_pair "$ghc810_sim" "project810" "8.10.7"
+make_lib_pair "$ghc810_ios" "project810" "8.10.7"
+run_case \
+  "ghc_8_10_7_pair_passes" \
+  0 \
+  "Xcode real-core references are consistent with installed build paths" \
+  --project "$ghc810_project" \
+  --sim-dir "$ghc810_sim" \
+  --ios-dir "$ghc810_ios" \
+  --device-source "$ghc810_ios"
 
 echo "[PASS] check-real-core-xcode-sync tests passed"

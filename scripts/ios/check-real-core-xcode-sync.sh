@@ -71,13 +71,13 @@ single_match() {
 plain_lib_name_from_dir() {
   local dir="$1"
   single_match "plain libHS archive in $dir" \
-    find "$dir" -maxdepth 1 -type f -name 'libHSsimplex-chat-*.a' ! -name '*-ghc9.6.3.a' -exec basename '{}' ';'
+    find "$dir" -maxdepth 1 -type f -name 'libHSsimplex-chat-*.a' ! -name '*-ghc*.a' -exec basename '{}' ';'
 }
 
 ghc_lib_name_from_dir() {
   local dir="$1"
   single_match "GHC libHS archive in $dir" \
-    find "$dir" -maxdepth 1 -type f -name 'libHSsimplex-chat-*-ghc9.6.3.a' -exec basename '{}' ';'
+    find "$dir" -maxdepth 1 -type f -name 'libHSsimplex-chat-*-ghc*.a' -exec basename '{}' ';'
 }
 
 compare_pair() {
@@ -176,8 +176,8 @@ if [ ! -f "$project_file" ]; then
   exit "$status"
 fi
 
-project_ghc="$(single_match "project GHC libHS reference" grep -Eoh 'libHSsimplex-chat-[^ ";/]+-ghc9\.6\.3\.a' "$project_file" || true)"
-project_plain="$(single_match "project plain libHS reference" sh -c "grep -Eoh 'libHSsimplex-chat-[^ \" ;/]+\\.a' \"\$1\" | grep -v -- '-ghc9\\.6\\.3\\.a'" sh "$project_file" || true)"
+project_ghc="$(single_match "project GHC libHS reference" grep -Eoh 'libHSsimplex-chat-[^ ";/]+-ghc[^ ";/]+\.a' "$project_file" || true)"
+project_plain="$(single_match "project plain libHS reference" sh -c "grep -Eoh 'libHSsimplex-chat-[^ \" ;/]+\\.a' \"\$1\" | grep -v -- '-ghc[^ \";/]*\\.a'" sh "$project_file" || true)"
 
 if [ -z "$project_ghc" ] || [ -z "$project_plain" ]; then
   exit "$status"

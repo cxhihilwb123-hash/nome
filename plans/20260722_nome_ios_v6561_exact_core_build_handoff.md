@@ -2,16 +2,31 @@
 
 更新时间：2026-07-22（Asia/Shanghai）
 
+## 后续状态更新（优先于下文原计划）
+
+同日后续排查找到了官方 Hydra build `1460001` 的预编译 arm64 Swift JSON
+Core 6.5.6.1，因此不再需要安装 Nix 或在本机从头构建 Haskell Core。
+
+该官方包使用 GHC 8.10.7，原始 archive 为 Darwin platform 1。device 副本经
+官方固定版本 `mac2ios FILE` 转为 IOS platform 2，simulator 副本经
+`mac2ios -s FILE` 转为 IOSSIMULATOR platform 7。generic iOS device 构建、
+arm64 Simulator 构建以及两台专用 Simulator 的 3+3 双向真实消息均已通过。
+
+当前权威结果与哈希记录：
+`plans/evidence/20260722_nome_ios_v6561_build1460001/RESULTS.md`。
+
+下文“安装 Nix 并本机构建”的内容仅保留为原始调查记录和最终回退方案，不再是
+当前执行路线。
+
 ## 结论
 
-当前 iOS 端已经具备可运行的原生 SwiftUI 界面和真实通信诊断能力，但安装的
-simulator Core 仍是官方 v6.5.5 兼容产物，不是与当前 Swift 层完全匹配的
-v6.5.6.1 Core。因此，下一任务只做一件事：在本机从官方 v6.5.6 源码构建并
-验证精确的 arm64 iOS Core，再重复现有双向通信诊断。
+当前 iOS 端已接入官方预编译的 Core 6.5.6.1，并完成 device/simulator 平台
+转换、Xcode 双路线构建和两台 Simulator 的 3+3 双向真实消息验证。iOS Core
+本地源码构建阻塞已经关闭。
 
 这不是 Android 工作；不得触碰 Android 工作树、Android 测试进程或用户测试
-产物。官方 Hydra 的精确 x86_64 产物已经验证可用，但本机 Apple Silicon 的
-iOS Simulator 目的地只接受 arm64，所以它不能替代待构建的 arm64 产物。
+产物。当前剩余边界是真实 iPhone 运行、后台通知矩阵和发布签名，不是 Core
+编译或 Simulator 通信。
 
 ## 权威入口与起点
 

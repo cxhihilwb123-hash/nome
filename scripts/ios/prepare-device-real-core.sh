@@ -9,6 +9,9 @@ project_file="${PROJECT_FILE:-$root_dir/apps/ios/SimpleX.xcodeproj/project.pbxpr
 min_core_bytes="${MIN_REAL_CORE_LIB_BYTES:-1000000}"
 prepare=0
 force=0
+convert_darwin=0
+mac2ios_bin="${MAC2IOS:-}"
+staging_dir=""
 
 usage() {
   cat <<'USAGE'
@@ -27,6 +30,9 @@ Options:
   --target DIR    Device library target. Default:
                   apps/ios/Libraries/ios
   --prepare       Copy the audited device libraries into --target.
+  --convert-darwin
+                  Convert a Darwin arm64 archive set to IOS platform metadata
+                  in temporary staging before auditing or installing it.
   --force         Allow replacing a non-empty --target. A backup is written to
                   /tmp before replacement.
   -h, --help      Show this help.
@@ -36,6 +42,8 @@ Environment:
   TARGET_DIR                  Override the default target directory.
   PROJECT_FILE                Override the Xcode project file used for warnings.
   MIN_REAL_CORE_LIB_BYTES     Override the production-size threshold.
+  MAC2IOS                     Override the mac2ios executable used with
+                              --convert-darwin.
 USAGE
 }
 
@@ -113,6 +121,37 @@ assert_safe_target() {
   esac
 }
 
+cleanup() {
+  if [ -n "$staging_dir" ] && [ -d "$staging_dir" ]; then
+    rm -rf "$staging_dir"
+  fi
+}
+
+trap cleanup EXIT
+
+find_mac2ios() {
+  if [ -n "$mac2ios_bin" ] && [ -x "$mac2ios_bin" ]; then
+    return 0
+  fi
+  if have_cmd mac2ios; then
+    mac2ios_bin="$(command -v mac2ios)"
+    return 0
+  fi
+  if [ -x "$root_dir/tools/bin/mac2ios" ]; then
+    mac2ios_bin="$root_dir/tools/bin/mac2ios"
+    return 0
+  fi
+  return 1
+}
+
+library_platforms() {
+  local lib="$1"
+
+  otool -l "$lib" 2>/dev/null |
+    awk '$1 == "platform" { print $2 }' |
+    sort -u
+}
+
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --source)
@@ -131,6 +170,9 @@ while [ "$#" -gt 0 ]; do
       ;;
     --prepare)
       prepare=1
+      ;;
+    --convert-darwin)
+      convert_darwin=1
       ;;
     --force)
       force=1
@@ -156,19 +198,23 @@ HEADER
 info "Source: $source_dir"
 info "Target: $target_dir"
 info "Prepare: $prepare"
+info "Convert Darwin archives: $convert_darwin"
 
 assert_safe_target
 
 if ! have_cmd lipo; then
   fail "lipo is required to verify static library architecture"
 fi
+if ! have_cmd otool; then
+  fail "otool is required to verify static library platform metadata"
+fi
 
 if [ ! -d "$source_dir" ]; then
   fail "Source directory is missing: $source_dir"
 fi
 
-ghc_lib="$(single_match "device GHC libHS archive" find "$source_dir" -maxdepth 1 -type f -name 'libHSsimplex-chat-*-ghc9.6.3.a' -exec basename '{}' ';')"
-plain_lib="$(single_match "device plain libHS archive" find "$source_dir" -maxdepth 1 -type f -name 'libHSsimplex-chat-*.a' ! -name '*-ghc9.6.3.a' -exec basename '{}' ';')"
+ghc_lib="$(single_match "device GHC libHS archive" find "$source_dir" -maxdepth 1 -type f -name 'libHSsimplex-chat-*-ghc*.a' -exec basename '{}' ';')"
+plain_lib="$(single_match "device plain libHS archive" find "$source_dir" -maxdepth 1 -type f -name 'libHSsimplex-chat-*.a' ! -name '*-ghc*.a' -exec basename '{}' ';')"
 
 for required in "$ghc_lib" "$plain_lib" libffi.a libgmp.a libgmpxx.a; do
   if [ ! -f "$source_dir/$required" ]; then
@@ -177,7 +223,23 @@ for required in "$ghc_lib" "$plain_lib" libffi.a libgmp.a libgmpxx.a; do
   ok "Found required device library: $required"
 done
 
-for core_lib in "$source_dir/$ghc_lib" "$source_dir/$plain_lib"; do
+audit_dir="$source_dir"
+if [ "$convert_darwin" -eq 1 ]; then
+  if ! find_mac2ios; then
+    fail "--convert-darwin requires mac2ios via MAC2IOS, PATH, or tools/bin/mac2ios"
+  fi
+
+  staging_dir="$(mktemp -d "${TMPDIR:-/tmp}/nome-ios-device-core.XXXXXX")"
+  cp -R "$source_dir"/. "$staging_dir"/
+  chmod u+w "$staging_dir"/*.a
+  while IFS= read -r lib; do
+    "$mac2ios_bin" "$lib" >/dev/null
+    ok "Converted device library to IOS platform metadata: $(basename "$lib")"
+  done < <(find "$staging_dir" -maxdepth 1 -type f -name '*.a' | sort)
+  audit_dir="$staging_dir"
+fi
+
+for core_lib in "$audit_dir/$ghc_lib" "$audit_dir/$plain_lib"; do
   core_size="$(wc -c < "$core_lib" | tr -d ' ')"
   if [ "$core_size" -lt "$min_core_bytes" ]; then
     fail "Device core library is too small for production use: $(basename "$core_lib") is ${core_size} bytes"
@@ -202,15 +264,24 @@ while IFS= read -r lib; do
   else
     fail "Device library does not support arm64: $(basename "$lib") [$archs]"
   fi
-done < <(find "$source_dir" -maxdepth 1 -type f -name '*.a' | sort)
+
+  platforms="$(library_platforms "$lib")"
+  if [ "$platforms" = "2" ] || [ "$platforms" = "IOS" ]; then
+    ok "Device library uses IOS platform metadata: $(basename "$lib") [$platforms]"
+  elif [ -z "$platforms" ]; then
+    fail "Could not inspect device library platform metadata: $(basename "$lib")"
+  else
+    fail "Device library platform metadata mismatch: $(basename "$lib") has [$platforms], requires IOS [2]. Use --convert-darwin for official Darwin archives."
+  fi
+done < <(find "$audit_dir" -maxdepth 1 -type f -name '*.a' | sort)
 
 if [ "$checked" -eq 0 ]; then
   fail "No static .a libraries found in source directory: $source_dir"
 fi
 
 if [ -f "$project_file" ]; then
-  project_ghc="$(grep -Eoh 'libHSsimplex-chat-[^ ";/]+-ghc9\.6\.3\.a' "$project_file" | sort -u | head -1 || true)"
-  project_plain="$(grep -Eoh 'libHSsimplex-chat-[^ ";/]+\.a' "$project_file" | grep -v -- '-ghc9\.6\.3\.a' | sort -u | head -1 || true)"
+  project_ghc="$(grep -Eoh 'libHSsimplex-chat-[^ ";/]+-ghc[^ ";/]+\.a' "$project_file" | sort -u | head -1 || true)"
+  project_plain="$(grep -Eoh 'libHSsimplex-chat-[^ ";/]+\.a' "$project_file" | grep -v -- '-ghc[^ ";/]*\.a' | sort -u | head -1 || true)"
 
   if [ -n "$project_ghc" ] && [ "$project_ghc" != "$ghc_lib" ]; then
     warn "Device GHC archive name differs from current Xcode project reference: $ghc_lib vs $project_ghc"
@@ -224,12 +295,16 @@ if [ -f "$project_file" ]; then
 fi
 
 if [ "$prepare" -ne 1 ]; then
+  convert_hint=""
+  if [ "$convert_darwin" -eq 1 ]; then
+    convert_hint=" --convert-darwin"
+  fi
   cat <<EOF
 
 [PASS] Device real-core artifact is ready for explicit install
 [INFO] Dry run only. No files were copied.
 [INFO] To install the device libraries:
-  scripts/ios/prepare-device-real-core.sh --source "$source_dir" --prepare
+  scripts/ios/prepare-device-real-core.sh --source "$source_dir"$convert_hint --prepare
 EOF
   exit 0
 fi
@@ -246,7 +321,7 @@ fi
 
 rm -rf "$target_dir"
 mkdir -p "$target_dir"
-cp -R "$source_dir"/. "$target_dir"/
+cp -R "$audit_dir"/. "$target_dir"/
 
 ok "Installed device real-core libraries into: $target_dir"
 info "Simulator libraries were not modified: $root_dir/apps/ios/Libraries/sim"

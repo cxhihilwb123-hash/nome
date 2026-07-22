@@ -38,14 +38,36 @@ case "$lib" in
 esac
 SH
   chmod +x "$bin_dir/lipo"
+
+  cat > "$bin_dir/otool" <<'SH'
+#!/bin/sh
+
+for arg do
+  lib="$arg"
+done
+
+case "$lib" in
+  *darwin-source*) echo " platform 1" ;;
+  *) echo " platform 2" ;;
+esac
+SH
+  chmod +x "$bin_dir/otool"
+
+  cat > "$bin_dir/mac2ios" <<'SH'
+#!/bin/sh
+
+printf 'converted-to-ios\n' >> "$1"
+SH
+  chmod +x "$bin_dir/mac2ios"
 }
 
 make_device_artifact() {
   local dir="$1"
   local marker="${2:-real-core-placeholder}"
+  local ghc_version="${3:-8.10.7}"
 
   mkdir -p "$dir"
-  printf '%s\n' "$marker" > "$dir/libHSsimplex-chat-test-ghc9.6.3.a"
+  printf '%s\n' "$marker" > "$dir/libHSsimplex-chat-test-ghc$ghc_version.a"
   printf 'plain-real-core-placeholder\n' > "$dir/libHSsimplex-chat-test.a"
   printf 'ffi\n' > "$dir/libffi.a"
   printf 'gmp\n' > "$dir/libgmp.a"
@@ -57,6 +79,7 @@ run_script() {
   shift
 
   PATH="$fake_bin:$restricted_path" \
+    MAC2IOS="$fake_bin/mac2ios" \
     PROJECT_FILE="$work_dir/project.pbxproj" \
     MIN_REAL_CORE_LIB_BYTES=1 \
     "$script" "$@" > "$log" 2>&1
@@ -109,6 +132,13 @@ expect_fail \
   "does not support arm64" \
   --source "$wrongarch_source"
 
+darwin_source="$work_dir/darwin-source"
+make_device_artifact "$darwin_source"
+expect_fail \
+  "darwin_platform_without_conversion" \
+  "requires IOS [2]. Use --convert-darwin" \
+  --source "$darwin_source"
+
 valid_source="$work_dir/valid-source"
 valid_target="$work_dir/valid-target"
 make_device_artifact "$valid_source"
@@ -137,9 +167,20 @@ run_script "$work_dir/prepare-force.log" \
   --force
 
 grep -Fq "Installed device real-core libraries" "$work_dir/prepare-force.log" || fail "force prepare did not report install"
-[ -f "$valid_target/libHSsimplex-chat-test-ghc9.6.3.a" ] || fail "missing installed GHC archive"
+[ -f "$valid_target/libHSsimplex-chat-test-ghc8.10.7.a" ] || fail "missing installed GHC archive"
 [ -f "$valid_target/libHSsimplex-chat-test.a" ] || fail "missing installed plain archive"
 [ -f "$valid_target/libffi.a" ] || fail "missing installed dependency"
 pass "prepare_force_copies_libraries"
+
+converted_target="$work_dir/converted-target"
+run_script "$work_dir/convert-darwin.log" \
+  --source "$darwin_source" \
+  --target "$converted_target" \
+  --convert-darwin \
+  --prepare
+
+grep -Fq "converted-to-ios" "$converted_target/libgmp.a" || fail "Darwin conversion did not run before install"
+grep -Fq "Converted device library to IOS platform metadata" "$work_dir/convert-darwin.log" || fail "Darwin conversion was not reported"
+pass "convert_darwin_stages_ios_libraries"
 
 echo "[PASS] prepare-device-real-core helper tests passed"

@@ -75,16 +75,16 @@ if [ ! -d "$lib_dir" ]; then
   exit 1
 fi
 
-new_ghc="$(single_match "simulator GHC libHS archive" find "$lib_dir" -maxdepth 1 -type f -name 'libHSsimplex-chat-*-ghc9.6.3.a' -exec basename '{}' ';')"
-new_plain="$(single_match "simulator plain libHS archive" find "$lib_dir" -maxdepth 1 -type f -name 'libHSsimplex-chat-*.a' ! -name '*-ghc9.6.3.a' -exec basename '{}' ';')"
+new_ghc="$(single_match "simulator GHC libHS archive" find "$lib_dir" -maxdepth 1 -type f -name 'libHSsimplex-chat-*-ghc*.a' -exec basename '{}' ';')"
+new_plain="$(single_match "simulator plain libHS archive" find "$lib_dir" -maxdepth 1 -type f -name 'libHSsimplex-chat-*.a' ! -name '*-ghc*.a' -exec basename '{}' ';')"
 
 if [ -d "$ios_lib_dir" ]; then
   require_file "$ios_lib_dir/$new_ghc"
   require_file "$ios_lib_dir/$new_plain"
 fi
 
-old_ghc="$(single_match "project GHC libHS reference" grep -Eoh 'libHSsimplex-chat-[^ ";/]+-ghc9\.6\.3\.a' "$project_file")"
-old_plain="$(single_match "project plain libHS reference" sh -c "grep -Eoh 'libHSsimplex-chat-[^ \" ;/]+\\.a' \"\$1\" | grep -v -- '-ghc9\\.6\\.3\\.a'" sh "$project_file")"
+old_ghc="$(single_match "project GHC libHS reference" grep -Eoh 'libHSsimplex-chat-[^ ";/]+-ghc[^ ";/]+\.a' "$project_file")"
+old_plain="$(single_match "project plain libHS reference" sh -c "grep -Eoh 'libHSsimplex-chat-[^ \" ;/]+\\.a' \"\$1\" | grep -v -- '-ghc[^ \";/]*\\.a'" sh "$project_file")"
 
 if [ "$old_ghc" = "$new_ghc" ] && [ "$old_plain" = "$new_plain" ]; then
   echo "[PASS] Xcode project already references current real-core archives"
