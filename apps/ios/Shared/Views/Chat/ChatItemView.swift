@@ -72,21 +72,32 @@ struct ChatItemView: View {
 
     var body: some View {
         let ci = chatItem
-        if chatItem.meta.itemDeleted != nil && (!revealed || chatItem.isDeletedContent) {
-            MarkedDeletedItemView(chat: chat, im: im, chatItem: chatItem)
-        } else if ci.quotedItem == nil && ci.meta.itemForwarded == nil && ci.meta.itemDeleted == nil && !ci.meta.isLive {
-            if let mc = ci.content.msgContent, mc.isText && isShortEmoji(ci.content.text) {
-                EmojiItemView(chat: chat, chatItem: ci)
-            } else if ci.content.text.isEmpty, case let .voice(_, duration) = ci.content.msgContent {
-                CIVoiceView(chat: chat, chatItem: ci, recordingFile: ci.file, duration: duration, allowMenu: $allowMenu)
-            } else if ci.content.msgContent == nil {
-                ChatItemContentView(chat: chat, im: im, chatItem: chatItem, msgContentView: { Text(ci.text) }) // msgContent is unreachable branch in this case
+        Group {
+            if chatItem.meta.itemDeleted != nil && (!revealed || chatItem.isDeletedContent) {
+                MarkedDeletedItemView(chat: chat, im: im, chatItem: chatItem)
+            } else if ci.quotedItem == nil && ci.meta.itemForwarded == nil && ci.meta.itemDeleted == nil && !ci.meta.isLive {
+                if let mc = ci.content.msgContent, mc.isText && isShortEmoji(ci.content.text) {
+                    EmojiItemView(chat: chat, chatItem: ci)
+                } else if ci.content.text.isEmpty, case let .voice(_, duration) = ci.content.msgContent {
+                    CIVoiceView(chat: chat, chatItem: ci, recordingFile: ci.file, duration: duration, allowMenu: $allowMenu)
+                } else if ci.content.msgContent == nil {
+                    ChatItemContentView(chat: chat, im: im, chatItem: chatItem, msgContentView: { Text(ci.text) }) // msgContent is unreachable branch in this case
+                } else {
+                    framedItemView()
+                }
             } else {
                 framedItemView()
             }
-        } else {
-            framedItemView()
         }
+        .if(isRealCoreDiagnosticMode) {
+            $0.accessibilityElement(children: .combine)
+                .accessibilityIdentifier("chat-real-core-diagnostic-message")
+                .accessibilityValue(ci.content.text)
+        }
+    }
+
+    private var isRealCoreDiagnosticMode: Bool {
+        ProcessInfo.processInfo.environment["NOME_REAL_CORE_DIAGNOSTIC_RUN_ID"]?.isEmpty == false
     }
 
     private func framedItemView() -> some View {

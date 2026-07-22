@@ -9,6 +9,18 @@ import XCTest
 
 class Tests_iOS: XCTestCase {
 
+    private struct DiagnosticIdentity {
+        let sender: String
+        let contact: String
+
+        var remoteSender: String {
+            sender == "main" ? "peer" : "main"
+        }
+    }
+
+    private let diagnosticRunIDKey = "NOME_REAL_CORE_DIAGNOSTIC_RUN_ID"
+    private let diagnosticRoundsKey = "NOME_REAL_CORE_DIAGNOSTIC_ROUNDS"
+
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.
 
@@ -31,6 +43,54 @@ class Tests_iOS: XCTestCase {
         // Use XCTAssert and related functions to verify your tests produce the correct results.
     }
 
+    func testSendRealCoreDiagnosticMessages() throws {
+        let configuration = try diagnosticConfiguration()
+        let app = diagnosticApplication(configuration: configuration)
+        app.launch()
+        skipQuiescenceWaits(in: app)
+
+        let identity = try detectDiagnosticIdentity(in: app)
+        try openDiagnosticContact(identity.contact, in: app)
+        app.swipeUp()
+
+        for round in 1...configuration.rounds {
+            let message = diagnosticMessage(
+                runID: configuration.runID,
+                sender: identity.sender,
+                round: round
+            )
+            try sendDiagnosticMessage(message, round: round, in: app)
+        }
+    }
+
+    func testReceiveRealCoreDiagnosticMessages() throws {
+        let configuration = try diagnosticConfiguration()
+        let app = diagnosticApplication(configuration: configuration)
+        app.launch()
+        skipQuiescenceWaits(in: app)
+
+        let identity = try detectDiagnosticIdentity(in: app)
+        try openDiagnosticContact(identity.contact, in: app)
+        app.swipeUp()
+
+        for round in 1...configuration.rounds {
+            let message = diagnosticMessage(
+                runID: configuration.runID,
+                sender: identity.remoteSender,
+                round: round
+            )
+            print("[NOME_DIAG] remote-receive-wait sender=\(identity.remoteSender) round=\(round) message=\(message)")
+            let startedAt = Date()
+            let received = diagnosticMessageElement(message, in: app).waitForExistence(timeout: 45)
+            let elapsed = Date().timeIntervalSince(startedAt)
+            print("[NOME_DIAG] remote-receive sender=\(identity.remoteSender) round=\(round) elapsed=\(String(format: "%.3f", elapsed)) message=\(message)")
+            if !received {
+                attachDiagnosticScreenshot(app, name: "missing-remote-\(identity.remoteSender)-round-\(round)")
+            }
+            XCTAssertTrue(received, "Remote diagnostic message did not arrive: \(message)")
+        }
+    }
+
     func testLaunchPerformance() throws {
         if #available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 7.0, *) {
             // This measures how long it takes to launch your application.
@@ -38,5 +98,157 @@ class Tests_iOS: XCTestCase {
                 XCUIApplication().launch()
             }
         }
+    }
+
+    private func diagnosticConfiguration() throws -> (runID: String, rounds: Int) {
+        let environment = ProcessInfo.processInfo.environment
+        guard let rawRunID = environment[diagnosticRunIDKey], !rawRunID.isEmpty else {
+            throw XCTSkip("Set \(diagnosticRunIDKey) to enable the real-core diagnostic UI tests")
+        }
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_"))
+        let runID = rawRunID.unicodeScalars.filter(allowed.contains).map(String.init).joined()
+        guard !runID.isEmpty else {
+            XCTFail("\(diagnosticRunIDKey) must contain at least one safe character")
+            throw DiagnosticFailure.invalidConfiguration
+        }
+
+        let rounds = environment[diagnosticRoundsKey].flatMap(Int.init) ?? 1
+        guard (1...20).contains(rounds) else {
+            XCTFail("\(diagnosticRoundsKey) must be between 1 and 20")
+            throw DiagnosticFailure.invalidConfiguration
+        }
+        return (runID, rounds)
+    }
+
+    private func diagnosticApplication(configuration: (runID: String, rounds: Int)) -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchEnvironment[diagnosticRunIDKey] = configuration.runID
+        app.launchEnvironment[diagnosticRoundsKey] = String(configuration.rounds)
+
+        skipQuiescenceWaits(in: app)
+        return app
+    }
+
+    private func skipQuiescenceWaits(in app: XCUIApplication) {
+        // SimpleX has intentional, continuously updating SwiftUI animations. XCUITest otherwise
+        // waits up to 60 seconds before and after every interaction even though the UI is usable.
+        // These XCTest-only interaction flags skip those idle waits without changing app behavior.
+        // XCUIApplication resets them when a new automation session is established, so callers
+        // apply them both before and immediately after launch.
+        let selector = NSSelectorFromString("setCurrentInteractionOptions:")
+        guard app.responds(to: selector) else {
+            XCTFail("This Xcode version does not expose XCUITest interaction options")
+            return
+        }
+        typealias InteractionOptionsSetter = @convention(c) (AnyObject, Selector, UInt) -> Void
+        let setter = unsafeBitCast(app.method(for: selector), to: InteractionOptionsSetter.self)
+        setter(app, selector, 3)
+    }
+
+    private func detectDiagnosticIdentity(in app: XCUIApplication) throws -> DiagnosticIdentity {
+        let mainContact = app.staticTexts["nomepeer"].firstMatch
+        let peerContact = app.staticTexts["nometest"].firstMatch
+        let deadline = Date().addingTimeInterval(30)
+
+        while Date() < deadline {
+            if mainContact.exists && mainContact.isHittable {
+                print("[NOME_DIAG] identity sender=main contact=nomepeer")
+                return DiagnosticIdentity(sender: "main", contact: "nomepeer")
+            }
+            if peerContact.exists && peerContact.isHittable {
+                print("[NOME_DIAG] identity sender=peer contact=nometest")
+                return DiagnosticIdentity(sender: "peer", contact: "nometest")
+            }
+            RunLoop.current.run(until: Date().addingTimeInterval(0.25))
+        }
+
+        attachDiagnosticScreenshot(app, name: "identity-not-found")
+        XCTFail("Expected the nometest or nomepeer diagnostic contact on the chat list")
+        throw DiagnosticFailure.identityNotFound
+    }
+
+    private func openDiagnosticContact(_ contact: String, in app: XCUIApplication) throws {
+        let contactLabel = app.staticTexts[contact].firstMatch
+        XCTAssertTrue(contactLabel.exists, "Diagnostic contact is not visible: \(contact)")
+        contactLabel.tap()
+
+        let editor = app.textViews["chat-compose-editor"].firstMatch
+        if !editor.waitForExistence(timeout: 20) {
+            attachDiagnosticScreenshot(app, name: "composer-not-found-\(contact)")
+            XCTFail("Chat composer did not appear for \(contact)")
+            throw DiagnosticFailure.composerNotFound
+        }
+    }
+
+    private func sendDiagnosticMessage(_ message: String, round: Int, in app: XCUIApplication) throws {
+        let editor = app.textViews["chat-compose-editor"].firstMatch
+        XCTAssertTrue(editor.exists, "Chat composer disappeared before round \(round)")
+        editor.tap()
+        editor.typeText(message)
+
+        let sendButton = app.buttons["chat-send-button"].firstMatch
+        guard sendButton.waitForExistence(timeout: 10), sendButton.isEnabled else {
+            attachDiagnosticScreenshot(app, name: "send-button-unavailable-round-\(round)")
+            XCTFail("Send button was unavailable for round \(round)")
+            throw DiagnosticFailure.sendButtonUnavailable
+        }
+
+        print("[NOME_DIAG] local-send-start round=\(round) message=\(message)")
+        let startedAt = Date()
+        sendButton.tap()
+
+        let deadline = startedAt.addingTimeInterval(35)
+        var cleared = false
+        while Date() < deadline {
+            let value = editor.value as? String
+            if value != message {
+                cleared = true
+                break
+            }
+            RunLoop.current.run(until: Date().addingTimeInterval(0.2))
+        }
+
+        let elapsed = Date().timeIntervalSince(startedAt)
+        print("[NOME_DIAG] local-send-complete round=\(round) elapsed=\(String(format: "%.3f", elapsed)) cleared=\(cleared) message=\(message)")
+        if !cleared {
+            attachDiagnosticScreenshot(app, name: "local-send-stalled-round-\(round)")
+            XCTFail("Local send remained in progress for 35 seconds: \(message)")
+            throw DiagnosticFailure.localSendStalled
+        }
+
+        app.swipeUp()
+        let localMessage = diagnosticMessageElement(message, in: app)
+        if !localMessage.waitForExistence(timeout: 10) {
+            attachDiagnosticScreenshot(app, name: "local-message-missing-round-\(round)")
+            XCTFail("Sent message did not appear in the local conversation: \(message)")
+            throw DiagnosticFailure.localMessageMissing
+        }
+    }
+
+    private func diagnosticMessage(runID: String, sender: String, round: Int) -> String {
+        "nome-diag-\(runID)-\(sender)-r\(round)"
+    }
+
+    private func diagnosticMessageElement(_ message: String, in app: XCUIApplication) -> XCUIElement {
+        return app.descendants(matching: .any)
+            .matching(identifier: "chat-real-core-diagnostic-message")
+            .matching(NSPredicate(format: "value == %@", message))
+            .firstMatch
+    }
+
+    private func attachDiagnosticScreenshot(_ app: XCUIApplication, name: String) {
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
+    private enum DiagnosticFailure: Error {
+        case invalidConfiguration
+        case identityNotFound
+        case composerNotFound
+        case sendButtonUnavailable
+        case localSendStalled
+        case localMessageMissing
     }
 }

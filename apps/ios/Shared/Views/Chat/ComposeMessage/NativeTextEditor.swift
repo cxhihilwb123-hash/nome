@@ -26,6 +26,7 @@ struct NativeTextEditor: UIViewRepresentable {
     func makeUIView(context: Context) -> CustomUITextField {
         let field = CustomUITextField(parent: self, height: _height)
         field.backgroundColor = .clear
+        field.accessibilityIdentifier = "chat-compose-editor"
         field.text = text
         field.textAlignment = alignment(text)
         field.autocapitalizationType = .sentences
