@@ -308,7 +308,7 @@ struct ChatListView: View {
     @ViewBuilder func withToolbar(_ material: Material, content: () -> some View) -> some View {
         if #available(iOS 16.0, *) {
             if oneHandUI {
-                if showsNomeHomeTabBar {
+                if showsNomeHomeTabBar || searchMode {
                     content()
                         .toolbarBackground(.hidden, for: .bottomBar)
                 } else {
@@ -324,7 +324,7 @@ struct ChatListView: View {
             }
         } else {
             if oneHandUI {
-                if showsNomeHomeTabBar {
+                if showsNomeHomeTabBar || searchMode {
                     content()
                 } else {
                     content().toolbar { bottomToolbarGroup() }
@@ -418,7 +418,7 @@ struct ChatListView: View {
     }
 
     private var shouldInvertChatList: Bool {
-        oneHandUI && !showsNomeHomeTabBar && !chatModel.chats.isEmpty
+        oneHandUI && shouldShowOnboarding && !chatModel.chats.isEmpty
     }
 
     @ViewBuilder private var chatList: some View {
