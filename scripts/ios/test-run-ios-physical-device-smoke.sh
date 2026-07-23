@@ -19,7 +19,10 @@ pass() {
 no_device_list="$work_dir/no-device.txt"
 cat > "$no_device_list" <<'EOF'
 == Devices ==
-forkman03's Mac mini (D66468AA-3320-5C5F-A2FF-8482FB40449A)
+Developer's Mac mini (D66468AA-3320-5C5F-A2FF-8482FB40449A)
+
+== Devices Offline ==
+Offline QA iPhone (26.5.2) (00008120-BBBBBBBBBBBBBBBB)
 
 == Simulators ==
 iPhone 17 Pro Simulator (26.5) (95CA9F4F-F85B-4AC9-ADAE-62098924E3B4)
@@ -41,8 +44,8 @@ pass "no connected device blocks before build"
 device_list="$work_dir/device.txt"
 cat > "$device_list" <<'EOF'
 == Devices ==
-Nome Test iPhone (00000000-1111-2222-3333-444444444444)
-forkman03's Mac mini (D66468AA-3320-5C5F-A2FF-8482FB40449A)
+Mac Pro QA iPad (26.5.2) (00008120-AAAAAAAAAAAAAAAA)
+Developer's Mac mini (D66468AA-3320-5C5F-A2FF-8482FB40449A)
 
 == Simulators ==
 iPhone 17 Pro Simulator (26.5) (95CA9F4F-F85B-4AC9-ADAE-62098924E3B4)
@@ -72,13 +75,13 @@ skip_output="$work_dir/skip"
   --force > "$work_dir/skip.log" 2>&1
 
 [ -f "$skip_output/summary.tsv" ] || fail "skip output should include summary"
-grep -Fq $'device_id\t00000000-1111-2222-3333-444444444444' "$skip_output/summary.tsv" || fail "skip summary should record device id"
-grep -Fq $'device_name\tNome Test iPhone' "$skip_output/summary.tsv" || fail "skip summary should record device name"
+grep -Fq $'device_id\t00008120-AAAAAAAAAAAAAAAA' "$skip_output/summary.tsv" || fail "skip summary should record modern device UDID"
+grep -Fq $'device_name\tMac Pro QA iPad (26.5.2)' "$skip_output/summary.tsv" || fail "skip summary should preserve device names containing Mac"
 grep -Fq $'bundle_id\tchat.simplex.app' "$skip_output/summary.tsv" || fail "skip summary should read bundle id"
 grep -Fq $'PASS\tconnected_device' "$skip_output/steps.tsv" || fail "skip steps should pass connected_device"
 grep -Fq $'WARN\tdevice_build' "$skip_output/steps.tsv" || fail "skip steps should warn device_build"
 grep -Fq $'WARN\tdevice_install' "$skip_output/steps.tsv" || fail "skip steps should warn device_install"
 grep -Fq $'WARN\tdevice_launch' "$skip_output/steps.tsv" || fail "skip steps should warn device_launch"
-pass "connected fixture records skipped build install launch"
+pass "connected modern-UDID fixture records skipped build install launch"
 
 echo "[PASS] physical-device smoke tests passed"

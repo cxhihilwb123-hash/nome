@@ -35,7 +35,7 @@ Options:
   --configuration NAME  Xcode configuration. Default: Debug.
   --project PATH        Xcode project. Default: apps/ios/SimpleX.xcodeproj.
   --scheme NAME         Xcode scheme. Default: SimpleX (iOS).
-  --device-id UUID      Use a specific connected device UUID.
+  --device-id ID        Use a specific connected device UUID or UDID.
   --device-name NAME    Label to record with --device-id.
   --device-list-file FILE
                         Parse this xctrace-list-devices output instead of
@@ -173,22 +173,26 @@ record_command() {
 
 physical_devices_from_log() {
   awk '
-    /^== Devices ==/ {in_devices=1; next}
-    /^== Simulators ==/ {in_devices=0}
-    in_devices && NF && $0 !~ /Mac/ {
+    /^== Devices ==$/ {in_devices=1; next}
+    /^== .* ==$/ {in_devices=0; next}
+    in_devices && NF {
+      device_id = $0
+      sub(/^.*\(/, "", device_id)
+      sub(/\)$/, "", device_id)
+      if (length(device_id) == 36 && device_id ~ /^[[:xdigit:]-]+$/) next
       print
     }
   ' "$1"
 }
 
 extract_device_id() {
-  sed -nE 's/^.*\(([0-9A-Fa-f-]{36})\)[[:space:]]*$/\1/p' | head -1
+  sed -nE 's/^.*\(([0-9A-Fa-f-]{20,40})\)[[:space:]]*$/\1/p' | head -1
 }
 
 extract_device_name() {
   local line="$1"
 
-  printf '%s\n' "$line" | sed -E 's/[[:space:]]*\([0-9A-Fa-f-]{36}\)[[:space:]]*$//'
+  printf '%s\n' "$line" | sed -E 's/[[:space:]]*\([0-9A-Fa-f-]{20,40}\)[[:space:]]*$//'
 }
 
 read_bundle_id_from_app() {
