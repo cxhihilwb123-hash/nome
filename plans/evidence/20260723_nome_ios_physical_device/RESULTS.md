@@ -4,142 +4,129 @@
 
 ## 结论
 
-状态：**BLOCKED_INFRASTRUCTURE**
+状态：**PERSONAL_TEAM_MAIN_APP_PASS_WITH_LIMITS**
 
-本轮从 `codex/nome-ios-v656-integration` 的
-`2cb055358829168f02d78e24511309011c19c006` 继续，没有重做 Core 集成，也没有
-修改 Android。
+本轮从 `codex/nome-ios-v656-integration` 继续，没有重做 Core 集成，也没有修改
+Android。为了先用免费 Apple Developer Personal Team 做能完成的真机验证，使用
+独立临时 worktree 生成了仅包含主 App 的测试包；临时签名、bundle identifier、
+entitlement 和扩展裁剪没有合入产品分支。
 
-精确 Core 6.5.6.1 的 physical-device 预检通过，但当前不能形成可安装的签名
-产物，也没有建立 Xcode 真实设备开发通道。因此安装、启动、真机通信、钥匙串、
-通知、相机、分享扩展和前后台切换都没有被宣称为通过。
+真机 build 338 已覆盖安装到同一 Personal Team 测试 bundle 的 build 337 上。
+安装、启动、首页与联系人页、现有数据读取、腾讯云服务器配置、双向通信、
+冷启动以及前后台切换均通过。
 
-这不是 Core 或产品编译失败。当前阻塞属于设备连接和 Apple 签名基础设施。
+免费账号不能签发当前产品所需的 Push、Notification Service Extension、
+Share Extension、App Group 等完整能力，因此通知和分享扩展没有被宣称通过。
+相机控制器可以从 Nome 正常打开，但 iPhone 镜像明确阻止 Mac 使用 iPhone
+摄像头；真实取景和拍摄需在手机上人工确认。
 
-## 已确认
+## 本轮产物
 
-- Xcode 26.6 / build 17F113 可用。
-- Xcode 工程、`SimpleX (iOS)` scheme 和 generic iOS destination 可见。
-- 已安装 device Core 是官方 6.5.6.1、arm64、Mach-O iOS platform 2。
-- 两个 Core archive 都是 production-size，未发现 preview-core markers。
-- Xcode 工程已经引用当前 6.5.6.1 archive 文件名。
-- 工程仍保留兼容标识：主 App `chat.simplex.app`，以及对应通知扩展、分享扩展、
-  App Group 和钥匙串组；本轮没有修改这些标识。
-- 目标 iPhone 的配对记录和 Developer Mode 正常；macOS iPhone 镜像可以连接。
-- iPhone 镜像只证明手机可达，不会建立 Xcode CoreDevice/DDI 开发通道，不能替代
-  安装或运行证据。
-- 设备上的既有 App 仍显示为 SimpleX；没有把既有安装当作当前 Nome 分支产物。
+- 源分支：`codex/nome-ios-v656-integration`
+- 源 HEAD：`b4f822e55c3f9f363bc974556ec74ad512449b2a`
+- 真机测试版本：Nome `6.5.6` build `338`
+- 架构：`arm64`
+- App 二进制 SHA-256：
+  `3948447b1d450b6310cb267a398ca1f583fb696af19c50e2c39c7f7312231614`
+- Xcode 结果：`** BUILD SUCCEEDED **`
+- 安装方式：同一测试 bundle 覆盖安装，没有先卸载旧版本
 
-## 设备连接阻塞
+三个 UI 源文件从产品 worktree 同步到临时签名 worktree 后做过 SHA-256 对照，
+确保真机运行的是当前未提交的 Android 对齐 UI，而不是旧界面。
 
-实时 Xcode/CoreDevice 结果：
+## 已通过
 
-- CoreDevice state：`unavailable`
-- DDI services：不可用
-- developer tunnel：`unavailable`
-- `xctrace`：设备位于 `Devices Offline`
-- Xcode Devices：`Disconnected`
-- USB 设备树：没有连接的 iPhone
+### 安装与启动
 
-Xcode 给出的恢复条件是：物理解锁设备，并用数据线连接，或确保设备与 Mac 位于
-同一局域网且无线开发通道可用。iPhone 镜像连接后重新检查，开发通道仍未建立。
+- Personal Team 主 App 自动签名成功。
+- build 338 覆盖安装成功，设备回读版本为 `6.5.6 (338)`。
+- 解锁设备后 `devicectl` 启动成功。
+- 设备进程列表确认 `Nome.app/Nome` 正在运行。
 
-## 签名阻塞
+### 首页、联系人和数据保留
 
-### 当前工程团队
+- 首页显示新版 28pt 标题、16pt 正文、72pt 会话行、44pt 头像、底部导航和 FAB。
+- 联系人页使用与 Android 对齐的标题、搜索和紧凑分组列表。
+- 覆盖安装后，原有 ForkMan 会话、群组和私密笔记仍存在。
+- 完全关闭 App 后从主屏幕重新启动，原会话和本轮新消息仍能加载。
 
-启用签名的 generic iPhoneOS Debug 构建在 provisioning 阶段停止：
+### 腾讯云服务器
 
-- 没有当前工程配置团队对应的 Apple Development 证书私钥；
-- 没有主 App、通知扩展和分享扩展的 development provisioning profiles。
+“你的服务器”页面在 build 338 上继续显示并启用：
 
-编译依赖图和 Core 链接输入在签名检查前没有报告产品错误。
+- 消息服务器：`124.223.71.168`
+- 媒体与文件服务器：`124.223.71.168`
 
-### 临时个人团队探测
+后续真实双向消息成功，也证明当前会话的实际网络链路可用。
 
-随后通过命令行临时覆盖到本机已配置的 Personal Team，并允许 Xcode 自动准备
-profile；该操作没有修改仓库。Apple 明确拒绝当前能力集合：
+### 双向通信
 
-- Personal Team 不支持 Notification Service Extension 所需能力；
-- Personal Team 不支持 Push Notifications；
-- Personal Team 不支持 Associated Domains；
-- Personal Team 不支持 In-App Purchase、User Assigned Device Name 和
-  Multicast Networking；
-- 兼容 App Group `group.chat.simplex.app` 对该团队不可用；
-- 因此主 App、通知扩展和分享扩展都无法生成可安装 profile。
+- iPhone 向 ForkMan 会话发送测试消息；
+- 出站消息显示双勾和发送时间；
+- Android 端回复 `338 收到`；
+- iPhone 在同一会话显示该入站消息和接收时间。
 
-不能通过删除 entitlement 或禁用扩展来把本轮标记为通过，因为这会绕开本次必须
-验证的钥匙串、通知和分享扩展能力。
+因此本轮不是只验证本地 UI 或历史数据，而是完成了真实设备的双向通信闭环。
 
-## 代码整理
+### 钥匙串/本地解密链路
 
-真实设备 smoke runner 的自动发现原先只接受 36 字符 UUID，而当前 iPhone 的
-`xctrace` 标识是现代 UDID 格式。现在：
+- build 338 覆盖安装没有清空旧 build 337 的应用数据；
+- 完全结束进程并冷启动后，App 能继续打开原有会话数据库；
+- 刚完成的双向消息也在冷启动后保留。
 
-- `--device-id` 明确接受 UUID 或 UDID；
-- 自动解析接受 20–40 字符的十六进制/连字符设备标识；
-- 任意后续 `xctrace` section 都会终止在线设备解析；
-- `Devices Offline` 中的设备不会被误报为已连接；
-- 单元夹具覆盖现代 UDID 和 offline-only 场景。
+这证明 Personal Team 测试 bundle 内的本地数据与解密凭据链路可继续使用。它不
+等同于生产 `chat.simplex.app` 与完整 App Group/keychain access group 的迁移
+证明；生产签名身份仍需付费团队单独验证。
 
-`scripts/ios/test-run-ios-physical-device-smoke.sh`：
+### 前后台切换
 
-```text
-[PASS] no connected device blocks before build
-[PASS] connected modern-UDID fixture records skipped build install launch
-[PASS] physical-device smoke tests passed
-```
+- 从聊天页返回 iOS 主屏幕后，Nome 出现在 App 切换器中；
+- 从 App 切换器恢复后，仍停留在原聊天上下文；
+- 连接状态、会话内容和已发送消息保持正常；
+- 随后彻底结束进程并冷启动也通过。
 
-`scripts/ios/test-check-ios-device-readiness.sh`：
-
-```text
-[PASS] iOS device readiness xctrace parser fixtures
-```
-
-## 真机矩阵
+## 受免费账号或镜像限制的项目
 
 | 项目 | 状态 | 说明 |
-|---|---|---|
-| 签名构建 | BLOCKED | 缺少有能力的 Apple Development team/profile |
-| 安装 | BLOCKED | 没有可安装签名产物，设备开发通道也离线 |
-| 启动 | BLOCKED | 未安装当前分支产物 |
-| 双向通信 | BLOCKED | 未启动当前分支真机 App |
-| 钥匙串 | BLOCKED | 不能绕开 App Group/keychain entitlement 验证 |
-| 通知 | BLOCKED | Personal Team 不支持所需 Push/NSE 能力 |
-| 相机 | BLOCKED | 当前分支未安装 |
-| 分享扩展 | BLOCKED | 分享扩展 profile 无法生成 |
-| 前后台切换 | BLOCKED | 当前分支未安装 |
-
-## 继续条件
-
-继续真实设备验证需要同时满足：
-
-1. iPhone 物理解锁、信任并通过数据线或可用无线开发通道连接；
-2. Xcode 显示设备为 connected，CoreDevice DDI/tunnel 可用；
-3. 使用能够签发当前主 App、通知扩展、分享扩展、App Group、钥匙串、Push 和
-   Associated Domains 能力的付费 Apple Development team；
-4. 对兼容标识继续沿用，或 Nome 自有标识与数据迁移方案，作出明确签名决策；
-5. 决策前不修改 bundle id、App Group、钥匙串组或 entitlement。
-
-满足后从以下顺序继续：
-
-```bash
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
-  scripts/ios/check-ios-device-readiness.sh
-
-scripts/ios/check-real-core.sh --target physical-device
-scripts/ios/sync-real-core-xcode-project.sh --check
-
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
-  scripts/ios/run-ios-physical-device-smoke.sh \
-    --output /private/tmp/nome-ios-physical-device-smoke-current \
-    --force
-```
-
-只有 signed build、install 和 launch 全部通过后，才进入通信、钥匙串、通知、
-相机、分享扩展和前后台切换的真机人工矩阵。
+| --- | --- | --- |
+| Personal Team 主 App 构建 | PASS | `6.5.6 (338)`，arm64 |
+| 覆盖安装 | PASS | 未卸载 build 337，数据保留 |
+| 启动/冷启动 | PASS | 进程运行，冷启动后数据可读 |
+| 首页与联系人页 | PASS | 新版 Android 对齐 UI 已在真机确认 |
+| 腾讯云服务器 | PASS | 自定义消息/文件服务器继续启用 |
+| 双向通信 | PASS | 出站双勾，Android 回复在 iPhone 入站 |
+| Personal Team 钥匙串/解密链路 | PASS | 覆盖安装与冷启动后旧数据、新消息可读 |
+| 前后台切换 | PASS | 主屏幕、App 切换器、恢复和冷启动均通过 |
+| 相机入口/控制器 | PASS | Nome 可打开系统相机控制器 |
+| 相机真实取景/拍摄 | MANUAL | iPhone 镜像阻止 Mac 使用手机摄像头 |
+| 推送通知/NSE | UNSUPPORTED_FREE_TEAM | Personal Team 无法签发所需能力 |
+| 分享扩展 | UNSUPPORTED_FREE_TEAM | 免费验证包未包含 Share Extension |
+| 生产 bundle 完整能力 | PENDING_PAID_TEAM | 需付费团队验证兼容签名与扩展 |
 
 ## 证据保留
 
-可提交的去敏结论是本文档。包含本机设备标识、序列号、团队名和完整 Xcode 输出
-的原始日志保存在同目录的 Git 忽略 `private/` 子目录，不会提交到 PR。
+可提交的去敏结论是本文档。包含设备标识、团队信息和完整日志的原始证据保存在
+同目录 Git 忽略的 `private/` 子目录，包括：
+
+- build 338 安装、版本回读、启动和进程 JSON/日志；
+- build 338 首页与联系人页截图；
+- 腾讯云服务器保留截图；
+- 出站双勾与 Android 入站回复截图；
+- 主屏幕、App 切换器和恢复前台截图；
+- 冷启动后数据保留截图；
+- iPhone 镜像相机限制提示和系统相机控制器截图。
+
+临时 Personal Team 签名 worktree 和 DerivedData 位于 `/private/tmp`，不会合入
+产品分支。
+
+## 完整生产验证的继续条件
+
+使用能够签发主 App、Notification Service Extension、Share Extension、
+App Group、keychain access group、Push 和 Associated Domains 的付费 Apple
+Development team 后，还需补测：
+
+1. 生产 bundle 覆盖安装和兼容数据/钥匙串迁移；
+2. APNs 前台、后台、锁屏和通知扩展处理；
+3. 从系统分享面板进入 Share Extension；
+4. 手机上真实拍照、确认和发送；
+5. 上述完整能力下再次执行双向通信与前后台回归。

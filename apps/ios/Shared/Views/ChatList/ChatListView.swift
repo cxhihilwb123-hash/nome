@@ -273,13 +273,20 @@ struct ChatListView: View {
         }
         .safeAreaInset(edge: .bottom) {
             if showsNomeHomeTabBar {
-                NomeHomeTabBar(
-                    selected: nomeHomeTab,
-                    onHome: { nomeHomeTab = .home },
-                    onContacts: { nomeHomeTab = .contacts },
-                    onSettings: { nomeHomeTab = .settings }
-                )
-                .background(.ultraThinMaterial)
+                ZStack(alignment: .topTrailing) {
+                    NomeHomeTabBar(
+                        selected: nomeHomeTab,
+                        onHome: { nomeHomeTab = .home },
+                        onContacts: { nomeHomeTab = .contacts },
+                        onSettings: { nomeHomeTab = .settings }
+                    )
+
+                    if nomeHomeTab != .settings && chatModel.chatRunning == true {
+                        NomeNewConnectionButton(action: { openNewChat() })
+                            .padding(.trailing, 20)
+                            .offset(y: -72)
+                    }
+                }
             }
         }
         .sheet(item: $sheet) { sheet in
@@ -432,25 +439,37 @@ struct ChatListView: View {
 
     private var nomeContactsTabView: some View {
         let contactChats = nomeContactChats()
-        let counts = nomeContactCounts(contactChats)
 
         return List {
-            NomeContactsHeader(
-                contactCount: counts.contacts,
-                groupCount: counts.groups,
-                requestCount: counts.requests
+            NomeHomeHeader(
+                user: chatModel.currentUser ?? User.sampleData,
+                onProfile: { userPickerShown = true }
             )
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)
-            .listRowInsets(EdgeInsets(top: 18, leading: 20, bottom: 12, trailing: 20))
+            .listRowInsets(EdgeInsets(top: 12, leading: 20, bottom: 12, trailing: 20))
 
-            NomeContactsQuickActions(
-                onAddFriend: { openNewChat(.oneTimeLink) },
-                onPublicAddress: { activeUserPickerSheet = .address }
+            NomePageTitle(
+                title: "联系人",
+                subtitle: "管理联系人和连接"
             )
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)
-            .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 14, trailing: 20))
+            .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 12, trailing: 20))
+
+            ChatListSearchBar(
+                searchMode: $searchMode,
+                searchFocussed: $searchFocussed,
+                searchText: $searchText,
+                searchShowingSimplexLink: $searchShowingSimplexLink,
+                searchChatFilteredBySimplexLink: $searchChatFilteredBySimplexLink,
+                parentSheet: $sheet,
+                searchPlaceholder: "搜索联系人",
+                showsListFilters: false
+            )
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 16, trailing: 20))
 
             if contactChats.isEmpty {
                 NomeContactsEmptyCard(
@@ -461,32 +480,44 @@ struct ChatListView: View {
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 24, trailing: 20))
             } else {
-                Section {
-                    if #available(iOS 16.0, *) {
-                        ForEach(contactChats, id: \.viewId) { chat in
-                            ChatListNavLink(chat: chat, parentSheet: $sheet)
-                                .padding(.trailing, -16)
-                                .disabled(chatModel.chatRunning != true || chatModel.deletedChats.contains(chat.chatInfo.id))
-                                .listRowBackground(Color.clear)
-                        }
-                        .offset(x: -8)
-                    } else {
-                        ForEach(contactChats, id: \.viewId) { chat in
-                            ChatListNavLink(chat: chat, parentSheet: $sheet)
-                                .listRowSeparator(.hidden)
-                                .listRowInsets(EdgeInsets())
-                                .background { theme.colors.background }
-                                .disabled(chatModel.chatRunning != true || chatModel.deletedChats.contains(chat.chatInfo.id))
-                        }
+                Text("联系人")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(NomeHomePalette.textSecondary)
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 16, leading: 20, bottom: 8, trailing: 20))
+
+                if #available(iOS 16.0, *) {
+                    ForEach(Array(contactChats.enumerated()), id: \.element.viewId) { index, chat in
+                        ChatListNavLink(chat: chat, parentSheet: $sheet, nomeCompactStyle: true)
+                            .modifier(
+                                NomeConversationRowStyle(
+                                    position: NomeGroupedRowPosition(index: index, count: contactChats.count)
+                                )
+                            )
+                            .disabled(chatModel.chatRunning != true || chatModel.deletedChats.contains(chat.chatInfo.id))
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
                     }
-                } header: {
-                    Text("联系人和群组")
-                        .foregroundColor(.secondary)
+                } else {
+                    ForEach(Array(contactChats.enumerated()), id: \.element.viewId) { index, chat in
+                        ChatListNavLink(chat: chat, parentSheet: $sheet, nomeCompactStyle: true)
+                            .modifier(
+                                NomeConversationRowStyle(
+                                    position: NomeGroupedRowPosition(index: index, count: contactChats.count)
+                                )
+                            )
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
+                            .listRowBackground(Color.clear)
+                            .disabled(chatModel.chatRunning != true || chatModel.deletedChats.contains(chat.chatInfo.id))
+                    }
                 }
             }
         }
         .listStyle(.plain)
-        .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
+        .background(NomeHomePalette.canvas.ignoresSafeArea())
     }
 
     private var chatListContent: some View {
@@ -496,45 +527,39 @@ struct ChatListView: View {
                 List {
                     NomeHomeHeader(
                         user: chatModel.currentUser ?? User.sampleData,
-                        chatRunning: chatModel.chatRunning,
-                        showsSearch: chatModel.chats.isEmpty,
-                        onProfile: { userPickerShown = true },
-                        onAdd: { openNewChat() },
-                        onSearch: { activateSearchOrConnect() }
+                        onProfile: { userPickerShown = true }
                     )
                     .scaleEffect(x: 1, y: shouldInvertChatList ? -1 : 1, anchor: .center)
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: oneHandUI ? 12 : 18, leading: 20, bottom: 8, trailing: 20))
-                    .id(chatModel.chats.isEmpty ? "searchBar" : "nomeHomeHeader")
+                    .listRowInsets(EdgeInsets(top: 12, leading: 20, bottom: 12, trailing: 20))
+                    .id("nomeHomeHeader")
 
-                    if !chatModel.chats.isEmpty {
-                        ChatListSearchBar(
-                            searchMode: $searchMode,
-                            searchFocussed: $searchFocussed,
-                            searchText: $searchText,
-                            searchShowingSimplexLink: $searchShowingSimplexLink,
-                            searchChatFilteredBySimplexLink: $searchChatFilteredBySimplexLink,
-                            parentSheet: $sheet
-                        )
-                        .scaleEffect(x: 1, y: shouldInvertChatList ? -1 : 1, anchor: .center)
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                        .frame(maxWidth: .infinity)
-                        .id("searchBar")
-                    }
+                    NomePageTitle(
+                        title: "首页",
+                        subtitle: "当前本地身份的会话"
+                    )
+                    .scaleEffect(x: 1, y: shouldInvertChatList ? -1 : 1, anchor: .center)
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 12, trailing: 20))
 
-                    if hasConversations {
-                        NomeHomeCompactActions(
-                            onAddFriend: { openNewChat(.oneTimeLink) },
-                            onJoinGroup: { openNewChat(.joinGroup) },
-                            onPublicAddress: { activeUserPickerSheet = .address }
-                        )
-                        .scaleEffect(x: 1, y: shouldInvertChatList ? -1 : 1, anchor: .center)
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 8, trailing: 20))
-                    } else if chatModel.chats.isEmpty {
+                    ChatListSearchBar(
+                        searchMode: $searchMode,
+                        searchFocussed: $searchFocussed,
+                        searchText: $searchText,
+                        searchShowingSimplexLink: $searchShowingSimplexLink,
+                        searchChatFilteredBySimplexLink: $searchChatFilteredBySimplexLink,
+                        parentSheet: $sheet
+                    )
+                    .scaleEffect(x: 1, y: shouldInvertChatList ? -1 : 1, anchor: .center)
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
+                    .frame(maxWidth: .infinity)
+                    .id("searchBar")
+
+                    if chatModel.chats.isEmpty {
                         NomeEmptyInboxCard(
                             onAddFriend: { openNewChat(.oneTimeLink) },
                             onJoinGroup: { openNewChat(.joinGroup) },
@@ -543,17 +568,7 @@ struct ChatListView: View {
                         .scaleEffect(x: 1, y: shouldInvertChatList ? -1 : 1, anchor: .center)
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 20, trailing: 20))
-                    } else {
-                        NomeHomeQuickActions(
-                            onAddFriend: { openNewChat(.oneTimeLink) },
-                            onJoinGroup: { openNewChat(.joinGroup) },
-                            onPublicAddress: { activeUserPickerSheet = .address }
-                        )
-                        .scaleEffect(x: 1, y: shouldInvertChatList ? -1 : 1, anchor: .center)
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 10, trailing: 20))
+                        .listRowInsets(EdgeInsets(top: 16, leading: 20, bottom: 20, trailing: 20))
                     }
                     if !oneHandUICardShown && !chatModel.chats.isEmpty {
                         OneHandUICard()
@@ -562,22 +577,41 @@ struct ChatListView: View {
                             .listRowSeparator(.hidden)
                             .listRowBackground(Color.clear)
                     }
-                    if #available(iOS 16.0, *) {
-                        ForEach(cs, id: \.viewId) { chat in
-                            ChatListNavLink(chat: chat, parentSheet: $sheet)
-                                .scaleEffect(x: 1, y: shouldInvertChatList ? -1 : 1, anchor: .center)
-                                .padding(.trailing, -16)
-                                .disabled(chatModel.chatRunning != true || chatModel.deletedChats.contains(chat.chatInfo.id))
-                                .listRowBackground(Color.clear)
-                        }
-                        .offset(x: -8)
-                    } else {
-                        ForEach(cs, id: \.viewId) { chat in
-                            ChatListNavLink(chat: chat,  parentSheet: $sheet)
+                    if !cs.isEmpty {
+                        Text("会话")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(NomeHomePalette.textSecondary)
                             .scaleEffect(x: 1, y: shouldInvertChatList ? -1 : 1, anchor: .center)
                             .listRowSeparator(.hidden)
-                            .listRowInsets(EdgeInsets())
-                            .background { theme.colors.background } // Hides default list selection colour
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets(top: 16, leading: 20, bottom: 8, trailing: 20))
+                    }
+                    if #available(iOS 16.0, *) {
+                        ForEach(Array(cs.enumerated()), id: \.element.viewId) { index, chat in
+                            ChatListNavLink(chat: chat, parentSheet: $sheet, nomeCompactStyle: true)
+                                .scaleEffect(x: 1, y: shouldInvertChatList ? -1 : 1, anchor: .center)
+                                .modifier(
+                                    NomeConversationRowStyle(
+                                        position: NomeGroupedRowPosition(index: index, count: cs.count)
+                                    )
+                                )
+                                .disabled(chatModel.chatRunning != true || chatModel.deletedChats.contains(chat.chatInfo.id))
+                                .listRowSeparator(.hidden)
+                                .listRowBackground(Color.clear)
+                                .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
+                        }
+                    } else {
+                        ForEach(Array(cs.enumerated()), id: \.element.viewId) { index, chat in
+                            ChatListNavLink(chat: chat, parentSheet: $sheet, nomeCompactStyle: true)
+                            .scaleEffect(x: 1, y: shouldInvertChatList ? -1 : 1, anchor: .center)
+                            .modifier(
+                                NomeConversationRowStyle(
+                                    position: NomeGroupedRowPosition(index: index, count: cs.count)
+                                )
+                            )
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
+                            .listRowBackground(Color.clear)
                             .disabled(chatModel.chatRunning != true || chatModel.deletedChats.contains(chat.chatInfo.id))
                         }
                     }
@@ -590,6 +624,7 @@ struct ChatListView: View {
                     }
                 }
                 .listStyle(.plain)
+                .background(NomeHomePalette.canvas.ignoresSafeArea())
                 .onChange(of: chatModel.chatId) { currentChatId in
                     if let chatId = chatModel.chatToTop, currentChatId != chatId {
                         chatModel.chatToTop = nil
@@ -764,7 +799,8 @@ struct ChatListView: View {
     }
 
     private func nomeContactChats() -> [Chat] {
-        chatModel.chats.filter { chat in
+        let query = searchString()
+        return chatModel.chats.filter { chat in
             if chat.chatInfo.chatDeleted || chat.chatInfo.contactCard {
                 return false
             }
@@ -782,21 +818,8 @@ struct ChatListView: View {
             case .invalidJSON:
                 return false
             }
-        }
-    }
-
-    private func nomeContactCounts(_ chats: [Chat]) -> (contacts: Int, groups: Int, requests: Int) {
-        chats.reduce((contacts: 0, groups: 0, requests: 0)) { counts, chat in
-            switch chat.chatInfo {
-            case .direct:
-                return (counts.contacts + 1, counts.groups, counts.requests)
-            case .group:
-                return (counts.contacts, counts.groups + 1, counts.requests)
-            case .contactRequest, .contactConnection:
-                return (counts.contacts, counts.groups, counts.requests + 1)
-            case .local, .invalidJSON:
-                return counts
-            }
+        }.filter { chat in
+            query.isEmpty || chat.chatInfo.chatViewName.localizedLowercase.contains(query)
         }
     }
 }
@@ -804,15 +827,56 @@ struct ChatListView: View {
 private enum NomeHomePalette {
     static let navy = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark
-            ? UIColor.label.resolvedColor(with: traits)
+            ? UIColor(red: 247.0 / 255.0, green: 249.0 / 255.0, blue: 252.0 / 255.0, alpha: 1)
             : UIColor(red: 14.0 / 255.0, green: 27.0 / 255.0, blue: 45.0 / 255.0, alpha: 1)
     })
     static let brandNavy = Color(red: 14.0 / 255.0, green: 27.0 / 255.0, blue: 45.0 / 255.0)
-    static let green = Color(red: 22.0 / 255.0, green: 174.0 / 255.0, blue: 102.0 / 255.0)
-    static let blue = Color(red: 39.0 / 255.0, green: 107.0 / 255.0, blue: 255.0 / 255.0)
-    static let purple = Color(red: 116.0 / 255.0, green: 89.0 / 255.0, blue: 238.0 / 255.0)
-    static let surface = Color(uiColor: .secondarySystemGroupedBackground)
-    static let border = Color.black.opacity(0.06)
+    static let action = Color(red: 10.0 / 255.0, green: 135.0 / 255.0, blue: 77.0 / 255.0)
+    static let green = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 113.0 / 255.0, green: 220.0 / 255.0, blue: 159.0 / 255.0, alpha: 1)
+            : UIColor(red: 10.0 / 255.0, green: 135.0 / 255.0, blue: 77.0 / 255.0, alpha: 1)
+    })
+    static let canvas = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 14.0 / 255.0, green: 27.0 / 255.0, blue: 45.0 / 255.0, alpha: 1)
+            : UIColor.white
+    })
+    static let surface = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 18.0 / 255.0, green: 31.0 / 255.0, blue: 50.0 / 255.0, alpha: 1)
+            : UIColor.white
+    })
+    static let surfaceContainer = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 23.0 / 255.0, green: 39.0 / 255.0, blue: 60.0 / 255.0, alpha: 1)
+            : UIColor(red: 248.0 / 255.0, green: 250.0 / 255.0, blue: 252.0 / 255.0, alpha: 1)
+    })
+    static let input = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 26.0 / 255.0, green: 43.0 / 255.0, blue: 65.0 / 255.0, alpha: 1)
+            : UIColor.white
+    })
+    static let subtleSurface = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 18.0 / 255.0, green: 31.0 / 255.0, blue: 50.0 / 255.0, alpha: 1)
+            : UIColor(red: 245.0 / 255.0, green: 247.0 / 255.0, blue: 250.0 / 255.0, alpha: 1)
+    })
+    static let border = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 48.0 / 255.0, green: 68.0 / 255.0, blue: 92.0 / 255.0, alpha: 1)
+            : UIColor(red: 208.0 / 255.0, green: 213.0 / 255.0, blue: 221.0 / 255.0, alpha: 1)
+    })
+    static let divider = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 48.0 / 255.0, green: 68.0 / 255.0, blue: 92.0 / 255.0, alpha: 1)
+            : UIColor(red: 234.0 / 255.0, green: 236.0 / 255.0, blue: 240.0 / 255.0, alpha: 1)
+    })
+    static let textSecondary = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 181.0 / 255.0, green: 192.0 / 255.0, blue: 207.0 / 255.0, alpha: 1)
+            : UIColor(red: 102.0 / 255.0, green: 112.0 / 255.0, blue: 133.0 / 255.0, alpha: 1)
+    })
 }
 
 private enum NomeHomeTab {
@@ -821,267 +885,192 @@ private enum NomeHomeTab {
     case settings
 }
 
+private enum NomeGroupedRowPosition: Equatable {
+    case single
+    case first
+    case middle
+    case last
+
+    init(index: Int, count: Int) {
+        if count <= 1 {
+            self = .single
+        } else if index == 0 {
+            self = .first
+        } else if index == count - 1 {
+            self = .last
+        } else {
+            self = .middle
+        }
+    }
+
+    var corners: UIRectCorner {
+        switch self {
+        case .single:
+            return .allCorners
+        case .first:
+            return [.topLeft, .topRight]
+        case .middle:
+            return []
+        case .last:
+            return [.bottomLeft, .bottomRight]
+        }
+    }
+
+    var showsDivider: Bool {
+        self == .first || self == .middle
+    }
+}
+
+private struct NomeGroupedRowShape: Shape {
+    let corners: UIRectCorner
+
+    func path(in rect: CGRect) -> Path {
+        Path(
+            UIBezierPath(
+                roundedRect: rect,
+                byRoundingCorners: corners,
+                cornerRadii: CGSize(width: 16, height: 16)
+            ).cgPath
+        )
+    }
+}
+
+private struct NomeConversationRowStyle: ViewModifier {
+    let position: NomeGroupedRowPosition
+
+    func body(content: Content) -> some View {
+        let shape = NomeGroupedRowShape(corners: position.corners)
+        content
+            .background(
+                shape.fill(NomeHomePalette.surfaceContainer)
+            )
+            .overlay(alignment: .bottom) {
+                if position.showsDivider {
+                    Rectangle()
+                        .fill(NomeHomePalette.divider)
+                        .frame(height: 1)
+                        .padding(.leading, 68)
+                        .padding(.trailing, 12)
+                }
+            }
+            .contentShape(shape)
+    }
+}
+
 private struct NomeHomeHeader: View {
-    @Environment(\.colorScheme) var colorScheme
     let user: User
-    let chatRunning: Bool?
-    let showsSearch: Bool
     let onProfile: () -> Void
-    let onAdd: () -> Void
-    let onSearch: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 12) {
-                Image(colorScheme == .light ? "logo" : "logo-light")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 102, height: 32, alignment: .leading)
-                    .accessibilityHidden(true)
+        HStack {
+            NomeBrandLockup()
+                .frame(width: 104, height: 38, alignment: .leading)
+                .accessibilityHidden(true)
 
-                Spacer(minLength: 12)
+            Spacer(minLength: 12)
 
-                Button(action: onProfile) {
-                    ProfileImage(imageStr: user.image, size: 32, color: Color(uiColor: .tertiarySystemGroupedBackground))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text("身份中心"))
-
-                Button(action: onAdd) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.white)
-                        .frame(width: 34, height: 34)
-                        .background(Circle().fill(NomeHomePalette.green))
-                }
-                .disabled(chatRunning != true)
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text("新建连接"))
+            Button(action: onProfile) {
+                ProfileImage(imageStr: user.image, size: 38, color: NomeHomePalette.surfaceContainer)
             }
-
-            if showsSearch {
-                Button(action: onSearch) {
-                    HStack(spacing: 10) {
-                        Image(systemName: "magnifyingglass")
-                        Text("搜索联系人或粘贴邀请链接")
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.82)
-                        Spacer(minLength: 0)
-                        Image(systemName: "qrcode.viewfinder")
-                            .font(.system(size: 16, weight: .semibold))
-                    }
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .padding(.horizontal, 14)
-                    .frame(height: 42)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(Color(uiColor: .tertiarySystemGroupedBackground))
-                    )
-                }
-                .buttonStyle(.plain)
-            }
-        }
-    }
-}
-
-private struct NomeHomeQuickActions: View {
-    let onAddFriend: () -> Void
-    let onJoinGroup: () -> Void
-    let onPublicAddress: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("开始")
-                .font(.subheadline.weight(.semibold))
-                .foregroundColor(.secondary)
-
-            Button(action: onAddFriend) {
-                NomeTaskCard(
-                    icon: "link.badge.plus",
-                    title: "添加朋友",
-                    subtitle: "生成一次性链接或二维码",
-                    tint: NomeHomePalette.green,
-                    layout: .horizontal
-                )
-            }
+            .frame(width: 48, height: 48)
             .buttonStyle(.plain)
-
-            HStack(spacing: 10) {
-                Button(action: onJoinGroup) {
-                    NomeTaskCard(
-                        icon: "person.2.fill",
-                        title: "加入群组",
-                        subtitle: "扫码或粘贴邀请",
-                        tint: NomeHomePalette.blue,
-                        layout: .compact
-                    )
-                }
-                .buttonStyle(.plain)
-
-                Button(action: onPublicAddress) {
-                    NomeTaskCard(
-                        icon: "globe",
-                        title: "公开联系方式",
-                        subtitle: "可重复分享地址",
-                        tint: NomeHomePalette.purple,
-                        layout: .compact
-                    )
-                }
-                .buttonStyle(.plain)
-            }
+            .accessibilityLabel(Text("当前身份"))
         }
+        .frame(minHeight: 56)
     }
 }
 
-private struct NomeHomeCompactActions: View {
-    let onAddFriend: () -> Void
-    let onJoinGroup: () -> Void
-    let onPublicAddress: () -> Void
+private struct NomeBrandLockup: View {
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        HStack(spacing: 0) {
-            actionButton(
-                icon: "link.badge.plus",
-                title: "添加朋友",
-                tint: NomeHomePalette.green,
-                action: onAddFriend
-            )
+        HStack(spacing: 7) {
+            NomeBrandMark()
+                .frame(width: 34, height: 38)
 
-            actionDivider
-
-            actionButton(
-                icon: "person.2",
-                title: "加入群组",
-                tint: NomeHomePalette.navy.opacity(0.82),
-                action: onJoinGroup
-            )
-
-            actionDivider
-
-            actionButton(
-                icon: "globe.asia.australia",
-                title: "公开地址",
-                tint: NomeHomePalette.navy.opacity(0.82),
-                action: onPublicAddress
-            )
+            Text("Nome")
+                .font(.system(size: 25, weight: .bold, design: .rounded))
+                .foregroundColor(colorScheme == .dark ? .white : NomeHomePalette.brandNavy)
+                .tracking(-0.5)
         }
-        .padding(4)
-        .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color(uiColor: .secondarySystemGroupedBackground))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(NomeHomePalette.border, lineWidth: 1)
-        )
-    }
-
-    private var actionDivider: some View {
-        Rectangle()
-            .fill(Color(uiColor: .separator).opacity(0.42))
-            .frame(width: 1, height: 28)
-    }
-
-    private func actionButton(
-        icon: String,
-        title: LocalizedStringKey,
-        tint: Color,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            VStack(spacing: 5) {
-                Image(systemName: icon)
-                    .font(.system(size: 17, weight: .semibold))
-                    .symbolRenderingMode(.hierarchical)
-                Text(title)
-                    .font(.caption.weight(.medium))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.82)
-            }
-            .foregroundColor(tint)
-            .frame(maxWidth: .infinity, minHeight: 52)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
+        .fixedSize()
     }
 }
 
-private struct NomeTaskCard: View {
-    enum Layout {
-        case horizontal
-        case compact
-    }
+private struct NomeBrandMark: View {
+    @Environment(\.colorScheme) private var colorScheme
 
-    let icon: String
+    var body: some View {
+        ZStack {
+            NomeBrandMarkShape()
+                .fill(colorScheme == .dark ? Color.white : NomeHomePalette.brandNavy)
+
+            NomeBrandMarkShape()
+                .fill(NomeHomePalette.action)
+                .mask(alignment: .trailing) {
+                    Rectangle()
+                        .frame(width: 17)
+                }
+
+            Image(systemName: "infinity")
+                .font(.system(size: 16, weight: .heavy))
+                .foregroundColor(colorScheme == .dark ? NomeHomePalette.brandNavy : .white)
+                .offset(y: -1)
+        }
+    }
+}
+
+private struct NomeBrandMarkShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX + rect.width * 0.12, y: rect.minY + rect.height * 0.18))
+        path.addLine(to: CGPoint(x: rect.midX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX - rect.width * 0.10, y: rect.minY + rect.height * 0.18))
+        path.addLine(to: CGPoint(x: rect.maxX - rect.width * 0.13, y: rect.minY + rect.height * 0.62))
+        path.addQuadCurve(
+            to: CGPoint(x: rect.midX, y: rect.maxY - rect.height * 0.04),
+            control: CGPoint(x: rect.maxX - rect.width * 0.20, y: rect.maxY - rect.height * 0.16)
+        )
+        path.addLine(to: CGPoint(x: rect.minX + rect.width * 0.34, y: rect.maxY - rect.height * 0.18))
+        path.addLine(to: CGPoint(x: rect.minX + rect.width * 0.08, y: rect.maxY - rect.height * 0.08))
+        path.addLine(to: CGPoint(x: rect.minX + rect.width * 0.17, y: rect.minY + rect.height * 0.61))
+        path.closeSubpath()
+        return path
+    }
+}
+
+private struct NomePageTitle: View {
     let title: LocalizedStringKey
     let subtitle: LocalizedStringKey
-    let tint: Color
-    let layout: Layout
 
     var body: some View {
-        Group {
-            switch layout {
-            case .horizontal:
-                HStack(spacing: 14) {
-                    iconView
-                    textView(alignment: .leading)
-                    Spacer(minLength: 0)
-                    Image(systemName: "chevron.right")
-                        .font(.footnote.weight(.semibold))
-                        .foregroundColor(.secondary)
-                }
-                .padding(14)
-                .frame(maxWidth: .infinity, minHeight: 78, alignment: .leading)
-            case .compact:
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack {
-                        iconView
-                        Spacer(minLength: 0)
-                        Image(systemName: "chevron.right")
-                            .font(.caption.weight(.semibold))
-                            .foregroundColor(.secondary)
-                    }
-                    textView(alignment: .leading)
-                }
-                .padding(12)
-                .frame(maxWidth: .infinity, minHeight: 126, alignment: .topLeading)
-            }
-        }
-        .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(NomeHomePalette.surface)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(NomeHomePalette.border, lineWidth: 1)
-        )
-    }
-
-    private var iconView: some View {
-        Image(systemName: icon)
-            .font(.system(size: 18, weight: .semibold))
-            .foregroundColor(tint)
-            .frame(width: 36, height: 36)
-            .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(tint.opacity(0.12))
-            )
-    }
-
-    private func textView(alignment: HorizontalAlignment) -> some View {
-        VStack(alignment: alignment, spacing: 4) {
+        VStack(alignment: .leading, spacing: 3) {
             Text(title)
-                .font(.headline)
+                .font(.system(size: 28, weight: .bold))
                 .foregroundColor(NomeHomePalette.navy)
-                .lineLimit(1)
-                .minimumScaleFactor(0.78)
+                .accessibilityAddTraits(.isHeader)
             Text(subtitle)
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
+                .font(.system(size: 16, weight: .regular))
+                .foregroundColor(NomeHomePalette.textSecondary)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct NomeNewConnectionButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "plus")
+                .font(.system(size: 25, weight: .medium))
+                .foregroundColor(.white)
+                .frame(width: 56, height: 56)
+                .background(Circle().fill(NomeHomePalette.action))
+                .shadow(color: Color.black.opacity(0.20), radius: 8, y: 4)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text("新建连接"))
     }
 }
 
@@ -1091,37 +1080,19 @@ private struct NomeEmptyInboxCard: View {
     let onPublicAddress: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack(alignment: .top, spacing: 12) {
-                Image(systemName: "message.fill")
-                    .font(.system(size: 21, weight: .semibold))
-                    .foregroundColor(.white)
-                    .frame(width: 46, height: 46)
-                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(NomeHomePalette.brandNavy))
-                VStack(alignment: .leading, spacing: 5) {
-                    Text("开始第一段私密对话")
-                        .font(.title3.weight(.bold))
-                        .foregroundColor(NomeHomePalette.navy)
-                    Text("发送一次性邀请，或扫描对方二维码建立连接。无需手机号，也无需公开用户名。")
-                        .font(.callout)
-                        .foregroundColor(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 0)
-            }
+        VStack(alignment: .leading, spacing: 12) {
+            Image(systemName: "tray")
+                .font(.system(size: 22, weight: .medium))
+                .foregroundColor(NomeHomePalette.textSecondary)
 
-            HStack(spacing: 0) {
-                    NomeTrustPoint(icon: "iphone.slash", text: "无需手机号")
-                trustDivider
-                NomeTrustPoint(icon: "lock.shield", text: "端到端加密")
-                trustDivider
-                NomeTrustPoint(icon: "internaldrive", text: "本地保存")
-            }
-            .padding(.vertical, 10)
-            .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(NomeHomePalette.green.opacity(0.08))
-            )
+            Text("开始第一段私密对话")
+                .font(.title3.weight(.semibold))
+                .foregroundColor(NomeHomePalette.navy)
+
+            Text("发送一次性邀请，或扫描对方二维码建立连接。无需手机号，也无需公开用户名。")
+                .font(.body)
+                .foregroundColor(NomeHomePalette.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
 
             Button(action: onAddFriend) {
                 Label("添加朋友", systemImage: "link.badge.plus")
@@ -1143,41 +1114,15 @@ private struct NomeEmptyInboxCard: View {
                 .buttonStyle(NomeSecondaryButtonStyle())
             }
         }
-        .padding(16)
+        .padding(20)
         .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color(uiColor: .systemBackground))
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(NomeHomePalette.subtleSurface)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(NomeHomePalette.border, lineWidth: 1)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(NomeHomePalette.textSecondary.opacity(0.42), lineWidth: 1)
         )
-    }
-
-    private var trustDivider: some View {
-        Rectangle()
-            .fill(NomeHomePalette.green.opacity(0.18))
-            .frame(width: 1, height: 24)
-    }
-}
-
-private struct NomeTrustPoint: View {
-    let icon: String
-    let text: LocalizedStringKey
-
-    var body: some View {
-        VStack(spacing: 6) {
-            Image(systemName: icon)
-                .font(.system(size: 15, weight: .semibold))
-                .frame(width: 20, height: 18, alignment: .center)
-            Text(text)
-                .font(.caption2.weight(.medium))
-                .lineLimit(1)
-                .minimumScaleFactor(0.78)
-                .frame(height: 16, alignment: .center)
-        }
-        .foregroundColor(NomeHomePalette.navy)
-        .frame(maxWidth: .infinity, minHeight: 42, alignment: .center)
     }
 }
 
@@ -1189,7 +1134,8 @@ private struct NomePrimaryButtonStyle: ButtonStyle {
             .padding(.vertical, 11)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(NomeHomePalette.green.opacity(configuration.isPressed ? 0.82 : 1))
+                    .fill(NomeHomePalette.action)
+                    .opacity(configuration.isPressed ? 0.82 : 1)
             )
     }
 }
@@ -1202,7 +1148,11 @@ private struct NomeSecondaryButtonStyle: ButtonStyle {
             .padding(.vertical, 11)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(NomeHomePalette.navy.opacity(configuration.isPressed ? 0.12 : 0.07))
+                    .fill(configuration.isPressed ? NomeHomePalette.navy.opacity(0.12) : NomeHomePalette.input)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(NomeHomePalette.border, lineWidth: 1)
             )
     }
 }
@@ -1214,99 +1164,47 @@ private struct NomeHomeTabBar: View {
     let onSettings: () -> Void
 
     var body: some View {
-        HStack(spacing: 0) {
-            tabButton(icon: selected == .home ? "bubble.left.and.bubble.right.fill" : "bubble.left.and.bubble.right", title: "聊天", active: selected == .home, action: onHome)
-            tabButton(icon: selected == .contacts ? "person.2.fill" : "person.2", title: "联系人", active: selected == .contacts, action: onContacts)
-            tabButton(icon: selected == .settings ? "gearshape.fill" : "gearshape", title: "设置", active: selected == .settings, action: onSettings)
+        VStack(spacing: 0) {
+            Rectangle()
+                .fill(NomeHomePalette.divider)
+                .frame(height: 1)
+
+            HStack(spacing: 0) {
+                tabButton(icon: selected == .home ? "house.fill" : "house", title: "首页", active: selected == .home, action: onHome)
+                tabButton(icon: selected == .contacts ? "person.2.fill" : "person.2", title: "联系人", active: selected == .contacts, action: onContacts)
+                tabButton(icon: selected == .settings ? "gearshape.fill" : "gearshape", title: "设置", active: selected == .settings, action: onSettings)
+            }
+            .padding(.horizontal, 16)
+            .frame(height: 64)
+            .background(NomeHomePalette.surface)
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 9)
-        .padding(.bottom, 12)
-        .overlay(alignment: .top) {
-            Divider()
-        }
+        .background(NomeHomePalette.surface)
     }
 
     private func tabButton(icon: String, title: LocalizedStringKey, active: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            VStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.system(size: 18, weight: active ? .semibold : .regular))
-                Text(title)
-                    .font(.caption2.weight(active ? .semibold : .medium))
+            ZStack(alignment: .top) {
+                if active {
+                    Capsule()
+                        .fill(NomeHomePalette.green)
+                        .frame(width: 32, height: 3)
+                }
+
+                VStack(spacing: 2) {
+                    Image(systemName: icon)
+                        .font(.system(size: 24, weight: active ? .semibold : .regular))
+                        .frame(height: 24)
+                    Text(title)
+                        .font(.system(size: 13, weight: .regular))
+                }
+                .frame(maxHeight: .infinity)
             }
-            .foregroundColor(active ? NomeHomePalette.green : .secondary)
+            .foregroundColor(active ? NomeHomePalette.green : NomeHomePalette.textSecondary)
             .frame(maxWidth: .infinity)
+            .frame(height: 64)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-    }
-}
-
-private struct NomeContactsHeader: View {
-    let contactCount: Int
-    let groupCount: Int
-    let requestCount: Int
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("联系人")
-                        .font(.largeTitle.weight(.bold))
-                        .foregroundColor(NomeHomePalette.navy)
-                    Text("朋友、群组和待处理请求都会在这里。")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-                Spacer(minLength: 0)
-                Image(systemName: "person.2.fill")
-                    .font(.system(size: 22, weight: .semibold))
-                    .foregroundColor(NomeHomePalette.green)
-                    .frame(width: 44, height: 44)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(NomeHomePalette.green.opacity(0.12))
-                    )
-            }
-
-            HStack(spacing: 8) {
-                NomeContactsCountPill(title: "朋友", count: contactCount)
-                NomeContactsCountPill(title: "群组", count: groupCount)
-                NomeContactsCountPill(title: "请求", count: requestCount)
-            }
-        }
-    }
-}
-
-private struct NomeContactsQuickActions: View {
-    let onAddFriend: () -> Void
-    let onPublicAddress: () -> Void
-
-    var body: some View {
-        HStack(spacing: 10) {
-            Button(action: onAddFriend) {
-                NomeTaskCard(
-                    icon: "link.badge.plus",
-                    title: "添加朋友",
-                    subtitle: "一次性链接",
-                    tint: NomeHomePalette.green,
-                    layout: .compact
-                )
-            }
-            .buttonStyle(.plain)
-
-            Button(action: onPublicAddress) {
-                NomeTaskCard(
-                    icon: "person.text.rectangle",
-                    title: "公开联系方式",
-                    subtitle: "长期可分享",
-                    tint: NomeHomePalette.purple,
-                    layout: .compact
-                )
-            }
-            .buttonStyle(.plain)
-        }
     }
 }
 
@@ -1315,32 +1213,18 @@ private struct NomeContactsEmptyCard: View {
     let onPublicAddress: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 10) {
-                Image(systemName: "person.crop.circle.badge.plus")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.white)
-                    .frame(width: 36, height: 36)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(NomeHomePalette.brandNavy)
-                    )
+        VStack(alignment: .leading, spacing: 12) {
+            Image(systemName: "person.2")
+                .font(.system(size: 22, weight: .medium))
+                .foregroundColor(NomeHomePalette.textSecondary)
 
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("还没有联系人")
-                        .font(.headline)
-                        .foregroundColor(NomeHomePalette.navy)
-                    Text("先用一次性链接连接一个朋友。")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                Spacer(minLength: 0)
-            }
+            Text("还没有联系人")
+                .font(.title3.weight(.semibold))
+                .foregroundColor(NomeHomePalette.navy)
 
-            Text("联系人页会保留好友、群组、连接请求和待处理邀请。现在可以先创建一次性链接，或准备一个公开联系方式。")
-                .font(.subheadline)
-                .lineSpacing(2)
-                .foregroundColor(.secondary)
+            Text("先用一次性链接连接一个朋友。联系人、群组和待处理请求都会显示在这里。")
+                .font(.body)
+                .foregroundColor(NomeHomePalette.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
             HStack(spacing: 10) {
@@ -1357,39 +1241,14 @@ private struct NomeContactsEmptyCard: View {
                 .buttonStyle(NomeSecondaryButtonStyle())
             }
         }
-        .padding(16)
+        .padding(20)
         .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color(uiColor: .systemBackground))
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(NomeHomePalette.subtleSurface)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(NomeHomePalette.border, lineWidth: 1)
-        )
-    }
-}
-
-private struct NomeContactsCountPill: View {
-    let title: LocalizedStringKey
-    let count: Int
-
-    var body: some View {
-        VStack(spacing: 3) {
-            Text("\(count)")
-                .font(.headline.weight(.bold))
-            Text(title)
-                .font(.caption2.weight(.medium))
-        }
-        .foregroundColor(NomeHomePalette.navy)
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 9)
-        .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color(uiColor: .systemBackground))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(NomeHomePalette.border, lineWidth: 1)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(NomeHomePalette.textSecondary.opacity(0.42), lineWidth: 1)
         )
     }
 }
@@ -1454,7 +1313,6 @@ struct SubsStatusIndicator: View {
 
 // Spec: spec/client/chat-list.md#ChatListSearchBar
 struct ChatListSearchBar: View {
-    @EnvironmentObject var m: ChatModel
     @EnvironmentObject var theme: AppTheme
     @EnvironmentObject var chatTagsModel: ChatTagsModel
     @StateObject private var connectProgressManager = ConnectProgressManager.shared
@@ -1464,14 +1322,22 @@ struct ChatListSearchBar: View {
     @Binding var searchShowingSimplexLink: Bool
     @Binding var searchChatFilteredBySimplexLink: String?
     @Binding var parentSheet: SomeSheet<AnyView>?
+    var searchPlaceholder: LocalizedStringKey = "搜索会话"
+    var showsListFilters = true
     @State private var ignoreSearchTextChange = false
 
     var body: some View {
-        VStack(spacing: hasVisibleTags ? 10 : 0) {
+        VStack(spacing: showsListFilters ? 12 : 0) {
             HStack(spacing: 12) {
-                HStack(spacing: 4) {
+                HStack(spacing: 9) {
                     Image(systemName: "magnifyingglass")
-                    TextField("Search contacts or paste link", text: $searchText)
+                        .font(.system(size: 20, weight: .medium))
+                    TextField(
+                        "",
+                        text: $searchText,
+                        prompt: Text(searchPlaceholder).foregroundColor(NomeHomePalette.textSecondary)
+                    )
+                        .font(.system(size: 16, weight: .regular))
                         .foregroundColor(searchShowingSimplexLink ? theme.colors.secondary : theme.colors.onBackground)
                         .disabled(searchShowingSimplexLink)
                         .focused($searchFocussed)
@@ -1486,10 +1352,17 @@ struct ChatListSearchBar: View {
                             }
                     }
                 }
-                .padding(EdgeInsets(top: 7, leading: 7, bottom: 7, trailing: 7))
-                .foregroundColor(theme.colors.secondary)
-                .background(Color(.tertiarySystemFill))
-                .cornerRadius(10.0)
+                .padding(.horizontal, 14)
+                .frame(height: 48)
+                .foregroundColor(NomeHomePalette.textSecondary)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(NomeHomePalette.input)
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(NomeHomePalette.divider, lineWidth: 1)
+                }
 
                 if searchFocussed {
                     Text("Cancel")
@@ -1498,14 +1371,22 @@ struct ChatListSearchBar: View {
                             searchText = ""
                             searchFocussed = false
                         }
-                } else if m.chats.count > 0 {
-                    filterMenuButton()
                 }
             }
 
-            if hasVisibleTags {
+            if showsListFilters {
                 ScrollView([.horizontal], showsIndicators: false) {
                     TagsView(parentSheet: $parentSheet, searchText: $searchText)
+                        .padding(4)
+                }
+                .frame(minHeight: 48)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(NomeHomePalette.input)
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(NomeHomePalette.divider, lineWidth: 1)
                 }
             }
         }
@@ -1542,51 +1423,6 @@ struct ChatListSearchBar: View {
         }
     }
 
-    private var hasVisibleTags: Bool {
-        chatTagsModel.presetTags.count > 1 || !chatTagsModel.userTags.isEmpty
-    }
-
-    private func filterMenuButton() -> some View {
-        let showUnread = chatTagsModel.activeFilter == .unread
-        return Menu {
-            Button {
-                if showUnread {
-                    chatTagsModel.activeFilter = nil
-                } else {
-                    chatTagsModel.activeFilter = .unread
-                }
-            } label: {
-                Label(showUnread ? "显示全部" : "仅看未读", systemImage: showUnread ? "text.badge.checkmark" : "envelope.badge")
-            }
-
-            Button {
-                parentSheet = SomeSheet(
-                    content: {
-                        AnyView(
-                            NavigationView {
-                                TagListEditor()
-                            }
-                        )
-                    },
-                    id: "tag create"
-                )
-            } label: {
-                Label("新建列表", systemImage: "rectangle.stack.badge.plus")
-            }
-        } label: {
-            ZStack {
-                Color.clear
-                    .frame(width: 30, height: 30)
-                Image(systemName: showUnread ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease")
-                    .resizable()
-                    .scaledToFit()
-                    .foregroundColor(showUnread ? theme.colors.primary : theme.colors.secondary)
-                    .frame(width: showUnread ? 22 : 16, height: showUnread ? 22 : 16)
-            }
-        }
-        .accessibilityLabel(Text("筛选和列表"))
-    }
-
     private func connect(_ link: String) {
         planAndConnect(
             link,
@@ -1610,12 +1446,14 @@ struct TagsView: View {
     @Binding var searchText: String
 
     var body: some View {
-        HStack {
+        HStack(spacing: 4) {
             tagsView()
         }
     }
     
     @ViewBuilder private func tagsView() -> some View {
+        allChatsFilterView()
+
         if chatTagsModel.presetTags.count > 1 {
             if chatTagsModel.presetTags.count + chatTagsModel.userTags.count <= 3 {
                 expandedPresetTagsFiltersView()
@@ -1690,13 +1528,43 @@ struct TagsView: View {
             if chatTagsModel.userTags.isEmpty {
                 HStack(spacing: 4) {
                     Image(systemName: "plus")
-                    Text("Add list")
+                    Text("添加列表")
                 }
             } else {
                 Image(systemName: "plus")
             }
         }
-        .foregroundColor(.secondary)
+        .font(.system(size: 14, weight: .medium))
+        .foregroundColor(NomeHomePalette.action)
+        .padding(.horizontal, 10)
+        .frame(minHeight: 40)
+    }
+
+    private func allChatsFilterView() -> some View {
+        let selected = chatTagsModel.activeFilter == nil
+        return HStack(spacing: 4) {
+            Text("全部")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(selected ? NomeHomePalette.green : NomeHomePalette.textSecondary)
+                .padding(.horizontal, 12)
+                .frame(minHeight: 40)
+                .background(
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .fill(selected ? NomeHomePalette.green.opacity(0.10) : Color.clear)
+                )
+                .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .onTapGesture {
+                    chatTagsModel.activeFilter = nil
+                    searchText = ""
+                }
+                .accessibilityAddTraits(selected ? .isSelected : [])
+
+            Text("\(chatModel.chats.filter { !$0.chatInfo.chatDeleted }.count)")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(NomeHomePalette.navy)
+                .padding(.horizontal, 8)
+                .frame(minHeight: 40)
+        }
     }
 
     @ViewBuilder private func expandedTagFilterView(_ tag: PresetTag) -> some View {
