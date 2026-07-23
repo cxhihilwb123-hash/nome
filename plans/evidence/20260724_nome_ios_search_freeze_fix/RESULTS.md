@@ -59,3 +59,30 @@ Personal Team physical-device package:
 
 The install succeeded. The first automated launch attempt was rejected by iOS
 because the phone was locked; no application credential was entered.
+
+## Empty-result placement follow-up
+
+The follow-up report was reproduced by entering an unmatched query in the
+deterministic preview. `noChatsView()` was rendered as a sibling overlay above
+the complete list, so SwiftUI centered it in the available page area. Its
+vertical position therefore changed with the keyboard, safe area, and list
+height instead of staying attached to the search controls.
+
+The empty-result view is now a real list row immediately after the search and
+filter row. It uses the Nome secondary text color, a stable 14-point font, and
+fixed row insets.
+
+| Check | Result |
+| --- | --- |
+| Simulator build after placement fix | PASS |
+| Unmatched query shows the hint directly below filters | PASS |
+| Matching query hides the hint and shows only the matching chat | PASS |
+| Clearing the query restores all three seed chats | PASS |
+| Cancelling search restores the Nome bottom tabs | PASS |
+| Personal Team Nome `6.5.6 (343)` arm64 build | PASS |
+| Overwrite-install Build 343 without uninstall | PASS |
+| Physical-device visual confirmation | PENDING_DEVICE_UNLOCK |
+
+The iPhone Mirroring connection was unavailable after installation and
+`devicectl` reported the phone as locked. No device or application password was
+entered.

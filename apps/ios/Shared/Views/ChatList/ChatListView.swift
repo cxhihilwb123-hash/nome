@@ -559,6 +559,18 @@ struct ChatListView: View {
                     .frame(maxWidth: .infinity)
                     .id("searchBar")
 
+                    if cs.isEmpty && !chatModel.chats.isEmpty {
+                        noChatsView()
+                            .font(.system(size: 14))
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.vertical, 28)
+                            .scaleEffect(x: 1, y: shouldInvertChatList ? -1 : 1, anchor: .center)
+                            .foregroundColor(NomeHomePalette.textSecondary)
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 16, trailing: 20))
+                    }
+
                     if chatModel.chats.isEmpty {
                         NomeEmptyInboxCard(
                             onAddFriend: { openNewChat(.oneTimeLink) },
@@ -641,11 +653,6 @@ struct ChatListView: View {
                         withAnimation { scrollProxy.scrollTo("searchBar") }
                     }
                 }
-            }
-            if cs.isEmpty && !chatModel.chats.isEmpty {
-                noChatsView()
-                    .scaleEffect(x: 1, y: shouldInvertChatList ? -1 : 1, anchor: .center)
-                    .foregroundColor(.secondary)
             }
         }
     }
