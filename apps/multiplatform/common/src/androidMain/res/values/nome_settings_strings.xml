@@ -62,6 +62,18 @@
   <string name="nome_brand_default_call_servers_question">Use the default call servers?</string>
   <string name="nome_brand_default_call_servers">Using the default call servers.</string>
   <string name="nome_brand_theme">Nome</string>
+  <string name="nome_brand_links">Nome links</string>
+  <string name="nome_brand_invalid_scanned_link">The code you scanned is not a Nome link QR code.</string>
+  <string name="nome_brand_invalid_pasted_link">The text you pasted is not a Nome link.</string>
+  <string name="nome_brand_invalid_link_hint">Please check that the Nome link is correct.</string>
+  <string name="nome_brand_links_not_allowed">Nome links are not allowed</string>
+  <string name="nome_brand_allow_links">Allow sending Nome links.</string>
+  <string name="nome_brand_prohibit_links">Prohibit sending Nome links</string>
+  <string name="nome_brand_group_links_allowed">Members can send Nome links.</string>
+  <string name="nome_brand_channel_links_allowed">Subscribers can send Nome links.</string>
+  <string name="nome_brand_group_links_prohibited">Nome links are prohibited.</string>
+  <string name="nome_official_server">Nome official server</string>
+  <string name="nome_official_server_help">How to use the Nome official server</string>
 
   <string name="nome_p24_title">Backup &amp; migration</string>
   <string name="nome_p24_back">Back to settings</string>

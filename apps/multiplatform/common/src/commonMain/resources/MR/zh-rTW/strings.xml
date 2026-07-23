@@ -276,7 +276,7 @@
     <string name="service_notifications">即時通知！</string>
     <string name="service_notifications_disabled">已禁用即時通知功能！</string>
     <string name="database_initialization_error_desc">資料庫目前沒有正常運作。點擊查看更多</string>
-    <string name="ntf_channel_calls">SimpleX Chat 通話來電</string>
+    <string name="ntf_channel_calls">Nome 通話來電</string>
     <string name="settings_notifications_mode_title">通知服務</string>
     <string name="settings_notification_preview_mode_title">顯示預覽</string>
     <string name="settings_notification_preview_title">通知預覽</string>
@@ -326,7 +326,7 @@
     <string name="simplex_service_notification_title">SimpleX Chat 服務</string>
     <string name="simplex_service_notification_text">正在接收訊息…</string>
     <string name="hide_notification">隱藏</string>
-    <string name="ntf_channel_messages">SimpleX Chat 訊息</string>
+    <string name="ntf_channel_messages">Nome 訊息</string>
     <string name="notifications_mode_off">當應用程式是開啟</string>
     <string name="notifications_mode_periodic">定期啟動</string>
     <string name="notification_preview_mode_message_desc">顯示聯絡人名稱和訊息內容</string>

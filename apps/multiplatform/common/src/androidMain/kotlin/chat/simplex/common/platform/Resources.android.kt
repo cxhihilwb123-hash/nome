@@ -74,6 +74,31 @@ actual fun StringResource.localized(): String =
       )
     MR.strings.theme_simplex ->
       androidAppContext.getString(R.string.nome_brand_theme)
+    MR.strings.simplex_link_mode,
+    MR.strings.simplex_links ->
+      androidAppContext.getString(R.string.nome_brand_links)
+    MR.strings.code_you_scanned_is_not_simplex_link_qr_code ->
+      androidAppContext.getString(R.string.nome_brand_invalid_scanned_link)
+    MR.strings.the_text_you_pasted_is_not_a_link ->
+      androidAppContext.getString(R.string.nome_brand_invalid_pasted_link)
+    MR.strings.error_parsing_uri_desc ->
+      androidAppContext.getString(R.string.nome_brand_invalid_link_hint)
+    MR.strings.simplex_links_not_allowed ->
+      androidAppContext.getString(R.string.nome_brand_links_not_allowed)
+    MR.strings.allow_to_send_simplex_links ->
+      androidAppContext.getString(R.string.nome_brand_allow_links)
+    MR.strings.prohibit_sending_simplex_links ->
+      androidAppContext.getString(R.string.nome_brand_prohibit_links)
+    MR.strings.group_members_can_send_simplex_links ->
+      androidAppContext.getString(R.string.nome_brand_group_links_allowed)
+    MR.strings.group_members_can_send_simplex_links_channel ->
+      androidAppContext.getString(R.string.nome_brand_channel_links_allowed)
+    MR.strings.simplex_links_are_prohibited_in_group ->
+      androidAppContext.getString(R.string.nome_brand_group_links_prohibited)
+    MR.strings.your_servers ->
+      androidAppContext.getString(R.string.nome_official_server)
+    MR.strings.how_to_use_your_servers ->
+      androidAppContext.getString(R.string.nome_official_server_help)
     else -> desc().toString(context = androidAppContext)
   }
 

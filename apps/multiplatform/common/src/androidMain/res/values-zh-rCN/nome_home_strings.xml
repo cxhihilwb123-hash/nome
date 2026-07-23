@@ -96,7 +96,7 @@
     <string name="nome_p10_add_contact">添加朋友</string>
     <string name="nome_p10_add_contact_body">创建一次性邀请链接或二维码</string>
     <string name="nome_p10_scan_paste">扫码或粘贴</string>
-    <string name="nome_p10_scan_paste_body">读取对方发来的 SimpleX 邀请</string>
+    <string name="nome_p10_scan_paste_body">读取对方发来的 Nome 邀请</string>
     <string name="nome_p10_group">创建群组</string>
     <string name="nome_p10_group_body">打开现有私密群组创建流程</string>
     <string name="nome_p10_channel">公开频道</string>
@@ -130,9 +130,9 @@
     <string name="nome_p12_scan_heading">将二维码放入取景框</string>
     <string name="nome_p12_camera_permission">只有选择扫码后，Android 才会请求相机权限。</string>
     <string name="nome_p12_open_camera">打开相机扫描</string>
-    <string name="nome_p12_link_label">SimpleX 连接链接</string>
+    <string name="nome_p12_link_label">Nome 连接链接</string>
     <string name="nome_p12_link_input">连接链接</string>
-    <string name="nome_p12_link_placeholder">粘贴 SimpleX 链接</string>
+    <string name="nome_p12_link_placeholder">粘贴 Nome 链接</string>
     <string name="nome_p12_clipboard_action">从剪贴板读取并检查</string>
     <string name="nome_p12_check">检查链接</string>
     <string name="nome_p12_plan_note">链接由官方连接确认流程处理；显示内容以实际解析和 core 返回为准。</string>

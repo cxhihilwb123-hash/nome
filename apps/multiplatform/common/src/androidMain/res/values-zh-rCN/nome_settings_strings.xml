@@ -62,6 +62,18 @@
   <string name="nome_brand_default_call_servers_question">使用默认通话服务器？</string>
   <string name="nome_brand_default_call_servers">正在使用默认通话服务器。</string>
   <string name="nome_brand_theme">Nome</string>
+  <string name="nome_brand_links">Nome 链接</string>
+  <string name="nome_brand_invalid_scanned_link">你扫描的二维码不是 Nome 链接。</string>
+  <string name="nome_brand_invalid_pasted_link">你粘贴的文本不是 Nome 链接。</string>
+  <string name="nome_brand_invalid_link_hint">请检查 Nome 链接是否正确。</string>
+  <string name="nome_brand_links_not_allowed">不允许发送 Nome 链接</string>
+  <string name="nome_brand_allow_links">允许发送 Nome 链接。</string>
+  <string name="nome_brand_prohibit_links">禁止发送 Nome 链接</string>
+  <string name="nome_brand_group_links_allowed">成员可以发送 Nome 链接。</string>
+  <string name="nome_brand_channel_links_allowed">订阅者可以发送 Nome 链接。</string>
+  <string name="nome_brand_group_links_prohibited">Nome 链接已被禁止。</string>
+  <string name="nome_official_server">Nome 官方服务器</string>
+  <string name="nome_official_server_help">如何使用 Nome 官方服务器</string>
 
   <string name="nome_p24_title">备份与迁移</string>
   <string name="nome_p24_back">返回设置</string>

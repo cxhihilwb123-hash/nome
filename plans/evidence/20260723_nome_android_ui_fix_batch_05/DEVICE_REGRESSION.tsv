@@ -1,0 +1,14 @@
+device	serial	check	result	evidence
+V2048A	3106403166006XM	final APK	PASS	SHA256 04b42f51e59dc693768a8e61a4a4f08e589cf6ba0c8a0a83d52666cc823c2f21 matches local artifact
+V2048A	3106403166006XM	Home real profile images	PASS	3 profile-image accessibility nodes on final APK; initial fallback retained for profiles without images
+V2048A	3106403166006XM	Contacts real profile images	PASS	4 profile-image accessibility nodes on final APK
+V2048A	3106403166006XM	Nome invitation/link wording	PASS	Nome label and placeholder present; visible SimpleX wording count 0; no camera permission triggered
+V2048A	3106403166006XM	server root branding	PASS	Nome official server=1; SimpleX=0; Flux=0; legacy custom title=0
+V2048A	3106403166006XM	message-server real click	PASS	detail page opened with editable field and test action
+V2048A	3106403166006XM	file-server real click	PASS	detail page opened with editable field and test action
+V2048A	3106403166006XM	continuous Android Back	PASS	message detail -> official list and file detail -> official list -> server root
+V2048A	3106403166006XM	temporary UI XML cleanup	PASS	no generated Batch 05 UI tree retained
+V2047A	9590146717002S1	final APK and scoped regression	NOT_RUN	device absent from adb for final Batch 05 regression
+both	both	protected pixels	PASS_WITH_GAP	screenshot protection preserved; no protected-account screenshot captured
+both	both	English/dark physical pixels	PASS_WITH_GAP	resources and instrumentation pass; device-wide English/dark mode not forced
+

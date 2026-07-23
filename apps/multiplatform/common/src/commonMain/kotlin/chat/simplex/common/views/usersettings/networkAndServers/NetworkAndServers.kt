@@ -177,6 +177,9 @@ fun ModalData.NetworkAndServersView(closeNetworkAndServers: () -> Unit) {
   val m = chatModel
   val conditionsAction = remember { m.conditions.value.conditionsAction }
   val anyOperatorEnabled = remember { derivedStateOf { userServers.value.any { it.operator?.enabled == true } } }
+  val hasNomeOfficialServers = remember {
+    derivedStateOf { hasCompleteNomeOfficialServerSet(userServers.value) }
+  }
   val scope = rememberCoroutineScope()
 
   LaunchedEffect(Unit) {
@@ -219,7 +222,10 @@ fun ModalData.NetworkAndServersView(closeNetworkAndServers: () -> Unit) {
     val showCustomModal = { it: @Composable (close: () -> Unit) -> Unit -> ModalManager.start.showCustomModal { close -> it(close) } }
 
     // TODO: Review this and socks.
-    if (!chatModel.desktopNoUserNoRemote) {
+    if (
+      !chatModel.desktopNoUserNoRemote &&
+      !(appPlatform.isAndroid && hasNomeOfficialServers.value)
+    ) {
       SectionView(generalGetString(MR.strings.network_preset_servers_title).uppercase()) {
         userServers.value.forEachIndexed { index, srv ->
           srv.operator?.let { ServerOperatorRow(index, it, currUserServers, userServers, serverErrors, serverWarnings, currentRemoteHost?.remoteHostId) }
@@ -255,11 +261,11 @@ fun ModalData.NetworkAndServersView(closeNetworkAndServers: () -> Unit) {
         }) {
           Icon(
             painterResource(MR.images.ic_dns),
-            stringResource(MR.strings.your_servers),
+            generalGetString(MR.strings.your_servers),
             tint = MaterialTheme.colors.secondary
           )
           TextIconSpaced()
-          Text(stringResource(MR.strings.your_servers), color = MaterialTheme.colors.onBackground)
+          Text(generalGetString(MR.strings.your_servers), color = MaterialTheme.colors.onBackground)
 
           if (currUserServers.value.getOrNull(nullOperatorIndex) != userServers.value.getOrNull(nullOperatorIndex)) {
             Spacer(Modifier.weight(1f))
@@ -703,6 +709,15 @@ fun SessionModePicker(
     }
   )
 }
+
+fun hasCompleteNomeOfficialServerSet(
+  userServers: List<UserOperatorServers>
+): Boolean =
+  userServers.any { operatorServers ->
+    operatorServers.operator == null &&
+      operatorServers.smpServers.any { it.enabled && !it.deleted } &&
+      operatorServers.xftpServers.any { it.enabled && !it.deleted }
+  }
 
 private fun validHost(s: String): Boolean =
   !s.contains('@')

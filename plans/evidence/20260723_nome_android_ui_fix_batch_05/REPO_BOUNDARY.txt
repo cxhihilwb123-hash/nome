@@ -1,0 +1,31 @@
+Checked: 2026-07-23 23:34:52 +0800
+
+OFFICIAL_VERSION=v6.5.6
+OFFICIAL_BASELINE=59fce95d3cd08897b4ef742447b785cf2e56c7ce
+BRANCH=codex/nome-android-v656
+HEAD=64e8a161e6a42c841fbd4d7c6ba163508cb71d3d
+BASELINE_IS_HEAD_ANCESTOR=PASS
+STAGED_INDEX=EMPTY
+GRADLE_REVIEW_TRACKED=NO
+HISTORIC_DEBUG_MANIFEST_SHA256=b6aa278d102675e777a4a0eac66cb9fd049209bb1998cdab247dfc7b56d792f3
+HISTORIC_DEBUG_MANIFEST_PRESERVED=PASS
+DIRTY_TREE_PRESERVED=PASS
+COMMIT_CREATED=NO
+PUSH_PERFORMED=NO
+
+FROZEN_FEATURE_VALIDATION_SHA256=PASS
+FROZEN_FEATURE_VALIDATION_E2E_SHA256=PASS
+FROZEN_FULL_UI_AUDIT_SHA256=PASS
+FROZEN_UI_FIX_BATCH_01_SHA256=PASS
+FROZEN_UI_FIX_BATCH_02_SHA256=PASS
+FROZEN_UI_FIX_BATCH_03_SHA256=PASS
+FROZEN_UI_FIX_BATCH_04_SHA256=PASS
+
+No Haskell/native core, Core.kt, protocol, database, message-state, account
+data, server record, communication semantics, or iOS runtime behavior was
+changed by Batch 05.
+
+The server change is an Android presentation/recognition policy over already
+saved server records. No endpoint, fingerprint, password, private key, or
+complete server URI was added to source or evidence.
+

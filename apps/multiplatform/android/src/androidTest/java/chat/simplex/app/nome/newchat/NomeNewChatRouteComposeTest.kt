@@ -178,6 +178,28 @@ class NomeNewChatRouteComposeTest {
       .assertHasClickAction()
       .performClick()
     composeRule
+      .onNodeWithText(
+        target.getString(R.string.nome_p12_link_label),
+      )
+      .assertIsDisplayed()
+    composeRule
+      .onNodeWithText(
+        target.getString(R.string.nome_p12_link_placeholder),
+      )
+      .assertIsDisplayed()
+    assertEquals(
+      false,
+      target
+        .getString(R.string.nome_p12_link_label)
+        .contains("SimpleX"),
+    )
+    assertEquals(
+      false,
+      target
+        .getString(R.string.nome_p12_link_placeholder)
+        .contains("SimpleX"),
+    )
+    composeRule
       .onNodeWithContentDescription(
         target.getString(R.string.nome_p12_link_input),
       )

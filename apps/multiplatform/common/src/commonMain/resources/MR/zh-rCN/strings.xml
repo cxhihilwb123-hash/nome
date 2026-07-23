@@ -575,7 +575,7 @@
     <string name="callstatus_rejected">拒接来电</string>
     <string name="v4_3_voice_messages">语音消息</string>
     <string name="voice_messages">语音消息</string>
-    <string name="ntf_channel_calls">SimpleX Chat 通话</string>
+    <string name="ntf_channel_calls">Nome 通话</string>
     <string name="if_you_cannot_meet_in_person_show_QR_in_video_call_or_via_another_channel"><![CDATA[如果你不能亲自见面，<b>在视频通话</b>中出示二维码，或分享链接。]]></string>
     <string name="your_chat_profiles">你的聊天资料</string>
     <string name="icon_descr_call_missed">未接来电</string>
@@ -720,7 +720,7 @@
     <string name="security_code">安全码</string>
     <string name="secret_text">秘密</string>
     <string name="v4_2_security_assessment">安全评估</string>
-    <string name="ntf_channel_messages">SimpleX 消息</string>
+    <string name="ntf_channel_messages">Nome 消息</string>
     <string name="is_not_verified">%s 未验证</string>
     <string name="v4_5_italian_interface_descr">感谢用户——通过 Weblate 做出贡献！</string>
     <string name="first_platform_without_user_ids">没有用户标识符。</string>

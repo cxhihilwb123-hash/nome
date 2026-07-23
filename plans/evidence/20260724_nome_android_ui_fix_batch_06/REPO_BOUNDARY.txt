@@ -1,0 +1,32 @@
+Nome Android UI Fix Batch 06 repository boundary
+Date: 2026-07-24 Asia/Shanghai
+
+Official baseline:
+  v6.5.6
+  59fce95d3cd08897b4ef742447b785cf2e56c7ce
+
+Branch:
+  codex/nome-android-v656
+
+Pre-commit parent HEAD:
+  64e8a161e6a42c841fbd4d7c6ba163508cb71d3d
+
+Verified:
+  official baseline remains an ancestor
+  staged index was empty before scoped staging
+  .gradle-review has zero tracked paths
+  historical debug AndroidManifest SHA256 remains:
+  b6aa278d102675e777a4a0eac66cb9fd049209bb1998cdab247dfc7b56d792f3
+
+Explicitly excluded from this commit:
+  apps/multiplatform/android/src/debug/AndroidManifest.xml
+  apps/multiplatform/android/src/debug/java/chat/simplex/app/nome/smp/
+  apps/multiplatform/android/src/testDebug/
+  apps/multiplatform/Screenshot_1784275771.png
+  .gradle-review/
+  apps/multiplatform/.gradle-review/
+  all older untracked frozen evidence and validation utilities
+
+No reset, clean, stash, checkout, force operation, core/protocol/database/iOS
+edit, credential capture, commit signing, or remote push was used while
+preparing this checkpoint.

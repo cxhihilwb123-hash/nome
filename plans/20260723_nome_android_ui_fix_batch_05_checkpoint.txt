@@ -1,0 +1,43 @@
+NOME ANDROID UI FIX BATCH 05 CHECKPOINT
+=======================================
+
+Date: 2026-07-23 +0800
+Repo: /Users/forkman03/project/nome/simplex-chat
+Branch: codex/nome-android-v656
+HEAD: 64e8a161e6a42c841fbd4d7c6ba163508cb71d3d
+Official baseline: v6.5.6 / 59fce95d3cd08897b4ef742447b785cf2e56c7ce
+
+STATUS=IMPLEMENTED_ONE_DEVICE_VERIFIED
+COMMIT=NONE
+PUSH=NONE
+STAGED_INDEX=EMPTY
+
+FINAL_APP_APK_SHA256=04b42f51e59dc693768a8e61a4a4f08e589cf6ba0c8a0a83d52666cc823c2f21
+V2048A_INSTALLED_SHA256=MATCH
+V2047A_INSTALLED_SHA256=NOT_RUN_DEVICE_OFFLINE
+
+OUTCOMES
+- Home/Contacts render real profile images with initial fallback
+- Android invitation/link wording uses Nome
+- current saved Tencent Cloud SMP+XFTP is designated Nome official server
+- complete official set hides SimpleX and Flux rows on Android
+- Nome official server opens real SMP and XFTP details
+- continuous Android Back has no trap
+- API35 targeted instrumentation PASS 21/21
+- JVM PASS 54/54
+- Release lint PASS with 0 Error/Fatal
+
+LIMITS
+- V2047A final Batch 05 regression pending because device was offline
+- clean install does not auto-provision the saved endpoint
+- protected pixel screenshots unavailable by policy
+
+EVIDENCE=plans/evidence/20260723_nome_android_ui_fix_batch_05/
+HANDOFF=plans/20260723_nome_android_ui_fix_batch_05_handoff.md
+SHA256_MANIFEST=plans/20260723_nome_android_ui_fix_batch_05_HANDOFF_SHA256SUMS
+
+USER_ACTION
+- inspect Vivo V2048A
+- connect Vivo V2047A for final dual-device regression
+- do not commit or push until the user decides
+

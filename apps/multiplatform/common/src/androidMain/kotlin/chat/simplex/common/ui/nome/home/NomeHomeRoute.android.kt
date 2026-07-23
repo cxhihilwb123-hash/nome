@@ -81,6 +81,7 @@ import chat.simplex.common.ui.theme.CurrentColors
 import chat.simplex.common.views.helpers.AnimatedViewState
 import chat.simplex.common.views.helpers.DefaultDropdownMenu
 import chat.simplex.common.views.helpers.ModalManager
+import chat.simplex.common.views.helpers.ProfileImage
 import chat.simplex.common.views.helpers.tryOrShowError
 import chat.simplex.common.views.onboarding.SetNotificationsModeAdditions
 import chat.simplex.common.views.contacts.onRequestAccepted
@@ -918,7 +919,7 @@ internal fun resolveOpenableNomeHomeChat(chatModel: ChatModel, capturedChat: Cha
   return when (val info = currentChat.chatInfo) {
     is ChatInfo.Direct ->
       currentChat.takeIf {
-        !info.contactCard &&
+        info.contactCard ||
           (
             info.ready ||
               (
@@ -1120,7 +1121,7 @@ private fun NomeChatRow(
     !pendingDeletion &&
     when (info) {
       is ChatInfo.Direct ->
-        !info.contactCard &&
+        info.contactCard ||
           (
             info.ready ||
               (
@@ -1269,19 +1270,7 @@ private fun NomeChatRow(
               ),
           verticalAlignment = Alignment.CenterVertically,
         ) {
-          Box(
-            modifier = Modifier
-              .size(44.dp)
-              .clip(CircleShape)
-              .background(NomeTheme.colors.surface),
-            contentAlignment = Alignment.Center,
-          ) {
-            Text(
-              text = info.chatViewName.firstOrNull()?.uppercase() ?: "?",
-              style = NomeTheme.typography.bodyStrong,
-              color = NomeTheme.colors.action,
-            )
-          }
+          NomeChatAvatar(info)
           Spacer(Modifier.width(dimensions.space12))
           Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -1373,6 +1362,33 @@ private fun NomeChatRow(
         chat = chat,
         showMenu = showMenu,
         inProgress = inProgress,
+      )
+    }
+  }
+}
+
+@Composable
+private fun NomeChatAvatar(info: ChatInfo) {
+  val image = info.image
+  if (image != null) {
+    ProfileImage(
+      size = 44.dp,
+      image = image,
+      color = NomeTheme.colors.action,
+      backgroundColor = NomeTheme.colors.surface,
+    )
+  } else {
+    Box(
+      modifier = Modifier
+        .size(44.dp)
+        .clip(CircleShape)
+        .background(NomeTheme.colors.surface),
+      contentAlignment = Alignment.Center,
+    ) {
+      Text(
+        text = info.chatViewName.firstOrNull()?.uppercase() ?: "?",
+        style = NomeTheme.typography.bodyStrong,
+        color = NomeTheme.colors.action,
       )
     }
   }

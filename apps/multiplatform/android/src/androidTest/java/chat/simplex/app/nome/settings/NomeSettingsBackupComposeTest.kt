@@ -17,12 +17,17 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import chat.simplex.common.R
 import chat.simplex.common.model.User
+import chat.simplex.common.model.UserOperatorServers
+import chat.simplex.common.model.UserServer
 import chat.simplex.common.ui.nome.theme.NomeAndroidTheme
 import chat.simplex.common.views.helpers.generalGetString
 import chat.simplex.common.views.usersettings.NomeBackupMigrationContent
 import chat.simplex.common.views.usersettings.NomeSettingsHomeContent
+import chat.simplex.common.views.usersettings.networkAndServers.hasCompleteNomeOfficialServerSet
 import chat.simplex.res.MR
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -188,6 +193,71 @@ class NomeSettingsBackupComposeTest {
     assertEquals(
       target.getString(R.string.nome_brand_theme),
       generalGetString(MR.strings.theme_simplex),
+    )
+    assertEquals(
+      target.getString(R.string.nome_brand_links),
+      generalGetString(MR.strings.simplex_link_mode),
+    )
+    assertEquals(
+      target.getString(R.string.nome_brand_invalid_scanned_link),
+      generalGetString(
+        MR.strings.code_you_scanned_is_not_simplex_link_qr_code,
+      ),
+    )
+    assertEquals(
+      target.getString(R.string.nome_brand_invalid_pasted_link),
+      generalGetString(MR.strings.the_text_you_pasted_is_not_a_link),
+    )
+    assertEquals(
+      target.getString(R.string.nome_brand_group_links_prohibited),
+      generalGetString(MR.strings.simplex_links_are_prohibited_in_group),
+    )
+    assertEquals(
+      target.getString(R.string.nome_official_server),
+      generalGetString(MR.strings.your_servers),
+    )
+    assertEquals(
+      target.getString(R.string.nome_official_server_help),
+      generalGetString(MR.strings.how_to_use_your_servers),
+    )
+  }
+
+  @Test
+  fun officialServerSetRequiresEnabledMessageAndFileServers() {
+    fun server(enabled: Boolean = true, deleted: Boolean = false) =
+      UserServer(
+        remoteHostId = null,
+        serverId = null,
+        server = "test-server",
+        preset = false,
+        enabled = enabled,
+        deleted = deleted,
+      )
+
+    val messageOnly =
+      UserOperatorServers(
+        operator = null,
+        smpServers = listOf(server()),
+        xftpServers = emptyList(),
+      )
+    val complete =
+      messageOnly.copy(xftpServers = listOf(server()))
+    val deletedFileServer =
+      messageOnly.copy(
+        xftpServers = listOf(server(deleted = true)),
+      )
+
+    assertFalse(hasCompleteNomeOfficialServerSet(emptyList()))
+    assertFalse(
+      hasCompleteNomeOfficialServerSet(listOf(messageOnly)),
+    )
+    assertTrue(
+      hasCompleteNomeOfficialServerSet(listOf(complete)),
+    )
+    assertFalse(
+      hasCompleteNomeOfficialServerSet(
+        listOf(deletedFileServer),
+      ),
     )
   }
 

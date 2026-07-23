@@ -49,6 +49,8 @@ import chat.simplex.common.ui.nome.components.NomePrimaryDestination
 import chat.simplex.common.ui.nome.theme.NomeAndroidTheme
 import chat.simplex.common.views.chatlist.NomeHomeRouteContent
 import chat.simplex.common.views.chatlist.nomeHomeRouteProjection
+import chat.simplex.common.views.helpers.generalGetString
+import chat.simplex.res.MR
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
@@ -415,6 +417,49 @@ class NomeHomeComposeTest {
   }
 
   @Test
+  fun chatRowsRenderProfileImageAndKeepInitialAsFallback() {
+    val direct = Chat.sampleData.chatInfo as ChatInfo.Direct
+    val imageChat = Chat.sampleData.copy(
+      chatInfo = direct.copy(
+        contact = direct.contact.copy(
+          profile = direct.contact.profile.copy(image = TINY_PNG),
+        ),
+      ),
+    )
+    val fallbackChat = Chat.sampleData.copy(
+      chatInfo = direct.copy(
+        contact = direct.contact.copy(
+          contactId = 2L,
+          localDisplayName = "bob",
+          profile = direct.contact.profile.copy(
+            displayName = "bob",
+            fullName = "Bob",
+            image = null,
+          ),
+        ),
+      ),
+    )
+    composeRule.setContent {
+      NomeAndroidTheme(darkTheme = false) {
+        NomeHomeRouteContent(
+          chatModel = ChatModel,
+          state = state(
+            content = NomeHomeContentState.POPULATED,
+            chats = listOf(imageChat, fallbackChat),
+          ),
+        )
+      }
+    }
+
+    composeRule
+      .onNodeWithContentDescription(
+        generalGetString(MR.strings.image_descr_profile_image),
+      )
+      .assertIsDisplayed()
+    composeRule.onNodeWithText("B").assertIsDisplayed()
+  }
+
+  @Test
   fun pendingDeletionChatIsReadOnlyWhileCoreRuns() {
     val target = InstrumentationRegistry.getInstrumentation().targetContext
     val chat = Chat.sampleData
@@ -451,7 +496,7 @@ class NomeHomeComposeTest {
   }
 
   @Test
-  fun contactCardsRemainVisibleReadOnlyAndDeletedRowsLeaveTheRouteProjection() {
+  fun contactCardsRemainVisibleAndDeletedRowsLeaveTheRouteProjection() {
     val direct = Chat.sampleData.chatInfo as ChatInfo.Direct
     val contactCard = Chat.sampleData.copy(
       chatInfo = direct.copy(
@@ -485,7 +530,7 @@ class NomeHomeComposeTest {
   }
 
   @Test
-  fun readOnlyRowsExposeOnlySupportedMenuActions() {
+  fun contactCardsExposeOpenAndMenuWhilePendingConnectionsStayReadOnly() {
     val target = InstrumentationRegistry.getInstrumentation().targetContext
     val direct = Chat.sampleData.chatInfo as ChatInfo.Direct
     val contactCard = Chat(
@@ -520,16 +565,21 @@ class NomeHomeComposeTest {
 
     composeRule.onNodeWithContentDescription(
       target.getString(
-        R.string.nome_home_read_only_chat,
+        R.string.nome_home_open_chat,
         contactCard.chatInfo.chatViewName,
         target.getString(R.string.nome_home_direct_chat),
         getTimestampText(contactCard.chatInfo.chatTs),
       ),
     )
       .assertHeightIsAtLeast(48.dp)
-      .assert(SemanticsMatcher.keyNotDefined(SemanticsActions.OnClick))
-      .assert(SemanticsMatcher.keyNotDefined(SemanticsActions.CustomActions))
-      .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Role))
+      .assertHasClickAction()
+      .assert(SemanticsMatcher.keyIsDefined(SemanticsActions.CustomActions))
+      .assert(
+        SemanticsMatcher.expectValue(
+          SemanticsProperties.Role,
+          Role.Button,
+        ),
+      )
 
     composeRule.onNodeWithContentDescription(
       target.getString(
@@ -543,6 +593,20 @@ class NomeHomeComposeTest {
       .assert(SemanticsMatcher.keyNotDefined(SemanticsActions.OnClick))
       .assert(SemanticsMatcher.keyIsDefined(SemanticsActions.CustomActions))
       .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Role))
+
+    composeRule.onNodeWithContentDescription(
+      target.getString(
+        R.string.nome_home_open_chat,
+        contactCard.chatInfo.chatViewName,
+        target.getString(R.string.nome_home_direct_chat),
+        getTimestampText(contactCard.chatInfo.chatTs),
+      ),
+    ).performTouchInput { longClick() }
+    composeRule
+      .onNodeWithText(
+        generalGetString(MR.strings.delete_contact_menu_action),
+      )
+      .assertIsDisplayed()
   }
 
   @Test
@@ -806,4 +870,9 @@ class NomeHomeComposeTest {
     visibleChats = chats,
     hasCachedChats = chats.isNotEmpty(),
   )
+
+  private companion object {
+    const val TINY_PNG =
+      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+  }
 }

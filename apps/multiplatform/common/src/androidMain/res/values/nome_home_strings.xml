@@ -96,7 +96,7 @@
     <string name="nome_p10_add_contact">Add contact</string>
     <string name="nome_p10_add_contact_body">Create a one-time invitation link or QR code</string>
     <string name="nome_p10_scan_paste">Scan or paste</string>
-    <string name="nome_p10_scan_paste_body">Read a SimpleX invitation received from another person</string>
+    <string name="nome_p10_scan_paste_body">Read a Nome invitation received from another person</string>
     <string name="nome_p10_group">Create group</string>
     <string name="nome_p10_group_body">Start the existing private group creation flow</string>
     <string name="nome_p10_channel">Public channel</string>
@@ -130,9 +130,9 @@
     <string name="nome_p12_scan_heading">Place a QR code in the camera frame</string>
     <string name="nome_p12_camera_permission">Android requests camera permission only after you choose to scan.</string>
     <string name="nome_p12_open_camera">Open camera to scan</string>
-    <string name="nome_p12_link_label">SimpleX connection link</string>
+    <string name="nome_p12_link_label">Nome connection link</string>
     <string name="nome_p12_link_input">Connection link</string>
-    <string name="nome_p12_link_placeholder">Paste a SimpleX link</string>
+    <string name="nome_p12_link_placeholder">Paste a Nome link</string>
     <string name="nome_p12_clipboard_action">Read from clipboard and check</string>
     <string name="nome_p12_check">Check link</string>
     <string name="nome_p12_plan_note">The official connection confirmation flow handles this link; details depend on parsing and the actual core result.</string>

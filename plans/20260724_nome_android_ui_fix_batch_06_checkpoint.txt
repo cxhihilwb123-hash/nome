@@ -1,0 +1,31 @@
+Nome Android UI Fix Batch 06 checkpoint
+Date: 2026-07-24 Asia/Shanghai
+
+Status:
+  Batch 05 implementation and evidence are ready for scoped commit.
+  Batch 06 contact-card interaction and notification branding are implemented.
+  Build, Android-test APK, 54 JVM tests, and release lint pass.
+  New physical-device installation is blocked by manual Vivo approval.
+
+Behavior:
+  Home contact-address cards can open the official connect flow.
+  Long-press and accessibility actions expose the existing delete menu.
+  Pending contact connections remain read-only with supported management.
+  English, Simplified Chinese, and Traditional Chinese notification channels
+  use Nome branding.
+  No force-wake behavior was added for ordinary messages.
+
+Repository:
+  branch codex/nome-android-v656
+  pre-commit parent 64e8a161e6a42c841fbd4d7c6ba163508cb71d3d
+  official baseline 59fce95d3cd08897b4ef742447b785cf2e56c7ce
+  staged only scoped Batch 05/06 source and evidence
+  historical dirty tree preserved
+  historical debug manifest preserved
+  .gradle-review untracked
+
+Next:
+  user manually approves USB installation
+  install exact APK adc3dc61d88ef9c3094db234b5f69bee239a7e4c10d53e4d7cb2cb8a1651e256
+  validate tap, long-press delete menu, and manual lock-screen presentation
+  repeat on V2047A when it is online

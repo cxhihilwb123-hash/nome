@@ -47,7 +47,7 @@ fun ModalData.YourServersView(
 
   Box {
     ColumnWithScrollBar {
-      AppBarTitle(stringResource(MR.strings.your_servers))
+      AppBarTitle(generalGetString(MR.strings.your_servers))
       YourServersViewLayout(
         scope,
         userServers,
@@ -334,7 +334,7 @@ private fun HowToButton() {
   val uriHandler = LocalUriHandler.current
   SettingsActionItem(
     painterResource(MR.images.ic_open_in_new),
-    stringResource(MR.strings.how_to_use_your_servers),
+    generalGetString(MR.strings.how_to_use_your_servers),
     { uriHandler.openExternalLink("https://simplex.chat/docs/server.html") },
     textColor = MaterialTheme.colors.primary,
     iconColor = MaterialTheme.colors.primary
