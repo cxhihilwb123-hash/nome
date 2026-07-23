@@ -39,7 +39,6 @@ android {
         debug {
             applicationIdSuffix = rootProject.extra["application_id.suffix"] as String
             isDebuggable = rootProject.extra["enable_debuggable"] as Boolean
-            manifestPlaceholders["app_name"] = rootProject.extra["app.name"] as String
             // Provider can"t be the same for different apps on the same device
             manifestPlaceholders["provider_authorities"] = "chat.simplex.app${rootProject.extra["application_id.suffix"]}.provider"
         }
