@@ -279,6 +279,26 @@ private enum NomeSettingsPalette {
     })
     static let green = Color(red: 22.0 / 255.0, green: 174.0 / 255.0, blue: 102.0 / 255.0)
     static let blue = Color(red: 39.0 / 255.0, green: 107.0 / 255.0, blue: 255.0 / 255.0)
+
+    static func canvas(_ theme: AppTheme) -> Color {
+        theme.colors.background.asGroupedBackground(theme.base.mode)
+    }
+
+    static func surface(_ theme: AppTheme) -> Color {
+        theme.colors.background
+    }
+
+    static func primaryText(_ theme: AppTheme) -> Color {
+        theme.colors.onBackground
+    }
+
+    static func border(_ theme: AppTheme) -> Color {
+        theme.colors.onBackground.opacity(theme.colors.isLight ? 0.08 : 0.22)
+    }
+
+    static func divider(_ theme: AppTheme) -> Color {
+        theme.colors.secondary.opacity(theme.colors.isLight ? 0.18 : 0.30)
+    }
 }
 
 struct SettingsView: View {
@@ -535,7 +555,7 @@ struct SettingsView: View {
                     }
                     .disabled(chatModel.chatRunning != true)
 
-                    Divider().padding(.leading, 52)
+                    Divider().background(NomeSettingsPalette.divider(theme)).padding(.leading, 52)
 
                     NavigationLink {
                         NomeBackupAndMigrationView(
@@ -548,7 +568,7 @@ struct SettingsView: View {
                         NomeSettingsTabRow(icon: "icloud.and.arrow.up", title: "备份与迁移", subtitle: "数据只保存在你的设备上", trailing: nil)
                     }
 
-                    Divider().padding(.leading, 52)
+                    Divider().background(NomeSettingsPalette.divider(theme)).padding(.leading, 52)
 
                     NavigationLink {
                         DatabaseView(dismissSettingsSheet: dismiss, chatItemTTL: chatModel.chatItemTTL)
@@ -558,7 +578,7 @@ struct SettingsView: View {
                         NomeSettingsTabRow(icon: "internaldrive", title: "数据与存储", subtitle: "数据库密码、导出与本地文件", trailing: nil)
                     }
 
-                    Divider().padding(.leading, 52)
+                    Divider().background(NomeSettingsPalette.divider(theme)).padding(.leading, 52)
 
                     NavigationLink {
                         ConnectDesktopView()
@@ -580,7 +600,7 @@ struct SettingsView: View {
                     }
                     .disabled(chatModel.chatRunning != true)
 
-                    Divider().padding(.leading, 52)
+                    Divider().background(NomeSettingsPalette.divider(theme)).padding(.leading, 52)
 
                     NavigationLink {
                         NetworkAndServers()
@@ -619,7 +639,7 @@ struct SettingsView: View {
                         }
                     }
 
-                    Divider().padding(.leading, 52)
+                    Divider().background(NomeSettingsPalette.divider(theme)).padding(.leading, 52)
 
                     NavigationLink {
                         NomeAboutView()
@@ -633,7 +653,7 @@ struct SettingsView: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 98)
         }
-        .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
+        .background(NomeSettingsPalette.canvas(theme).ignoresSafeArea())
     }
     
     private func chatDatabaseRow() -> some View {
@@ -704,15 +724,13 @@ struct SettingsView: View {
 }
 
 private struct NomeSettingsLogoHeader: View {
-    @Environment(\.colorScheme) var colorScheme
-
     var body: some View {
         HStack {
             Spacer()
-            Image(colorScheme == .light ? "logo" : "logo-light")
+            Image("nome_header_logo")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 138, height: 42)
+                .frame(width: 138)
                 .accessibilityHidden(true)
             Spacer()
         }
@@ -722,12 +740,13 @@ private struct NomeSettingsLogoHeader: View {
 
 private struct NomeSettingsHeader: View {
     @Environment(\.colorScheme) var colorScheme
+    @EnvironmentObject var theme: AppTheme
     let user: User?
 
     var body: some View {
         HStack(spacing: 14) {
             if let user {
-                ProfileImage(imageStr: user.image, size: 74, color: Color(uiColor: .tertiarySystemGroupedBackground))
+                ProfileImage(imageStr: user.image, size: 74, color: NomeSettingsPalette.canvas(theme))
             } else {
                 Image(colorScheme == .light ? "icon-light" : "icon-dark")
                     .resizable()
@@ -739,7 +758,7 @@ private struct NomeSettingsHeader: View {
             VStack(alignment: .leading, spacing: 5) {
                 Text("主身份")
                     .font(.title3.weight(.bold))
-                    .foregroundColor(NomeSettingsPalette.navy)
+                    .foregroundColor(NomeSettingsPalette.primaryText(theme))
                     .lineLimit(1)
                 Text(user?.displayName ?? "当前设备上的身份")
                     .font(.subheadline)
@@ -755,16 +774,17 @@ private struct NomeSettingsHeader: View {
         .frame(minHeight: 112)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color(uiColor: .systemBackground))
+                .fill(NomeSettingsPalette.surface(theme))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(Color.black.opacity(0.06), lineWidth: 1)
+                .stroke(NomeSettingsPalette.border(theme), lineWidth: 1)
         )
     }
 }
 
 private struct NomeSettingsActionRow: View {
+    @EnvironmentObject var theme: AppTheme
     let icon: String
     let title: LocalizedStringKey
     let subtitle: LocalizedStringKey
@@ -774,13 +794,13 @@ private struct NomeSettingsActionRow: View {
         HStack(spacing: 14) {
             Image(systemName: icon)
                 .font(.system(size: 22, weight: .medium))
-                .foregroundColor(NomeSettingsPalette.navy)
+                .foregroundColor(NomeSettingsPalette.primaryText(theme))
                 .frame(width: 34, height: 34)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
                     .font(.body.weight(.semibold))
-                    .foregroundColor(NomeSettingsPalette.navy)
+                    .foregroundColor(NomeSettingsPalette.primaryText(theme))
                 Text(subtitle)
                     .font(.caption)
                     .foregroundColor(.secondary)
@@ -804,6 +824,7 @@ private struct NomeSettingsActionRow: View {
 }
 
 private struct NomeSettingsTabSection<Content: View>: View {
+    @EnvironmentObject var theme: AppTheme
     let title: LocalizedStringKey?
     let content: Content
 
@@ -828,11 +849,11 @@ private struct NomeSettingsTabSection<Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color(uiColor: .systemBackground))
+                    .fill(NomeSettingsPalette.surface(theme))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(Color.black.opacity(0.06), lineWidth: 1)
+                    .stroke(NomeSettingsPalette.border(theme), lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
@@ -840,6 +861,7 @@ private struct NomeSettingsTabSection<Content: View>: View {
 }
 
 private struct NomeSettingsTabRow: View {
+    @EnvironmentObject var theme: AppTheme
     let icon: String
     let title: LocalizedStringKey
     let subtitle: LocalizedStringKey?
@@ -849,13 +871,13 @@ private struct NomeSettingsTabRow: View {
         HStack(spacing: 14) {
             Image(systemName: icon)
                 .font(.system(size: 23, weight: .medium))
-                .foregroundColor(NomeSettingsPalette.navy)
+                .foregroundColor(NomeSettingsPalette.primaryText(theme))
                 .frame(width: 38, height: 46)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.body.weight(.semibold))
-                    .foregroundColor(NomeSettingsPalette.navy)
+                    .foregroundColor(NomeSettingsPalette.primaryText(theme))
                 if let subtitle {
                     Text(subtitle)
                         .font(.caption)
@@ -1025,21 +1047,21 @@ private struct NomeBackupAndMigrationView: View {
 }
 
 private struct NomeAboutView: View {
-    @Environment(\.colorScheme) var colorScheme
+    @EnvironmentObject var theme: AppTheme
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 VStack(alignment: .center, spacing: 16) {
-                    Image(colorScheme == .light ? "logo" : "logo-light")
+                    Image("nome_header_logo")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 150, height: 46)
+                        .frame(width: 150)
                         .accessibilityHidden(true)
 
                     Text("私密连接，简单使用")
                         .font(.title3.weight(.bold))
-                        .foregroundColor(NomeSettingsPalette.navy)
+                        .foregroundColor(NomeSettingsPalette.primaryText(theme))
                         .multilineTextAlignment(.center)
 
                     Text("Nome 是一款重视隐私的通信应用，把连接、身份和备份说得更清楚。")
@@ -1052,11 +1074,11 @@ private struct NomeAboutView: View {
                 .frame(maxWidth: .infinity)
                 .background(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Color(uiColor: .systemBackground))
+                        .fill(NomeSettingsPalette.surface(theme))
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .stroke(Color.black.opacity(0.06), lineWidth: 1)
+                        .stroke(NomeSettingsPalette.border(theme), lineWidth: 1)
                 )
 
                 NomeAboutSection(title: "版本") {

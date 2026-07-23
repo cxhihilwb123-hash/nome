@@ -964,7 +964,7 @@ private struct NomeHomeHeader: View {
     var body: some View {
         HStack {
             NomeBrandLockup()
-                .frame(width: 104, height: 38, alignment: .leading)
+                .frame(width: 104, alignment: .leading)
                 .accessibilityHidden(true)
 
             Spacer(minLength: 12)
@@ -981,61 +981,10 @@ private struct NomeHomeHeader: View {
 }
 
 private struct NomeBrandLockup: View {
-    @Environment(\.colorScheme) private var colorScheme
-
     var body: some View {
-        HStack(spacing: 7) {
-            NomeBrandMark()
-                .frame(width: 34, height: 38)
-
-            Text("Nome")
-                .font(.system(size: 25, weight: .bold, design: .rounded))
-                .foregroundColor(colorScheme == .dark ? .white : NomeHomePalette.brandNavy)
-                .tracking(-0.5)
-        }
-        .fixedSize()
-    }
-}
-
-private struct NomeBrandMark: View {
-    @Environment(\.colorScheme) private var colorScheme
-
-    var body: some View {
-        ZStack {
-            NomeBrandMarkShape()
-                .fill(colorScheme == .dark ? Color.white : NomeHomePalette.brandNavy)
-
-            NomeBrandMarkShape()
-                .fill(NomeHomePalette.action)
-                .mask(alignment: .trailing) {
-                    Rectangle()
-                        .frame(width: 17)
-                }
-
-            Image(systemName: "infinity")
-                .font(.system(size: 16, weight: .heavy))
-                .foregroundColor(colorScheme == .dark ? NomeHomePalette.brandNavy : .white)
-                .offset(y: -1)
-        }
-    }
-}
-
-private struct NomeBrandMarkShape: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: rect.minX + rect.width * 0.12, y: rect.minY + rect.height * 0.18))
-        path.addLine(to: CGPoint(x: rect.midX, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.maxX - rect.width * 0.10, y: rect.minY + rect.height * 0.18))
-        path.addLine(to: CGPoint(x: rect.maxX - rect.width * 0.13, y: rect.minY + rect.height * 0.62))
-        path.addQuadCurve(
-            to: CGPoint(x: rect.midX, y: rect.maxY - rect.height * 0.04),
-            control: CGPoint(x: rect.maxX - rect.width * 0.20, y: rect.maxY - rect.height * 0.16)
-        )
-        path.addLine(to: CGPoint(x: rect.minX + rect.width * 0.34, y: rect.maxY - rect.height * 0.18))
-        path.addLine(to: CGPoint(x: rect.minX + rect.width * 0.08, y: rect.maxY - rect.height * 0.08))
-        path.addLine(to: CGPoint(x: rect.minX + rect.width * 0.17, y: rect.minY + rect.height * 0.61))
-        path.closeSubpath()
-        return path
+        Image("nome_header_logo")
+            .resizable()
+            .scaledToFit()
     }
 }
 
@@ -1454,18 +1403,6 @@ struct TagsView: View {
     @ViewBuilder private func tagsView() -> some View {
         allChatsFilterView()
 
-        if chatTagsModel.presetTags.count > 1 {
-            if chatTagsModel.presetTags.count + chatTagsModel.userTags.count <= 3 {
-                expandedPresetTagsFiltersView()
-            } else {
-                collapsedTagsFilterView()
-                ForEach(PresetTag.allCases, id: \.id) { (tag: PresetTag) in
-                    if !tag.сollapse && (chatTagsModel.presetTags[tag] ?? 0) > 0 {
-                        expandedTagFilterView(tag)
-                    }
-                }
-            }
-        }
         let selectedTag: ChatTag? = if case let .userTag(tag) = chatTagsModel.activeFilter {
             tag
         } else {

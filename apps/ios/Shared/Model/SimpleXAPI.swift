@@ -802,6 +802,123 @@ func getUserServers() async throws -> [UserOperatorServers] {
     throw r.unexpected
 }
 
+enum NomeServerConfiguration {
+    static let smpServer = configuredAddress(key: "NomeSMPServer", requiredScheme: "smp://")
+    static let xftpServer = configuredAddress(key: "NomeXFTPServer", requiredScheme: "xftp://")
+
+    static var isConfigured: Bool {
+        smpServer != nil && xftpServer != nil
+    }
+
+    private static func configuredAddress(key: String, requiredScheme: String) -> String? {
+        guard let value = Bundle.main.object(forInfoDictionaryKey: key) as? String else {
+            return nil
+        }
+        let address = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard address.hasPrefix(requiredScheme), !address.contains("$(") else {
+            return nil
+        }
+        return address
+    }
+}
+
+@discardableResult
+func applyNomeOfficialServersIfConfigured() async -> Bool {
+    guard
+        let smpServer = NomeServerConfiguration.smpServer,
+        let xftpServer = NomeServerConfiguration.xftpServer,
+        ChatModel.shared.currentUser != nil
+    else {
+        return false
+    }
+
+    do {
+        var userServers = try await getUserServers()
+        var changed = false
+
+        for operatorIndex in userServers.indices where userServers[operatorIndex].operator != nil {
+            if userServers[operatorIndex].operator?.enabled == true {
+                userServers[operatorIndex].operator?.enabled = false
+                changed = true
+            }
+            if userServers[operatorIndex].operator?.smpRoles != ServerRoles(storage: false, proxy: false) {
+                userServers[operatorIndex].operator?.smpRoles = ServerRoles(storage: false, proxy: false)
+                changed = true
+            }
+            if userServers[operatorIndex].operator?.xftpRoles != ServerRoles(storage: false, proxy: false) {
+                userServers[operatorIndex].operator?.xftpRoles = ServerRoles(storage: false, proxy: false)
+                changed = true
+            }
+            for serverIndex in userServers[operatorIndex].smpServers.indices where userServers[operatorIndex].smpServers[serverIndex].enabled {
+                userServers[operatorIndex].smpServers[serverIndex].enabled = false
+                changed = true
+            }
+            for serverIndex in userServers[operatorIndex].xftpServers.indices where userServers[operatorIndex].xftpServers[serverIndex].enabled {
+                userServers[operatorIndex].xftpServers[serverIndex].enabled = false
+                changed = true
+            }
+        }
+
+        let customIndex: Int
+        if let existingIndex = userServers.firstIndex(where: { $0.operator == nil }) {
+            customIndex = existingIndex
+        } else {
+            userServers.append(UserOperatorServers(operator: nil, smpServers: [], xftpServers: [], chatRelays: []))
+            customIndex = userServers.index(before: userServers.endIndex)
+            changed = true
+        }
+
+        changed = enableNomeServer(smpServer, in: &userServers[customIndex].smpServers) || changed
+        changed = enableNomeServer(xftpServer, in: &userServers[customIndex].xftpServers) || changed
+
+        guard changed else {
+            return true
+        }
+
+        let (serverErrors, _) = try await validateServers(userServers: userServers)
+        guard serverErrors.isEmpty else {
+            logger.error("Nome official server configuration did not pass validation")
+            return false
+        }
+
+        try await setUserServers(userServers: userServers)
+        logger.info("Nome official message and file servers are active; preset operators are disabled")
+        return true
+    } catch {
+        logger.error("Nome official server configuration could not be applied")
+        return false
+    }
+}
+
+private func enableNomeServer(_ address: String, in servers: inout [UserServer]) -> Bool {
+    if let index = servers.firstIndex(where: {
+        $0.server.trimmingCharacters(in: .whitespacesAndNewlines) == address
+    }) {
+        var changed = false
+        if !servers[index].enabled {
+            servers[index].enabled = true
+            changed = true
+        }
+        if servers[index].deleted {
+            servers[index].deleted = false
+            changed = true
+        }
+        return changed
+    }
+
+    servers.append(
+        UserServer(
+            serverId: nil,
+            server: address,
+            preset: false,
+            tested: nil,
+            enabled: true,
+            deleted: false
+        )
+    )
+    return true
+}
+
 func setUserServers(userServers: [UserOperatorServers]) async throws {
     let userId = try currentUserId("setUserServers")
     let r: ChatResponse2 = try await chatSendCmd(.apiSetUserServers(userId: userId, userServers: userServers))
@@ -2154,12 +2271,18 @@ func initializeChat(start: Bool, confirmStart: Bool = false, dbKey: String? = ni
             do {
                 if start { AppChatState.shared.set(.active) }
                 try chatInitialized(start: start, refreshInvitations: refreshInvitations)
+                Task {
+                    await applyNomeOfficialServersIfConfigured()
+                }
             } catch let error {
                 logger.error("ChatInitialized error: \(error)")
             }
         }
     } else {
         try chatInitialized(start: start, refreshInvitations: refreshInvitations)
+        Task {
+            await applyNomeOfficialServersIfConfigured()
+        }
     }
 }
 

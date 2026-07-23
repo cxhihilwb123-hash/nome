@@ -158,10 +158,26 @@ struct ChatPreviewView: View {
             ChatInfoImage(chat: chat, size: nomeCompactAvatarSize)
 
             VStack(alignment: .leading, spacing: 1) {
-                Text(chat.chatInfo.chatViewName)
-                    .font(.system(size: nomeCompactTitleSize, weight: .medium))
-                    .foregroundColor(.primary)
-                    .lineLimit(1)
+                HStack(spacing: 6) {
+                    Text(chat.chatInfo.chatViewName)
+                        .font(.system(size: nomeCompactTitleSize, weight: .medium))
+                        .foregroundColor(theme.colors.onBackground)
+                        .lineLimit(1)
+
+                    if case .group = chat.chatInfo {
+                        HStack(spacing: 3) {
+                            Image(systemName: "person.2.fill")
+                            Text("群")
+                        }
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(nomeAction)
+                        .padding(.horizontal, 6)
+                        .frame(height: 18)
+                        .background(Capsule().fill(nomeAction.opacity(0.11)))
+                        .fixedSize()
+                        .accessibilityLabel(Text("群聊"))
+                    }
+                }
 
                 Text(compactPreviewText(cItem))
                     .font(.system(size: nomeCompactSupportingSize, weight: .regular))
