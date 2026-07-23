@@ -1,0 +1,61 @@
+NOME ANDROID UI FIX BATCH 01 CHECKPOINT
+Date: 2026-07-23
+Status: IMPLEMENTATION COMPLETE; TWO-DEVICE FUNCTIONAL REGRESSION PASS; PIXEL/INSTRUMENTATION GAPS RECORDED
+
+Repository: /Users/forkman03/project/nome/simplex-chat
+Branch: codex/nome-android-v656
+HEAD: 6a01efa5e6d10dc0743cdf82dfb69e09cc459862
+Official v6.5.6 baseline: 59fce95d3cd08897b4ef742447b785cf2e56c7ce
+Baseline ancestor of HEAD: yes
+
+Implemented:
+- UI-001 P07 shared bottom navigation restored.
+- UI-002 P07 ChatBubbleOutline replaced by approved Nome lockup.
+- UI-003 91 x 37 RGB bitmap replaced by 700 x 285 RGBA resources.
+- UI-005 day/night transparent resources added; fixed 700:285 Fit renderer used.
+- UI-006 P07/P22/P23 share the same Home/Contacts/Settings bar and selection model.
+- Android-only P23/P22 callbacks close the correct modal stack; P22 top/system back share one close path.
+- Selectable semantics remain outside sizing modifiers; the shared component also applies navigation-bar inset padding.
+- After protected-screen user review, P07 and P23 header Logo width was increased from 66 dp to 84 dp; the shared 700:285 renderer preserves an approximately 84 x 34 dp aspect ratio.
+
+Build/test:
+- Android debug compile/assemble: PASS.
+- Android test APK compile/assemble: PASS.
+- Desktop compile boundary: PASS.
+- JVM tests: PASS, 54/54.
+- release lint: PASS, 0 Error/Fatal; 68 warnings, none on changed paths.
+- git diff --check: PASS.
+- post-review 84 dp Logo assemble/test/lint gates: PASS.
+- final arm64 APK SHA256: a71382e0c8af08143acf5b7efcaea0f087185684ad74a5a1d2f9787a4def757b
+- Android test APK SHA256: 969d4ad6c0786b4f79ca9b03aab29292f7a284b1d74c5b9ac343fb0af6dabb4b
+
+Device evidence obtained:
+- Final APK cafa19c0 installed on both Vivo devices.
+- Both devices: cold launch, P07 Home/Contacts/Settings, P23 fixed rows, bottom Home, Android Back, P22 fixed content, top Back, and bottom Contacts all reached the expected visible state by real taps.
+- Both devices: zh-CN/en and light/dark fixed labels plus Nome node PASS; both restored to system Chinese, empty per-app locale override, and light.
+- P22 top Back measured exactly 48 dp on both: 126 px at 420 dpi and 144 px at 480 dpi.
+- Final 84 dp Logo APK installed on both; fresh cold P07 and real P07 -> P23 -> P07 taps PASS.
+- P07 Logo measured 221 x 90 px on V2048A and 252 x 103 px on V2047A, matching approximately 84 x 34 dp without stretch.
+- All batch-owned /sdcard/nome_batch01_*.xml files were deleted from both devices.
+
+Evidence gaps:
+- Screenshot/recording protection stayed enabled, so pixel-level Logo sharpness/background screenshots are intentionally absent.
+- Approved 700 x 285 RGBA resources and non-sensitive light/dark composites pass offline inspection.
+- The Android test APK installed on both. On both devices the runner entered the focused navigation method, but Vivo did not launch the test Activity; no assertion result was emitted and both stalls were manually stopped.
+- Vivo UIAutomator clips bottom nodes against its OEM root bounds (112 px on V2048A, 135 px on V2047A). Source declares a full-height 76 dp selectable with a 48 dp minimum and real taps pass, but direct Compose-boundary proof remains blocked by the instrumentation issue.
+
+Frozen evidence:
+- 20260723 full UI audit SHA256 manifest: PASS after implementation.
+- 20260722 feature validation SHA256 manifest: PASS after implementation.
+- No frozen evidence was overwritten.
+
+Repository boundary:
+- staged index: must remain empty.
+- .gradle-review: must remain untracked.
+- historical apps/multiplatform/android/src/debug/AndroidManifest.xml SHA256 remains b6aa278d102675e777a4a0eac66cb9fd049209bb1998cdab247dfc7b56d792f3.
+- no commit, push, signing, release, reset, clean, or stash.
+
+Evidence directory:
+plans/evidence/20260723_nome_android_ui_fix_batch_01/
+
+Next decision: user visually inspects the final 84 dp protected-screen Logo quality; if accepted, create a carefully scoped local commit only after explicit authorization. Do not push.

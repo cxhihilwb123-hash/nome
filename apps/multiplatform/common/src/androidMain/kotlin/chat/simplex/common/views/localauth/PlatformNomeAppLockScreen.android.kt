@@ -1,7 +1,6 @@
 package chat.simplex.common.views.localauth
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,13 +28,13 @@ import androidx.compose.material.icons.rounded.Security
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import chat.simplex.common.R
+import chat.simplex.common.ui.nome.components.NomeBrandLockup
 import chat.simplex.common.ui.nome.components.NomeButton
 import chat.simplex.common.ui.nome.components.NomeButtonVariant
 import chat.simplex.common.ui.nome.theme.NomeTheme
@@ -66,10 +65,9 @@ internal actual fun PlatformNomeAppLockScreen(
     horizontalAlignment = Alignment.CenterHorizontally,
   ) {
     Spacer(Modifier.height(4.dp))
-    Image(
-      painter = painterResource(R.drawable.nome_header_logo),
+    NomeBrandLockup(
       contentDescription = stringResource(R.string.nome_brand_logo_description),
-      modifier = Modifier.width(68.dp).height(28.dp),
+      modifier = Modifier.width(68.dp),
     )
     Spacer(Modifier.height(56.dp))
     Surface(

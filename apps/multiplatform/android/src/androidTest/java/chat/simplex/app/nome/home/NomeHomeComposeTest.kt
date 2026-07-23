@@ -12,7 +12,9 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
@@ -20,6 +22,8 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -30,6 +34,7 @@ import chat.simplex.common.model.ChatInfo
 import chat.simplex.common.model.ChatListLoadGeneration
 import chat.simplex.common.model.ChatListLoadState
 import chat.simplex.common.model.ChatModel
+import chat.simplex.common.model.ChatTag
 import chat.simplex.common.model.User
 import chat.simplex.common.model.UserNetworkInfo
 import chat.simplex.common.model.UserNetworkType
@@ -40,6 +45,7 @@ import chat.simplex.common.ui.nome.home.NomeHomeCoreState
 import chat.simplex.common.ui.nome.home.NomeHomeState
 import chat.simplex.common.ui.nome.home.NomeHomeStateAdapter
 import chat.simplex.common.ui.nome.home.NomeHomeTruthInput
+import chat.simplex.common.ui.nome.components.NomePrimaryDestination
 import chat.simplex.common.ui.nome.theme.NomeAndroidTheme
 import chat.simplex.common.views.chatlist.NomeHomeRouteContent
 import chat.simplex.common.views.chatlist.nomeHomeRouteProjection
@@ -107,6 +113,176 @@ class NomeHomeComposeTest {
           LiveRegionMode.Polite,
         ),
       )
+  }
+
+  @Test
+  fun primaryNavigationExposesThreeTabsAndDispatchesRealDestinations() {
+    val target = InstrumentationRegistry.getInstrumentation().targetContext
+    val selected = mutableStateOf(NomePrimaryDestination.HOME)
+    var home = 0
+    var contacts = 0
+    var settings = 0
+    composeRule.setContent {
+      NomeAndroidTheme(darkTheme = false) {
+        NomeHomeRouteContent(
+          chatModel = ChatModel,
+          state = state(content = NomeHomeContentState.TRUE_EMPTY),
+          selectedDestination = selected.value,
+          onOpenHome = {
+            home++
+            selected.value = NomePrimaryDestination.HOME
+          },
+          onOpenContacts = {
+            contacts++
+            selected.value = NomePrimaryDestination.CONTACTS
+          },
+          onOpenSettings = {
+            settings++
+            selected.value = NomePrimaryDestination.SETTINGS
+          },
+        )
+      }
+    }
+
+    val homeTab =
+      composeRule.onNodeWithContentDescription(
+        target.getString(R.string.nome_primary_nav_home),
+      )
+    val contactsTab =
+      composeRule.onNodeWithContentDescription(
+        target.getString(R.string.nome_primary_nav_contacts),
+      )
+    val settingsTab =
+      composeRule.onNodeWithContentDescription(
+        target.getString(R.string.nome_primary_nav_settings),
+      )
+
+    homeTab.assertIsDisplayed().assertIsSelected().assertHeightIsEqualTo(64.dp)
+    contactsTab.assertIsDisplayed().assertHasClickAction().assertHeightIsEqualTo(64.dp).performClick()
+    contactsTab.assertIsSelected()
+    composeRule.onNodeWithText(
+      target.getString(R.string.nome_contacts_subtitle),
+    ).assertIsDisplayed()
+    composeRule.onNodeWithContentDescription(
+      target.getString(R.string.nome_contacts_search),
+    ).assertIsDisplayed()
+    homeTab.performClick().assertIsSelected()
+    composeRule.onNodeWithText(
+      target.getString(R.string.nome_home_subtitle),
+    ).assertIsDisplayed()
+    composeRule.onNodeWithContentDescription(
+      target.getString(R.string.nome_home_search),
+    ).assertIsDisplayed()
+    settingsTab.assertIsDisplayed().assertHasClickAction().assertHeightIsEqualTo(64.dp).performClick()
+    settingsTab.assertIsSelected()
+
+    composeRule.runOnIdle {
+      assertEquals(1, home)
+      assertEquals(1, contacts)
+      assertEquals(1, settings)
+    }
+  }
+
+  @Test
+  fun customListsAreSelectableManageableAndHiddenFromContacts() {
+    val target = InstrumentationRegistry.getInstrumentation().targetContext
+    val destination = mutableStateOf(NomePrimaryDestination.HOME)
+    val selectedListId = mutableStateOf<Long?>(null)
+    val work = ChatTag(
+      chatTagId = 41L,
+      chatTagText = "Work",
+      chatTagEmoji = "💼",
+    )
+    var addList = 0
+    var manageLists = 0
+    composeRule.setContent {
+      NomeAndroidTheme(darkTheme = false) {
+        NomeHomeRouteContent(
+          chatModel = ChatModel,
+          state = state(content = NomeHomeContentState.TRUE_EMPTY),
+          selectedDestination = destination.value,
+          userLists = listOf(work),
+          allListsSelected = selectedListId.value == null,
+          selectedUserListId = selectedListId.value,
+          onSelectAllLists = {
+            selectedListId.value = null
+          },
+          onSelectUserList = { tag ->
+            selectedListId.value =
+              if (selectedListId.value == tag.chatTagId) null else tag.chatTagId
+          },
+          onAddUserList = {
+            addList++
+          },
+          onManageUserList = { tag ->
+            assertEquals(work.chatTagId, tag.chatTagId)
+            manageLists++
+          },
+        )
+      }
+    }
+
+    val allLabel =
+      target.getString(
+        R.string.nome_home_list_filter,
+        target.getString(R.string.nome_home_list_all),
+      )
+    val workLabel =
+      target.getString(
+        R.string.nome_home_list_filter,
+        work.chatTagText,
+      )
+    val addLabel = target.getString(R.string.nome_home_add_list)
+    val manageLabel = target.getString(R.string.nome_home_manage_lists)
+
+    composeRule.onNodeWithContentDescription(allLabel)
+      .assertIsDisplayed()
+      .assertIsSelected()
+      .assertHeightIsAtLeast(48.dp)
+    composeRule.onNodeWithContentDescription(addLabel)
+      .assertIsDisplayed()
+      .assertHasClickAction()
+      .assertHeightIsAtLeast(48.dp)
+      .performClick()
+    composeRule.onNodeWithContentDescription(workLabel)
+      .assertIsDisplayed()
+      .assertHasClickAction()
+      .assertHeightIsAtLeast(48.dp)
+      .performClick()
+      .assertIsSelected()
+      .performTouchInput {
+        longClick()
+      }
+    composeRule.onNodeWithText(
+      target.getString(R.string.nome_home_selected_list_subtitle),
+    ).assertIsDisplayed()
+    composeRule.onNodeWithContentDescription(
+      target.getString(R.string.nome_home_selected_list_search),
+    ).assertIsDisplayed()
+    composeRule.onAllNodesWithContentDescription(addLabel).assertCountEquals(0)
+    composeRule.onNodeWithContentDescription(manageLabel)
+      .assertIsDisplayed()
+      .assertHasClickAction()
+      .assertHeightIsAtLeast(48.dp)
+      .performClick()
+
+    composeRule.runOnIdle {
+      assertEquals(work.chatTagId, selectedListId.value)
+      assertEquals(2, manageLists)
+      assertEquals(1, addList)
+      destination.value = NomePrimaryDestination.CONTACTS
+    }
+
+    composeRule.onAllNodesWithContentDescription(allLabel).assertCountEquals(0)
+    composeRule.onAllNodesWithContentDescription(workLabel).assertCountEquals(0)
+    composeRule.onAllNodesWithContentDescription(addLabel).assertCountEquals(0)
+    composeRule.onAllNodesWithContentDescription(manageLabel).assertCountEquals(0)
+    composeRule.onNodeWithText(
+      target.getString(R.string.nome_contacts_subtitle),
+    ).assertIsDisplayed()
+    composeRule.onNodeWithContentDescription(
+      target.getString(R.string.nome_contacts_search),
+    ).assertIsDisplayed()
   }
 
   @Test
@@ -309,7 +485,7 @@ class NomeHomeComposeTest {
   }
 
   @Test
-  fun contactCardAndConnectionRowsExposeNoNavigationAction() {
+  fun readOnlyRowsExposeOnlySupportedMenuActions() {
     val target = InstrumentationRegistry.getInstrumentation().targetContext
     val direct = Chat.sampleData.chatInfo as ChatInfo.Direct
     val contactCard = Chat(
@@ -329,37 +505,44 @@ class NomeHomeComposeTest {
       chatInfo = ChatInfo.ContactConnection.getSampleData(),
       chatItems = emptyList(),
     )
-    val cases = listOf(
-      contactCard to R.string.nome_home_direct_chat,
-      contactConnection to R.string.nome_home_connection_pending,
-    )
-
     composeRule.setContent {
       NomeAndroidTheme(darkTheme = false) {
         NomeHomeRouteContent(
           chatModel = ChatModel,
           state = state(
             content = NomeHomeContentState.POPULATED,
-            chats = cases.map { it.first },
+            chats = listOf(contactCard, contactConnection),
           ),
           showChatPreviews = true,
         )
       }
     }
 
-    for ((chat, previewResource) in cases) {
-      composeRule.onNodeWithContentDescription(
-        target.getString(
-          R.string.nome_home_read_only_chat,
-          chat.chatInfo.chatViewName,
-          target.getString(previewResource),
-          getTimestampText(chat.chatInfo.chatTs),
-        ),
-      )
-        .assertHeightIsAtLeast(48.dp)
-        .assert(SemanticsMatcher.keyNotDefined(SemanticsActions.OnClick))
-        .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Role))
-    }
+    composeRule.onNodeWithContentDescription(
+      target.getString(
+        R.string.nome_home_read_only_chat,
+        contactCard.chatInfo.chatViewName,
+        target.getString(R.string.nome_home_direct_chat),
+        getTimestampText(contactCard.chatInfo.chatTs),
+      ),
+    )
+      .assertHeightIsAtLeast(48.dp)
+      .assert(SemanticsMatcher.keyNotDefined(SemanticsActions.OnClick))
+      .assert(SemanticsMatcher.keyNotDefined(SemanticsActions.CustomActions))
+      .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Role))
+
+    composeRule.onNodeWithContentDescription(
+      target.getString(
+        R.string.nome_home_read_only_chat,
+        contactConnection.chatInfo.chatViewName,
+        target.getString(R.string.nome_home_connection_pending),
+        getTimestampText(contactConnection.chatInfo.chatTs),
+      ),
+    )
+      .assertHeightIsAtLeast(48.dp)
+      .assert(SemanticsMatcher.keyNotDefined(SemanticsActions.OnClick))
+      .assert(SemanticsMatcher.keyIsDefined(SemanticsActions.CustomActions))
+      .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Role))
   }
 
   @Test

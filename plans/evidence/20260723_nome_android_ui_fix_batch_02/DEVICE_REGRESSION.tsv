@@ -1,0 +1,8 @@
+device_serial	model	density	build	check	result	evidence_or_gap
+3106403166006XM	V2048A	physical 480 / override 420	APK 3b8e8a31	composer single-line alignment	PASS	EditText [158,1267][1059,1393] and send target [949,1267][1075,1393]; both 126 px = 48 dp; center y 1330; delta 0 dp
+9590146717002S1	V2047A	physical 480	APK 3b8e8a31	composer single-line alignment	PASS	EditText [180,1290][1056,1434] and send target [930,1290][1074,1434]; both 144 px = 48 dp; center y 1362; delta 0 dp
+3106403166006XM	V2048A	physical 480 / override 420	APK 3b8e8a31	Home pending connection long press	PASS	real long press exposed fixed Set contact name and Delete menu labels; no action selected
+3106403166006XM	V2048A	physical 480 / override 420	APK 3b8e8a31	Contacts pending connection long press	PASS	real Contacts tap plus pending-row long press exposed the same fixed menu labels; no action selected
+9590146717002S1	V2047A	physical 480	APK 3b8e8a31	Home pending connection long press and cancel	PASS	real long press exposed the fixed menu; existing delete confirmation was reached, Android Back canceled it, dialog closed, and pending connection remained present
+both	V2048A + V2047A	high density	APK 3b8e8a31	cursor pixel appearance	GAP	screenshot protection remained enabled; native field/target geometry is proven, but caret glyph pixels require user-visible confirmation
+

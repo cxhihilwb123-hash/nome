@@ -221,29 +221,67 @@ fun SettingsLayout(
       remember {
         appPrefs.appLanguage.state
       }.value ?: "system",
-    onOpenIdentity = {
-      showSettingsModalWithSearch { m, search ->
-        val profileHidden =
-          rememberSaveable {
-            mutableStateOf(false)
+    onOpenIdentity =
+      if (appPlatform == AppPlatform.ANDROID) {
+        showCustomModal { m, close ->
+          val search = rememberSaveable { mutableStateOf("") }
+          val profileHidden =
+            rememberSaveable {
+              mutableStateOf(false)
+            }
+          UserProfilesView(
+            m,
+            search,
+            profileHidden,
+            onClose = close,
+            onOpenHome = {
+              m.activeChatTagFilter.value = null
+              ModalManager.start.closeModals()
+            },
+            onOpenContacts = {
+              m.activeChatTagFilter.value =
+                ActiveFilter.PresetTag(
+                  PresetTagKind.CONTACTS,
+                )
+              ModalManager.start.closeModals()
+            },
+          ) { block ->
+            withAuth(
+              generalGetString(
+                MR.strings.auth_open_chat_profiles,
+              ),
+              generalGetString(
+                MR.strings.auth_log_in_using_credential,
+              ),
+              block,
+            )
           }
-        UserProfilesView(
-          m,
-          search,
-          profileHidden,
-        ) { block ->
-          withAuth(
-            generalGetString(
-              MR.strings.auth_open_chat_profiles,
-            ),
-            generalGetString(
-              MR.strings.auth_log_in_using_credential,
-            ),
-            block,
-          )
         }
-      }
-    },
+      } else {
+        {
+          showSettingsModalWithSearch { m, search ->
+            val profileHidden =
+              rememberSaveable {
+                mutableStateOf(false)
+              }
+            UserProfilesView(
+              m,
+              search,
+              profileHidden,
+            ) { block ->
+              withAuth(
+                generalGetString(
+                  MR.strings.auth_open_chat_profiles,
+                ),
+                generalGetString(
+                  MR.strings.auth_log_in_using_credential,
+                ),
+                block,
+              )
+            }
+          }
+        }
+      },
     onOpenNotifications = openNotifications,
     onOpenBackupMigration = openBackupMigration,
     onOpenDesktop = {
@@ -407,7 +445,7 @@ fun SettingsLayout(
             painterResource(
               MR.images.ic_info,
             ),
-            stringResource(
+            generalGetString(
               MR.strings.about_simplex_chat,
             ),
             openAbout,
@@ -447,7 +485,7 @@ fun SettingsLayout(
         SectionDividerSpaced()
 
         SectionView(
-          stringResource(
+          generalGetString(
             MR.strings.settings_section_title_support,
           ),
         ) {
@@ -528,7 +566,7 @@ fun ChatLockItem(
   SettingsActionItemWithContent(
     click = showSettingsModal { SimplexLockView(ChatModel, currentLAMode, setPerformLA) },
     icon = if (performLA.value) painterResource(MR.images.ic_lock_filled) else painterResource(MR.images.ic_lock),
-    text = stringResource(MR.strings.chat_lock),
+    text = generalGetString(MR.strings.chat_lock),
     iconColor = if (performLA.value) SimplexGreen else MaterialTheme.colors.secondary
   ) {
     Text(if (performLA.value) remember { currentLAMode.state }.value.text else generalGetString(MR.strings.la_mode_off), color = MaterialTheme.colors.secondary)

@@ -561,7 +561,7 @@ fun SimplexLockView(
   }
 
   ColumnWithScrollBar {
-    AppBarTitle(stringResource(MR.strings.chat_lock))
+    AppBarTitle(generalGetString(MR.strings.chat_lock))
     SectionView {
       EnableLock(remember { appPrefs.performLA.state }) { performLAToggle ->
         showAuthScreen.value = performLAToggle

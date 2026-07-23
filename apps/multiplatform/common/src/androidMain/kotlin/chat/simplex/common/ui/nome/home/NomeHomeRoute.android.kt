@@ -4,18 +4,21 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Divider
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.ChatBubbleOutline
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.runtime.Composable
@@ -32,14 +35,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import chat.simplex.common.R
@@ -49,10 +55,15 @@ import chat.simplex.common.model.ChatInfo
 import chat.simplex.common.model.ChatListLoadState
 import chat.simplex.common.model.ChatModel
 import chat.simplex.common.model.ChatController
+import chat.simplex.common.model.ChatTag
 import chat.simplex.common.model.getTimestampText
+import chat.simplex.common.platform.BackHandler
 import chat.simplex.common.ui.nome.accessibility.nomeMinimumTouchTarget
 import chat.simplex.common.ui.nome.accessibility.nomeTalkBackSemantics
 import chat.simplex.common.ui.nome.accessibility.NomeFocusRestoration
+import chat.simplex.common.ui.nome.components.NomeBrandLockup
+import chat.simplex.common.ui.nome.components.NomePrimaryBottomNavigation
+import chat.simplex.common.ui.nome.components.NomePrimaryDestination
 import chat.simplex.common.ui.nome.components.NomeStatePanel
 import chat.simplex.common.ui.nome.components.NomeStatePanelState
 import chat.simplex.common.ui.nome.components.NomeSurface
@@ -69,10 +80,13 @@ import chat.simplex.common.ui.nome.theme.NomeTheme
 import chat.simplex.common.ui.theme.CurrentColors
 import chat.simplex.common.views.helpers.AnimatedViewState
 import chat.simplex.common.views.helpers.DefaultDropdownMenu
+import chat.simplex.common.views.helpers.ModalManager
 import chat.simplex.common.views.helpers.tryOrShowError
 import chat.simplex.common.views.onboarding.SetNotificationsModeAdditions
 import chat.simplex.common.views.contacts.onRequestAccepted
+import chat.simplex.common.views.usersettings.SettingsView
 import chat.simplex.res.MR
+import dev.icerock.moko.resources.compose.painterResource
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -100,6 +114,15 @@ actual fun PlatformHomeRoute(
   )
   val hasActiveFilter =
     activeFilter != null || searchQuery.value.isNotBlank()
+  val primaryDestination =
+    if (
+      activeFilter is ActiveFilter.PresetTag &&
+        activeFilter.tag == PresetTagKind.CONTACTS
+    ) {
+      NomePrimaryDestination.CONTACTS
+    } else {
+      NomePrimaryDestination.HOME
+    }
   val (baseChats, visibleChats) = nomeHomeRouteProjection(
     allChats = allChats,
     upstreamVisibleChats = upstreamVisibleChats,
@@ -197,6 +220,10 @@ actual fun PlatformHomeRoute(
       NomeHomeRouteContent(
         chatModel = chatModel,
         state = state,
+        userLists = chatModel.userTags.value,
+        allListsSelected = activeFilter == null,
+        selectedUserListId =
+          (activeFilter as? ActiveFilter.UserTag)?.tag?.chatTagId,
         onOpenProfile = {
           userPickerState.value = AnimatedViewState.VISIBLE
         },
@@ -211,6 +238,52 @@ actual fun PlatformHomeRoute(
               userPickerState.value = AnimatedViewState.VISIBLE
             },
           )
+        },
+        selectedDestination = primaryDestination,
+        onOpenHome = {
+          chatModel.activeChatTagFilter.value = null
+        },
+        onOpenContacts = {
+          chatModel.activeChatTagFilter.value =
+            ActiveFilter.PresetTag(PresetTagKind.CONTACTS)
+        },
+        onOpenSettings = {
+          ModalManager.start.showCustomModal { close ->
+            SettingsView(chatModel, setPerformLA, close)
+          }
+        },
+        onSelectAllLists = {
+          chatModel.activeChatTagFilter.value = null
+        },
+        onSelectUserList = { tag ->
+          chatModel.activeChatTagFilter.value =
+            if (
+              chatModel.activeChatTagFilter.value ==
+                ActiveFilter.UserTag(tag)
+            ) {
+              null
+            } else {
+              ActiveFilter.UserTag(tag)
+            }
+        },
+        onAddUserList = {
+          ModalManager.start.showCustomModal { close ->
+            TagListEditor(
+              rhId = chatModel.remoteHostId(),
+              close = close,
+            )
+          }
+        },
+        onManageUserList = { tag ->
+          ModalManager.start.showCustomModal { close ->
+            TagListEditor(
+              rhId = chatModel.remoteHostId(),
+              tagId = tag.chatTagId,
+              close = close,
+              emoji = tag.chatTagEmoji,
+              name = tag.chatTagText,
+            )
+          }
         },
       )
     }
@@ -242,10 +315,55 @@ fun NomeHomeRouteContent(
   onOpenProfile: () -> Unit = {},
   onSearch: () -> Unit = {},
   onNewConnection: () -> Unit = {},
+  selectedDestination: NomePrimaryDestination = NomePrimaryDestination.HOME,
+  onOpenHome: () -> Unit = {},
+  onOpenContacts: () -> Unit = {},
+  onOpenSettings: () -> Unit = {},
+  userLists: List<ChatTag> = emptyList(),
+  allListsSelected: Boolean = true,
+  selectedUserListId: Long? = null,
+  onSelectAllLists: () -> Unit = {},
+  onSelectUserList: (ChatTag) -> Unit = {},
+  onAddUserList: () -> Unit = {},
+  onManageUserList: (ChatTag) -> Unit = {},
 ) {
   val dimensions = NomeTheme.dimensions
   val scope = rememberCoroutineScope()
   val pendingDeletionChats = chatModel.deletedChats.value.toSet()
+  val selectedUserList =
+    userLists.firstOrNull { it.chatTagId == selectedUserListId }
+  val isContacts =
+    selectedDestination == NomePrimaryDestination.CONTACTS
+  BackHandler(
+    enabled = isContacts,
+    onBack = onOpenHome,
+  )
+  val pageTitle =
+    when {
+      isContacts -> stringResource(R.string.nome_contacts_title)
+      selectedUserList != null -> selectedUserList.chatTagText
+      else -> stringResource(R.string.nome_home_title)
+    }
+  val pageSubtitle =
+    when {
+      isContacts -> stringResource(R.string.nome_contacts_subtitle)
+      selectedUserList != null ->
+        stringResource(R.string.nome_home_selected_list_subtitle)
+      else -> stringResource(R.string.nome_home_subtitle)
+    }
+  val searchLabel =
+    when {
+      isContacts -> stringResource(R.string.nome_contacts_search)
+      selectedUserList != null ->
+        stringResource(R.string.nome_home_selected_list_search)
+      else -> stringResource(R.string.nome_home_search)
+    }
+  val sectionTitle =
+    if (isContacts) {
+      stringResource(R.string.nome_contacts_section)
+    } else {
+      stringResource(R.string.nome_home_section_chats)
+    }
   val openChat: (Chat) -> Unit = { capturedChat ->
     resolveOpenableNomeHomeChat(chatModel, capturedChat)?.let { currentChat ->
       if (onOpenChat != null) {
@@ -300,131 +418,172 @@ fun NomeHomeRouteContent(
     }
   }
 
-  Box(
+  Column(
     modifier = Modifier
       .fillMaxSize()
       .background(NomeTheme.colors.background)
       .windowInsetsPadding(WindowInsets.safeDrawing),
   ) {
-    LazyColumn(
-      modifier = Modifier.fillMaxSize(),
-      contentPadding = PaddingValues(
-        start = dimensions.screenHorizontalInset,
-        top = dimensions.space12,
-        end = dimensions.screenHorizontalInset,
-        bottom = 96.dp,
-      ),
-      verticalArrangement = Arrangement.spacedBy(dimensions.space12),
+    Box(
+      modifier =
+        Modifier
+          .weight(1f)
+          .fillMaxWidth(),
     ) {
-      item {
-        NomeHomeHeader(
-          chatModel = chatModel,
-          profileNameOverride = profileNameOverride,
-          onOpenProfile = onOpenProfile,
-        )
-      }
-      item {
-        Text(
-          text = stringResource(R.string.nome_home_title),
-          modifier = Modifier.semantics { heading() },
-          style = NomeTheme.typography.display,
-          color = NomeTheme.colors.textPrimary,
-        )
-        Text(
-          text = stringResource(R.string.nome_home_subtitle),
-          style = NomeTheme.typography.body,
-          color = NomeTheme.colors.textSecondary,
-        )
-      }
-      item {
-        NomeHomeSearchBar(onSearch)
-      }
-
-      when (state.connectivity) {
-        NomeHomeConnectivityState.UNKNOWN -> item {
-          NomeStatusPanel(
-            state = NomeStatePanelState.LOADING,
-            title = R.string.nome_home_network_unknown_title,
-            body = R.string.nome_home_network_unknown_body,
-            stateDescription = R.string.nome_home_network_unknown_state,
-          )
-        }
-        NomeHomeConnectivityState.DEVICE_OFFLINE -> item {
-          NomeStatusPanel(
-            state = NomeStatePanelState.OFFLINE,
-            title = R.string.nome_home_offline_title,
-            body = R.string.nome_home_offline_body,
-            stateDescription = R.string.nome_home_offline_state,
-          )
-        }
-        NomeHomeConnectivityState.ONLINE -> Unit
-      }
-
-      if (state.core == NomeHomeCoreState.STOPPED) {
+      LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(
+          start = dimensions.screenHorizontalInset,
+          top = dimensions.space12,
+          end = dimensions.screenHorizontalInset,
+          bottom = 96.dp,
+        ),
+        verticalArrangement = Arrangement.Top,
+      ) {
         item {
-          NomeStatusPanel(
-            state = NomeStatePanelState.ERROR,
-            title = R.string.nome_home_stopped_title,
-            body = R.string.nome_home_stopped_body,
-            stateDescription = R.string.nome_home_stopped_state,
-          )
+          Column(
+            verticalArrangement =
+              Arrangement.spacedBy(dimensions.space12),
+          ) {
+            NomeHomeHeader(
+              chatModel = chatModel,
+              profileNameOverride = profileNameOverride,
+              onOpenProfile = onOpenProfile,
+            )
+            Column(
+              verticalArrangement =
+                Arrangement.spacedBy(dimensions.space2),
+            ) {
+              Text(
+                text = pageTitle,
+                modifier = Modifier.semantics { heading() },
+                style = NomeTheme.typography.display,
+                color = NomeTheme.colors.textPrimary,
+              )
+              Text(
+                text = pageSubtitle,
+                style = NomeTheme.typography.body,
+                color = NomeTheme.colors.textSecondary,
+              )
+            }
+            NomeHomeSearchBar(
+              label = searchLabel,
+              onSearch = onSearch,
+            )
+            if (!isContacts) {
+              NomeHomeListFilters(
+                userLists = userLists,
+                allListsSelected = allListsSelected,
+                selectedUserListId = selectedUserListId,
+                onSelectAll = onSelectAllLists,
+                onSelectList = onSelectUserList,
+                onAddList = onAddUserList,
+                onManageList = onManageUserList,
+              )
+            }
+          }
         }
-      }
 
-      when (state.content) {
-        NomeHomeContentState.LOADING -> item {
-          NomeHomeSkeleton()
+        when (state.connectivity) {
+          NomeHomeConnectivityState.UNKNOWN -> item {
+            NomeStatusPanel(
+              state = NomeStatePanelState.LOADING,
+              title = R.string.nome_home_network_unknown_title,
+              body = R.string.nome_home_network_unknown_body,
+              stateDescription = R.string.nome_home_network_unknown_state,
+              modifier = Modifier.padding(top = dimensions.space12),
+            )
+          }
+          NomeHomeConnectivityState.DEVICE_OFFLINE -> item {
+            NomeStatusPanel(
+              state = NomeStatePanelState.OFFLINE,
+              title = R.string.nome_home_offline_title,
+              body = R.string.nome_home_offline_body,
+              stateDescription = R.string.nome_home_offline_state,
+              modifier = Modifier.padding(top = dimensions.space12),
+            )
+          }
+          NomeHomeConnectivityState.ONLINE -> Unit
         }
-        NomeHomeContentState.FIRST_USE -> item {
-          NomeStatusPanel(
-            state = NomeStatePanelState.EMPTY,
-            title = R.string.nome_home_first_use_title,
-            body = R.string.nome_home_first_use_body,
-            stateDescription = R.string.nome_home_first_use_state,
-          )
-        }
-        NomeHomeContentState.TRUE_EMPTY -> item {
-          NomeStatusPanel(
-            state = NomeStatePanelState.EMPTY,
-            title = R.string.nome_home_empty_title,
-            body = R.string.nome_home_empty_body,
-            stateDescription = R.string.nome_home_empty_state,
-          )
-        }
-        NomeHomeContentState.FILTERED_NO_RESULT -> item {
-          NomeStatusPanel(
-            state = NomeStatePanelState.EMPTY,
-            title = R.string.nome_home_filtered_empty_title,
-            body = R.string.nome_home_filtered_empty_body,
-            stateDescription = R.string.nome_home_filtered_empty_state,
-          )
-        }
-        NomeHomeContentState.UNAVAILABLE -> {
+
+        if (state.core == NomeHomeCoreState.STOPPED) {
           item {
+            NomeStatusPanel(
+              state = NomeStatePanelState.ERROR,
+              title = R.string.nome_home_stopped_title,
+              body = R.string.nome_home_stopped_body,
+              stateDescription = R.string.nome_home_stopped_state,
+              modifier = Modifier.padding(top = dimensions.space12),
+            )
+          }
+        }
+
+        when (state.content) {
+          NomeHomeContentState.LOADING -> item {
+            NomeHomeSkeleton(
+              modifier = Modifier.padding(top = dimensions.space12),
+            )
+          }
+          NomeHomeContentState.FIRST_USE -> item {
+            NomeStatusPanel(
+              state = NomeStatePanelState.EMPTY,
+              title = R.string.nome_home_first_use_title,
+              body = R.string.nome_home_first_use_body,
+              stateDescription = R.string.nome_home_first_use_state,
+              modifier = Modifier.padding(top = dimensions.space12),
+            )
+          }
+          NomeHomeContentState.TRUE_EMPTY -> item {
+            NomeStatusPanel(
+              state = NomeStatePanelState.EMPTY,
+              title = R.string.nome_home_empty_title,
+              body = R.string.nome_home_empty_body,
+              stateDescription = R.string.nome_home_empty_state,
+              modifier = Modifier.padding(top = dimensions.space12),
+            )
+          }
+          NomeHomeContentState.FILTERED_NO_RESULT -> item {
+            NomeStatusPanel(
+              state = NomeStatePanelState.EMPTY,
+              title = R.string.nome_home_filtered_empty_title,
+              body = R.string.nome_home_filtered_empty_body,
+              stateDescription = R.string.nome_home_filtered_empty_state,
+              modifier = Modifier.padding(top = dimensions.space12),
+            )
+          }
+          NomeHomeContentState.UNAVAILABLE -> item {
             NomeStatusPanel(
               state = NomeStatePanelState.ERROR,
               title = R.string.nome_home_unavailable_title,
               body = R.string.nome_home_unavailable_body,
               stateDescription = R.string.nome_home_unavailable_state,
+              modifier = Modifier.padding(top = dimensions.space12),
             )
           }
-          if (state.visibleChats.isNotEmpty()) {
-            item { NomeChatsHeading() }
-            items(state.visibleChats, key = { it.remoteHostId to it.id }) { chat ->
-              NomeChatRow(
-                chatModel = chatModel,
-                chat = chat,
-                coreState = state.core,
-                pendingDeletion = pendingDeletionChats.contains(chat.remoteHostId to chat.chatInfo.id),
-                showChatPreviews = showChatPreviews,
-                openChat = openChat,
-              )
-            }
-          }
+          NomeHomeContentState.POPULATED -> Unit
         }
-        NomeHomeContentState.POPULATED -> {
-          item { NomeChatsHeading() }
-          items(state.visibleChats, key = { it.remoteHostId to it.id }) { chat ->
+
+        val showChatList =
+          state.content == NomeHomeContentState.POPULATED ||
+            (
+              state.content == NomeHomeContentState.UNAVAILABLE &&
+                state.visibleChats.isNotEmpty()
+            )
+        if (showChatList) {
+          item {
+            NomeChatsHeading(
+              title = sectionTitle,
+              modifier =
+                Modifier.padding(
+                  top = dimensions.space16,
+                  bottom = dimensions.space8,
+                ),
+            )
+          }
+          itemsIndexed(
+            items = state.visibleChats,
+            key = { _, chat -> chat.remoteHostId to chat.id },
+          ) { index, chat ->
             NomeChatRow(
               chatModel = chatModel,
               chat = chat,
@@ -432,48 +591,263 @@ fun NomeHomeRouteContent(
               pendingDeletion = pendingDeletionChats.contains(chat.remoteHostId to chat.chatInfo.id),
               showChatPreviews = showChatPreviews,
               openChat = openChat,
+              shape =
+                nomeGroupedRowShape(
+                  index = index,
+                  count = state.visibleChats.size,
+                ),
+              showDivider = index < state.visibleChats.lastIndex,
             )
           }
         }
       }
+      if (state.core == NomeHomeCoreState.RUNNING) {
+        FloatingActionButton(
+          onClick = onNewConnection,
+          modifier = Modifier
+            .align(Alignment.BottomEnd)
+            .padding(end = dimensions.screenHorizontalInset, bottom = dimensions.space20)
+            .size(56.dp)
+            .nomeTalkBackSemantics(
+              label = stringResource(R.string.nome_home_new_connection),
+              role = Role.Button,
+            ),
+          backgroundColor = NomeTheme.colors.action,
+          contentColor = NomeTheme.colors.onAction,
+        ) {
+          Icon(
+            imageVector = Icons.Rounded.Add,
+            contentDescription = null,
+            modifier = Modifier.size(28.dp),
+          )
+        }
+      }
     }
-    if (state.core == NomeHomeCoreState.RUNNING) {
-      FloatingActionButton(
-        onClick = onNewConnection,
-        modifier = Modifier
-          .align(Alignment.BottomEnd)
-          .padding(end = dimensions.screenHorizontalInset, bottom = dimensions.space20)
-          .size(56.dp)
-          .nomeTalkBackSemantics(
-            label = stringResource(R.string.nome_home_new_connection),
-            role = Role.Button,
-          ),
-        backgroundColor = NomeTheme.colors.action,
-        contentColor = NomeTheme.colors.onAction,
-      ) {
-        Icon(
-          imageVector = Icons.Rounded.Add,
-          contentDescription = null,
-          modifier = Modifier.size(28.dp),
+    NomePrimaryBottomNavigation(
+      selected = selectedDestination,
+      onDestinationSelected = { destination ->
+        when (destination) {
+          NomePrimaryDestination.HOME -> onOpenHome()
+          NomePrimaryDestination.CONTACTS -> onOpenContacts()
+          NomePrimaryDestination.SETTINGS -> onOpenSettings()
+        }
+      },
+    )
+  }
+}
+
+@Composable
+internal fun NomeHomeListFilters(
+  userLists: List<ChatTag>,
+  allListsSelected: Boolean,
+  selectedUserListId: Long?,
+  onSelectAll: () -> Unit,
+  onSelectList: (ChatTag) -> Unit,
+  onAddList: () -> Unit,
+  onManageList: (ChatTag) -> Unit,
+) {
+  val selectedState = stringResource(R.string.nome_home_list_selected)
+  val manageListLabel = stringResource(R.string.nome_home_manage_lists)
+  val selectedList =
+    userLists.firstOrNull { it.chatTagId == selectedUserListId }
+  NomeSurface(
+    modifier = Modifier.fillMaxWidth(),
+    shape = NomeTheme.shapes.control,
+    color = NomeTheme.colors.input,
+    border = BorderStroke(1.dp, NomeTheme.colors.divider),
+  ) {
+    Row(
+      modifier =
+        Modifier
+          .fillMaxWidth()
+          .horizontalScroll(rememberScrollState())
+          .padding(4.dp),
+      horizontalArrangement = Arrangement.spacedBy(4.dp),
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      NomeHomeListFilterChip(
+        label = stringResource(R.string.nome_home_list_all),
+        selected = allListsSelected,
+        selectedState = selectedState,
+        onClick = onSelectAll,
+      )
+      userLists.forEach { tag ->
+        NomeHomeListFilterChip(
+          label = tag.chatTagText,
+          emoji = tag.chatTagEmoji,
+          selected = tag.chatTagId == selectedUserListId,
+          selectedState = selectedState,
+          onClick = { onSelectList(tag) },
+          manageLabel = manageListLabel,
+          onManage = { onManageList(tag) },
         )
       }
+      NomeHomeListAction(
+        label =
+          stringResource(
+            if (selectedList == null) {
+              R.string.nome_home_add_list
+            } else {
+              R.string.nome_home_manage_lists
+            },
+          ),
+        managing = selectedList != null,
+        onClick = {
+          if (selectedList == null) {
+            onAddList()
+          } else {
+            onManageList(selectedList)
+          }
+        },
+      )
     }
   }
 }
 
 @Composable
-private fun NomeHomeSearchBar(onSearch: () -> Unit) {
+private fun NomeHomeListFilterChip(
+  label: String,
+  selected: Boolean,
+  selectedState: String,
+  onClick: () -> Unit,
+  emoji: String? = null,
+  manageLabel: String? = null,
+  onManage: (() -> Unit)? = null,
+) {
+  val accessibilityLabel =
+    stringResource(R.string.nome_home_list_filter, label)
+  NomeSurface(
+    modifier =
+      Modifier
+        .heightIn(min = 48.dp)
+        .combinedClickable(
+          onClick = onClick,
+          onLongClick = {
+            onManage?.invoke()
+          },
+        )
+        .nomeMinimumTouchTarget()
+        .semantics {
+          this.selected = selected
+          if (manageLabel != null && onManage != null) {
+            customActions =
+              listOf(
+                CustomAccessibilityAction(
+                  label = manageLabel,
+                  action = {
+                    onManage()
+                    true
+                  },
+                ),
+              )
+          }
+        }
+        .nomeTalkBackSemantics(
+          label = accessibilityLabel,
+          state = selectedState.takeIf { selected },
+          role = Role.Tab,
+        ),
+    shape = NomeTheme.shapes.pill,
+    color =
+      if (selected) {
+        NomeTheme.colors.successContainer
+      } else {
+        androidx.compose.ui.graphics.Color.Transparent
+      },
+  ) {
+    Row(
+      modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+      horizontalArrangement = Arrangement.spacedBy(6.dp),
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      if (emoji != null) {
+        Text(
+          text = emoji,
+          style = NomeTheme.typography.body,
+        )
+      }
+      Text(
+        text = label,
+        style = NomeTheme.typography.label,
+        color =
+          if (selected) {
+            NomeTheme.colors.success
+          } else {
+            NomeTheme.colors.textPrimary
+          },
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+      )
+    }
+  }
+}
+
+@Composable
+private fun NomeHomeListAction(
+  label: String,
+  managing: Boolean,
+  onClick: () -> Unit,
+) {
+  NomeSurface(
+    modifier =
+      Modifier
+        .heightIn(min = 48.dp)
+        .clickable(onClick = onClick)
+        .nomeMinimumTouchTarget()
+        .nomeTalkBackSemantics(
+          label = label,
+          role = Role.Button,
+        ),
+    shape = NomeTheme.shapes.pill,
+    color = androidx.compose.ui.graphics.Color.Transparent,
+  ) {
+    Row(
+      modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+      horizontalArrangement = Arrangement.spacedBy(6.dp),
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      if (managing) {
+        Icon(
+          painter = painterResource(MR.images.ic_label),
+          contentDescription = null,
+          modifier = Modifier.size(18.dp),
+          tint = NomeTheme.colors.action,
+        )
+      } else {
+        Icon(
+          imageVector = Icons.Rounded.Add,
+          contentDescription = null,
+          modifier = Modifier.size(18.dp),
+          tint = NomeTheme.colors.action,
+        )
+      }
+      Text(
+        text = label,
+        style = NomeTheme.typography.label,
+        color = NomeTheme.colors.action,
+        maxLines = 1,
+      )
+    }
+  }
+}
+
+@Composable
+private fun NomeHomeSearchBar(
+  label: String,
+  onSearch: () -> Unit,
+) {
   NomeSurface(
     modifier = Modifier
       .fillMaxWidth()
       .heightIn(min = 48.dp)
       .clickable(onClick = onSearch)
       .nomeTalkBackSemantics(
-        label = stringResource(R.string.nome_home_search),
+        label = label,
         role = Role.Button,
       ),
-    shape = NomeTheme.shapes.pill,
-    color = NomeTheme.colors.surfaceSubtle,
+    shape = NomeTheme.shapes.control,
+    color = NomeTheme.colors.input,
+    border = BorderStroke(1.dp, NomeTheme.colors.divider),
   ) {
     Row(
       modifier = Modifier.padding(horizontal = 14.dp),
@@ -487,7 +861,7 @@ private fun NomeHomeSearchBar(onSearch: () -> Unit) {
       )
       Spacer(Modifier.width(8.dp))
       Text(
-        text = stringResource(R.string.nome_p09_search_placeholder),
+        text = label,
         style = NomeTheme.typography.body,
         color = NomeTheme.colors.textSecondary,
       )
@@ -598,19 +972,12 @@ private fun NomeHomeHeader(
       .heightIn(min = dimensions.minimumRowHeight),
     verticalAlignment = Alignment.CenterVertically,
   ) {
-    Icon(
-      imageVector = Icons.Rounded.ChatBubbleOutline,
-      contentDescription = null,
-      modifier = Modifier.size(dimensions.icon),
-      tint = NomeTheme.colors.action,
+    NomeBrandLockup(
+      contentDescription = stringResource(R.string.nome_home_brand),
+      modifier = Modifier.width(104.dp),
     )
-    Spacer(Modifier.width(dimensions.space8))
-    Text(
-      text = stringResource(R.string.nome_home_brand),
+    Spacer(
       modifier = Modifier.weight(1f),
-      style = NomeTheme.typography.title,
-      color = NomeTheme.colors.textPrimary,
-      fontWeight = FontWeight.Bold,
     )
     Box(
       modifier = Modifier
@@ -639,14 +1006,16 @@ private fun NomeHomeHeader(
       }
     }
   }
-  Divider(color = NomeTheme.colors.divider)
 }
 
 @Composable
-private fun NomeChatsHeading() {
+private fun NomeChatsHeading(
+  title: String,
+  modifier: Modifier = Modifier,
+) {
   Text(
-    text = stringResource(R.string.nome_home_section_chats),
-    modifier = Modifier.semantics { heading() },
+    text = title,
+    modifier = modifier.semantics { heading() },
     style = NomeTheme.typography.label,
     color = NomeTheme.colors.textSecondary,
   )
@@ -658,21 +1027,24 @@ private fun NomeStatusPanel(
   title: Int,
   body: Int,
   stateDescription: Int,
+  modifier: Modifier = Modifier,
 ) {
   NomeStatePanel(
     state = state,
     title = stringResource(title),
     description = stringResource(body),
     stateDescription = stringResource(stateDescription),
-    modifier = Modifier.fillMaxWidth(),
+    modifier = modifier.fillMaxWidth(),
   )
 }
 
 @Composable
-private fun NomeHomeSkeleton() {
+private fun NomeHomeSkeleton(
+  modifier: Modifier = Modifier,
+) {
   val dimensions = NomeTheme.dimensions
   NomeSurface(
-    modifier = Modifier
+    modifier = modifier
       .fillMaxWidth()
       .nomeTalkBackSemantics(
         label = stringResource(R.string.nome_home_skeleton_semantics),
@@ -733,6 +1105,8 @@ private fun NomeChatRow(
   pendingDeletion: Boolean,
   showChatPreviews: Boolean,
   openChat: (Chat) -> Unit,
+  shape: Shape,
+  showDivider: Boolean,
 ) {
   val dimensions = NomeTheme.dimensions
   val showMenu = remember(chat.id) {
@@ -804,6 +1178,9 @@ private fun NomeChatRow(
         timestamp,
       )
     }
+  val canOpenReadOnlyMenu =
+    info is ChatInfo.ContactConnection &&
+      !pendingDeletion
   val interactionModifier =
     if (canOpen) {
       Modifier
@@ -839,6 +1216,32 @@ private fun NomeChatRow(
               )
           }
         }
+    } else if (canOpenReadOnlyMenu) {
+      Modifier
+        .pointerInput(chat.id) {
+          detectTapGestures(
+            onLongPress = {
+              showMenu.value = true
+            },
+          )
+        }
+        .nomeMinimumTouchTarget()
+        .nomeTalkBackSemantics(
+          label = spokenLabel,
+          state = spokenState.takeIf { it.isNotBlank() },
+        )
+        .semantics {
+          customActions =
+            listOf(
+              CustomAccessibilityAction(
+                label = menuLabel,
+                action = {
+                  showMenu.value = true
+                  true
+                },
+              ),
+            )
+        }
     } else {
       Modifier
         .nomeMinimumTouchTarget()
@@ -851,94 +1254,116 @@ private fun NomeChatRow(
   Box {
     NomeSurface(
       modifier = interactionModifier.fillMaxWidth(),
-      color = NomeTheme.colors.surface,
-      border = BorderStroke(dimensions.divider, NomeTheme.colors.border),
+      shape = shape,
+      color = NomeTheme.colors.surfaceContainer,
     ) {
-      Row(
-        modifier = Modifier.padding(
-          horizontal = dimensions.space12,
-          vertical = dimensions.space8,
-        ),
-        verticalAlignment = Alignment.CenterVertically,
-      ) {
-        Box(
-          modifier = Modifier
-            .size(44.dp)
-            .clip(CircleShape)
-            .background(NomeTheme.colors.surfaceContainer),
-          contentAlignment = Alignment.Center,
+      Column {
+        Row(
+          modifier =
+            Modifier
+              .fillMaxWidth()
+              .heightIn(min = 72.dp)
+              .padding(
+                horizontal = dimensions.space12,
+                vertical = dimensions.space8,
+              ),
+          verticalAlignment = Alignment.CenterVertically,
         ) {
-          Text(
-            text = info.chatViewName.firstOrNull()?.uppercase() ?: "?",
-            style = NomeTheme.typography.title,
-            color = NomeTheme.colors.action,
-          )
-        }
-        Spacer(Modifier.width(dimensions.space12))
-        Column(modifier = Modifier.weight(1f)) {
-          Text(
-            text = info.chatViewName,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            style = NomeTheme.typography.title,
-            color = NomeTheme.colors.textPrimary,
-          )
-          Text(
-            text = preview,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            style = NomeTheme.typography.body,
-            color = NomeTheme.colors.textSecondary,
-          )
-        }
-        Spacer(Modifier.width(dimensions.space8))
-        Column(horizontalAlignment = Alignment.End) {
-          Row(
-            horizontalArrangement = Arrangement.spacedBy(dimensions.space4),
-            verticalAlignment = Alignment.CenterVertically,
+          Box(
+            modifier = Modifier
+              .size(44.dp)
+              .clip(CircleShape)
+              .background(NomeTheme.colors.surface),
+            contentAlignment = Alignment.Center,
           ) {
-            if (favorite) {
-              Icon(
-                imageVector = Icons.Rounded.Star,
-                contentDescription = null,
-                modifier = Modifier.size(16.dp),
-                tint = NomeTheme.colors.accent,
-              )
-            }
             Text(
-              text = timestamp,
-              style = NomeTheme.typography.supporting,
-              color = NomeTheme.colors.textTertiary,
+              text = info.chatViewName.firstOrNull()?.uppercase() ?: "?",
+              style = NomeTheme.typography.bodyStrong,
+              color = NomeTheme.colors.action,
             )
           }
-          if (unreadCount > 0) {
-            Box(
-              modifier = Modifier
-                .padding(top = dimensions.space4)
-                .defaultMinSize(
-                  minWidth = dimensions.icon,
-                  minHeight = dimensions.icon,
-                )
-                .clip(CircleShape)
-                .background(NomeTheme.colors.action),
-              contentAlignment = Alignment.Center,
+          Spacer(Modifier.width(dimensions.space12))
+          Column(modifier = Modifier.weight(1f)) {
+            Text(
+              text = info.chatViewName,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis,
+              style = NomeTheme.typography.bodyStrong,
+              color = NomeTheme.colors.textPrimary,
+            )
+            Text(
+              text = preview,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis,
+              style = NomeTheme.typography.supporting,
+              color = NomeTheme.colors.textSecondary,
+            )
+          }
+          Spacer(Modifier.width(dimensions.space8))
+          Column(horizontalAlignment = Alignment.End) {
+            Row(
+              horizontalArrangement =
+                Arrangement.spacedBy(dimensions.space4),
+              verticalAlignment = Alignment.CenterVertically,
             ) {
+              if (favorite) {
+                Icon(
+                  imageVector = Icons.Rounded.Star,
+                  contentDescription = null,
+                  modifier = Modifier.size(16.dp),
+                  tint = NomeTheme.colors.accent,
+                )
+              }
               Text(
-                text = stringResource(R.string.nome_home_unread_marker, unreadCount),
-                modifier = Modifier.padding(horizontal = dimensions.space4),
+                text = timestamp,
                 style = NomeTheme.typography.supporting,
-                color = NomeTheme.colors.onAction,
+                color = NomeTheme.colors.textTertiary,
               )
             }
-          } else if (chat.chatStats.unreadChat) {
-            Box(
-              modifier = Modifier
-                .padding(top = dimensions.space4)
-                .size(dimensions.space8)
-                .clip(CircleShape)
-                .background(NomeTheme.colors.action),
-            )
+            if (unreadCount > 0) {
+              Box(
+                modifier = Modifier
+                  .padding(top = dimensions.space4)
+                  .defaultMinSize(
+                    minWidth = dimensions.icon,
+                    minHeight = dimensions.icon,
+                  )
+                  .clip(CircleShape)
+                  .background(NomeTheme.colors.action),
+                contentAlignment = Alignment.Center,
+              ) {
+                Text(
+                  text =
+                    stringResource(
+                      R.string.nome_home_unread_marker,
+                      unreadCount,
+                    ),
+                  modifier =
+                    Modifier.padding(horizontal = dimensions.space4),
+                  style = NomeTheme.typography.supporting,
+                  color = NomeTheme.colors.onAction,
+                )
+              }
+            } else if (chat.chatStats.unreadChat) {
+              Box(
+                modifier = Modifier
+                  .padding(top = dimensions.space4)
+                  .size(dimensions.space8)
+                  .clip(CircleShape)
+                  .background(NomeTheme.colors.action),
+              )
+            }
           }
+        }
+        if (showDivider) {
+          Divider(
+            modifier =
+              Modifier.padding(
+                start = 68.dp,
+                end = dimensions.space12,
+              ),
+            color = NomeTheme.colors.divider,
+          )
         }
       }
     }
@@ -952,6 +1377,25 @@ private fun NomeChatRow(
     }
   }
 }
+
+private fun nomeGroupedRowShape(
+  index: Int,
+  count: Int,
+): Shape =
+  when {
+    count <= 1 -> RoundedCornerShape(16.dp)
+    index == 0 ->
+      RoundedCornerShape(
+        topStart = 16.dp,
+        topEnd = 16.dp,
+      )
+    index == count - 1 ->
+      RoundedCornerShape(
+        bottomStart = 16.dp,
+        bottomEnd = 16.dp,
+      )
+    else -> RectangleShape
+  }
 
 @Composable
 private fun NomeChatDropdownMenu(

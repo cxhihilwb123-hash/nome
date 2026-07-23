@@ -31,10 +31,12 @@ import chat.simplex.app.R
 import chat.simplex.common.model.Chat
 import chat.simplex.common.model.ChatInfo
 import chat.simplex.common.model.ChatItem
+import chat.simplex.common.model.ChatTag
 import chat.simplex.common.ui.nome.home.NomeHomeConnectivityState
 import chat.simplex.common.ui.nome.home.NomeHomeContentState
 import chat.simplex.common.ui.nome.home.NomeHomeCoreState
 import chat.simplex.common.ui.nome.home.NomeHomeState
+import chat.simplex.common.ui.nome.components.NomePrimaryDestination
 import chat.simplex.common.ui.nome.theme.NomeAndroidTheme
 import chat.simplex.common.ui.nome.theme.NomeTheme
 import chat.simplex.common.views.chatlist.NomeHomeRouteContent
@@ -94,6 +96,14 @@ class NomeHomeEvidenceActivity : ComponentActivity() {
                 profileNameOverride = stringResource(
                   R.string.nome_home_evidence_profile,
                 ),
+                selectedDestination = spec.screen.destination,
+                userLists = listOf(evidenceList),
+                allListsSelected =
+                  spec.screen != NomeHomeEvidenceScreen.CUSTOM_LIST,
+                selectedUserListId =
+                  evidenceList.chatTagId.takeIf {
+                    spec.screen == NomeHomeEvidenceScreen.CUSTOM_LIST
+                  },
               )
             }
           }
@@ -132,7 +142,15 @@ class NomeHomeEvidenceActivity : ComponentActivity() {
         putExtra(NomeHomeEvidenceSpec.EXTRA_LOCALE, spec.languageTag)
         putExtra(NomeHomeEvidenceSpec.EXTRA_DARK, spec.dark)
         putExtra(NomeHomeEvidenceSpec.EXTRA_FONT_SCALE, spec.fontScale)
+        putExtra(NomeHomeEvidenceSpec.EXTRA_SCREEN, spec.screen.intentValue)
       }
+
+    private val evidenceList =
+      ChatTag(
+        chatTagId = 41L,
+        chatTagText = "111",
+        chatTagEmoji = null,
+      )
   }
 }
 
@@ -141,12 +159,14 @@ data class NomeHomeEvidenceSpec(
   val languageTag: String,
   val dark: Boolean,
   val fontScale: Float,
+  val screen: NomeHomeEvidenceScreen = NomeHomeEvidenceScreen.HOME,
 ) {
   companion object {
     const val EXTRA_STATE = "nomeHomeState"
     const val EXTRA_LOCALE = "nomeHomeLocale"
     const val EXTRA_DARK = "nomeHomeDark"
     const val EXTRA_FONT_SCALE = "nomeHomeFontScale"
+    const val EXTRA_SCREEN = "nomeHomeScreen"
 
     fun from(intent: Intent): NomeHomeEvidenceSpec =
       NomeHomeEvidenceSpec(
@@ -158,7 +178,24 @@ data class NomeHomeEvidenceSpec(
         fontScale = intent.getFloatExtra(EXTRA_FONT_SCALE, 1f)
           .takeIf { it == 2f }
           ?: 1f,
+        screen = NomeHomeEvidenceScreen.from(
+          intent.getStringExtra(EXTRA_SCREEN),
+        ),
       )
+  }
+}
+
+enum class NomeHomeEvidenceScreen(
+  val intentValue: String,
+  val destination: NomePrimaryDestination,
+) {
+  HOME("home", NomePrimaryDestination.HOME),
+  CONTACTS("contacts", NomePrimaryDestination.CONTACTS),
+  CUSTOM_LIST("custom-list", NomePrimaryDestination.HOME);
+
+  companion object {
+    fun from(raw: String?): NomeHomeEvidenceScreen =
+      entries.firstOrNull { it.intentValue == raw } ?: HOME
   }
 }
 

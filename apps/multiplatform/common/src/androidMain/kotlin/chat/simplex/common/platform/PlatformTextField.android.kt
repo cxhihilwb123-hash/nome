@@ -65,11 +65,12 @@ actual fun PlatformTextField(
   val cs = composeState.value
   val textColor = MaterialTheme.colors.onBackground
   val hintColor = MaterialTheme.colors.secondary
-  val padding = PaddingValues(12.dp, 7.dp, 50.dp, 0.dp)
+  val padding = PaddingValues(12.dp, 7.dp, 50.dp, 7.dp)
   val paddingStart = with(LocalDensity.current) { 12.dp.roundToPx() }
   val paddingTop = with(LocalDensity.current) { 7.dp.roundToPx() }
   val paddingEnd = with(LocalDensity.current) { 50.dp.roundToPx() }
   val paddingBottom = with(LocalDensity.current) { 7.dp.roundToPx() }
+  val minimumComposerHeight = with(LocalDensity.current) { 48.dp.roundToPx() }
   var showKeyboard by remember { mutableStateOf(false) }
   var freeFocus by remember { mutableStateOf(false) }
   LaunchedEffect(cs.contextItem) {
@@ -128,7 +129,9 @@ actual fun PlatformTextField(
       }
     }
     editText.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+    editText.minHeight = minimumComposerHeight
     editText.maxLines = 16
+    editText.gravity = Gravity.START or Gravity.CENTER_VERTICAL
     editText.inputType = InputType.TYPE_TEXT_FLAG_CAP_SENTENCES or editText.inputType
     editText.setTextColor(textColor.toArgb())
     editText.textSize = textStyle.value.fontSize.value * appPrefs.fontScale.get()

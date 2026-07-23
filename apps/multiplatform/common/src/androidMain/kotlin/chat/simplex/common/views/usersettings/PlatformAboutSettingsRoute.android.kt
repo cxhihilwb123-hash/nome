@@ -1,7 +1,6 @@
 package chat.simplex.common.views.usersettings
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -29,7 +28,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
@@ -41,6 +39,7 @@ import chat.simplex.common.BuildConfigCommon
 import chat.simplex.common.R
 import chat.simplex.common.platform.BackHandler
 import chat.simplex.common.ui.nome.accessibility.nomeTalkBackSemantics
+import chat.simplex.common.ui.nome.components.NomeBrandLockup
 import chat.simplex.common.ui.nome.components.NomeFullPageScaffold
 import chat.simplex.common.ui.nome.components.NomeSurface
 import chat.simplex.common.ui.nome.theme.NomeAndroidTheme
@@ -112,16 +111,14 @@ fun NomeAboutSettingsContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
       ) {
-        Image(
-          painter = painterResource(R.drawable.nome_header_logo),
+        NomeBrandLockup(
           contentDescription =
             stringResource(
               R.string.nome_about_logo_description,
             ),
           modifier =
             Modifier
-              .width(112.dp)
-              .widthIn(max = 112.dp),
+              .width(112.dp),
         )
         Text(
           text =

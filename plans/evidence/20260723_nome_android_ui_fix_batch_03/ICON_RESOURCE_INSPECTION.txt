@@ -1,0 +1,42 @@
+NOME ADAPTIVE ICON RESOURCE INSPECTION
+Date: 2026-07-23
+
+Authoritative default mark source:
+/Users/forkman03/project/nome/design/design/product/nome-mark-transparent.png
+SHA256: 621e68b971c6e8b71509db06184b5198c5710478e23d9c4713f9318bce1b709c
+Geometry: 310x320 RGBA, visible bounds 189x235+63+37, transparent corner.
+
+Target adaptive foreground geometry:
+- standard canvas: 108dp x 108dp
+- visible mark height: 60dp
+- aspect ratio preserved
+- transparent canvas and corners
+
+Default foregrounds:
+mdpi    canvas=108x108 visible=48x60+30+24
+hdpi    canvas=162x162 visible=72x90+45+36
+xhdpi   canvas=216x216 visible=97x120+59+48
+xxhdpi  canvas=324x324 visible=145x180+89+72
+xxxhdpi canvas=432x432 visible=193x240+119+96
+
+Dark-blue foregrounds:
+mdpi    canvas=108x108 visible=47x60+30+24
+hdpi    canvas=162x162 visible=71x90+45+36
+xhdpi   canvas=216x216 visible=95x120+60+48
+xxhdpi  canvas=324x324 visible=142x180+91+72
+xxxhdpi canvas=432x432 visible=189x240+121+96
+
+All ten files report RGBA/sRGBA and pixel (0,0) alpha=0.
+
+Packaging:
+- AndroidManifest application icon resource resolves to 0x7f0f0000 mipmap/icon.
+- Dark-blue alias resolves to 0x7f0f0001 mipmap/icon_dark_blue.
+- APK resource table contains all five densities for mipmap/icon_foreground and mipmap/icon_dark_blue_foreground.
+- Existing mipmap-anydpi-v26 adaptive XML continues to combine the unchanged background with these foregrounds.
+
+Preview evidence:
+- rendered-screens/icon-preview-default.png
+- rendered-screens/icon-preview-dark.png
+
+Evidence gap:
+The launcher/App Drawer was not automated or captured because issuing Android Home is prohibited. Final launcher-mask appearance requires user-visible inspection on a real device.

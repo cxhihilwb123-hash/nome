@@ -1,0 +1,41 @@
+NOME ANDROID UI FIX BATCH 02 CHECKPOINT
+Date: 2026-07-23
+Status: IMPLEMENTATION AND TWO-DEVICE TARGETED REGRESSION COMPLETE
+
+Repository: /Users/forkman03/project/nome/simplex-chat
+Branch: codex/nome-android-v656
+HEAD: 6a01efa5e6d10dc0743cdf82dfb69e09cc459862
+Official v6.5.6 baseline: 59fce95d3cd08897b4ef742447b785cf2e56c7ce
+Baseline ancestor of HEAD: yes
+
+Implemented:
+- Android composer native field has a 48 dp minimum height and vertical centering.
+- Android send button has a 6 dp bottom inset while retaining multiline bottom alignment.
+- Pending contact connections remain read-only on tap but expose their existing menu by long press and TalkBack custom action.
+- Android Compose test now distinguishes read-only contact cards from pending rows with menu actions.
+
+Build/test:
+- debug APK and Android test APK: PASS.
+- JVM tests: 54/54 PASS.
+- release lint: PASS, 0 Error/Fatal and no changed-path location.
+- final APK SHA256: 3b8e8a31b2057d552932a7ade54fbca28e1ac5f8a4f2bcc599e2fb5b4784237f
+- Android test APK SHA256: 8335b4e160e8f6ec03f7d05f95c37642a5bb9252b7f5b25bb234a670f40250a1
+
+Device:
+- V2048A composer: 48 dp field, 48 dp send target, 0 dp center delta.
+- V2047A composer: 48 dp field, 48 dp send target, 0 dp center delta.
+- V2048A Home and Contacts pending-row long press: existing menu visible.
+- V2047A Home pending-row long press: existing menu and delete confirmation reachable; confirmation canceled and row retained.
+- No message sent and no pending connection deleted.
+
+Finding:
+- `Change list` opens the valid custom-list assignment modal.
+- Legacy SimpleX shows user lists in a top tag row.
+- Nome P07 currently omits that row, so assigned lists are not selectable from the main page.
+- Product decision remains: add a Nome list-filter presentation or hide the action until one exists.
+
+Boundary:
+- index empty; .gradle-review untracked; historical dirty tree and debug manifest preserved.
+- no commit or push.
+- evidence: plans/evidence/20260723_nome_android_ui_fix_batch_02/
+

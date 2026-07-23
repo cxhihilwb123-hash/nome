@@ -1,7 +1,6 @@
 package chat.simplex.common.views.onboarding
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -42,7 +41,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
@@ -55,6 +53,7 @@ import androidx.compose.ui.unit.sp
 import chat.simplex.common.R
 import chat.simplex.common.model.NotificationsMode
 import chat.simplex.common.model.ServerOperator
+import chat.simplex.common.ui.nome.components.NomeBrandLockup
 import chat.simplex.common.ui.nome.components.NomeButton
 import chat.simplex.common.ui.nome.components.NomeButtonVariant
 import chat.simplex.common.ui.nome.components.NomeSurface
@@ -570,10 +569,9 @@ private fun NomeTopBar(title: String, onBack: (() -> Unit)?) {
 
 @Composable
 private fun NomeBrandLogo() {
-  Image(
-    painter = painterResource(R.drawable.nome_header_logo),
+  NomeBrandLockup(
     contentDescription = stringResource(R.string.nome_brand_logo_description),
-    modifier = Modifier.width(104.dp).height(44.dp),
+    modifier = Modifier.width(104.dp),
   )
 }
 

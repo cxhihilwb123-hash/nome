@@ -50,6 +50,18 @@
   <string name="nome_about_source_body">Open the official SimpleX Chat source repository.</string>
   <string name="nome_about_license_title">Open-source license</string>
   <string name="nome_about_license_body">GNU Affero General Public License v3.</string>
+  <string name="nome_brand_chat_lock">Nome Lock</string>
+  <string name="nome_brand_lock_enabled">Nome Lock turned on</string>
+  <string name="nome_brand_enable_lock">Enable Nome Lock</string>
+  <string name="nome_brand_lock_unavailable_enable">Device authentication is not enabled. Enable device authentication first, then turn on Nome Lock in Settings.</string>
+  <string name="nome_brand_lock_unavailable_disable">Device authentication is disabled. Turning off Nome Lock.</string>
+  <string name="nome_brand_lock_not_enabled">Nome Lock is not enabled.</string>
+  <string name="nome_brand_lock_enable_hint">You can turn on Nome Lock in Settings.</string>
+  <string name="nome_brand_support">SUPPORT NOME</string>
+  <string name="nome_brand_terminal_client">Install the desktop or terminal client</string>
+  <string name="nome_brand_default_call_servers_question">Use the default call servers?</string>
+  <string name="nome_brand_default_call_servers">Using the default call servers.</string>
+  <string name="nome_brand_theme">Nome</string>
 
   <string name="nome_p24_title">Backup &amp; migration</string>
   <string name="nome_p24_back">Back to settings</string>

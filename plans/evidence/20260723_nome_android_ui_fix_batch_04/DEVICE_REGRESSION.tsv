@@ -1,0 +1,21 @@
+device	serial	check	result	evidence
+V2048A	3106403166006XM	final APK	PASS	SHA256 4b44d0d7c0c19a22f9b23c660ff711691070f2879a1a7432bf1745fe9aef5958; v6.5.6 (358); installed 2026-07-23 21:32:44 +0800
+V2047A	9590146717002S1	final APK	PASS	SHA256 4b44d0d7c0c19a22f9b23c660ff711691070f2879a1a7432bf1745fe9aef5958; v6.5.6 (358); installed 2026-07-23 21:33:09 +0800
+V2048A	3106403166006XM	Home bottom-nav geometry	PASS	three item bounds share y=2015..2183; 168px=64dp; 7px to app root
+V2047A	9590146717002S1	Home bottom-nav geometry	PASS	three item bounds share y=2076..2268; 192px=64dp; 15px to app root
+V2048A	3106403166006XM	Home -> Contacts -> Settings -> Home real taps	PASS	fixed destination subtitles/titles visible after every tap
+V2047A	9590146717002S1	Home -> Contacts -> Settings -> Home real taps	PASS	fixed destination subtitles/titles visible after every tap
+V2048A	3106403166006XM	Contacts system Back	PASS	returned to Home; Contacts page no longer remained
+V2047A	9590146717002S1	Contacts system Back	PASS	returned to Home; Contacts page no longer remained
+V2048A	3106403166006XM	Settings-root system Back	PASS	returned to Home
+V2047A	9590146717002S1	Settings-root system Back	PASS	returned to Home
+V2048A	3106403166006XM	Privacy brand wording	PASS	Nome 锁定 present; SimpleX 锁定 absent
+V2047A	9590146717002S1	Privacy brand wording	PASS	Nome 锁定 present; SimpleX 锁定 absent
+V2048A	3106403166006XM	Privacy system Back	PASS	returned to Settings
+V2047A	9590146717002S1	Privacy system Back	PASS	returned to Settings
+V2048A	3106403166006XM	Visible one-hand Back control	PASS	actual bottom Back control returned to Settings
+V2047A	9590146717002S1	Visible one-hand Back control	PASS	actual bottom Back control returned to Settings
+both	both	selected state	PASS_WITH_GAP	Compose test asserts selected destination; physical UI tree did not expose selected flag and protected pixels were unavailable
+both	both	light/dark and Chinese/English	PASS_WITH_GAP	Chinese fixed UI physically verified; English resources and mappings instrumented; protected physical dark/English pixels not forced
+both	both	temporary UI XML cleanup	PASS	no /data/local/tmp/nome_batch04_*.xml remains
+

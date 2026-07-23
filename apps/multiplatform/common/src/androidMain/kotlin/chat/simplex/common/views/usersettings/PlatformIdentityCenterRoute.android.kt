@@ -36,9 +36,6 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.People
-import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
@@ -64,8 +61,11 @@ import androidx.compose.ui.unit.dp
 import chat.simplex.common.R
 import chat.simplex.common.model.User
 import chat.simplex.common.model.UserInfo
+import chat.simplex.common.platform.BackHandler
 import chat.simplex.common.ui.nome.accessibility.nomeMinimumTouchTarget
 import chat.simplex.common.ui.nome.accessibility.nomeTalkBackSemantics
+import chat.simplex.common.ui.nome.components.NomePrimaryBottomNavigation
+import chat.simplex.common.ui.nome.components.NomePrimaryDestination
 import chat.simplex.common.ui.nome.components.NomeSurface
 import chat.simplex.common.ui.nome.theme.NomeAndroidTheme
 import chat.simplex.common.ui.nome.theme.NomeTheme
@@ -155,6 +155,7 @@ fun NomeIdentityCenterContent(
   onOpenHome: () -> Unit,
   onOpenContacts: () -> Unit,
 ) {
+  BackHandler(onBack = onClose)
   var passwordEntryVisible by
     remember(profileHidden) {
       mutableStateOf(
@@ -347,9 +348,15 @@ fun NomeIdentityCenterContent(
         onBodyClick = onOpenNetworkSettings,
       )
     }
-    NomeIdentityBottomNavigation(
-      onOpenHome = onOpenHome,
-      onOpenContacts = onOpenContacts,
+    NomePrimaryBottomNavigation(
+      selected = NomePrimaryDestination.SETTINGS,
+      onDestinationSelected = { destination ->
+        when (destination) {
+          NomePrimaryDestination.HOME -> onOpenHome()
+          NomePrimaryDestination.CONTACTS -> onOpenContacts()
+          NomePrimaryDestination.SETTINGS -> Unit
+        }
+      },
     )
   }
 }
@@ -1003,142 +1010,4 @@ private fun NomeSectionLabel(
     style = NomeTheme.typography.supporting,
     color = NomeTheme.colors.textSecondary,
   )
-}
-
-@Composable
-private fun NomeIdentityBottomNavigation(
-  onOpenHome: () -> Unit,
-  onOpenContacts: () -> Unit,
-) {
-  Divider(color = NomeTheme.colors.divider)
-  Row(
-    modifier =
-      Modifier
-        .fillMaxWidth()
-        .height(76.dp)
-        .background(
-          NomeTheme.colors.surfaceContainer,
-        )
-        .padding(horizontal = 28.dp),
-    horizontalArrangement =
-      Arrangement.SpaceBetween,
-    verticalAlignment = Alignment.CenterVertically,
-  ) {
-    NomeIdentityNavItem(
-      label =
-        androidx.compose.ui.res.stringResource(
-          R.string.nome_p22_home,
-        ),
-      icon = {
-        Icon(
-          imageVector = Icons.Rounded.Home,
-          contentDescription = null,
-        )
-      },
-      active = false,
-      onClick = onOpenHome,
-    )
-    NomeIdentityNavItem(
-      label =
-        androidx.compose.ui.res.stringResource(
-          R.string.nome_p22_contacts,
-        ),
-      icon = {
-        Icon(
-          imageVector = Icons.Rounded.People,
-          contentDescription = null,
-        )
-      },
-      active = false,
-      onClick = onOpenContacts,
-    )
-    NomeIdentityNavItem(
-      label =
-        androidx.compose.ui.res.stringResource(
-          R.string.nome_p22_settings,
-        ),
-      icon = {
-        Icon(
-          imageVector = Icons.Rounded.Settings,
-          contentDescription = null,
-        )
-      },
-      active = true,
-      onClick = {},
-    )
-  }
-}
-
-@Composable
-private fun NomeIdentityNavItem(
-  label: String,
-  icon: @Composable () -> Unit,
-  active: Boolean,
-  onClick: () -> Unit,
-) {
-  Column(
-    modifier =
-      Modifier
-        .nomeMinimumTouchTarget()
-        .clickable(
-          enabled = !active,
-          role = Role.Tab,
-          onClick = onClick,
-        )
-        .nomeTalkBackSemantics(
-          label = label,
-          state =
-            if (active) {
-              androidx.compose.ui.res.stringResource(
-                R.string.nome_p22_selected,
-              )
-            } else {
-              null
-            },
-          role = Role.Tab,
-          enabled = !active,
-        )
-        .padding(horizontal = 12.dp, vertical = 4.dp),
-    horizontalAlignment = Alignment.CenterHorizontally,
-    verticalArrangement = Arrangement.spacedBy(2.dp),
-  ) {
-    Box(
-      modifier =
-        if (active) {
-          Modifier
-            .background(
-              NomeTheme.colors.successContainer,
-              CircleShape,
-            )
-            .padding(horizontal = 14.dp, vertical = 4.dp)
-        } else {
-          Modifier.padding(
-            horizontal = 14.dp,
-            vertical = 4.dp,
-          )
-        },
-      contentAlignment = Alignment.Center,
-    ) {
-      androidx.compose.runtime.CompositionLocalProvider(
-        androidx.compose.material.LocalContentColor provides
-          if (active) {
-            NomeTheme.colors.success
-          } else {
-            NomeTheme.colors.textSecondary
-          },
-      ) {
-        icon()
-      }
-    }
-    Text(
-      text = label,
-      style = NomeTheme.typography.supporting,
-      color =
-        if (active) {
-          NomeTheme.colors.success
-        } else {
-          NomeTheme.colors.textSecondary
-        },
-    )
-  }
 }

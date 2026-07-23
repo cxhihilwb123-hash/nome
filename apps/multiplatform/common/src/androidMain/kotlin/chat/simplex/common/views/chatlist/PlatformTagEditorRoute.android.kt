@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import chat.simplex.common.R
+import chat.simplex.common.platform.BackHandler
 import chat.simplex.common.ui.nome.accessibility.nomeMinimumTouchTarget
 import chat.simplex.common.ui.nome.components.NomeButton
 import chat.simplex.common.ui.nome.components.NomeButtonVariant
@@ -42,6 +43,7 @@ internal actual fun PlatformTagEditorRoute(
   legacyContent: @Composable () -> Unit,
 ) {
   val darkTheme = !CurrentColors.collectAsState().value.colors.isLight
+  BackHandler(onBack = onClose)
   NomeAndroidTheme(darkTheme = darkTheme) {
     NomeTagEditorContent(
       title = title,
@@ -74,6 +76,7 @@ internal actual fun PlatformTagListRoute(
     return
   }
   val darkTheme = !CurrentColors.collectAsState().value.colors.isLight
+  BackHandler(onBack = onClose)
   NomeAndroidTheme(darkTheme = darkTheme) {
     NomeTagListContent(
       title = title,

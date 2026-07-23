@@ -1,0 +1,39 @@
+NOME ANDROID UI FIX BATCH 04 CHECKPOINT
+=======================================
+
+Date: 2026-07-23 +0800
+Repo: /Users/forkman03/project/nome/simplex-chat
+Branch: codex/nome-android-v656
+HEAD: 6a01efa5e6d10dc0743cdf82dfb69e09cc459862
+Official baseline: v6.5.6 / 59fce95d3cd08897b4ef742447b785cf2e56c7ce
+
+STATUS=IMPLEMENTED_AND_VERIFIED
+COMMIT=NONE
+PUSH=NONE
+STAGED_INDEX=EMPTY
+
+FINAL_APP_APK_SHA256=4b44d0d7c0c19a22f9b23c660ff711691070f2879a1a7432bf1745fe9aef5958
+V2048A_INSTALLED_SHA256=MATCH
+V2047A_INSTALLED_SHA256=MATCH
+
+OUTCOMES
+- shared bottom navigation uses complete 64dp items
+- V2048A final item y=2015..2183, app-root gap=7px
+- V2047A final item y=2076..2268, app-root gap=15px
+- Home / Contacts / Settings real taps PASS on both
+- Contacts system Back returns Home on both
+- Settings-root Back returns Home on both
+- privacy system/app Back returns Settings on both
+- Nome 锁定 visible and SimpleX 锁定 absent on both
+- API35 targeted instrumentation PASS 17/17
+- JVM PASS 54/54
+- Release lint PASS with 0 Error/Fatal
+
+EVIDENCE=plans/evidence/20260723_nome_android_ui_fix_batch_04/
+HANDOFF=plans/20260723_nome_android_ui_fix_batch_04_handoff.md
+SHA256_MANIFEST=plans/20260723_nome_android_ui_fix_batch_04_HANDOFF_SHA256SUMS
+
+USER_ACTION
+- inspect the two physical devices
+- do not commit or push until the user decides
+

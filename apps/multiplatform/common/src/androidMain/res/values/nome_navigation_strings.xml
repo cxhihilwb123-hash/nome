@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nome_primary_nav_home">Home</string>
+    <string name="nome_primary_nav_contacts">Contacts</string>
+    <string name="nome_primary_nav_settings">Settings</string>
+    <string name="nome_primary_nav_selected">Selected</string>
+</resources>

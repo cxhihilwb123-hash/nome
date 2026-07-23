@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nome_primary_nav_home">首页</string>
+    <string name="nome_primary_nav_contacts">联系人</string>
+    <string name="nome_primary_nav_settings">设置</string>
+    <string name="nome_primary_nav_selected">已选中</string>
+</resources>

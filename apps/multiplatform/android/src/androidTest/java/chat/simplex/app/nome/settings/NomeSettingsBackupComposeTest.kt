@@ -2,8 +2,10 @@ package chat.simplex.app.nome.settings
 
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -16,8 +18,10 @@ import androidx.test.platform.app.InstrumentationRegistry
 import chat.simplex.common.R
 import chat.simplex.common.model.User
 import chat.simplex.common.ui.nome.theme.NomeAndroidTheme
+import chat.simplex.common.views.helpers.generalGetString
 import chat.simplex.common.views.usersettings.NomeBackupMigrationContent
 import chat.simplex.common.views.usersettings.NomeSettingsHomeContent
+import chat.simplex.res.MR
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -113,6 +117,12 @@ class NomeSettingsBackupComposeTest {
       .performClick()
     composeRule
       .onNodeWithContentDescription(
+        target.getString(R.string.nome_primary_nav_settings),
+      )
+      .assertIsSelected()
+      .assertHeightIsEqualTo(64.dp)
+    composeRule
+      .onNodeWithContentDescription(
         target.getString(
           R.string.nome_p23_search_action,
         ),
@@ -150,6 +160,35 @@ class NomeSettingsBackupComposeTest {
       assertEquals(1, desktops)
       assertEquals(1, contacts)
     }
+  }
+
+  @Test
+  fun androidSettingsBrandLabelsUseNomeResources() {
+    val target =
+      InstrumentationRegistry
+        .getInstrumentation()
+        .targetContext
+
+    assertEquals(
+      target.getString(R.string.nome_brand_chat_lock),
+      generalGetString(MR.strings.chat_lock),
+    )
+    assertEquals(
+      target.getString(R.string.nome_brand_lock_enabled),
+      generalGetString(
+        MR.strings.auth_simplex_lock_turned_on,
+      ),
+    )
+    assertEquals(
+      target.getString(R.string.nome_brand_terminal_client),
+      generalGetString(
+        MR.strings.install_simplex_chat_for_terminal,
+      ),
+    )
+    assertEquals(
+      target.getString(R.string.nome_brand_theme),
+      generalGetString(MR.strings.theme_simplex),
+    )
   }
 
   @Test

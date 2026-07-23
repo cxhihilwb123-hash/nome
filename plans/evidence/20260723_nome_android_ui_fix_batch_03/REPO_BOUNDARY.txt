@@ -1,0 +1,35 @@
+NOME ANDROID UI FIX BATCH 03 REPOSITORY BOUNDARY
+Date: 2026-07-23
+
+Repository: /Users/forkman03/project/nome/simplex-chat
+Branch: codex/nome-android-v656
+HEAD: 6a01efa5e6d10dc0743cdf82dfb69e09cc459862
+Official v6.5.6 baseline: 59fce95d3cd08897b4ef742447b785cf2e56c7ce
+Baseline ancestor of HEAD: yes
+
+Required preserved state:
+- Existing dirty tree retained.
+- Staged index empty.
+- .gradle-review not tracked.
+- Historical apps/multiplatform/android/src/debug/AndroidManifest.xml modification retained.
+- Historical debug manifest SHA256:
+  b6aa278d102675e777a4a0eac66cb9fd049209bb1998cdab247dfc7b56d792f3
+- Frozen full-audit, feature-validation, Batch 01, and Batch 02 evidence not overwritten.
+
+Scope:
+- Android UI/navigation/resources/tests/debug evidence only.
+- No Haskell/native core, Core.kt, protocol, database, message-state, server, account, or iOS changes.
+- No commit, push, signature, or release.
+
+Final pre-manifest verification:
+- branch: codex/nome-android-v656
+- HEAD: 6a01efa5e6d10dc0743cdf82dfb69e09cc459862
+- baseline ancestor check: rc 0
+- staged index: empty
+- tracked .gradle-review paths: none
+- git diff --check: PASS
+- historical debug manifest SHA256: unchanged
+- feature-validation, full-UI-audit, Batch 01, and Batch 02 SHA256 manifests: PASS
+- V2048A and V2047A: both online
+
+The same boundary is checked again after the Batch 03 SHA256 manifest is created.

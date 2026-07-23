@@ -1,0 +1,48 @@
+NOME ANDROID UI FIX BATCH 03 CHECKPOINT
+Date: 2026-07-23
+Status: IMPLEMENTATION, BUILD GATES, DESIGN QA, AND TWO-DEVICE TARGETED REGRESSION COMPLETE
+
+Repository: /Users/forkman03/project/nome/simplex-chat
+Branch: codex/nome-android-v656
+HEAD: 6a01efa5e6d10dc0743cdf82dfb69e09cc459862
+Official v6.5.6 baseline: 59fce95d3cd08897b4ef742447b785cf2e56c7ce
+Baseline ancestor of HEAD: yes
+
+Implemented:
+- Home, Contacts, and custom-list surfaces use the approved card/search/list-shelf composition.
+- Existing custom lists remain available from Home; selecting 111 exposes its filtered conversations and Manage list.
+- Home, Contacts, and Settings use one 76dp bottom-navigation component with consistent selected state and 48dp-or-larger targets.
+- OEM inset reconciliation keeps that component at 76.19dp on V2048A and 76.0dp on V2047A.
+- List editor/list overlays close through their existing callbacks on Android Back.
+- Header uses the authoritative 700x285 transparent Nome lockup at 104dp with explicit approved dark variant.
+- Adaptive launcher foreground uses the authoritative transparent Nome mark at 60dp high on a 108dp canvas.
+
+Build/test:
+- final consolidated Android test APK/JVM/lint gate: PASS, 144 tasks, 2m24s.
+- JVM tests: 54/54 PASS.
+- release lint: PASS, 0 Error/Fatal.
+- API 35 Compose interaction tests: 15/15 PASS.
+- API 35 screenshot test: 1/1 PASS; twelve native production-component renders refreshed.
+- design QA: PASS.
+- final APK SHA256: 730408743fe4b5059edd23048afa6207b63fbf8a26f638b57d321d997f6c76a4
+- Android test APK SHA256: 3c5c6c18a2648da22d7c6b2df48b7d43b07c2edb0e8fc00ad615498b5e3c7d3e
+
+Device:
+- V2048A, 420dpi, package 6.5.6/358 installed at 19:59:07.
+- V2047A, 480dpi, package 6.5.6/358 installed at 19:49:48.
+- Both passed real Home/Contacts/Settings switching, selected custom list, Manage list, top/system Back, Settings system Back, and bottom-nav return to Home.
+- Real-account screenshot protection remained enabled; only fixed accessibility labels were retained in conclusions.
+
+Evidence boundary:
+- Physical devices stayed in their existing Chinese/light configuration.
+- English/Chinese plus light/dark pixel conclusions come from a non-sensitive API 35 renderer using production components.
+- Physical selected tint pixels and launcher-mask appearance remain user-visible checks because real screenshots and Android Home automation are prohibited.
+
+Repository boundary:
+- existing dirty tree preserved; staged index empty.
+- .gradle-review remains untracked.
+- historical debug manifest retained at SHA256 b6aa278d102675e777a4a0eac66cb9fd049209bb1998cdab247dfc7b56d792f3.
+- frozen earlier evidence remains read-only and verifies successfully.
+- no commit or push.
+
+Evidence: plans/evidence/20260723_nome_android_ui_fix_batch_03/

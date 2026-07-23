@@ -1,0 +1,40 @@
+Repository: /Users/forkman03/project/nome/simplex-chat
+Branch: codex/nome-android-v656
+HEAD during implementation: 6a01efa5e6d10dc0743cdf82dfb69e09cc459862
+Official v6.5.6 baseline: 59fce95d3cd08897b4ef742447b785cf2e56c7ce
+Official baseline remains an ancestor of HEAD: yes
+
+Start:
+- porcelain entries: 22,261
+- staged entries: 0
+- .gradle-review tracked entries: 0
+- Batch 01 SHA256 manifest: PASS
+- historical debug AndroidManifest SHA256: b6aa278d102675e777a4a0eac66cb9fd049209bb1998cdab247dfc7b56d792f3
+
+Scope:
+- Android composer layout branch
+- Android native text field
+- Android Nome P07 pending-row interaction
+- Android Compose test source
+- new Batch 02 evidence only
+
+Excluded:
+- no Haskell/native core, Core.kt, protocol, database, message state machine, communication behavior, server configuration, account-data mutation, iOS behavior, signing, release, commit, or push
+- no screenshot-protection change
+- no delete confirmation accepted
+- no .gradle-review tracking
+
+Final:
+- porcelain entries after adding the Batch 02 SHA256 manifest: 22,272
+- staged entries: 0
+- .gradle-review tracked entries: 0; existing runtime directory remains untracked
+- branch: codex/nome-android-v656
+- HEAD: 6a01efa5e6d10dc0743cdf82dfb69e09cc459862
+- official baseline ancestry: PASS
+- historical debug AndroidManifest remains modified with SHA256 b6aa278d102675e777a4a0eac66cb9fd049209bb1998cdab247dfc7b56d792f3
+- Batch 01, frozen full UI audit, and frozen feature-validation manifests: PASS
+- Batch 02 manifest: PASS
+- git diff --check: PASS
+- final production APK SHA256: 3b8e8a31b2057d552932a7ade54fbca28e1ac5f8a4f2bcc599e2fb5b4784237f
+- final Android test APK SHA256: 8335b4e160e8f6ec03f7d05f95c37642a5bb9252b7f5b25bb234a670f40250a1
+- no commit or push

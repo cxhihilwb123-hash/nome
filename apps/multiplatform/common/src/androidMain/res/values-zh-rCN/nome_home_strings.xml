@@ -6,6 +6,12 @@
     <string name="nome_home_current_profile">当前身份：%1$s</string>
     <string name="nome_home_unknown_profile">本地身份</string>
     <string name="nome_home_section_chats">会话</string>
+    <string name="nome_home_selected_list_subtitle">此列表中的会话</string>
+    <string name="nome_home_selected_list_search">搜索此列表</string>
+    <string name="nome_contacts_title">联系人</string>
+    <string name="nome_contacts_subtitle">管理联系人和连接</string>
+    <string name="nome_contacts_section">联系人</string>
+    <string name="nome_contacts_search">搜索联系人</string>
 
     <string name="nome_home_loading_title">正在同步本地会话</string>
     <string name="nome_home_loading_body">正在等待当前身份的会话列表。</string>
@@ -49,6 +55,11 @@
 
     <string name="nome_home_search">搜索会话</string>
     <string name="nome_home_new_connection">新建连接</string>
+    <string name="nome_home_list_all">全部</string>
+    <string name="nome_home_list_filter">%1$s 列表</string>
+    <string name="nome_home_list_selected">已选择</string>
+    <string name="nome_home_add_list">添加列表</string>
+    <string name="nome_home_manage_lists">管理列表</string>
 
     <string name="nome_p09_title">搜索</string>
     <string name="nome_p09_back">关闭搜索</string>

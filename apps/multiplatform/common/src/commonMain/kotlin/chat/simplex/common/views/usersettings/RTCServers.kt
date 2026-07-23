@@ -116,7 +116,10 @@ fun RTCServersLayout(
       }
 
       if (!isUserRTCServers) {
-        Text(stringResource(MR.strings.using_simplex_chat_servers), lineHeight = 22.sp)
+        Text(
+          generalGetString(MR.strings.using_simplex_chat_servers),
+          lineHeight = 22.sp,
+        )
       } else {
         Text(stringResource(MR.strings.enter_one_ICE_server_per_line))
         if (editRTCServers) {

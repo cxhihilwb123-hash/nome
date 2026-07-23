@@ -50,6 +50,18 @@
   <string name="nome_about_source_body">打开 SimpleX Chat 官方源代码仓库。</string>
   <string name="nome_about_license_title">开源许可</string>
   <string name="nome_about_license_body">GNU Affero 通用公共许可证第 3 版。</string>
+  <string name="nome_brand_chat_lock">Nome 锁定</string>
+  <string name="nome_brand_lock_enabled">已开启 Nome 锁定</string>
+  <string name="nome_brand_enable_lock">启用 Nome 锁定</string>
+  <string name="nome_brand_lock_unavailable_enable">尚未启用设备验证。请先启用设备验证，再在设置中开启 Nome 锁定。</string>
+  <string name="nome_brand_lock_unavailable_disable">设备验证已停用，正在关闭 Nome 锁定。</string>
+  <string name="nome_brand_lock_not_enabled">尚未启用 Nome 锁定。</string>
+  <string name="nome_brand_lock_enable_hint">你可以在设置中开启 Nome 锁定。</string>
+  <string name="nome_brand_support">支持 NOME</string>
+  <string name="nome_brand_terminal_client">安装桌面或终端客户端</string>
+  <string name="nome_brand_default_call_servers_question">使用默认通话服务器？</string>
+  <string name="nome_brand_default_call_servers">正在使用默认通话服务器。</string>
+  <string name="nome_brand_theme">Nome</string>
 
   <string name="nome_p24_title">备份与迁移</string>
   <string name="nome_p24_back">返回设置</string>

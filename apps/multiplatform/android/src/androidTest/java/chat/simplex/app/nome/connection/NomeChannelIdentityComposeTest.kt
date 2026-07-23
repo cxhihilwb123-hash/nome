@@ -5,6 +5,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -211,6 +212,12 @@ class NomeChannelIdentityComposeTest {
       .assertHasClickAction()
       .assertHeightIsAtLeast(48.dp)
       .performClick()
+    composeRule
+      .onNodeWithContentDescription(
+        target.getString(R.string.nome_primary_nav_settings),
+      )
+      .assertIsSelected()
+      .assertHeightIsAtLeast(48.dp)
 
     composeRule.runOnIdle {
       assertEquals(1, additions)

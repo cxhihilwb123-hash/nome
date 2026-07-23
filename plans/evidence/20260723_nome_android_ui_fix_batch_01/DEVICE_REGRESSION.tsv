@@ -1,0 +1,26 @@
+device_serial	model	density	build	locale_theme	check	result	evidence_or_gap
+3106403166006XM	V2048A	physical 480 / override 420	final APK cafa19c0	zh-CN / light	cold launch	PASS	version 6.5.6; lastUpdateTime 2026-07-23 12:34:41; cold MainActivity launch completed
+3106403166006XM	V2048A	physical 480 / override 420	final APK cafa19c0	zh-CN / light	P07 Home initial	PASS	Nome visible; Home selected; Contacts and Settings present
+3106403166006XM	V2048A	physical 480 / override 420	final APK cafa19c0	zh-CN / light	Home to Contacts	PASS	Real tap changed selected destination to Contacts
+3106403166006XM	V2048A	physical 480 / override 420	final APK cafa19c0	zh-CN / light	Contacts to P23	PASS	Real tap exposed fixed Primary identity and Backup/Migration rows; Settings selected
+3106403166006XM	V2048A	physical 480 / override 420	final APK cafa19c0	zh-CN / light	P23 Android Back	PASS	System BACK returned to P07 and preserved the prior Contacts destination
+3106403166006XM	V2048A	physical 480 / override 420	final APK cafa19c0	zh-CN / light	P23 bottom Home	PASS	Real tap returned to P07; Home selected; Nome visible
+3106403166006XM	V2048A	physical 480 / override 420	final APK cafa19c0	zh-CN / light	P23 to P22	PASS	Identity center and Local identities visible; Settings selected
+3106403166006XM	V2048A	physical 480 / override 420	final APK cafa19c0	zh-CN / light	P22 top Back	PASS	126 x 126 px = 48 dp clickable Back returned to P23
+3106403166006XM	V2048A	physical 480 / override 420	final APK cafa19c0	zh-CN / light	P22 bottom Contacts	PASS	Closed modal stack and returned to P07 Contacts selected
+3106403166006XM	V2048A	physical 480 / override 420	final APK cafa19c0	zh-CN and en / light and dark	locale/theme matrix	PASS	Fixed localized labels and Nome node present in all four configurations; restored to system Chinese plus light
+3106403166006XM	V2048A	physical 480 / override 420	final APK cafa19c0	zh-CN and en / light and dark	Logo pixels	GAP	Screenshot protection remained enabled; RGBA asset/composite checks passed but pixel-level device capture is intentionally unavailable
+3106403166006XM	V2048A	physical 480 / override 420	final APK cafa19c0	zh-CN / light	bottom tab direct 48 dp proof	GAP	Source target is a full-height 76 dp selectable with 48 dp minimum and real taps pass; OEM UIAutomator clips to 112 px and Vivo blocked Compose test Activity launch
+9590146717002S1	V2047A	physical 480	final APK cafa19c0	zh-CN / light	cold launch	PASS	version 6.5.6; lastUpdateTime 2026-07-23 12:45:01; cold MainActivity launch completed
+9590146717002S1	V2047A	physical 480	final APK cafa19c0	zh-CN / light	P07 Home/Contacts/Settings	PASS	Real taps selected Contacts and entered P23 with fixed settings rows and Settings selected
+9590146717002S1	V2047A	physical 480	final APK cafa19c0	zh-CN / light	P23 Android Back	PASS	System BACK returned to P07 and preserved the prior Contacts destination
+9590146717002S1	V2047A	physical 480	final APK cafa19c0	zh-CN / light	P23 bottom Home	PASS	Real tap returned to P07 Home selected; Nome visible
+9590146717002S1	V2047A	physical 480	final APK cafa19c0	zh-CN / light	P23 to P22	PASS	Identity center and Local identities visible; Settings selected
+9590146717002S1	V2047A	physical 480	final APK cafa19c0	zh-CN / light	P22 top Back	PASS	144 x 144 px = 48 dp clickable Back returned to P23
+9590146717002S1	V2047A	physical 480	final APK cafa19c0	zh-CN / light	P22 bottom Contacts	PASS	Closed modal stack and returned to P07 Contacts selected
+9590146717002S1	V2047A	physical 480	final APK cafa19c0	zh-CN and en / light and dark	locale/theme matrix	PASS	Fixed localized labels and Nome node present in all four configurations; restored to system Chinese plus light
+9590146717002S1	V2047A	physical 480	final APK cafa19c0	zh-CN and en / light and dark	Logo pixels	GAP	Screenshot protection remained enabled; RGBA asset/composite checks passed but pixel-level device capture is intentionally unavailable
+9590146717002S1	V2047A	physical 480	final APK cafa19c0	zh-CN / light	bottom tab direct 48 dp proof	GAP	Source target is a full-height 76 dp selectable with 48 dp minimum and real taps pass; OEM UIAutomator clips to 135 px and Vivo blocked Compose test Activity launch
+both	V2048A + V2047A	high density	final Android test APK 969d4ad6	n/a	focused Compose navigation method	BLOCKED	Test APK installed on both; runner entered the method on both; no test Activity launched, no assertion result was produced, and both reproducible stalls were manually stopped
+3106403166006XM	V2048A	physical 480 / override 420	post-review final APK a71382e0	zh-CN / light	84 dp Logo targeted smoke	PASS	fresh cold P07 launch; Logo 221 x 90 px = approximately 84.2 x 34.3 dp; real Settings tap reached P23; real bottom Home tap returned to P07; installed 2026-07-23 14:11:19
+9590146717002S1	V2047A	physical 480	post-review final APK a71382e0	zh-CN / light	84 dp Logo targeted smoke	PASS	fresh cold P07 launch; Logo 252 x 103 px = 84 x approximately 34.3 dp; real Settings tap reached P23; real bottom Home tap returned to P07; installed 2026-07-23 14:12:07

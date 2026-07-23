@@ -6,6 +6,12 @@
     <string name="nome_home_current_profile">Current profile: %1$s</string>
     <string name="nome_home_unknown_profile">Local profile</string>
     <string name="nome_home_section_chats">Chats</string>
+    <string name="nome_home_selected_list_subtitle">Chats in this list</string>
+    <string name="nome_home_selected_list_search">Search this list</string>
+    <string name="nome_contacts_title">Contacts</string>
+    <string name="nome_contacts_subtitle">Manage contacts and connections</string>
+    <string name="nome_contacts_section">Contacts</string>
+    <string name="nome_contacts_search">Search contacts</string>
 
     <string name="nome_home_loading_title">Syncing local chats</string>
     <string name="nome_home_loading_body">Waiting for the current profile’s chat list.</string>
@@ -49,6 +55,11 @@
 
     <string name="nome_home_search">Search chats</string>
     <string name="nome_home_new_connection">New connection</string>
+    <string name="nome_home_list_all">All</string>
+    <string name="nome_home_list_filter">%1$s list</string>
+    <string name="nome_home_list_selected">Selected</string>
+    <string name="nome_home_add_list">Add list</string>
+    <string name="nome_home_manage_lists">Manage list</string>
 
     <string name="nome_p09_title">Search</string>
     <string name="nome_p09_back">Close search</string>

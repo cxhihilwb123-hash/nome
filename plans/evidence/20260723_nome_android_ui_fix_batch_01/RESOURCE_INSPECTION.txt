@@ -1,0 +1,29 @@
+Inspection date: 2026-07-23
+
+Android day resource:
+- path: apps/multiplatform/common/src/androidMain/res/drawable-nodpi/nome_header_logo.png
+- PNG: 700 x 285, 8-bit RGBA
+- hasAlpha: yes
+- SHA256: ffe97ea23fa157ad77e2e6f2054cf998108f75e22d2c1a31d7558ffdf7153cac
+- all four canvas corners: rgba alpha 0
+
+Android night resource:
+- path: apps/multiplatform/common/src/androidMain/res/drawable-night-nodpi/nome_header_logo.png
+- PNG: 700 x 285, 8-bit RGBA
+- hasAlpha: yes
+- SHA256: 4b346151e26cc03d48c0c8d8d99957e1ab3d8514afb150dc50d4ba379ed863e9
+- all four canvas corners: rgba alpha 0
+
+Renderer:
+- fixed intrinsic aspect ratio: 700 / 285
+- content scale: Fit
+- call sites supply width only
+
+Non-sensitive reference composites:
+- logo-light-preview.png: 900 x 480 over #F4F6F8; SHA256 81608a675b97ba8f0d84140bbf3a347de732f6c47ae53c443000f994dc76d5cb
+- logo-dark-preview.png: 900 x 480 over approved deep navy #0E1B2D; SHA256 72a4c39427893f38f62ae83ec8527d23ee3568535181f2591836288bb0cda6ab
+- both were visually inspected locally; no opaque rectangular plate is present
+
+Device evidence limit:
+- protected screenshot/recording policy was not changed
+- on-device pixel-edge/sharpness comparison remains user-visible evidence, not an automated screenshot artifact
