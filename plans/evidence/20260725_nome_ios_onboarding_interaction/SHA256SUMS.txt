@@ -20,6 +20,8 @@ b22fa3434bb124a3e90ad68e79f2cee918516de6a98e1c86f6d46dba159c5c7b  ./android-ios-
 16edacb76a82a3d9f7a55b633216a98e91e9171dcc7c59ee90340d5d6f57aac5  ./b-create-public-channel-zh-hans.png
 b1e776eac4c6371c181ae56fc26656534826e77655767c66e88b1e154f257d58  ./b-home-dark.png
 48ed89ac6a03c8f3780d798eb4457f3c396fba51747fc10564d5f9a7c04da29a  ./b-home-light.png
+fd5b8d5d12774bf1424a2fc760e4b19983b4b43b9c36330ccfb7b35a01b99e4b  ./b-join-group-single-logo.png
+308c16ae1f0182fd2101245f20ac1c1e59a247f8ae5f2eaed1afcb17107bcee4  ./b-public-address-single-logo.png
 9331b21cdf3c4fda3076193bbd9a3fe431689b7c1e5ea11fa7af9cea0f987c44  ./b-search-match.png
 9163da481c64e6e3db75e4328efbae3b2b55f023e12a67b136911ce872beb4f7  ./b-search-no-result.png
 35012616f387e678cbe915b20229e7f3058d613fb155d29da4bce5bd38127d72  ./b-search-third-cycle.png

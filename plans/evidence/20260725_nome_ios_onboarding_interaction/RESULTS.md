@@ -20,6 +20,7 @@
 主要验收源码提交：`a51728769991bebad3fbc405ae9b3882173434dd`。
 上游预置联系人清理跟进提交：`9609b6b56`。
 流程页 Logo 与频道中文跟进提交：`d1b08e551`。
+二级流程页重复 Logo 清理提交：`d9c4b6531`。
 最终模拟器产物：Nome `6.5.6 (337)`，`** BUILD SUCCEEDED **`。
 
 ## 本轮发现并修复
@@ -46,6 +47,9 @@
    导航栏和页面内展示尺寸。
 10. “创建公开频道”首屏及创建进度、频道链接、中继状态、错误和取消提示补齐
     简体中文；加好友失败兜底提示也不再回退到英文。
+11. 加好友、加入群组和公开联系方式等二级页删除内容区重复 Logo，只保留顶部
+    导航栏 Nome Logo；公开联系方式同时改为内联导航，避免大标题与内容标题
+    重复。
 
 ## 模拟器 A：全新用户
 
@@ -119,13 +123,15 @@
 在模拟器 B 安装最新签名 Debug 产物后完成以下复验：
 
 - “添加”入口卡片：PASS，透明 Nome Logo 无白底，尺寸增大
-- 加好友页导航栏和内容页头：PASS，透明 Logo 无白底
+- 加好友、加入群组页：PASS，每页只保留一个顶部 Nome Logo
+- 公开联系方式页：PASS，只保留一个顶部 Nome Logo，标题只显示一次
 - 明亮/深色模式：PASS，Logo 随外观切换并保持清晰
 - “创建公开频道”首屏：PASS，标题、输入框、中继设置、创建按钮及说明均为中文
 - 频道后续状态：PASS，创建进度、链接、错误和取消所需词条均有简体中文
 - Xcode 签名模拟器构建：PASS，`** BUILD SUCCEEDED **`
 - 公开截图：`b-add-sheet-transparent-logo.png`、
-  `b-create-public-channel-zh-hans.png`
+  `b-create-public-channel-zh-hans.png`、`b-join-group-single-logo.png`、
+  `b-public-address-single-logo.png`
 
 ## Android/iOS 视觉对照
 
