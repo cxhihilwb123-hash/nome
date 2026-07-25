@@ -175,9 +175,7 @@ struct CreateProfile: View {
             // .isEmpty check is redundant here, but it makes it clearer what is going on
             if m.users.isEmpty || m.users.allSatisfy({ $0.user.hidden }) {
                 try startChat()
-                Task {
-                    await applyNomeOfficialServersIfConfigured()
-                }
+                Task { await applyNomeStartupConfiguration() }
                 withAnimation {
                     onboardingStageDefault.set(.step3_ChooseServerOperators)
                     m.onboardingStage = .step3_ChooseServerOperators
@@ -374,9 +372,7 @@ struct CreateFirstProfile: View {
             AppChatState.shared.set(.active)
             m.currentUser = try apiCreateActiveUser(profile)
             try startChat(onboarding: true)
-            Task {
-                await applyNomeOfficialServersIfConfigured()
-            }
+            Task { await applyNomeStartupConfiguration() }
             onboardingStageDefault.set(.step3_ChooseServerOperators)
             m.onboardingStage = .step3_ChooseServerOperators
         } catch let error {

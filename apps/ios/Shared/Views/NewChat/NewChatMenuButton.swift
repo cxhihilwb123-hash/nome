@@ -248,7 +248,9 @@ struct NewChatSheet: View {
     private func contactListChatPredicate(_ chat: Chat, _ withSearch: Bool) -> Bool {
         switch chat.chatInfo {
         case .contactRequest: true
-        case let .direct(contact): contact.isContactCard || contact.active || (contact.chatDeleted && withSearch)
+        case let .direct(contact):
+            !isNomeUpstreamPresetContactCard(contact)
+                && (contact.isContactCard || contact.active || (contact.chatDeleted && withSearch))
         default: false
         }
     }

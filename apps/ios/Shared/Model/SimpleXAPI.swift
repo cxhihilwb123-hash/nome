@@ -822,6 +822,48 @@ enum NomeServerConfiguration {
     }
 }
 
+private let nomeUpstreamPresetContactNames: Set<String> = [
+    "Ask SimpleX Team",
+    "SimpleX Status"
+]
+
+func isNomeUpstreamPresetContactCard(_ contact: Contact) -> Bool {
+    contact.isContactCard && nomeUpstreamPresetContactNames.contains(contact.profile.displayName)
+}
+
+func applyNomeStartupConfiguration() async {
+    await removeNomeUpstreamPresetContactCards()
+    await applyNomeOfficialServersIfConfigured()
+}
+
+private func removeNomeUpstreamPresetContactCards() async {
+    let presetContacts: [(chatId: String, contactId: Int64)] = await MainActor.run {
+        ChatModel.shared.chats.compactMap { chat in
+            guard
+                case let .direct(contact) = chat.chatInfo,
+                isNomeUpstreamPresetContactCard(contact)
+            else {
+                return nil
+            }
+            return (chat.id, contact.contactId)
+        }
+    }
+
+    for presetContact in presetContacts {
+        do {
+            _ = try await apiDeleteContact(
+                id: presetContact.contactId,
+                chatDeleteMode: .full(notify: false)
+            )
+            await MainActor.run {
+                ChatModel.shared.removeChat(presetContact.chatId)
+            }
+        } catch {
+            logger.error("Nome could not remove an upstream preset contact card")
+        }
+    }
+}
+
 @discardableResult
 func applyNomeOfficialServersIfConfigured() async -> Bool {
     guard
@@ -2271,18 +2313,14 @@ func initializeChat(start: Bool, confirmStart: Bool = false, dbKey: String? = ni
             do {
                 if start { AppChatState.shared.set(.active) }
                 try chatInitialized(start: start, refreshInvitations: refreshInvitations)
-                Task {
-                    await applyNomeOfficialServersIfConfigured()
-                }
+                Task { await applyNomeStartupConfiguration() }
             } catch let error {
                 logger.error("ChatInitialized error: \(error)")
             }
         }
     } else {
         try chatInitialized(start: start, refreshInvitations: refreshInvitations)
-        Task {
-            await applyNomeOfficialServersIfConfigured()
-        }
+        Task { await applyNomeStartupConfiguration() }
     }
 }
 
