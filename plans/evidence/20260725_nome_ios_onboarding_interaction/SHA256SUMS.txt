@@ -13,6 +13,7 @@ cf816126aefd7d06e98a14b43372284396be63d8e5a3b30b7af4a6aa89d5c2be  ./a-settings-d
 caba4d2aa8d6dc03cd38cab93dc83f56ed76fac3174abb512ac36c0e86d38d8a  ./a-welcome-light.png
 b22fa3434bb124a3e90ad68e79f2cee918516de6a98e1c86f6d46dba159c5c7b  ./android-ios-contacts-side-by-side.png
 8037d6632808ef25610fd4bb90afbd4d80736e3487ff6cc25ad5af810f0fd77b  ./android-ios-home-side-by-side.png
+671581ce24e17cd0a1731dc89142f6aeb7a30dead74adbcb88c97e02edb7be1a  ./b-add-sheet-without-upstream-presets.png
 4e0fa15a1838f45e077486e905475195f3474232f3c5a6a3b1f91eb029d04fc6  ./b-contacts-dark.png
 2fe25bde36801560a2b719fdd71a44a87100d0bb196efcbd69f4001884cbcc98  ./b-contacts-light.png
 b1e776eac4c6371c181ae56fc26656534826e77655767c66e88b1e154f257d58  ./b-home-dark.png
