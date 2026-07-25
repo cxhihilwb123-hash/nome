@@ -240,7 +240,6 @@ struct ChatListView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .navigationBarHidden(true)
         }
-        .scaleEffect(x: 1, y: shouldInvertChatList ? -1 : 1, anchor: .center)
         .onAppear {
             if #unavailable(iOS 16.0), !viewOnScreen {
                 viewOnScreen = true
@@ -281,7 +280,9 @@ struct ChatListView: View {
                         onSettings: { nomeHomeTab = .settings }
                     )
 
-                    if nomeHomeTab != .settings && chatModel.chatRunning == true {
+                    if nomeHomeTab != .settings,
+                       chatModel.chatRunning == true,
+                       nomeHomeTab != .home || hasConversations {
                         NomeNewConnectionButton(action: { openNewChat() })
                             .padding(.trailing, 20)
                             .offset(y: -72)
@@ -337,7 +338,7 @@ struct ChatListView: View {
     
     @ToolbarContentBuilder var topToolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) { leadingToolbarItem }
-        ToolbarItem(placement: .principal) { if !shouldShowOnboarding { SubsStatusIndicator() } }
+        ToolbarItem(placement: .principal) { SubsStatusIndicator() }
         ToolbarItem(placement: .topBarTrailing) { trailingToolbarItem }
     }
 
@@ -347,10 +348,8 @@ struct ChatListView: View {
             HStack {
                 leadingToolbarItem.padding(.bottom, padding)
                 Spacer()
-                if !shouldShowOnboarding {
-                    SubsStatusIndicator().padding(.bottom, padding)
-                    Spacer()
-                }
+                SubsStatusIndicator().padding(.bottom, padding)
+                Spacer()
                 trailingToolbarItem.padding(.bottom, padding)
             }
             .contentShape(Rectangle())
@@ -363,10 +362,8 @@ struct ChatListView: View {
         ToolbarItemGroup(placement: viewOnScreen ? .bottomBar : .principal) {
             leadingToolbarItem.padding(.bottom, padding)
             Spacer()
-            if !shouldShowOnboarding {
-                SubsStatusIndicator().padding(.bottom, padding)
-                Spacer()
-            }
+            SubsStatusIndicator().padding(.bottom, padding)
+            Spacer()
             trailingToolbarItem.padding(.bottom, padding)
         }
     }
@@ -396,12 +393,8 @@ struct ChatListView: View {
         }
     }
     
-    private var shouldShowOnboarding: Bool {
-        !addressCreationCardShown && !chatModel.chats.isEmpty && !hasConversations
-    }
-
     private var showsNomeHomeTabBar: Bool {
-        !shouldShowOnboarding && !searchMode
+        !searchMode
     }
 
     private var hasConversations: Bool {
@@ -417,21 +410,11 @@ struct ChatListView: View {
         }
     }
 
-    private var shouldInvertChatList: Bool {
-        oneHandUI && shouldShowOnboarding && !chatModel.chats.isEmpty
-    }
-
     @ViewBuilder private var chatList: some View {
         if nomeHomeTab == .settings {
             SettingsView(embeddedInNomeTab: true)
-                .scaleEffect(x: 1, y: shouldInvertChatList ? -1 : 1, anchor: .center)
         } else if nomeHomeTab == .contacts {
             nomeContactsTabView
-                .scaleEffect(x: 1, y: shouldInvertChatList ? -1 : 1, anchor: .center)
-        } else if shouldShowOnboarding {
-            ConnectOnboardingView()
-                .scaleEffect(x: 1, y: shouldInvertChatList ? -1 : 1, anchor: .center)
-                .modifier(ThemedBackground())
         } else {
             chatListContent
         }
@@ -529,7 +512,6 @@ struct ChatListView: View {
                         user: chatModel.currentUser ?? User.sampleData,
                         onProfile: { userPickerShown = true }
                     )
-                    .scaleEffect(x: 1, y: shouldInvertChatList ? -1 : 1, anchor: .center)
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)
                     .listRowInsets(EdgeInsets(top: 12, leading: 20, bottom: 12, trailing: 20))
@@ -539,7 +521,6 @@ struct ChatListView: View {
                         title: "首页",
                         subtitle: "当前本地身份的会话"
                     )
-                    .scaleEffect(x: 1, y: shouldInvertChatList ? -1 : 1, anchor: .center)
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)
                     .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 12, trailing: 20))
@@ -552,40 +533,36 @@ struct ChatListView: View {
                         searchChatFilteredBySimplexLink: $searchChatFilteredBySimplexLink,
                         parentSheet: $sheet
                     )
-                    .scaleEffect(x: 1, y: shouldInvertChatList ? -1 : 1, anchor: .center)
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)
                     .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
                     .frame(maxWidth: .infinity)
                     .id("searchBar")
 
-                    if cs.isEmpty && !chatModel.chats.isEmpty {
+                    if cs.isEmpty && hasConversations {
                         noChatsView()
                             .font(.system(size: 14))
                             .frame(maxWidth: .infinity, alignment: .center)
                             .padding(.vertical, 28)
-                            .scaleEffect(x: 1, y: shouldInvertChatList ? -1 : 1, anchor: .center)
                             .foregroundColor(NomeHomePalette.textSecondary)
                             .listRowSeparator(.hidden)
                             .listRowBackground(Color.clear)
                             .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 16, trailing: 20))
                     }
 
-                    if chatModel.chats.isEmpty {
+                    if !hasConversations {
                         NomeEmptyInboxCard(
                             onAddFriend: { openNewChat(.oneTimeLink) },
                             onJoinGroup: { openNewChat(.joinGroup) },
                             onPublicAddress: { activeUserPickerSheet = .address }
                         )
-                        .scaleEffect(x: 1, y: shouldInvertChatList ? -1 : 1, anchor: .center)
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets(top: 16, leading: 20, bottom: 20, trailing: 20))
                     }
-                    if !oneHandUICardShown && !chatModel.chats.isEmpty {
+                    if !oneHandUICardShown && hasConversations {
                         OneHandUICard()
                             .padding(.vertical, 6)
-                            .scaleEffect(x: 1, y: shouldInvertChatList ? -1 : 1, anchor: .center)
                             .listRowSeparator(.hidden)
                             .listRowBackground(Color.clear)
                     }
@@ -593,7 +570,6 @@ struct ChatListView: View {
                         Text("会话")
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(NomeHomePalette.textSecondary)
-                            .scaleEffect(x: 1, y: shouldInvertChatList ? -1 : 1, anchor: .center)
                             .listRowSeparator(.hidden)
                             .listRowBackground(Color.clear)
                             .listRowInsets(EdgeInsets(top: 16, leading: 20, bottom: 8, trailing: 20))
@@ -601,7 +577,6 @@ struct ChatListView: View {
                     if #available(iOS 16.0, *) {
                         ForEach(Array(cs.enumerated()), id: \.element.viewId) { index, chat in
                             ChatListNavLink(chat: chat, parentSheet: $sheet, nomeCompactStyle: true)
-                                .scaleEffect(x: 1, y: shouldInvertChatList ? -1 : 1, anchor: .center)
                                 .modifier(
                                     NomeConversationRowStyle(
                                         position: NomeGroupedRowPosition(index: index, count: cs.count)
@@ -615,7 +590,6 @@ struct ChatListView: View {
                     } else {
                         ForEach(Array(cs.enumerated()), id: \.element.viewId) { index, chat in
                             ChatListNavLink(chat: chat, parentSheet: $sheet, nomeCompactStyle: true)
-                            .scaleEffect(x: 1, y: shouldInvertChatList ? -1 : 1, anchor: .center)
                             .modifier(
                                 NomeConversationRowStyle(
                                     position: NomeGroupedRowPosition(index: index, count: cs.count)
@@ -630,7 +604,6 @@ struct ChatListView: View {
                     if !addressCreationCardShown && hasConversations {
                         ConnectBannerCard()
                             .padding(.vertical, 6)
-                            .scaleEffect(x: 1, y: shouldInvertChatList ? -1 : 1, anchor: .center)
                             .listRowSeparator(.hidden)
                             .listRowBackground(Color.clear)
                     }
