@@ -47,6 +47,8 @@
 	<false/>
 	<key>NomeSMPServer</key>
 	<string>$(NOME_SMP_SERVER)</string>
+	<key>NomeWebRTCIceServers</key>
+	<string>$(NOME_WEBRTC_ICE_SERVERS)</string>
 	<key>NomeXFTPServer</key>
 	<string>$(NOME_XFTP_SERVER)</string>
 	<key>NSUserActivityTypes</key>

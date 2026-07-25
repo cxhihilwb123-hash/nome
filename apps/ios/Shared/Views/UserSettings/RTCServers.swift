@@ -53,8 +53,13 @@ struct RTCServers: View {
                 Text("")
             } footer: {
                 if !isUserRTCServers {
-                    Text("Using default call servers.")
-                        .foregroundColor(theme.colors.secondary)
+                    if NomeServerConfiguration.webRTCIceServers != nil {
+                        Text("Using Nome official call servers.")
+                            .foregroundColor(theme.colors.secondary)
+                    } else {
+                        Text("Using default call servers.")
+                            .foregroundColor(theme.colors.secondary)
+                    }
                 }
             }
 

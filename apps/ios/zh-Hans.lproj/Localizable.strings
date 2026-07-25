@@ -6325,6 +6325,7 @@ server test failure */
 "Invitation links not allowed" = "不允许发送邀请链接";
 "Use default call servers?" = "使用默认通话服务器？";
 "Using default call servers." = "正在使用默认通话服务器。";
+"Using Nome official call servers." = "正在使用 Nome 官方通话服务器。";
 "Install compatible terminal client" = "安装兼容的终端客户端";
 "Your profile is stored on your device and shared only with your contacts. Message servers cannot see your profile." = "你的资料保存在设备上，并且只与联系人共享；消息服务器无法查看这些资料。";
 "The underlying communication protocol was audited by Trail of Bits." = "底层通信协议的安全性已由 Trail of Bits 审核。";

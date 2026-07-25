@@ -805,6 +805,7 @@ func getUserServers() async throws -> [UserOperatorServers] {
 enum NomeServerConfiguration {
     static let smpServer = configuredAddress(key: "NomeSMPServer", requiredScheme: "smp://")
     static let xftpServer = configuredAddress(key: "NomeXFTPServer", requiredScheme: "xftp://")
+    static let webRTCIceServers = configuredList(key: "NomeWebRTCIceServers")
 
     static var isConfigured: Bool {
         smpServer != nil && xftpServer != nil
@@ -819,6 +820,17 @@ enum NomeServerConfiguration {
             return nil
         }
         return address
+    }
+
+    private static func configuredList(key: String) -> [String]? {
+        guard let value = Bundle.main.object(forInfoDictionaryKey: key) as? String else {
+            return nil
+        }
+        let entries = value
+            .split(whereSeparator: { $0 == "," || $0.isNewline })
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty && !$0.contains("$(") }
+        return entries.isEmpty ? nil : entries
     }
 }
 
