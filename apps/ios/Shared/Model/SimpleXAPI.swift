@@ -945,10 +945,20 @@ func applyNomeOfficialServersIfConfigured() async -> Bool {
 }
 
 private func enableNomeServer(_ address: String, in servers: inout [UserServer]) -> Bool {
-    if let index = servers.firstIndex(where: {
-        $0.server.trimmingCharacters(in: .whitespacesAndNewlines) == address
-    }) {
+    let endpoint = nomeServerEndpoint(address)
+    let matchingIndices = servers.indices.filter {
+        nomeServerEndpoint(servers[$0].server) == endpoint
+    }
+    if let index = matchingIndices.first(where: {
+        servers[$0].server.trimmingCharacters(in: .whitespacesAndNewlines) == address
+    }) ?? matchingIndices.first {
         var changed = false
+        if servers[index].server != address {
+            servers[index].server = address
+            servers[index].preset = false
+            servers[index].tested = nil
+            changed = true
+        }
         if !servers[index].enabled {
             servers[index].enabled = true
             changed = true
@@ -956,6 +966,16 @@ private func enableNomeServer(_ address: String, in servers: inout [UserServer])
         if servers[index].deleted {
             servers[index].deleted = false
             changed = true
+        }
+        for duplicateIndex in matchingIndices where duplicateIndex != index {
+            if servers[duplicateIndex].enabled {
+                servers[duplicateIndex].enabled = false
+                changed = true
+            }
+            if !servers[duplicateIndex].deleted {
+                servers[duplicateIndex].deleted = true
+                changed = true
+            }
         }
         return changed
     }
@@ -971,6 +991,19 @@ private func enableNomeServer(_ address: String, in servers: inout [UserServer])
         )
     )
     return true
+}
+
+private func nomeServerEndpoint(_ address: String) -> String {
+    let trimmed = address.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard let schemeRange = trimmed.range(of: "://") else {
+        return trimmed
+    }
+    let scheme = trimmed[..<schemeRange.lowerBound].lowercased()
+    let authority = trimmed[schemeRange.upperBound...]
+    let endpoint = authority.lastIndex(of: "@")
+        .map { authority[authority.index(after: $0)...] }
+        ?? authority[authority.startIndex...]
+    return "\(scheme)://\(endpoint.lowercased())"
 }
 
 func setUserServers(userServers: [UserOperatorServers]) async throws {
