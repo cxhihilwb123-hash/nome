@@ -191,7 +191,7 @@ struct YourNetworkView: View {
             } label: {
                 Text("继续")
             }
-            .buttonStyle(OnboardingButtonStyle())
+            .buttonStyle(OnboardingTransitionButtonStyle())
 
             NavigationLink(isActive: $nextStepNavLinkActive) {
                 OnboardingConditionsView(selectedOperatorIds: selectedOperatorIds)

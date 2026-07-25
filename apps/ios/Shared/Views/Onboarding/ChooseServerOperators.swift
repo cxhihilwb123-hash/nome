@@ -44,10 +44,56 @@ struct OnboardingButtonStyle: ButtonStyle {
     }
 }
 
+// Keep this scoped to consecutive full-screen transitions whose primary
+// buttons occupy the same position. The system tap recognizer treats a rapid
+// double tap as one activation so the second touch cannot land on the next
+// screen's primary action. Ordinary onboarding actions use OnboardingButtonStyle.
+struct OnboardingTransitionButtonStyle: PrimitiveButtonStyle {
+    @EnvironmentObject var theme: AppTheme
+    var isDisabled: Bool = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 17, weight: .semibold))
+            .padding()
+            .frame(maxWidth: .infinity)
+            .background(
+                isDisabled
+                ? (
+                    theme.colors.isLight
+                    ? .gray.opacity(0.17)
+                    : .gray.opacity(0.27)
+                )
+                : NomeOnboardingPalette.green
+            )
+            .foregroundColor(
+                isDisabled
+                ? (
+                    theme.colors.isLight
+                    ? .gray.opacity(0.4)
+                    : .white.opacity(0.2)
+                )
+                : .white
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .contentShape(Rectangle())
+            .gesture(
+                TapGesture(count: 2)
+                    .exclusively(before: TapGesture(count: 1))
+                    .onEnded { _ in
+                        if !isDisabled {
+                            configuration.trigger()
+                        }
+                    }
+            )
+    }
+}
+
 struct OnboardingConditionsView: View {
     @EnvironmentObject var theme: AppTheme
     @Environment(\.colorScheme) var colorScheme: ColorScheme
     @State private var showConditionsSheet = false
+    @State private var acceptanceInProgress = false
     var selectedOperatorIds: Set<Int64>
 
     var body: some View {
@@ -157,41 +203,55 @@ struct OnboardingConditionsView: View {
 
     private func acceptButton() -> some View {
         Button {
-            Task {
-                if selectedOperatorIds.isEmpty {
-                    await MainActor.run { completeOnboarding() }
-                    return
+            acceptConditionsAndComplete()
+        } label: {
+            HStack(spacing: 8) {
+                if acceptanceInProgress {
+                    ProgressView()
+                        .tint(.white)
                 }
-                do {
-                    let conditionsId = ChatModel.shared.conditions.currentConditions.conditionsId
-                    let r = try await acceptConditions(conditionsId: conditionsId, operatorIds: Array(selectedOperatorIds))
+                Text(acceptanceInProgress ? "正在进入…" : "同意并进入 Nome")
+            }
+        }
+        .buttonStyle(OnboardingButtonStyle(isDisabled: acceptanceInProgress))
+        .disabled(acceptanceInProgress)
+    }
+
+    private func acceptConditionsAndComplete() {
+        guard !acceptanceInProgress else { return }
+        acceptanceInProgress = true
+        Task {
+            if selectedOperatorIds.isEmpty {
+                await MainActor.run { completeOnboarding() }
+                return
+            }
+            do {
+                let conditionsId = ChatModel.shared.conditions.currentConditions.conditionsId
+                let r = try await acceptConditions(conditionsId: conditionsId, operatorIds: Array(selectedOperatorIds))
+                await MainActor.run {
+                    ChatModel.shared.conditions = r
+                }
+                if let enabledOps = enabledOperators(r.serverOperators) {
+                    let r2 = try await setServerOperators(operators: enabledOps)
                     await MainActor.run {
-                        ChatModel.shared.conditions = r
+                        ChatModel.shared.conditions = r2
+                        completeOnboarding()
                     }
-                    if let enabledOps = enabledOperators(r.serverOperators) {
-                        let r2 = try await setServerOperators(operators: enabledOps)
-                        await MainActor.run {
-                            ChatModel.shared.conditions = r2
-                            completeOnboarding()
-                        }
-                    } else {
-                        await MainActor.run {
-                            completeOnboarding()
-                        }
-                    }
-                } catch let error {
+                } else {
                     await MainActor.run {
-                        showAlert(
-                            NSLocalizedString("Error accepting conditions", comment: "alert title"),
-                            message: responseError(error)
-                        )
+                        completeOnboarding()
                     }
+                }
+            } catch let error {
+                await MainActor.run {
+                    acceptanceInProgress = false
+                    showAlert(
+                        NSLocalizedString("Error accepting conditions", comment: "alert title"),
+                        message: responseError(error)
+                    )
                 }
             }
-        } label: {
-            Text("同意并进入 Nome")
         }
-        .buttonStyle(OnboardingButtonStyle())
     }
 
     private func completeOnboarding() {

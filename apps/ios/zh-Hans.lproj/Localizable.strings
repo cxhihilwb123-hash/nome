@@ -6400,3 +6400,6 @@ server test failure */
 "Let's talk in Nome" = "一起在 Nome 聊聊";
 "<p>Hi!</p>\n<p><a href=\"%@\">Connect to me via Nome</a></p>" = "<p>你好！</p>\n<p><a href=\"%@\">通过 Nome 联系我</a></p>";
 "Contact address" = "联系地址";
+"Talk to someone" = "开始聊天";
+"Let someone connect to you" = "邀请别人联系你";
+"Connect via link or QR code" = "通过链接或二维码连接";

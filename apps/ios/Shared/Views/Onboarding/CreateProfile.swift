@@ -201,7 +201,7 @@ struct CreateFirstProfile: View {
     @Environment(\.colorScheme) var colorScheme: ColorScheme
     @State private var displayName: String = ""
     @FocusState private var focusDisplayName
-    @State private var nextStepNavLinkActive = false
+    @State private var creationInProgress = false
     @State private var showMigrateSheet = false
     var body: some View {
         let spacing: CGFloat = 16
@@ -245,10 +245,17 @@ struct CreateFirstProfile: View {
                             .font(.subheadline.weight(.semibold))
                             .foregroundColor(NomeOnboardingPalette.navy)
                         profileNameField()
-                        Text("只需要一个名字。手机号、邮箱和密码都不是必须项。")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
+                        if let validationMessage = firstProfileNameValidationMessage(displayName) {
+                            Text(validationMessage)
+                                .font(.caption)
+                                .foregroundColor(.red)
+                                .fixedSize(horizontal: false, vertical: true)
+                        } else {
+                            Text("只需要一个名字。手机号、邮箱和密码都不是必须项。")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                     }
                     .padding(.top, 2)
 
@@ -332,37 +339,32 @@ struct CreateFirstProfile: View {
     }
 
     private func createProfileButton() -> some View {
-        ZStack {
-            Button {
-                createProfile()
-            } label: {
-                Text("创建本机身份")
+        let disabled = creationInProgress || !canCreateFirstProfile(displayName)
+        return Button {
+            createProfile()
+        } label: {
+            HStack(spacing: 8) {
+                if creationInProgress {
+                    ProgressView()
+                        .tint(.white)
+                }
+                Text(creationInProgress ? "正在创建…" : "创建本机身份")
             }
-            .buttonStyle(OnboardingButtonStyle(isDisabled: !canCreateFirstProfile(displayName)))
-            .disabled(!canCreateFirstProfile(displayName))
-
-            NavigationLink(isActive: $nextStepNavLinkActive) {
-                nextStepDestinationView()
-            } label: {
-                EmptyView()
-            }
-            .frame(width: 1, height: 1)
-            .hidden()
         }
-    }
-
-    private func showAlert(_ alert: UserProfileAlert) {
-        AlertManager.shared.showAlert(userProfileAlert(alert, $displayName))
-    }
-
-    private func nextStepDestinationView() -> some View {
-        YourNetworkView()
-            .navigationBarBackButtonHidden(true)
-            .modifier(ThemedBackground())
+        .buttonStyle(OnboardingTransitionButtonStyle(isDisabled: disabled))
+        .disabled(disabled)
     }
 
     private func createProfile() {
+        guard !creationInProgress else { return }
+        creationInProgress = true
         hideKeyboard()
+        DispatchQueue.main.async {
+            performCreateProfile()
+        }
+    }
+
+    private func performCreateProfile() {
         let profile = Profile(
             displayName: displayName.trimmingCharacters(in: .whitespaces),
             fullName: ""
@@ -376,15 +378,27 @@ struct CreateFirstProfile: View {
                 await applyNomeOfficialServersIfConfigured()
             }
             onboardingStageDefault.set(.step3_ChooseServerOperators)
-            nextStepNavLinkActive = true
+            m.onboardingStage = .step3_ChooseServerOperators
         } catch let error {
-            showCreateProfileAlert(showAlert: showAlert, error)
+            creationInProgress = false
+            showCreateProfileAlert(
+                showAlert: { AlertManager.shared.showAlert(userProfileAlert($0, $displayName)) },
+                error
+            )
         }
     }
 }
 
 private func canCreateFirstProfile(_ displayName: String) -> Bool {
-    !displayName.trimmingCharacters(in: .whitespaces).isEmpty
+    let name = displayName.trimmingCharacters(in: .whitespaces)
+    return !name.isEmpty && mkValidName(name) == name
+}
+
+private func firstProfileNameValidationMessage(_ displayName: String) -> String? {
+    let name = displayName.trimmingCharacters(in: .whitespaces)
+    return !name.isEmpty && mkValidName(name) != name
+        ? "显示名称包含不支持的字符或过长，请修改后继续。"
+        : nil
 }
 
 private func showCreateProfileAlert(

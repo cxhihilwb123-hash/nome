@@ -1321,12 +1321,15 @@ struct ChatListSearchBar: View {
                 }
 
                 if searchFocussed {
-                    Text("Cancel")
-                        .foregroundColor(theme.colors.primary)
-                        .onTapGesture {
-                            searchText = ""
-                            searchFocussed = false
-                        }
+                    Button {
+                        searchText = ""
+                        searchFocussed = false
+                    } label: {
+                        Text("Cancel")
+                            .frame(minWidth: 44, minHeight: 44)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundColor(theme.colors.primary)
                 }
             }
 
@@ -1685,6 +1688,7 @@ struct ChatListView_Previews: PreviewProvider {
 
 #if DEBUG
 struct NomeChatListPreviewHost: View {
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var chatModel: ChatModel
     @State private var userPickerSheet: UserPickerSheet? = nil
     private let showContacts: Bool
@@ -1705,11 +1709,15 @@ struct NomeChatListPreviewHost: View {
         }
         .navigationViewStyle(.stack)
         .onAppear {
+            reactOnDarkThemeChanges(colorScheme == .dark)
             chatModel.currentUser = User.sampleData
             chatModel.chatRunning = true
             chatModel.chatInitialized = true
             chatModel.onboardingStage = nil
             chatModel.updateChats(Self.previewChatData)
+        }
+        .onChange(of: colorScheme) { scheme in
+            reactOnDarkThemeChanges(scheme == .dark)
         }
     }
 
