@@ -6403,3 +6403,33 @@ server test failure */
 "Talk to someone" = "开始聊天";
 "Let someone connect to you" = "邀请别人联系你";
 "Connect via link or QR code" = "通过链接或二维码连接";
+
+/* Nome public channel creation */
+"Configure relays" = "配置频道中继";
+"Create public channel" = "创建公开频道";
+"Enable at least one chat relay in Network & Servers." = "请在“网络和服务器”中至少启用一个频道中继。";
+"Channel image" = "频道图片";
+"Enter channel name…" = "输入频道名称…";
+"Error creating channel" = "创建频道失败";
+"Relay results:" = "中继连接结果：";
+"%d/%d relays active, %d failed" = "%d/%d 个中继已连接，%d 个失败";
+"%d/%d relays active" = "%d/%d 个中继已连接";
+"Relay connection failed" = "频道中继连接失败";
+"Cancel and delete channel" = "取消并删除频道";
+"Not all relays connected" = "部分频道中继尚未连接";
+"Channel will start working with %d of %d relays. Continue?" = "频道将使用已连接的 %d/%d 个中继开始运行。是否继续？";
+"Creating channel" = "正在创建频道";
+"Channel link" = "频道链接";
+"Cancel creating channel?" = "取消创建频道？";
+"Your profile **%@** will be shared with channel relays and subscribers.\nRelays can access channel messages." = "你的资料 **%@** 将分享给频道中继和订阅者。\n频道中继可以访问频道消息。";
+"Your new channel %@ is connected to %d of %d relays.\nIf you cancel, the channel will be deleted - you can create it again." = "新频道 %@ 已连接 %d/%d 个中继。\n如果取消，频道将被删除，你之后可以重新创建。";
+"Wait" = "继续等待";
+"failed" = "失败";
+"removed by operator" = "已被运营方移除";
+"new" = "新建";
+"accepted" = "已接受";
+"active" = "已连接";
+
+/* Nome invitation fallback */
+"Cannot create link" = "无法创建链接";
+"Nome could not create an invitation yet. Check that your local profile is ready and chat is running." = "Nome 暂时无法创建邀请链接。请确认本地资料已完成、聊天服务正在运行，然后重试。";

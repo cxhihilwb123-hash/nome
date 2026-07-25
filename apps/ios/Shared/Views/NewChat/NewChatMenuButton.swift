@@ -285,14 +285,12 @@ struct NewChatSheet: View {
 }
 
 private struct NomeSheetIntroCard: View {
-    @Environment(\.colorScheme) var colorScheme
-
     var body: some View {
         HStack(spacing: 14) {
-            Image(colorScheme == .light ? "icon-light" : "icon-dark")
+            Image("nome_header_logo")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 54, height: 54)
+                .frame(width: 92, height: 48)
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 5) {

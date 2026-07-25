@@ -1399,16 +1399,11 @@ private struct NomeDisabledBrowseGroupsRow: View {
 
 private struct NomeInlineBrandMark: View {
     var body: some View {
-        HStack(spacing: 6) {
-            Image("icon-light")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 20, height: 20)
-            Text("Nome")
-                .font(.subheadline.weight(.semibold))
-                .foregroundColor(NomeConnectPalette.navy)
-        }
-        .accessibilityLabel("Nome")
+        Image("nome_header_logo")
+            .resizable()
+            .scaledToFit()
+            .frame(width: 82, height: 34)
+            .accessibilityLabel("Nome")
     }
 }
 
@@ -1420,16 +1415,12 @@ private struct NomeFlowPageHeader: View {
 
     var body: some View {
         VStack(spacing: 10) {
-            HStack(spacing: 6) {
-                Image("icon-light")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 24, height: 24)
-                Text("Nome")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundColor(NomeConnectPalette.navy)
-            }
-            .frame(maxWidth: .infinity)
+            Image("nome_header_logo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 104, height: 42)
+                .accessibilityLabel("Nome")
+                .frame(maxWidth: .infinity)
 
             HStack(alignment: .center, spacing: 12) {
                 Image(systemName: icon)
