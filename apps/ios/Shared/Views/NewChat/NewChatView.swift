@@ -1414,38 +1414,29 @@ private struct NomeFlowPageHeader: View {
     let tint: Color
 
     var body: some View {
-        VStack(spacing: 10) {
-            Image("nome_header_logo")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 104, height: 42)
-                .accessibilityLabel("Nome")
-                .frame(maxWidth: .infinity)
+        HStack(alignment: .center, spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(width: 38, height: 38)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(tint)
+                )
 
-            HStack(alignment: .center, spacing: 12) {
-                Image(systemName: icon)
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.white)
-                    .frame(width: 38, height: 38)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(tint)
-                    )
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.system(size: 27, weight: .bold))
-                        .foregroundColor(NomeConnectPalette.navy)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.82)
-                    Text(subtitle)
-                        .font(.subheadline)
-                        .lineSpacing(2)
-                        .foregroundColor(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 0)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 27, weight: .bold))
+                    .foregroundColor(NomeConnectPalette.navy)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                Text(subtitle)
+                    .font(.subheadline)
+                    .lineSpacing(2)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
+            Spacer(minLength: 0)
         }
         .padding(.top, 2)
         .padding(.bottom, 2)

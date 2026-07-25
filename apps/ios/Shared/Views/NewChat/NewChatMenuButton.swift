@@ -184,7 +184,7 @@ struct NewChatSheet: View {
                         UserAddressView(shareViaProfile: chatModel.currentUser?.addressShared ?? false)
                             .navigationTitle("公开联系方式")
                             .modifier(ThemedBackground(grouped: true))
-                            .navigationBarTitleDisplayMode(.large)
+                            .navigationBarTitleDisplayMode(.inline)
                     } label: {
                         NomeSheetActionRow(
                             icon: "globe",

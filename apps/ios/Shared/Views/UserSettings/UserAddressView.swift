@@ -553,38 +553,29 @@ private struct NomeAddressInlineBrandMark: View {
 
 private struct NomeAddressPageHeader: View {
     var body: some View {
-        VStack(spacing: 10) {
-            Image("nome_header_logo")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 104, height: 42)
-                .accessibilityLabel("Nome")
-                .frame(maxWidth: .infinity)
+        HStack(alignment: .center, spacing: 12) {
+            Image(systemName: "globe")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(width: 38, height: 38)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(NomeAddressPalette.green)
+                )
 
-            HStack(alignment: .center, spacing: 12) {
-                Image(systemName: "globe")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.white)
-                    .frame(width: 38, height: 38)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(NomeAddressPalette.green)
-                    )
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("公开联系方式")
-                        .font(.system(size: 27, weight: .bold))
-                        .foregroundColor(NomeAddressPalette.navy)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.82)
-                    Text("让别人向你发起联系请求，是否通过仍由你决定。")
-                        .font(.subheadline)
-                        .lineSpacing(2)
-                        .foregroundColor(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 0)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("公开联系方式")
+                    .font(.system(size: 27, weight: .bold))
+                    .foregroundColor(NomeAddressPalette.navy)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                Text("让别人向你发起联系请求，是否通过仍由你决定。")
+                    .font(.subheadline)
+                    .lineSpacing(2)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
+            Spacer(minLength: 0)
         }
         .padding(.top, 2)
         .padding(.bottom, 2)
