@@ -50,6 +50,39 @@
 11. 加好友、加入群组和公开联系方式等二级页删除内容区重复 Logo，只保留顶部
     导航栏 Nome Logo；公开联系方式同时改为内联导航，避免大标题与内容标题
     重复。
+12. 修复带 Nome 私有服务器配置的新用户引导仍读取、展示并可能重新启用上游
+    运营商的问题。配置存在时，网络页现在只显示不可点击的
+    `Nome 官方服务器` 状态卡；进入首页前会再次应用 Nome SMP/XFTP 配置，
+    成功后才完成引导，失败时保留在当前页重试且不会改用其他服务器。
+
+### 服务器配置生效顺序跟进验证
+
+本次跟进使用 Git 忽略的 `apps/ios/Local.xcconfig` 构建，未在记录、截图、命令
+输出或提交中保存真实 SMP/XFTP 地址。编译产物只以布尔检查确认两个配置项分别
+以 `smp://` 和 `xftp://` 生效，本地配置文件仍未被 Git 跟踪。
+
+- iPhone 14 Pro 专用验收模拟器：卸载旧 App 后安装 Nome `6.5.6 (337)`，
+  使用 `Nome服务器修复测试` 完整走通欢迎、创建本机身份、网络说明、使用条件
+  和首页。
+- 网络页：PASS，只显示 `Nome 官方服务器` 和
+  `消息与文件服务器已自动配置`；没有 SimpleX/Flux 运营商 Logo、列表或选择
+  入口。
+- 辅助功能：PASS，Nome 官方服务器状态卡识别为静态文本而不是无效按钮；
+  通知方式和继续按钮保持可操作。
+- 完成顺序：PASS，点击进入首页时先应用 Nome 官方配置。模拟器系统日志记录
+  `Nome official message and file servers are active; preset operators are disabled`。
+- 冷启动恢复：PASS，完成后完全结束 App 再启动，直接回到首页，没有返回资料
+  或运营商设置页。
+- 设置页：PASS，服务器与 Tor 页面只显示 `Nome 官方服务器` 顶层入口，没有
+  SimpleX 官方运营商列表。
+- iPhone SE（第 3 代）：同一产物完成 14 个现有 UI 烟雾页面，全部截图成功、
+  哈希无重复，前后没有新增 Nome 崩溃报告；网络页和使用条件页的小屏布局通过。
+- 构建：PASS，Xcode 26.6、iOS 26.5，`** BUILD SUCCEEDED **`。
+- 脚本：`test-check-ios-preview-tooling.sh`、
+  `test-capture-nome-accessibility-previews.sh`、
+  `check-ios-preview-tooling.sh` 全部通过。
+
+敏感截图和烟雾输出仅保存在 Git 忽略的 `private/server-fix-*` 路径。
 
 ## 模拟器 A：全新用户
 

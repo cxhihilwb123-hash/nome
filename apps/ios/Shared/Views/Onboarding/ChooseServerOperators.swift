@@ -131,7 +131,11 @@ struct OnboardingConditionsView: View {
                         NomeOnboardingFeatureRow(
                             icon: "gearshape",
                             title: "以后仍可调整",
-                            text: selectedOperatorIds.isEmpty ? "当前使用默认网络设置，进入 app 后可在设置里更改。" : "当前已选择 \(selectedOperatorIds.count) 个运营商，进入 app 后仍可更改。",
+                            text: NomeServerConfiguration.isConfigured
+                                ? "Nome 官方消息与文件服务器已自动配置，进入 app 后可查看连接状态。"
+                                : selectedOperatorIds.isEmpty
+                                    ? "当前使用默认网络设置，进入 app 后可在设置里更改。"
+                                    : "当前已选择 \(selectedOperatorIds.count) 个运营商，进入 app 后仍可更改。",
                             tint: NomeOnboardingPalette.purple
                         )
                     }
@@ -221,6 +225,21 @@ struct OnboardingConditionsView: View {
         guard !acceptanceInProgress else { return }
         acceptanceInProgress = true
         Task {
+            if NomeServerConfiguration.isConfigured {
+                let applied = await applyNomeOfficialServersIfConfigured()
+                await MainActor.run {
+                    if applied {
+                        completeOnboarding()
+                    } else {
+                        acceptanceInProgress = false
+                        showAlert(
+                            NSLocalizedString("无法启用 Nome 官方服务器", comment: "alert title"),
+                            message: NSLocalizedString("请检查网络连接，然后重试。Nome 不会改用其他服务器。", comment: "alert message")
+                        )
+                    }
+                }
+                return
+            }
             if selectedOperatorIds.isEmpty {
                 await MainActor.run { completeOnboarding() }
                 return

@@ -30,6 +30,7 @@ struct YourNetworkView: View {
     @State private var sheetItem: YourNetworkSheet? = nil
     @State private var nextStepNavLinkActive = false
     @State private var justOpened = true
+    private var usesNomeOfficialServers: Bool { NomeServerConfiguration.isConfigured }
 
     var body: some View {
         GeometryReader { g in
@@ -41,13 +42,21 @@ struct YourNetworkView: View {
                     NomeOnboardingHeroCard(
                         symbol: "network.badge.shield.half.filled",
                         title: "设置网络与通知",
-                        subtitle: "Nome 会通过消息服务器转发加密消息。你可以选择运营商和通知方式，之后也能在设置里调整。",
+                        subtitle: usesNomeOfficialServers
+                            ? "Nome 已自动配置官方消息与文件服务器。你可以选择通知方式，之后也能在设置里调整。"
+                            : "Nome 会通过消息服务器转发加密消息。你可以选择运营商和通知方式，之后也能在设置里调整。",
                         tint: NomeOnboardingPalette.green,
-                        pills: [
-                            ("server.rack", "可选运营商"),
-                            ("bell.badge", "通知模式"),
-                            ("gearshape", "之后可改")
-                        ]
+                        pills: usesNomeOfficialServers
+                            ? [
+                                ("checkmark.shield", "官方服务器"),
+                                ("bell.badge", "通知模式"),
+                                ("gearshape", "之后可改")
+                            ]
+                            : [
+                                ("server.rack", "可选运营商"),
+                                ("bell.badge", "通知模式"),
+                                ("gearshape", "之后可改")
+                            ]
                     )
 
                     VStack(spacing: 10) {
@@ -75,8 +84,13 @@ struct YourNetworkView: View {
         }
         .onAppear {
             if justOpened {
-                serverOperators = ChatModel.shared.conditions.serverOperators
-                selectedOperatorIds = Set(serverOperators.filter { $0.enabled }.map { $0.operatorId })
+                if usesNomeOfficialServers {
+                    serverOperators = []
+                    selectedOperatorIds = []
+                } else {
+                    serverOperators = ChatModel.shared.conditions.serverOperators
+                    selectedOperatorIds = Set(serverOperators.filter { $0.enabled }.map { $0.operatorId })
+                }
                 justOpened = false
             }
         }
@@ -94,31 +108,54 @@ struct YourNetworkView: View {
         .navigationBarHidden(true)
     }
 
+    @ViewBuilder
     private func configureRoutersButton() -> some View {
-        Button {
-            sheetItem = .configureOperators
-        } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "server.rack")
-                    .font(.system(size: 17, weight: .semibold))
+        if usesNomeOfficialServers {
+            configureRoutersLabel()
+        } else {
+            Button {
+                sheetItem = .configureOperators
+            } label: {
+                configureRoutersLabel()
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func configureRoutersLabel() -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "server.rack")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundColor(NomeOnboardingPalette.green)
+                .frame(width: 36, height: 36)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(NomeOnboardingPalette.green.opacity(0.12))
+                )
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(usesNomeOfficialServers ? "Nome 官方服务器" : "消息服务器")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundColor(NomeOnboardingPalette.navy)
+                Text(
+                    usesNomeOfficialServers
+                        ? "消息与文件服务器已自动配置"
+                        : selectedOperatorIds.isEmpty
+                            ? "使用默认设置"
+                            : "已选择 \(selectedOperatorIds.count) 个运营商"
+                )
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            Spacer(minLength: 0)
+
+            if usesNomeOfficialServers {
+                Image(systemName: "checkmark.shield.fill")
+                    .font(.system(size: 19, weight: .semibold))
                     .foregroundColor(NomeOnboardingPalette.green)
-                    .frame(width: 36, height: 36)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(NomeOnboardingPalette.green.opacity(0.12))
-                    )
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("消息服务器")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundColor(NomeOnboardingPalette.navy)
-                    Text(selectedOperatorIds.isEmpty ? "使用默认设置" : "已选择 \(selectedOperatorIds.count) 个运营商")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-
-                Spacer(minLength: 0)
-
+                    .accessibilityLabel("Nome 官方服务器已启用")
+            } else {
                 HStack(spacing: -4) {
                     ForEach(serverOperators.prefix(3).reversed()) { op in
                         Image(op.logo(colorScheme))
@@ -135,13 +172,20 @@ struct YourNetworkView: View {
                     .font(.caption.weight(.semibold))
                     .foregroundColor(.secondary)
             }
-            .padding(14)
-            .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(NomeOnboardingPalette.surface)
-            )
         }
-        .buttonStyle(.plain)
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(NomeOnboardingPalette.surface)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(
+            usesNomeOfficialServers
+                ? "Nome 官方服务器，消息与文件服务器已自动配置"
+                : selectedOperatorIds.isEmpty
+                    ? "消息服务器，使用默认设置"
+                    : "消息服务器，已选择 \(selectedOperatorIds.count) 个运营商"
+        )
     }
 
     private func configureNotificationsButton() -> some View {
@@ -194,7 +238,9 @@ struct YourNetworkView: View {
             .buttonStyle(OnboardingTransitionButtonStyle())
 
             NavigationLink(isActive: $nextStepNavLinkActive) {
-                OnboardingConditionsView(selectedOperatorIds: selectedOperatorIds)
+                OnboardingConditionsView(
+                    selectedOperatorIds: usesNomeOfficialServers ? [] : selectedOperatorIds
+                )
                     .navigationBarBackButtonHidden(true)
                     .modifier(ThemedBackground())
             } label: {

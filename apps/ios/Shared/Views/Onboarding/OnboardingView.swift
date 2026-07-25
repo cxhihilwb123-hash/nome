@@ -30,7 +30,11 @@ struct OnboardingView: View {
                     .navigationBarBackButtonHidden(true)
                     .modifier(ThemedBackground())
             case .step4_NetworkCommitments:
-                OnboardingConditionsView(selectedOperatorIds: Set(ChatModel.shared.conditions.serverOperators.filter { $0.enabled }.map { $0.operatorId }))
+                OnboardingConditionsView(
+                    selectedOperatorIds: NomeServerConfiguration.isConfigured
+                        ? []
+                        : Set(ChatModel.shared.conditions.serverOperators.filter { $0.enabled }.map { $0.operatorId })
+                )
                     .navigationBarBackButtonHidden(true)
                     .modifier(ThemedBackground())
             case .onboardingComplete: EmptyView()
