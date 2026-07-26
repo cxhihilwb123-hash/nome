@@ -239,6 +239,14 @@ fun parseRTCIceServer(str: String): RTCIceServer? {
   return null
 }
 
+fun rtcIceServerHostname(str: String): String? {
+  var s = replaceScheme(str, "stun:")
+  s = replaceScheme(s, "stuns:")
+  s = replaceScheme(s, "turn:")
+  s = replaceScheme(s, "turns:")
+  return runCatching { URI(s) }.getOrNull()?.host
+}
+
 private fun replaceScheme(s: String, scheme: String): String = if (s.startsWith(scheme)) s.replace(scheme, "$scheme//") else s
 
 fun parseRTCIceServers(servers: List<String>): List<RTCIceServer>? {

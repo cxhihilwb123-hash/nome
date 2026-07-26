@@ -22,6 +22,7 @@ import chat.simplex.common.model.ChatModel
 import chat.simplex.common.platform.ColumnWithScrollBar
 import chat.simplex.common.ui.theme.*
 import chat.simplex.common.views.call.parseRTCIceServers
+import chat.simplex.common.views.call.rtcIceServerHostname
 import chat.simplex.common.views.helpers.*
 import chat.simplex.res.MR
 
@@ -165,7 +166,9 @@ fun RTCServersLayout(
               Modifier.verticalScroll(rememberScrollState())
             ) {
               Text(
-                userRTCServersStr.value,
+                userRTCServersStr.value.lineSequence()
+                  .map { rtcIceServerHostname(it) ?: it }
+                  .joinToString(separator = "\n"),
                 Modifier
                   .padding(vertical = 5.dp, horizontal = 7.dp),
                 style = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 14.sp),

@@ -66,10 +66,10 @@ let afterCallInitializedCandidates = [];
 const stopTrackOnAndroid = false;
 const processCommand = (function () {
     const defaultIceServers = [
-        { urls: ["stuns:stun.simplex.im:443"] },
-        { urls: ["stun:stun.simplex.im:443"] },
-        //{urls: ["turns:turn.simplex.im:443?transport=udp"], username: "private2", credential: "Hxuq2QxUjnhj96Zq2r4HjqHRj"},
-        { urls: ["turns:turn.simplex.im:443?transport=tcp"], username: "private2", credential: "Hxuq2QxUjnhj96Zq2r4HjqHRj" },
+        { urls: ["stun:turn.nome.im:3478"] },
+        { urls: ["turn:turn.nome.im:3478?transport=udp"], username: "nome-9950898a5a5a", credential: "512b88bc80a3f8be7d71515d555292c1386046ea66fe87e6f223d2acf9276967" },
+        { urls: ["turn:turn.nome.im:3478?transport=tcp"], username: "nome-9950898a5a5a", credential: "512b88bc80a3f8be7d71515d555292c1386046ea66fe87e6f223d2acf9276967" },
+        { urls: ["turns:turn.nome.im:5349?transport=tcp"], username: "nome-9950898a5a5a", credential: "512b88bc80a3f8be7d71515d555292c1386046ea66fe87e6f223d2acf9276967" },
     ];
     function getCallConfig(encodedInsertableStreams, iceServers, relay) {
         return {
