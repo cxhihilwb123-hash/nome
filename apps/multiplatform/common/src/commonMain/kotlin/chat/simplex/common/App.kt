@@ -19,6 +19,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
+import chat.simplex.common.activation.ActivationCapability
+import chat.simplex.common.activation.ActivationGate
+import chat.simplex.common.activation.PlatformActivationOverlay
 import chat.simplex.common.views.usersettings.SetDeliveryReceiptsView
 import chat.simplex.common.model.*
 import chat.simplex.common.model.ChatController.appPrefs
@@ -318,14 +321,20 @@ fun MainScreen() {
       if (onboarding == OnboardingStage.OnboardingComplete) {
         LaunchedEffect(chatModel.chatRunning.value, chatModel.currentUser.value, chatModel.appOpenUrl.value) {
           val pendingUrl = chatModel.appOpenUrl.value
-          if (pendingUrl != null && chatModel.chatRunning.value == true) {
-            chatModel.appOpenUrl.value = null
-            connectIfOpenedViaUri(
-              rhId = pendingUrl.remoteHostId,
-              uri = pendingUrl.uri,
-              chatModel = chatModel,
-              source = pendingUrl.source,
-            )
+          if (
+            pendingUrl != null &&
+            chatModel.chatRunning.value == true &&
+            !ActivationGate.hasBlockedPending(ActivationCapability.DEEP_LINK)
+          ) {
+            if (ActivationGate.guardFresh(ActivationCapability.DEEP_LINK, "pending_deep_link")) {
+              chatModel.appOpenUrl.value = null
+              connectIfOpenedViaUri(
+                rhId = pendingUrl.remoteHostId,
+                uri = pendingUrl.uri,
+                chatModel = chatModel,
+                source = pendingUrl.source,
+              )
+            }
           }
         }
       }
@@ -333,6 +342,7 @@ fun MainScreen() {
     val invitation = chatModel.activeCallInvitation.value
     if (invitation != null) IncomingCallAlertView(invitation, chatModel)
     AlertManager.shared.showInView()
+    if (!authOverlayVisible) PlatformActivationOverlay()
 
     LaunchedEffect(Unit) {
       delay(1000)

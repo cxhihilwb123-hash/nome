@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="nome_activation_card_title">激活 Nome</string>
+  <string name="nome_activation_card_body">本地身份和聊天记录仍可使用。发送消息、添加联系人、传输文件、加入群组和通话需要邀请码。</string>
+  <string name="nome_activation_card_checking">Nome 需要先检查激活策略，才能启动聊天网络。</string>
+  <string name="nome_activation_sheet_title">激活此设备</string>
+  <string name="nome_activation_sheet_body">请输入邀请码。被拦截的操作会保留，但激活后不会自动提交。</string>
+  <string name="nome_activation_check_required">请联网检查使用权限；如果已有邀请码，也可以直接输入。</string>
+  <string name="nome_activation_invite_code">邀请码</string>
+  <string name="nome_activation_activate">激活</string>
+  <string name="nome_activation_migrate">恢复激活</string>
+  <string name="nome_activation_migration_body">管理员重置已就绪。可在此设备恢复激活；待处理操作不会自动执行。</string>
+  <string name="nome_activation_card_migration">管理员重置已就绪。请在此设备恢复激活后继续使用网络功能。</string>
+  <string name="nome_activation_retry">重新检查</string>
+  <string name="nome_activation_not_now">暂不激活</string>
+  <string name="nome_activation_offline_grace">当前处于临时离线可用期。</string>
+  <string name="nome_activation_pending_link_title">检查待处理链接</string>
+  <string name="nome_activation_pending_link_body">设备已激活。Nome 已保留该链接，但没有自动打开或提交。</string>
+  <string name="nome_activation_review_link">检查链接</string>
+  <string name="nome_activation_keep_pending">稍后处理</string>
+</resources>

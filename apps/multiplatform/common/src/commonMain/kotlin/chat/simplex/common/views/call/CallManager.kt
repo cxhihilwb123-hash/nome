@@ -1,5 +1,7 @@
 package chat.simplex.common.views.call
 
+import chat.simplex.common.activation.ActivationCapability
+import chat.simplex.common.activation.ActivationGate
 import chat.simplex.common.model.*
 import chat.simplex.common.platform.*
 import chat.simplex.common.views.helpers.withBGApi
@@ -24,6 +26,7 @@ class CallManager(val chatModel: ChatModel) {
   }
 
   fun acceptIncomingCall(invitation: RcvCallInvitation) = withBGApi {
+    if (!ActivationGate.guardFresh(ActivationCapability.CALL, "accept_incoming_call")) return@withBGApi
     val call = chatModel.activeCall.value
     val contactInfo = chatModel.controller.apiContactInfo(invitation.remoteHostId, invitation.contact.contactId)
     val profile = contactInfo?.second ?: invitation.user.profile.toProfile()

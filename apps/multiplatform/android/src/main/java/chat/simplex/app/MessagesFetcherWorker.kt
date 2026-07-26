@@ -4,6 +4,8 @@ import android.content.Context
 import android.util.Log
 import androidx.work.*
 import chat.simplex.app.SimplexService.Companion.showPassphraseNotification
+import chat.simplex.common.activation.ActivationCapability
+import chat.simplex.common.activation.ActivationGate
 import chat.simplex.common.model.ChatController
 import chat.simplex.common.platform.*
 import chat.simplex.common.views.helpers.DBMigrationResult
@@ -16,6 +18,7 @@ object MessagesFetcherWorker {
   private const val UNIQUE_WORK_TAG = BuildConfig.APPLICATION_ID + ".UNIQUE_MESSAGES_FETCHER"
 
   fun scheduleWork(intervalSec: Int = 600, durationSec: Int = 60) {
+    if (!ActivationGate.guard(ActivationCapability.WORKER, "messages_worker_schedule", revealActivation = false)) return
     val initialDelaySec = intervalSec.toLong()
     Log.d(TAG, "Worker: scheduling work to run at ${Date(System.currentTimeMillis() + initialDelaySec * 1000)} for $durationSec sec")
     val periodicWorkRequest = OneTimeWorkRequest.Builder(MessagesFetcherWork::class.java)
@@ -51,6 +54,9 @@ class MessagesFetcherWork(
   }
 
   override suspend fun doWork(): Result {
+    if (!ActivationGate.guardFresh(ActivationCapability.WORKER, "messages_worker_execute", revealActivation = false)) {
+      return Result.success()
+    }
     // Skip when Simplex service is currently working
     if (SimplexService.getServiceState(SimplexApp.context) == SimplexService.ServiceState.STARTED) {
       reschedule()

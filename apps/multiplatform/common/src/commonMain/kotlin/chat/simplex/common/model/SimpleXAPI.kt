@@ -3,6 +3,8 @@ package chat.simplex.common.model
 import SectionItemView
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
+import chat.simplex.common.activation.ActivationCapability
+import chat.simplex.common.activation.ActivationGate
 import chat.simplex.common.views.helpers.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.Saver
@@ -572,6 +574,7 @@ object ChatController {
   }
 
   suspend fun startChat(user: User) {
+    if (!ActivationGate.guardFresh(ActivationCapability.START_CHAT, source = "chat_controller_start")) return
     Log.d(TAG, "user: $user")
     val previousUser = chatModel.currentUser.value
     try {
@@ -774,6 +777,18 @@ object ChatController {
     }
   }
 
+  /** Stop receiver delivery before the core so local-only mode has no network ingress. */
+  suspend fun pauseForActivation() {
+    stopReceiver()
+    if (chatModel.chatRunning.value == true) {
+      try {
+        apiStopChat()
+      } finally {
+        chatModel.chatRunning.value = false
+      }
+    }
+  }
+
   private suspend fun sendCmdWithRetry(rhId: Long?, cmd: CC, inProgress: MutableState<Boolean>? = null, retryNum: Int = 0): API? {
     val r = sendCmd(rhId, cmd, retryNum = retryNum)
     val alert = if (r is API.Error) retryableNetworkErrorAlert(r.err) else null
@@ -865,6 +880,7 @@ object ChatController {
 
   // Spec: spec/api.md#sendCmd
   suspend fun sendCmd(rhId: Long?, cmd: CC, otherCtrl: ChatCtrl? = null, retryNum: Int = 0, log: Boolean = true): API {
+    ActivationGate.enforceCommand(cmd, remote = rhId != null)
     val ctrl = otherCtrl ?: chatCtrl ?: throw Exception("Controller is not initialized")
 
     return withContext(Dispatchers.IO) {

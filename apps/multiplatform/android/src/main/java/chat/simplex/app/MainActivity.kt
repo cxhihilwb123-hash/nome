@@ -14,6 +14,8 @@ import chat.simplex.app.model.NtfManager
 import chat.simplex.app.model.NtfManager.getUserIdFromIntent
 import chat.simplex.app.nome.NomeProductionShell
 import chat.simplex.common.*
+import chat.simplex.common.activation.ActivationCapability
+import chat.simplex.common.activation.ActivationGate
 import chat.simplex.common.helpers.*
 import chat.simplex.common.model.*
 import chat.simplex.common.ui.theme.*
@@ -176,6 +178,9 @@ fun processIntent(intent: Intent?) {
           uri = uri.toString(),
           source = AppOpenUrlSource.ExternalActionView,
         )
+        withLongRunningApi {
+          ActivationGate.guardFresh(ActivationCapability.DEEP_LINK, "android_action_view")
+        }
       } else {
         AlertManager.shared.showAlertMsg(generalGetString(MR.strings.error_parsing_uri_title), generalGetString(MR.strings.error_parsing_uri_desc))
       }
@@ -233,6 +238,11 @@ fun processExternalIntent(intent: Intent?) {
         }
         else -> {}
       }
+    }
+  }
+  if (chatModel.sharedContent.value != null) {
+    withLongRunningApi {
+      ActivationGate.guardFresh(ActivationCapability.SHARE, "android_action_send")
     }
   }
 }
