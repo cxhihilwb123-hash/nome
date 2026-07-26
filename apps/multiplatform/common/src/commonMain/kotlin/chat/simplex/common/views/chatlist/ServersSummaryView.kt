@@ -49,6 +49,7 @@ import chat.simplex.common.platform.*
 import chat.simplex.common.ui.theme.*
 import chat.simplex.common.views.helpers.*
 import chat.simplex.common.views.usersettings.SettingsPreferenceItem
+import chat.simplex.common.views.usersettings.networkAndServers.serverHostname
 import chat.simplex.res.MR
 import dev.icerock.moko.resources.compose.painterResource
 import dev.icerock.moko.resources.compose.stringResource
@@ -531,7 +532,7 @@ fun XFTPServerSummaryLayout(summary: XFTPServerSummary, statsStartedAt: Instant,
   SectionView(generalGetString(MR.strings.server_address).uppercase()) {
     SelectionContainer {
       Text(
-        summary.xftpServer,
+        serverHostname(summary.xftpServer),
         Modifier.padding(start = DEFAULT_PADDING, top = 5.dp, end = DEFAULT_PADDING, bottom = 10.dp),
         style = TextStyle(
           fontFamily = FontFamily.Monospace, fontSize = 16.sp,
@@ -563,7 +564,7 @@ fun SMPServerSummaryLayout(summary: SMPServerSummary, statsStartedAt: Instant, r
   SectionView(generalGetString(MR.strings.server_address).uppercase()) {
     SelectionContainer {
       Text(
-        summary.smpServer,
+        serverHostname(summary.smpServer),
         Modifier.padding(start = DEFAULT_PADDING, top = 5.dp, end = DEFAULT_PADDING, bottom = 10.dp),
         style = TextStyle(
           fontFamily = FontFamily.Monospace, fontSize = 16.sp,

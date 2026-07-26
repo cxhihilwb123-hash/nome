@@ -170,7 +170,9 @@ suspend fun initChatController(useKey: String? = null, confirmMigrations: Migrat
         appPreferences.onboardingStage.set(newStage)
       }
       chatController.startChat(user)
-      platform.androidChatInitializedAndStarted()
+      if (chatModel.chatRunning.value == true) {
+        platform.androidChatInitializedAndStarted()
+      }
     } else {
       chatController.getUserChatData(null)
       chatModel.localUserCreated.value = currentUser.value != null

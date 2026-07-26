@@ -143,7 +143,7 @@ private fun PresetServer(
   SectionView(stringResource(MR.strings.smp_servers_preset_address).uppercase()) {
     SelectionContainer {
       Text(
-        server.value.server,
+        serverHostname(server.value.server),
         Modifier.padding(start = DEFAULT_PADDING, top = 5.dp, end = DEFAULT_PADDING, bottom = 10.dp),
         style = TextStyle(
           fontFamily = FontFamily.Monospace, fontSize = 16.sp,

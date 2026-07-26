@@ -573,12 +573,33 @@ object ChatController {
 
   suspend fun startChat(user: User) {
     Log.d(TAG, "user: $user")
+    val previousUser = chatModel.currentUser.value
     try {
+      chatModel.currentUser.value = user
       apiSetNetworkConfig(getNetCfg())
       val chatRunning = apiCheckChatRunning()
       val users = listUsers(null)
       chatModel.users.clear()
       chatModel.users.addAll(users)
+      val startedForNomeConfiguration = appPlatform.isAndroid && !chatRunning
+      if (startedForNomeConfiguration) {
+        // Server APIs require a running controller. No receiver or user-facing network action is
+        // started until the Nome configuration has been applied successfully.
+        apiStartChat()
+      }
+      if (appPlatform.isAndroid && !NomeServerConfiguration.applyBeforeNetwork(this, user)) {
+        Log.e(TAG, "Nome server configuration remains pending and will be retried")
+        if (startedForNomeConfiguration) {
+          try {
+            apiStopChat()
+          } catch (_: Throwable) {
+            Log.e(TAG, "Unable to stop the Nome server configuration bootstrap")
+          }
+        }
+        chatModel.chatRunning.value = false
+        chatModel.currentUser.value = previousUser
+        return
+      }
       if (!chatRunning) {
         chatModel.currentUser.value = user
         chatModel.localUserCreated.value = true
@@ -598,9 +619,10 @@ object ChatController {
         }
         Log.d(TAG, "startChat: running")
       }
-      apiStartChat()
+      if (!startedForNomeConfiguration) apiStartChat()
       appPrefs.chatStopped.set(false)
     } catch (e: Throwable) {
+      chatModel.currentUser.value = previousUser
       Log.e(TAG, "failed starting chat $e")
       throw e
     }
@@ -1321,14 +1343,16 @@ object ChatController {
     return null
   }
 
-  suspend fun setUserServers(rh: Long?, userServers: List<UserOperatorServers>): Boolean {
+  suspend fun setUserServers(rh: Long?, userServers: List<UserOperatorServers>, showError: Boolean = true): Boolean {
     val userId = currentUserId("setUserServers")
     val r = sendCmd(rh, CC.ApiSetUserServers(userId, userServers))
     if (r.result is CR.CmdOk) return true
-    AlertManager.shared.showAlertMsg(
-      generalGetString(MR.strings.failed_to_save_servers),
-      "${r.responseType}: ${r.details}"
-    )
+    if (showError) {
+      AlertManager.shared.showAlertMsg(
+        generalGetString(MR.strings.failed_to_save_servers),
+        "${r.responseType}: ${r.details}"
+      )
+    }
     Log.e(TAG, "setUserServers bad response: ${r.responseType} ${r.details}")
     return false
   }
@@ -4479,7 +4503,8 @@ enum class ServerProtocol {
 @Serializable
 enum class OperatorTag {
   @SerialName("simplex") SimpleX,
-  @SerialName("flux") Flux
+  @SerialName("flux") Flux,
+  @SerialName("nome") Nome
 }
 
 data class ServerOperatorInfo(
@@ -4492,29 +4517,16 @@ data class ServerOperatorInfo(
   val largeLogoDarkMode: ImageResource
 )
 val operatorsInfo: Map<OperatorTag, ServerOperatorInfo> = mapOf(
-  OperatorTag.SimpleX to ServerOperatorInfo(
+  OperatorTag.Nome to ServerOperatorInfo(
     description = listOf(
-      "SimpleX Chat is the first communication network that has no user profile IDs of any kind, not even random numbers or keys that identify the users.",
-      "SimpleX Chat Ltd develops the communication software for SimpleX network."
+      "Nome official message and file routing service.",
+      "Available through Nome's official smp.nome.im and xftp.nome.im endpoints."
     ),
-    website = "https://simplex.chat",
-    logo = MR.images.decentralized,
-    largeLogo = MR.images.logo,
-    logoDarkMode = MR.images.decentralized_light,
-    largeLogoDarkMode = MR.images.logo_light
-  ),
-  OperatorTag.Flux to ServerOperatorInfo(
-    description = listOf(
-      "Flux is the largest decentralized cloud, based on a global network of user-operated nodes.",
-      "Flux offers a powerful, scalable, and affordable cutting edge technology platform for all.",
-      "Flux operates servers in SimpleX network to improve its privacy and decentralization."
-    ),
-    website = "https://runonflux.com",
-    selfhost = "Self-host SimpleX servers on Flux" to "https://home.runonflux.io/apps/marketplace?q=simplex",
-    logo = MR.images.flux_logo_symbol,
-    largeLogo = MR.images.flux_logo,
-    logoDarkMode = MR.images.flux_logo_symbol,
-    largeLogoDarkMode = MR.images.flux_logo_light
+    website = "",
+    logo = MR.images.nome_mark,
+    largeLogo = MR.images.nome_mark,
+    logoDarkMode = MR.images.nome_mark,
+    largeLogoDarkMode = MR.images.nome_mark
   ),
 )
 
@@ -4594,20 +4606,20 @@ data class ServerOperator(
 ) {
   companion object {
     val dummyOperatorInfo = ServerOperatorInfo(
-      description = listOf("Default"),
-      website = "https://simplex.chat",
-      logo = MR.images.decentralized,
-      largeLogo = MR.images.logo,
-      logoDarkMode = MR.images.decentralized_light,
-      largeLogoDarkMode = MR.images.logo_light
+      description = emptyList(),
+      website = "",
+      logo = MR.images.ic_dns,
+      largeLogo = MR.images.ic_dns,
+      logoDarkMode = MR.images.ic_dns,
+      largeLogoDarkMode = MR.images.ic_dns
     )
 
     val sampleData1 = ServerOperator(
       operatorId = 1,
-      operatorTag = OperatorTag.SimpleX,
-      tradeName = "SimpleX Chat",
-      legalName = "SimpleX Chat Ltd",
-      serverDomains = listOf("simplex.im"),
+      operatorTag = OperatorTag.Nome,
+      tradeName = "Nome",
+      legalName = null,
+      serverDomains = listOf("nome.im"),
       conditionsAcceptance = ConditionsAcceptance.Accepted(acceptedAt = null, autoAccepted = false),
       enabled = true,
       smpRoles = ServerRoles(storage = true, proxy = true),
@@ -4846,7 +4858,7 @@ data class UserServer(
       preset = UserServer(
         remoteHostId = null,
         serverId = 1,
-        server = "smp://abcd@smp8.simplex.im",
+        server = "smp://RVzf_goDl1uPbeXQu7Mpi-gck_By0QhEGobrwPwULY8=:e0eabd5e5b046bd7e7082ad9d68e133c213281e9a9109c84@smp.nome.im",
         preset = true,
         tested = true,
         enabled = true,
@@ -4855,7 +4867,7 @@ data class UserServer(
       custom = UserServer(
         remoteHostId = null,
         serverId = 2,
-        server = "smp://abcd@smp9.simplex.im",
+        server = "smp://abcd@smp.example.invalid",
         preset = false,
         tested = false,
         enabled = false,
@@ -4864,7 +4876,7 @@ data class UserServer(
       untested = UserServer(
         remoteHostId = null,
         serverId = 3,
-        server = "smp://abcd@smp10.simplex.im",
+        server = "smp://abcd@smp-alt.example.invalid",
         preset = false,
         tested = null,
         enabled = true,
@@ -4873,7 +4885,7 @@ data class UserServer(
       xftpPreset = UserServer(
         remoteHostId = null,
         serverId = 4,
-        server = "xftp://abcd@xftp8.simplex.im",
+        server = "xftp://y00AWTizJH88sHCMioQ1m-d_xXWlwolHAek_Mc4MhYM=:accbd90c5c813d90facea657d3da87e022eae9ce07005b53@xftp.nome.im",
         preset = true,
         tested = true,
         enabled = true,
@@ -5002,10 +5014,10 @@ data class ServerAddress(
     )
     val sampleData = ServerAddress(
       serverProtocol = ServerProtocol.SMP,
-      hostnames = listOf("smp.simplex.im", "1234.onion"),
+      hostnames = listOf("smp.nome.im"),
       port = "",
-      keyHash = "LcJUMfVhwD8yxjAiSaDzzGF3-kLG4Uh0Fl_ZIjrRwjI=",
-      basicAuth = "server_password"
+      keyHash = "RVzf_goDl1uPbeXQu7Mpi-gck_By0QhEGobrwPwULY8=",
+      basicAuth = "e0eabd5e5b046bd7e7082ad9d68e133c213281e9a9109c84"
     )
 
     fun parseServerAddress(s: String): ServerAddress? {
