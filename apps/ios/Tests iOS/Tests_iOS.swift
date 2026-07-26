@@ -20,6 +20,8 @@ class Tests_iOS: XCTestCase {
 
     private let diagnosticRunIDKey = "NOME_REAL_CORE_DIAGNOSTIC_RUN_ID"
     private let diagnosticRoundsKey = "NOME_REAL_CORE_DIAGNOSTIC_ROUNDS"
+    private let callContactKey = "NOME_CALL_DIAGNOSTIC_CONTACT"
+    private let callMediaKey = "NOME_CALL_DIAGNOSTIC_MEDIA"
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.
@@ -89,6 +91,41 @@ class Tests_iOS: XCTestCase {
             }
             XCTAssertTrue(received, "Remote diagnostic message did not arrive: \(message)")
         }
+    }
+
+    func testStartNomeCallDiagnostic() throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let contact = environment[callContactKey], !contact.isEmpty,
+              let media = environment[callMediaKey], ["audio", "video"].contains(media) else {
+            throw XCTSkip("Set \(callContactKey) and \(callMediaKey)=audio|video to enable the call diagnostic")
+        }
+
+        let app = XCUIApplication()
+        app.launchEnvironment[callContactKey] = contact
+        app.launchEnvironment[callMediaKey] = media
+        app.launchEnvironment["NOME_DISABLE_CALLKIT_FOR_TESTS"] = "1"
+        app.launch()
+        skipQuiescenceWaits(in: app)
+
+        let contactLabel = app.staticTexts[contact].firstMatch
+        XCTAssertTrue(contactLabel.waitForExistence(timeout: 30), "Call diagnostic contact is not visible: \(contact)")
+        contactLabel.tap()
+        XCTAssertTrue(app.textViews["chat-compose-editor"].firstMatch.waitForExistence(timeout: 20))
+
+        let callMenu = app.buttons["chat-call-menu"].firstMatch
+        XCTAssertTrue(callMenu.waitForExistence(timeout: 10), "Call menu is not accessible")
+        callMenu.tap()
+
+        let mediaButton = app.buttons[media == "audio" ? "chat-audio-call" : "chat-video-call"].firstMatch
+        XCTAssertTrue(mediaButton.waitForExistence(timeout: 10), "Call media action is not accessible: \(media)")
+        print("[NOME_CALL_DIAG] start media=\(media) contact=\(contact)")
+        mediaButton.tap()
+
+        // Keep the caller alive while the peer accepts and require the connected state.
+        let connected = app.staticTexts["已连接"].firstMatch
+        XCTAssertTrue(connected.waitForExistence(timeout: 40), "Call did not reach the connected state: \(media)")
+        RunLoop.current.run(until: Date().addingTimeInterval(5))
+        attachDiagnosticScreenshot(app, name: "call-\(media)-connected")
     }
 
     func testLaunchPerformance() throws {

@@ -169,6 +169,11 @@ struct NewChatSheet: View {
                             .modifier(ThemedBackground(grouped: true))
                             .navigationBarTitleDisplayMode(.inline)
                             .navigationTitle(scanPasteMode == .group ? "加入群组" : "扫码或粘贴邀请")
+                            .onDisappear {
+                                // A sheet opened directly in group mode can navigate back to this
+                                // menu. The combined action must then return to general routing.
+                                scanPasteMode = .general
+                            }
                     } label: {
                         navigateOnTap(NomeSheetActionRow(
                             icon: "qrcode.viewfinder",

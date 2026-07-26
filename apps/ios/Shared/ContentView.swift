@@ -394,7 +394,7 @@ struct ContentView: View {
     }
 
     func requestNtfAuthorization() {
-        guard !ntfAuthorizationRequested else { return }
+        guard chatModel.notificationMode != .off, !ntfAuthorizationRequested else { return }
         ntfAuthorizationRequested = true
         NtfManager.shared.requestAuthorization(
             onDeny: {
@@ -493,6 +493,10 @@ struct ContentView: View {
     func showReRegisterTokenAlert() {
         dismissAllSheets() {
             let m = ChatModel.shared
+            guard m.notificationMode != .off else {
+                m.reRegisterTknStatus = nil
+                return
+            }
             if let errorTknStatus = m.reRegisterTknStatus, let token = chatModel.deviceToken {
                 chatModel.reRegisterTknStatus = nil
                 AlertManager.shared.showAlert(Alert(

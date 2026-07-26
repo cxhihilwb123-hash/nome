@@ -26,11 +26,17 @@ struct YourNetworkView: View {
     @Environment(\.colorScheme) var colorScheme: ColorScheme
     @State private var serverOperators: [ServerOperator] = []
     @State private var selectedOperatorIds = Set<Int64>()
-    @State private var notificationMode: NotificationsMode = .instant
+    @State private var notificationMode: NotificationsMode
     @State private var sheetItem: YourNetworkSheet? = nil
     @State private var nextStepNavLinkActive = false
     @State private var justOpened = true
     private var usesNomeOfficialServers: Bool { NomeServerConfiguration.isConfigured }
+
+    init() {
+        // Nome does not ship an upstream SimpleX notification-server preset.
+        // Keep official-server builds local until a Nome APNs/NTF service is configured.
+        _notificationMode = State(initialValue: NomeServerConfiguration.isConfigured ? .off : .instant)
+    }
 
     var body: some View {
         GeometryReader { g in
@@ -43,7 +49,7 @@ struct YourNetworkView: View {
                         symbol: "network.badge.shield.half.filled",
                         title: "设置网络与通知",
                         subtitle: usesNomeOfficialServers
-                            ? "Nome 已自动配置官方消息与文件服务器。你可以选择通知方式，之后也能在设置里调整。"
+                            ? "Nome 已自动配置官方消息与文件服务器。官方通知服务器启用后，可在设置里调整通知方式。"
                             : "Nome 会通过消息服务器转发加密消息。你可以选择运营商和通知方式，之后也能在设置里调整。",
                         tint: NomeOnboardingPalette.green,
                         pills: usesNomeOfficialServers
@@ -190,7 +196,9 @@ struct YourNetworkView: View {
 
     private func configureNotificationsButton() -> some View {
         Button {
-            sheetItem = .configureNotifications
+            if !usesNomeOfficialServers {
+                sheetItem = .configureNotifications
+            }
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: notificationMode.icon)
@@ -206,7 +214,11 @@ struct YourNetworkView: View {
                     Text("通知方式")
                         .font(.subheadline.weight(.semibold))
                         .foregroundColor(NomeOnboardingPalette.navy)
-                    Text("选择提醒强度和隐私级别")
+                    Text(
+                        usesNomeOfficialServers
+                            ? "官方通知服务器尚未启用；应用打开时接收消息"
+                            : "选择提醒强度和隐私级别"
+                    )
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -224,6 +236,7 @@ struct YourNetworkView: View {
             )
         }
         .buttonStyle(.plain)
+        .disabled(usesNomeOfficialServers)
     }
 
     private func continueButton() -> some View {
@@ -253,18 +266,21 @@ struct YourNetworkView: View {
 
     private func applyNotificationMode() {
         let m = ChatModel.shared
-        if let token = m.deviceToken {
-            switch notificationMode {
-            case .off:
+        let selectedMode: NotificationsMode = usesNomeOfficialServers ? .off : notificationMode
+        switch selectedMode {
+        case .off:
+            m.notificationMode = .off
+            if m.deviceToken != nil {
                 m.tokenStatus = .new
-                m.notificationMode = .off
-            default:
+            }
+        default:
+            if let token = m.deviceToken {
                 Task {
                     do {
-                        let status = try await apiRegisterToken(token: token, notificationMode: notificationMode)
+                        let status = try await apiRegisterToken(token: token, notificationMode: selectedMode)
                         await MainActor.run {
                             m.tokenStatus = status
-                            m.notificationMode = notificationMode
+                            m.notificationMode = selectedMode
                         }
                     } catch let error {
                         let a = getErrorAlert(error, "Error enabling notifications")

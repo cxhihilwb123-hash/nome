@@ -1059,14 +1059,18 @@ struct ChatView: View {
                             } label: {
                                 Label("Audio call", systemImage: "phone")
                             }
+                            .accessibilityIdentifier("chat-audio-call")
                             Button {
                                 CallController.shared.startCall(contact, .video)
                             } label: {
                                 Label("Video call", systemImage: "video")
                             }
+                            .accessibilityIdentifier("chat-video-call")
                         } label: {
-                            Image(systemName: "phone")
+                            Label("开始通话", systemImage: "phone")
+                                .labelStyle(.iconOnly)
                         }
+                        .accessibilityIdentifier("chat-call-menu")
                     } else if chatModel.activeCall == nil {
                         // Calls unavailable: show filter button in place of call button
                         contentFilterMenu(withLabel: false)

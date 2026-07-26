@@ -6434,3 +6434,19 @@ server test failure */
 /* Nome invitation fallback */
 "Cannot create link" = "无法创建链接";
 "Nome could not create an invitation yet. Check that your local profile is ready and chat is running." = "Nome 暂时无法创建邀请链接。请确认本地资料已完成、聊天服务正在运行，然后重试。";
+
+/* Nome first-run guidance and v6.5 highlights */
+"Bottom bar" = "底部栏";
+"Top bar" = "顶部栏";
+"New 1-time link" = "新建一次性链接";
+"Paste link / Scan" = "粘贴链接 / 扫码";
+"Public channels - speak freely 🚀" = "公开频道，自由交流 🚀";
+"Reliability: many relays per channel." = "可靠性：每个频道可使用多个中继。";
+"Ownership: you can run your own relays." = "自主可控：你可以运行自己的中继。";
+"Security: owners hold channel keys." = "安全性：频道所有者持有频道密钥。";
+"Privacy: for owners and subscribers." = "隐私保护：同时保护频道所有者和订阅者。";
+"Easier to invite your friends 👋" = "邀请朋友更简单 👋";
+"We made connecting simpler for new users." = "我们让新用户建立连接变得更简单。";
+"Safe web links" = "安全网页链接";
+"- opt-in to send link previews.\n- prevent hyperlink phishing.\n- remove link tracking." = "- 可选择是否发送链接预览。\n- 防止超链接钓鱼。\n- 移除链接跟踪参数。";
+"Non-profit governance" = "非营利治理";
