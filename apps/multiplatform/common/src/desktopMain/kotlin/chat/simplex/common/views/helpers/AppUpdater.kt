@@ -124,6 +124,7 @@ data class GitHubAsset(
 )
 
 fun showAppUpdateNotice() {
+  if (!desktopUpdateFeedAvailable()) return
   AlertManager.shared.showAlertDialogButtonsColumn(
     generalGetString(MR.strings.app_check_for_updates_notice_title),
     text = generalGetString(MR.strings.app_check_for_updates_notice_desc),
@@ -159,6 +160,12 @@ fun showAppUpdateNotice() {
 private var updateCheckerJob: Job = Job()
 fun setupUpdateChecker() = withLongRunningApi {
   updateCheckerJob.cancel()
+  // Nome does not yet have a signed, notarized update feed. Never offer the
+  // upstream SimpleX package as an in-place update for the macOS Nome bundle.
+  if (!desktopUpdateFeedAvailable()) {
+    appPrefs.appUpdateChannel.set(AppUpdatesChannel.DISABLED)
+    return@withLongRunningApi
+  }
   if (appPrefs.appUpdateChannel.get() == AppUpdatesChannel.DISABLED) {
     return@withLongRunningApi
   }

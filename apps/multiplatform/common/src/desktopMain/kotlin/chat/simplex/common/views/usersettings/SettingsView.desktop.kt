@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import chat.simplex.common.model.ChatController.appPrefs
 import chat.simplex.common.model.ChatModel
 import chat.simplex.common.platform.AppUpdatesChannel
+import chat.simplex.common.platform.desktopUpdateFeedAvailable
 import chat.simplex.common.ui.theme.DEFAULT_PADDING_HALF
 import chat.simplex.common.views.helpers.*
 import chat.simplex.res.MR
@@ -23,11 +24,13 @@ actual fun SettingsSectionApp(
 ) {
   SectionView(stringResource(MR.strings.settings_section_title_app)) {
     SettingsActionItem(painterResource(MR.images.ic_code), stringResource(MR.strings.settings_developer_tools), showSettingsModal { DeveloperView(withAuth) })
-    val selectedChannel = remember { appPrefs.appUpdateChannel.state }
-    val values = AppUpdatesChannel.entries.map { it to it.text }
-    ExposedDropDownSettingRow(stringResource(MR.strings.app_check_for_updates), values, selectedChannel) {
-      appPrefs.appUpdateChannel.set(it)
-      setupUpdateChecker()
+    if (desktopUpdateFeedAvailable()) {
+      val selectedChannel = remember { appPrefs.appUpdateChannel.state }
+      val values = AppUpdatesChannel.entries.map { it to it.text }
+      ExposedDropDownSettingRow(stringResource(MR.strings.app_check_for_updates), values, selectedChannel) {
+        appPrefs.appUpdateChannel.set(it)
+        setupUpdateChecker()
+      }
     }
     AppVersionItem(showVersion)
   }

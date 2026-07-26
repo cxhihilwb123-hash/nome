@@ -14,7 +14,6 @@ import chat.simplex.common.model.CloseBehavior
 import chat.simplex.common.model.ChatController.appPrefs
 import chat.simplex.common.platform.Log
 import chat.simplex.common.platform.TAG
-import chat.simplex.common.ui.theme.isInDarkTheme
 import chat.simplex.common.views.helpers.AlertManager
 import chat.simplex.common.views.helpers.generalGetString
 import chat.simplex.res.MR
@@ -60,16 +59,11 @@ fun ApplicationScope.SimplexTray() {
       }
     }
   }
-  val iconRes = if (unread > 0) {
-    if (isInDarkTheme()) MR.images.ic_simplex_tray_dot_light else MR.images.ic_simplex_tray_dot
-  } else {
-    if (isInDarkTheme()) MR.images.ic_simplex_tray_light else MR.images.ic_simplex
-  }
   val tooltip =
     if (unread > 0) stringResource(MR.strings.tray_tooltip_unread, unread)
     else stringResource(MR.strings.tray_tooltip)
   Tray(
-    icon = painterResource(iconRes),
+    icon = painterResource(MR.images.nome_mark),
     tooltip = tooltip,
     onAction = ::showWindow,
     menu = {

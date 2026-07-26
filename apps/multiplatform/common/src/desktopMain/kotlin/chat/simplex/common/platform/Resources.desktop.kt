@@ -26,15 +26,44 @@ actual fun font(name: String, res: String, weight: FontWeight, style: FontStyle)
 
 actual fun StringResource.localized(): String = desc().toString()
 
-private val detector: OsThemeDetector = OsThemeDetector.getDetector()
-actual fun isInNightMode() = try {
-  detector.isDark
+private val nonMacThemeDetector: OsThemeDetector? by lazy {
+  if (desktopPlatform.isMac()) {
+    null
+  } else {
+    try {
+      OsThemeDetector.getDetector()
+    } catch (e: Exception) {
+      Log.e(TAG, e.stackTraceToString())
+      null
+    }
+  }
 }
-catch (e: Exception) {
+
+internal fun macOSDefaultsIndicateDarkTheme(exitCode: Int, output: String): Boolean =
+  exitCode == 0 && output.trim().equals("Dark", ignoreCase = true)
+
+private fun isMacOSInNightMode(): Boolean = try {
+  val process = ProcessBuilder("/usr/bin/defaults", "read", "-g", "AppleInterfaceStyle")
+    .redirectErrorStream(true)
+    .start()
+  val output = process.inputStream.bufferedReader().use { it.readText() }
+  macOSDefaultsIndicateDarkTheme(process.waitFor(), output)
+} catch (e: Exception) {
   Log.e(TAG, e.stackTraceToString())
-  /* On Mac this code can produce exception */
   false
 }
+
+actual fun isInNightMode(): Boolean =
+  if (desktopPlatform.isMac()) {
+    isMacOSInNightMode()
+  } else {
+    try {
+      nonMacThemeDetector?.isDark ?: false
+    } catch (e: Exception) {
+      Log.e(TAG, e.stackTraceToString())
+      false
+    }
+  }
 
 private val settingsFile =
   File(desktopPlatform.configPath + File.separator + "settings.properties")

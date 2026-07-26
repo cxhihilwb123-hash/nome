@@ -20,6 +20,10 @@ enum class DesktopPlatform(val libExtension: String, val configPath: String, val
   fun isMac() = this == MAC_X86_64 || this == MAC_AARCH64
 }
 
+fun desktopUpdateFeedAvailable(
+  platform: DesktopPlatform = desktopPlatform,
+): Boolean = !platform.isMac()
+
 private fun detectDesktopPlatform(): DesktopPlatform {
   val os = System.getProperty("os.name", "generic").lowercase(Locale.ENGLISH)
   val arch = System.getProperty("os.arch")

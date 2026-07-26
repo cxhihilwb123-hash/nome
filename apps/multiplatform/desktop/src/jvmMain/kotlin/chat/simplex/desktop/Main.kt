@@ -52,6 +52,7 @@ private fun initHaskell() {
   platform = object: PlatformInterface {
     @Composable
     override fun desktopShowAppUpdateNotice() {
+      if (!desktopUpdateFeedAvailable()) return
       fun showNoticeIfNeeded() {
         if (
           !chatModel.controller.appPrefs.appUpdateNoticeShown.get()

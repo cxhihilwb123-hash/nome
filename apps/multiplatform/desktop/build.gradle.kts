@@ -1,5 +1,6 @@
-import org.gradle.internal.extensions.stdlib.toDefaultLowerCase
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import java.nio.file.Files
+import java.nio.file.LinkOption
 
 plugins {
   kotlin("multiplatform")
@@ -40,7 +41,7 @@ compose {
       }
       mainClass = "chat.simplex.desktop.MainKt"
       nativeDistributions {
-        copyright = "(c) 2020-2026 SimpleX Chat"
+        copyright = "(c) 2020-2026 Nome"
         // For debugging via VisualVM
         if (debugJava) {
           modules("jdk.zipfs", "jdk.unsupported", "jdk.management.agent")
@@ -51,10 +52,7 @@ compose {
         //includeAllModules = true
         outputBaseDir.set(project.file("../release"))
         appResourcesRootDir.set(project.file("../build/links"))
-        targetFormats(
-          TargetFormat.Deb, TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Exe
-          //, TargetFormat.AppImage // Gradle doesn't sync on Mac with it
-        )
+        targetFormats(TargetFormat.Dmg)
         linux {
           iconFile.set(project.file("src/jvmMain/resources/distribute/simplex.png"))
           appCategory = "Messenger"
@@ -69,14 +67,17 @@ compose {
           upgradeUuid = "CC9EFBC8-AFFF-40D8-BB69-FCD7CE99EFB9"
         }
         macOS {
-          packageName = "SimpleX"
+          packageName = "Nome"
+          minimumSystemVersion = "11.0"
           iconFile.set(project.file("src/jvmMain/resources/distribute/simplex.icns"))
           appCategory = "public.app-category.social-networking"
-          bundleID = "chat.simplex.app"
+          bundleID = "chat.nome.app"
           infoPlist {
             extraKeysRawXml = """
               <key>NSMicrophoneUsageDescription</key>
-              <string>SimpleX needs microphone access to record voice messages</string>
+              <string>Nome needs microphone access to record voice messages</string>
+              <key>NSCameraUsageDescription</key>
+              <string>Nome needs camera access for video calls</string>
             """
           }
           val identity = rootProject.extra["desktop.mac.signing.identity"] as String?
@@ -97,12 +98,7 @@ compose {
             }
           }
         }
-        val os = System.getProperty("os.name", "generic").toDefaultLowerCase()
-        if (os.contains("mac") || os.contains("win")) {
-          packageName = "SimpleX"
-        } else {
-          packageName = "simplex"
-        }
+        packageName = "Nome"
         // Packaging requires to have version like MAJOR.MINOR.PATCH
         var adjustedVersion = rootProject.extra["desktop.version_name"] as String
         adjustedVersion = adjustedVersion.replace(Regex("[^0-9.]"), "")
@@ -115,6 +111,33 @@ compose {
 }
 
 val cppPath = "../common/src/commonMain/cpp"
+
+val prepareMacArm64AppResources by tasks.registering {
+  val nativeResources = project.file("$cppPath/desktop/libs/mac-aarch64").toPath()
+  val appResourcesLink = project.file("../build/links/macos-arm64").toPath()
+  inputs.dir(nativeResources)
+  doLast {
+    check(Files.exists(nativeResources.resolve("libsimplex.dylib"))) {
+      "Missing macOS ARM64 native resources in $nativeResources"
+    }
+    Files.createDirectories(appResourcesLink.parent)
+    if (Files.exists(appResourcesLink, LinkOption.NOFOLLOW_LINKS)) {
+      check(Files.isSymbolicLink(appResourcesLink)) {
+        "Expected $appResourcesLink to be a symbolic link"
+      }
+      Files.delete(appResourcesLink)
+    }
+    Files.createSymbolicLink(
+      appResourcesLink,
+      appResourcesLink.parent.relativize(nativeResources),
+    )
+  }
+}
+
+tasks.matching { it.name == "prepareAppResources" }.configureEach {
+  dependsOn(prepareMacArm64AppResources)
+}
+
 cmake {
   // Run this command to make build for all targets:
   // ./gradlew common:cmakeBuild -PcrossCompile
