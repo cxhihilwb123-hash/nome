@@ -151,6 +151,7 @@ struct UserPickerSheetView: View {
 // Spec: spec/client/chat-list.md#ChatListView
 struct ChatListView: View {
     @EnvironmentObject var chatModel: ChatModel
+    @ObservedObject private var activationStore = NomeActivationStore.shared
     @StateObject private var connectProgressManager = ConnectProgressManager.shared
     @EnvironmentObject var theme: AppTheme
     @Binding var activeUserPickerSheet: UserPickerSheet?
@@ -252,6 +253,7 @@ struct ChatListView: View {
             }
         }
         .refreshable {
+            guard NomeActivationGate.require(.background) else { return }
             AlertManager.shared.showAlert(Alert(
                 title: Text("Reconnect servers?"),
                 message: Text("Reconnect all connected servers to force message delivery. It uses additional traffic."),
@@ -410,6 +412,14 @@ struct ChatListView: View {
         }
     }
 
+    private var canBrowseChats: Bool {
+        chatModel.chatRunning == true || activationStore.effectiveAccess != .full
+    }
+
+    private var showsActivationCard: Bool {
+        activationStore.needsActivation
+    }
+
     @ViewBuilder private var chatList: some View {
         if nomeHomeTab == .settings {
             SettingsView(embeddedInNomeTab: true)
@@ -439,6 +449,15 @@ struct ChatListView: View {
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 12, trailing: 20))
+
+            if showsActivationCard {
+                NomeActivationCard {
+                    activationStore.present(.connect)
+                }
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 14, trailing: 20))
+            }
 
             ChatListSearchBar(
                 searchMode: $searchMode,
@@ -478,7 +497,7 @@ struct ChatListView: View {
                                     position: NomeGroupedRowPosition(index: index, count: contactChats.count)
                                 )
                             )
-                            .disabled(chatModel.chatRunning != true || chatModel.deletedChats.contains(chat.chatInfo.id))
+                            .disabled(!canBrowseChats || chatModel.deletedChats.contains(chat.chatInfo.id))
                             .listRowSeparator(.hidden)
                             .listRowBackground(Color.clear)
                             .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
@@ -494,7 +513,7 @@ struct ChatListView: View {
                             .listRowSeparator(.hidden)
                             .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
                             .listRowBackground(Color.clear)
-                            .disabled(chatModel.chatRunning != true || chatModel.deletedChats.contains(chat.chatInfo.id))
+                            .disabled(!canBrowseChats || chatModel.deletedChats.contains(chat.chatInfo.id))
                     }
                 }
             }
@@ -524,6 +543,15 @@ struct ChatListView: View {
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)
                     .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 12, trailing: 20))
+
+                    if showsActivationCard {
+                        NomeActivationCard {
+                            activationStore.present(.connect)
+                        }
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 14, trailing: 20))
+                    }
 
                     ChatListSearchBar(
                         searchMode: $searchMode,
@@ -582,7 +610,7 @@ struct ChatListView: View {
                                         position: NomeGroupedRowPosition(index: index, count: cs.count)
                                     )
                                 )
-                                .disabled(chatModel.chatRunning != true || chatModel.deletedChats.contains(chat.chatInfo.id))
+                                .disabled(!canBrowseChats || chatModel.deletedChats.contains(chat.chatInfo.id))
                                 .listRowSeparator(.hidden)
                                 .listRowBackground(Color.clear)
                                 .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
@@ -598,7 +626,7 @@ struct ChatListView: View {
                             .listRowSeparator(.hidden)
                             .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
                             .listRowBackground(Color.clear)
-                            .disabled(chatModel.chatRunning != true || chatModel.deletedChats.contains(chat.chatInfo.id))
+                            .disabled(!canBrowseChats || chatModel.deletedChats.contains(chat.chatInfo.id))
                         }
                     }
                     if !addressCreationCardShown && hasConversations {
@@ -746,6 +774,7 @@ struct ChatListView: View {
     }
 
     private func openNewChat(_ initialDestination: NewChatSheetInitialDestination) {
+        guard NomeActivationGate.require(.connect) else { return }
         guard chatModel.currentUser != nil else {
             onboardingStageDefault.set(.step1_SimpleXInfo)
             chatModel.onboardingStage = .step1_SimpleXInfo
@@ -801,6 +830,48 @@ struct ChatListView: View {
         }.filter { chat in
             query.isEmpty || chat.chatInfo.chatViewName.localizedLowercase.contains(query)
         }
+    }
+}
+
+private struct NomeActivationCard: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 14) {
+                Image(systemName: "person.badge.key.fill")
+                    .font(.system(size: 21, weight: .semibold))
+                    .foregroundColor(NomeHomePalette.green)
+                    .frame(width: 42, height: 42)
+                    .background(Circle().fill(NomeHomePalette.green.opacity(0.12)))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Nome 目前采用邀请制")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(NomeHomePalette.navy)
+                    Text("可先浏览本机内容，输入邀请码后开始聊天。")
+                        .font(.system(size: 13))
+                        .foregroundColor(NomeHomePalette.textSecondary)
+                        .multilineTextAlignment(.leading)
+                }
+
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(NomeHomePalette.textSecondary)
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(NomeHomePalette.surfaceContainer)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(NomeHomePalette.green.opacity(0.24), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("nome.activation.card")
     }
 }
 

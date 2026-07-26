@@ -174,8 +174,7 @@ struct CreateProfile: View {
             m.currentUser = try apiCreateActiveUser(profile)
             // .isEmpty check is redundant here, but it makes it clearer what is going on
             if m.users.isEmpty || m.users.allSatisfy({ $0.user.hidden }) {
-                try startChat()
-                Task { await applyNomeStartupConfiguration() }
+                try finishNomeProfileCreation(startNetworking: NomeActivationGate.allowsNetworking)
                 withAnimation {
                     onboardingStageDefault.set(.step3_ChooseServerOperators)
                     m.onboardingStage = .step3_ChooseServerOperators
@@ -371,8 +370,7 @@ struct CreateFirstProfile: View {
         do {
             AppChatState.shared.set(.active)
             m.currentUser = try apiCreateActiveUser(profile)
-            try startChat(onboarding: true)
-            Task { await applyNomeStartupConfiguration() }
+            try finishNomeProfileCreation(startNetworking: NomeActivationGate.allowsNetworking, onboarding: true)
             onboardingStageDefault.set(.step3_ChooseServerOperators)
             m.onboardingStage = .step3_ChooseServerOperators
         } catch let error {
@@ -382,6 +380,22 @@ struct CreateFirstProfile: View {
                 error
             )
         }
+    }
+}
+
+/// Creating an identity is a local operation and must remain available before activation.
+/// When activation enforcement is active, load the new profile from the local database without
+/// starting chat transports; the activation store starts networking after a successful redeem.
+private func finishNomeProfileCreation(startNetworking: Bool, onboarding: Bool = false) throws {
+    let m = ChatModel.shared
+    if startNetworking {
+        try startChat(onboarding: onboarding)
+        Task { await applyNomeStartupConfiguration() }
+    } else {
+        m.chatRunning = false
+        m.users = try listUsers()
+        try getUserChatData()
+        AppChatState.shared.set(.stopped)
     }
 }
 

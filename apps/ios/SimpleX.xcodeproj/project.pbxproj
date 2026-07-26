@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A7C700022F9A000000000001 /* NomeActivation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7C700012F9A000000000001 /* NomeActivation.swift */; };
+		A7C700042F9A000000000001 /* NomeActivationPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7C700032F9A000000000001 /* NomeActivationPolicy.swift */; };
 		184152CEF68D2336FC2EBCB0 /* CallViewRenderers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18415B08031E8FB0F7FC27F9 /* CallViewRenderers.swift */; };
 		1841538E296606C74533367C /* UserPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18415835CBD939A9ABDC108A /* UserPicker.swift */; };
 		1841560FD1CD447955474C1D /* UserProfilesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18415845648CA4F5A8BCA272 /* UserProfilesView.swift */; };
@@ -338,6 +340,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A7C700012F9A000000000001 /* NomeActivation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NomeActivation.swift; sourceTree = "<group>"; };
+		A7C700032F9A000000000001 /* NomeActivationPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NomeActivationPolicy.swift; sourceTree = "<group>"; };
 		1841511920742C6E152E469F /* AnimatedImageView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnimatedImageView.swift; sourceTree = "<group>"; };
 		1841516F0CE5992B0EDFB377 /* GroupWelcomeView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GroupWelcomeView.swift; sourceTree = "<group>"; };
 		18415323A4082FC92887F906 /* WebRTCClient.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebRTCClient.swift; sourceTree = "<group>"; };
@@ -841,6 +845,8 @@
 		5C764E87279CBC8E000C6508 /* Model */ = {
 			isa = PBXGroup;
 			children = (
+				A7C700012F9A000000000001 /* NomeActivation.swift */,
+				A7C700032F9A000000000001 /* NomeActivationPolicy.swift */,
 				E5DDBE6D2DC4106200A0EFF0 /* AppAPITypes.swift */,
 				5C764E88279CBCB3000C6508 /* ChatModel.swift */,
 				5C2E260627A2941F00F70299 /* SimpleXAPI.swift */,
@@ -1513,6 +1519,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A7C700022F9A000000000001 /* NomeActivation.swift in Sources */,
+				A7C700042F9A000000000001 /* NomeActivationPolicy.swift in Sources */,
 				64C06EB52A0A4A7C00792D4D /* ChatItemInfoView.swift in Sources */,
 				8CC317442D4FEB9B00292A20 /* EndlessScrollView.swift in Sources */,
 				640417CE2B29B8C200CCB412 /* NewChatView.swift in Sources */,

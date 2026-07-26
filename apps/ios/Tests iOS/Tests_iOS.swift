@@ -45,6 +45,31 @@ class Tests_iOS: XCTestCase {
         // Use XCTAssert and related functions to verify your tests produce the correct results.
     }
 
+    func testNomeActivationFormFailsClosedWithoutEndpoint() throws {
+        let app = XCUIApplication()
+        app.launchArguments.append("-NomeActivationPreview")
+        app.launch()
+
+        let codeField = app.textFields["nome.activation.inviteCode"]
+        let redeemButton = app.buttons["nome.activation.redeem"]
+        XCTAssertTrue(codeField.waitForExistence(timeout: 10), "Invitation-code field is missing")
+        XCTAssertTrue(redeemButton.waitForExistence(timeout: 5), "Activation action is missing")
+        XCTAssertFalse(redeemButton.isEnabled, "An empty invitation code must not be submitted")
+
+        codeField.tap()
+        codeField.typeText("TEST-CODE")
+        XCTAssertTrue(redeemButton.isEnabled, "A non-empty invitation code should enable activation")
+        redeemButton.tap()
+
+        let activationError = app.descendants(matching: .any)
+            .matching(identifier: "nome.activation.error")
+            .firstMatch
+        XCTAssertTrue(
+            activationError.waitForExistence(timeout: 10),
+            "A build without an activation endpoint must fail closed with an actionable error"
+        )
+    }
+
     func testSendRealCoreDiagnosticMessages() throws {
         let configuration = try diagnosticConfiguration()
         let app = diagnosticApplication(configuration: configuration)

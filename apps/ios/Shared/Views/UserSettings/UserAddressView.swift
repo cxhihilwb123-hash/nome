@@ -137,6 +137,7 @@ struct UserAddressView: View {
                     ? Text("已有联系人仍会保持连接。你的联系人会收到资料更新。")
                     : Text("已有联系人仍会保持连接。"),
                     primaryButton: .destructive(Text("关闭")) {
+                        guard NomeActivationGate.require(.address) else { return }
                         if showRealCoreErrorIfNeeded() { return }
                         progressIndicator = true
                         Task {
@@ -171,6 +172,7 @@ struct UserAddressView: View {
                     title: Text("分享公开联系方式给联系人？"),
                     message: Text("它会添加到你的资料里，已有联系人会收到资料更新。"),
                     primaryButton: .default(Text("分享")) {
+                        guard NomeActivationGate.require(.address) else { return }
                         if showRealCoreErrorIfNeeded() { return }
                         setProfileAddress($progressIndicator, true)
                         shareViaProfile = true
@@ -297,6 +299,7 @@ struct UserAddressView: View {
     }
 
     private func createAddress() {
+        guard NomeActivationGate.require(.address) else { return }
         if showRealCoreErrorIfNeeded() { return }
         progressIndicator = true
         Task {
@@ -332,6 +335,7 @@ struct UserAddressView: View {
     }
 
     private func replaceAddress() {
+        guard NomeActivationGate.require(.address) else { return }
         if showRealCoreErrorIfNeeded() { return }
         progressIndicator = true
         Task {
@@ -359,6 +363,7 @@ struct UserAddressView: View {
     }
 
     private func upgradeAddress() {
+        guard NomeActivationGate.require(.address) else { return }
         if showRealCoreErrorIfNeeded() { return }
         upgradeAndShareAddressAlert(progressIndicator: $progressIndicator)
     }
@@ -402,6 +407,7 @@ struct UserAddressView: View {
     }
 
     private func shareAddress(_ userAddress: UserContactLink) {
+        guard NomeActivationGate.require(.address) else { return }
         if showRealCoreErrorIfNeeded() { return }
         if userAddress.shouldBeUpgraded {
             upgradeAndShareAddressAlert(progressIndicator: $progressIndicator, shareAddress: { userAddress.shareAddress(short: showShortLink) })
@@ -411,6 +417,7 @@ struct UserAddressView: View {
     }
 
     private func copyAddress(_ userAddress: UserContactLink) {
+        guard NomeActivationGate.require(.address) else { return }
         if showRealCoreErrorIfNeeded() { return }
         UIPasteboard.general.string = addressLink(userAddress)
         addressCopied = true
@@ -425,6 +432,7 @@ struct UserAddressView: View {
 
     private func shareViaEmailButton(_ userAddress: UserContactLink) -> some View {
         Button {
+            guard NomeActivationGate.require(.address) else { return }
             showMailView = true
         } label: {
             settingsRow("envelope", color: theme.colors.secondary) {
@@ -486,6 +494,7 @@ struct UserAddressView: View {
         Binding(
             get: { !settings.autoAccept },
             set: { needsConfirmation in
+                guard NomeActivationGate.require(.address) else { return }
                 if showRealCoreErrorIfNeeded() { return }
                 settings.autoAccept = !needsConfirmation
                 if needsConfirmation {
@@ -951,6 +960,7 @@ private struct NomeAddressActionLabel: View {
 }
 
 func upgradeAndShareAddressAlert(progressIndicator: Binding<Bool>, shareAddress: (() -> Void)? = nil) {
+    guard NomeActivationGate.require(.address) else { return }
     showAlert(
         NSLocalizedString("Upgrade address?", comment: "alert message"),
         message: NSLocalizedString("The address will be short, and your profile will be shared via the address.", comment: "alert message"),
@@ -970,6 +980,7 @@ func upgradeAndShareAddressAlert(progressIndicator: Binding<Bool>, shareAddress:
 }
 
 private func addShortLink(progressIndicator: Binding<Bool>, shareOnCompletion: Bool = false) {
+    guard NomeActivationGate.require(.address) else { return }
     if showRealChatCoreUnavailableIfNeeded() { return }
     progressIndicator.wrappedValue = true
     Task {

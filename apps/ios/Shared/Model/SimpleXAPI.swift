@@ -97,6 +97,11 @@ func chatSendCmdSync<R: ChatAPIResult>(_ cmd: ChatCommand, bgTask: Bool = true, 
 
 // Spec: spec/api.md#chatApiSendCmdSync
 func chatApiSendCmdSync<R: ChatAPIResult>(_ cmd: ChatCommand, bgTask: Bool = true, bgDelay: Double? = nil, ctrl: chat_ctrl? = nil, retryNum: Int32 = 0, log: Bool = true) -> APIResult<R> {
+    if !NomeActivationGate.allowsNetworking && !cmd.nomeAllowedWithoutActivation {
+        _ = NomeActivationGate.require(.command)
+        logger.notice("Nome activation blocked protected command type: \(cmd.cmdType)")
+        return NomeActivationGate.prohibitedResult()
+    }
     if log {
         logger.debug("chatSendCmd \(cmd.cmdType)")
     }
@@ -2339,6 +2344,11 @@ func initializeChat(start: Bool, confirmStart: Bool = false, dbKey: String? = ni
     try apiSetEncryptLocalFiles(privacyEncryptLocalFilesGroupDefault.get())
     m.chatInitialized = true
     m.currentUser = try apiGetActiveUser()
+    let hasUsableLocalProfile = m.currentUser != nil
+    NomeActivationGate.bootstrapInstallation(hasUsableLocalProfile: hasUsableLocalProfile)
+    Task { @MainActor in
+        NomeActivationStore.shared.bootstrapInstallation(hasUsableLocalProfile: hasUsableLocalProfile)
+    }
     m.conditions = try getServerOperatorsSync()
     if shouldImportAppSettingsDefault.get() {
         do {
@@ -2358,14 +2368,18 @@ func initializeChat(start: Bool, confirmStart: Bool = false, dbKey: String? = ni
             do {
                 if start { AppChatState.shared.set(.active) }
                 try chatInitialized(start: start, refreshInvitations: refreshInvitations)
-                Task { await applyNomeStartupConfiguration() }
+                if NomeActivationGate.allowsNetworking {
+                    Task { await applyNomeStartupConfiguration() }
+                }
             } catch let error {
                 logger.error("ChatInitialized error: \(error)")
             }
         }
     } else {
         try chatInitialized(start: start, refreshInvitations: refreshInvitations)
-        Task { await applyNomeStartupConfiguration() }
+        if NomeActivationGate.allowsNetworking {
+            Task { await applyNomeStartupConfiguration() }
+        }
     }
 }
 
@@ -2479,7 +2493,12 @@ func changeActiveUserAsync_(_ userId: Int64?, viewPwd: String?, keepingChatId: S
 
 func getUserChatData() throws {
     let m = ChatModel.shared
-    m.userAddress = try apiGetUserAddress()
+    if NomeActivationGate.allowsNetworking {
+        m.userAddress = try apiGetUserAddress()
+    } else {
+        // A usable address is a connection capability, not required for local history browsing.
+        m.userAddress = nil
+    }
     m.chatItemTTL = try getChatItemTTL()
     let chats = try apiGetChats()
     let tags = try apiGetChatTags()
@@ -2494,7 +2513,11 @@ private func getUserChatDataAsync(keepingChatId: String?) async throws {
     let m = ChatModel.shared
     let tm = ChatTagsModel.shared
     if m.currentUser != nil {
-        let userAddress = try await apiGetUserAddressAsync()
+        let userAddress: UserContactLink? = if NomeActivationGate.allowsNetworking {
+            try await apiGetUserAddressAsync()
+        } else {
+            nil
+        }
         let chatItemTTL = try await getChatItemTTLAsync()
         let chats = try await apiGetChatsAsync()
         let tags = try await apiGetChatTagsAsync()

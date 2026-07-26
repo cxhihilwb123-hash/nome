@@ -108,6 +108,10 @@ func setAppState(_ appState: AppState) {
 
 func activateChat(appState: AppState = .active) {
     logger.debug("DEBUGGING: activateChat")
+    guard NomeActivationGate.allowsNetworking else {
+        logger.notice("Nome activation prevented chat activation")
+        return
+    }
     suspendLockQueue.sync {
         AppChatState.shared.set(appState)
         if ChatModel.ok { apiActivateChat() }
@@ -120,9 +124,9 @@ func initChatAndMigrate(refreshInvitations: Bool = true) {
     if (!m.chatInitialized) {
         m.v3DBMigration = v3DBMigrationDefault.get()
         if AppChatState.shared.value == .stopped && storeDBPassphraseGroupDefault.get() && kcDatabasePassword.get() != nil {
-            initialize(start: true, confirmStart: true)
+            initialize(start: NomeActivationGate.allowsNetworking, confirmStart: NomeActivationGate.allowsNetworking)
         } else {
-            initialize(start: true)
+            initialize(start: NomeActivationGate.allowsNetworking)
         }
     }
 
@@ -140,6 +144,7 @@ func initChatAndMigrate(refreshInvitations: Bool = true) {
 
 func startChatForCall() {
     logger.debug("DEBUGGING: startChatForCall")
+    guard NomeActivationGate.require(.call) else { return }
     if ChatModel.shared.chatRunning == true {
         ChatReceiver.shared.start()
         logger.debug("DEBUGGING: startChatForCall: after ChatReceiver.shared.start")
@@ -153,6 +158,10 @@ func startChatForCall() {
 
 func startChatAndActivate(_ completion: @escaping () -> Void) {
     logger.debug("DEBUGGING: startChatAndActivate")
+    guard NomeActivationGate.allowsNetworking else {
+        logger.notice("Nome activation prevented foreground chat start")
+        return
+    }
     if ChatModel.shared.chatRunning == true {
         ChatReceiver.shared.start()
         logger.debug("DEBUGGING: startChatAndActivate: after ChatReceiver.shared.start")

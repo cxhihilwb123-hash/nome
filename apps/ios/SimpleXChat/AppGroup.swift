@@ -65,6 +65,12 @@ public let GROUP_DEFAULT_CALL_KIT_ENABLED = "callKitEnabled"
 public let GROUP_DEFAULT_PQ_EXPERIMENTAL_ENABLED = "pqExperimentalEnabled" // no longer used
 public let GROUP_DEFAULT_ONE_HAND_UI = "oneHandUI"
 public let GROUP_DEFAULT_CHAT_BOTTOM_BAR = "chatBottomBar"
+public let GROUP_DEFAULT_NOME_ACTIVATION_POLICY = "nomeActivationPolicyV1"
+public let GROUP_DEFAULT_NOME_ACTIVATION_RECEIPT = "nomeActivationReceiptV1"
+public let GROUP_DEFAULT_NOME_ACTIVATION_MIGRATION = "nomeActivationGateMigrationV1"
+public let GROUP_DEFAULT_NOME_ACTIVATION_ACCESS = "nomeActivationEffectiveAccessV1"
+public let GROUP_DEFAULT_NOME_ACTIVATION_WOULD_BLOCK = "nomeActivationWouldBlockV1"
+public let GROUP_DEFAULT_NOME_ACTIVATION_CREDENTIAL_RESET_REQUIRED = "nomeActivationCredentialResetRequiredV1"
 
 public let APP_GROUP_NAME = "group.chat.simplex.app"
 
@@ -107,11 +113,23 @@ public let groupAppDefaults: [String: Any] = [
     GROUP_DEFAULT_CALL_KIT_ENABLED: true,
     GROUP_DEFAULT_PQ_EXPERIMENTAL_ENABLED: false,
     GROUP_DEFAULT_ONE_HAND_UI: true,
-    GROUP_DEFAULT_CHAT_BOTTOM_BAR: true
+    GROUP_DEFAULT_CHAT_BOTTOM_BAR: true,
+    GROUP_DEFAULT_NOME_ACTIVATION_ACCESS: "local_only",
+    GROUP_DEFAULT_NOME_ACTIVATION_WOULD_BLOCK: false,
+    GROUP_DEFAULT_NOME_ACTIVATION_CREDENTIAL_RESET_REQUIRED: false
 ]
 
 public func registerGroupDefaults() {
     groupDefaults.register(defaults: groupAppDefaults)
+}
+
+/// Shared, non-secret enforcement snapshot for the main app, notification
+/// service extension and share extension. The bearer token never enters this store.
+public func nomeActivationAllowsNetworking() -> Bool {
+    // Extensions trust only the policy-aware snapshot written synchronously by the main app.
+    // Generic legacy runtime keys are not proof of a usable local profile and must never bypass
+    // an all-unactivated rollout. Until bootstrap has written the snapshot, fail closed.
+    return groupDefaults.string(forKey: GROUP_DEFAULT_NOME_ACTIVATION_ACCESS) == "full"
 }
 
 public enum AppState: String, Codable {

@@ -26,6 +26,7 @@ private enum NomePrimaryFlowPreview {
 struct SimpleXApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var chatModel = ChatModel.shared
+    @StateObject private var activationStore = NomeActivationStore.shared
     @ObservedObject var alertManager = AlertManager.shared
 
     @Environment(\.scenePhase) var scenePhase
@@ -51,6 +52,11 @@ struct SimpleXApp: App {
             rootView
                 .onOpenURL { url in
                     logger.debug("ContentView.onOpenURL: \(url)")
+                    guard NomeActivationGate.allowsNetworking else {
+                        // Keep blocked URLs out of ChatModel's foreground auto-consume path.
+                        activationStore.presentDeepLink(url)
+                        return
+                    }
                     if AppChatState.shared.value == .active {
                         chatModel.appOpenUrl = url
                     } else {
@@ -59,6 +65,7 @@ struct SimpleXApp: App {
                 }
                 .onAppear() {
                     if isNomeDebugPreview { return }
+                    Task { await activationStore.refreshIfNeeded(force: true) }
                     // Present screen for continue migration if it wasn't finished yet
                     if chatModel.migrationState != nil {
                         // It's important, otherwise, user may be locked in undefined state
@@ -89,14 +96,17 @@ struct SimpleXApp: App {
                             CallController.shared.shouldSuspendChat = true
                         } else {
                             suspendChat()
-                            BGManager.shared.schedule()
+                            if NomeActivationGate.allowsNetworking {
+                                BGManager.shared.schedule()
+                            }
                         }
                         NtfManager.shared.setNtfBadgeCount(chatModel.totalUnreadCountForAllUsers())
                     case .active:
                         CallController.shared.shouldSuspendChat = false
+                        Task { await activationStore.refreshIfNeeded() }
                         let appState = AppChatState.shared.value
 
-                        if appState != .stopped {
+                        if appState != .stopped && NomeActivationGate.allowsNetworking {
                             startChatAndActivate {
                                 if chatModel.chatRunning == true {
                                     if let ntfResponse = chatModel.notificationResponse {
@@ -132,7 +142,10 @@ struct SimpleXApp: App {
 
     @ViewBuilder private var rootView: some View {
         #if DEBUG
-        if isNomeConversationPreview {
+        if isNomeActivationPreview {
+            NomeActivationPreviewHost()
+                .environmentObject(activationStore)
+        } else if isNomeConversationPreview {
             NomeConversationPreviewHost()
                 .environmentObject(chatModel)
                 .environmentObject(AppTheme.shared)
@@ -168,16 +181,26 @@ struct SimpleXApp: App {
         ContentView(contentAccessAuthenticationExtended: !authenticationExpired())
             .environmentObject(chatModel)
             .environmentObject(AppTheme.shared)
+            .environmentObject(activationStore)
     }
 
     private var isNomeDebugPreview: Bool {
         #if DEBUG
+        isNomeActivationPreview ||
         isNomeConversationPreview ||
         isNomeChatListPreview ||
         isNomeContactsPreview ||
         isNomeIdentityCenterPreview ||
         nomePrimaryFlowPreview != nil ||
         nomeOnboardingPreviewStage != nil
+        #else
+        false
+        #endif
+    }
+
+    private var isNomeActivationPreview: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-NomeActivationPreview")
         #else
         false
         #endif
@@ -314,6 +337,14 @@ struct SimpleXApp: App {
         }
     }
 }
+
+#if DEBUG
+private struct NomeActivationPreviewHost: View {
+    var body: some View {
+        NomeActivationSheetView(action: .message)
+    }
+}
+#endif
 
 #if DEBUG
 private struct NomePrimaryFlowPreviewHost: View {

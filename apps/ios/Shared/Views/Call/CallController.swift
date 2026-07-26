@@ -61,6 +61,10 @@ class CallController: NSObject, CXProviderDelegate, PKPushRegistryDelegate, Obse
     // Spec: spec/services/calls.md#CXStartCallAction
     func provider(_ provider: CXProvider, perform action: CXStartCallAction) {
         logger.debug("CallController.provider CXStartCallAction")
+        guard NomeActivationGate.require(.call) else {
+            action.fail()
+            return
+        }
         if callManager.startOutgoingCall(callUUID: action.callUUID.uuidString.lowercased()) {
             action.fulfill()
             provider.reportOutgoingCall(with: action.callUUID, startedConnectingAt: nil)
@@ -72,6 +76,10 @@ class CallController: NSObject, CXProviderDelegate, PKPushRegistryDelegate, Obse
     // Spec: spec/services/calls.md#CXAnswerCallAction
     func provider(_ provider: CXProvider, perform action: CXAnswerCallAction) {
         logger.debug("CallController.provider CXAnswerCallAction")
+        guard NomeActivationGate.require(.call) else {
+            action.fail()
+            return
+        }
         Task {
             let chatIsReady = await waitUntilChatStarted(timeoutMs: 30_000, stepMs: 500)
             logger.debug("CallController chat started \(chatIsReady) \(ChatModel.shared.chatInitialized) \(ChatModel.shared.chatRunning == true) \(String(describing: AppChatState.shared.value))")
@@ -210,6 +218,13 @@ class CallController: NSObject, CXProviderDelegate, PKPushRegistryDelegate, Obse
         logger.debug("CallController: did receive push with type \(type.rawValue)")
         if type != .voIP {
             completion()
+            return
+        }
+        // PushKit requires every VoIP push to be reported to CallKit. In local-only mode,
+        // report it as expired so iOS receives the required acknowledgement without starting
+        // chat networking or exposing an answer action that could bypass activation.
+        guard NomeActivationGate.allowsNetworking else {
+            self.reportExpiredCall(payload: payload, completion)
             return
         }
         if AppChatState.shared.value == .stopped {
@@ -357,6 +372,7 @@ class CallController: NSObject, CXProviderDelegate, PKPushRegistryDelegate, Obse
 
     func startCall(_ contact: Contact, _ media: CallMediaType) {
         logger.debug("CallController.startCall")
+        guard NomeActivationGate.require(.call) else { return }
         let callUUID = callManager.newOutgoingCall(contact, media)
         guard let uuid = UUID(uuidString: callUUID) else {
             return
@@ -381,6 +397,7 @@ class CallController: NSObject, CXProviderDelegate, PKPushRegistryDelegate, Obse
 
     func answerCall(invitation: RcvCallInvitation) {
         logger.debug("CallController: answering a call")
+        guard NomeActivationGate.require(.call) else { return }
         if CallController.useCallKit(), let callUUID = invitation.callUUID, let uuid = UUID(uuidString: callUUID) {
             requestTransaction(with: CXAnswerCallAction(call: uuid))
         } else {
