@@ -71,7 +71,7 @@ usageConditionsText =
       in [|stripFrontMatter $(lift (safeDecodeUtf8 s))|]
    )
 
-data OperatorTag = OTSimplex | OTFlux
+data OperatorTag = OTSimplex | OTFlux | OTNome
   deriving (Eq, Ord, Show)
 
 instance FromField OperatorTag where fromField = fromTextField_ textDecode
@@ -89,10 +89,12 @@ instance TextEncoding OperatorTag where
   textDecode = \case
     "simplex" -> Just OTSimplex
     "flux" -> Just OTFlux
+    "nome" -> Just OTNome
     _ -> Nothing
   textEncode = \case
     OTSimplex -> "simplex"
     OTFlux -> "flux"
+    OTNome -> "nome"
 
 data UsageConditions = UsageConditions
   { conditionsId :: Int64,
@@ -116,11 +118,14 @@ data ServerOperatorConditions = ServerOperatorConditions
 
 usageConditionsAction :: [ServerOperator] -> UsageConditions -> UTCTime -> Maybe UsageConditionsAction
 usageConditionsAction operators UsageConditions {createdAt, notifiedAt} now = do
-  let enabledOperators = filter (\ServerOperator {enabled} -> enabled) operators
+  let enabledOperators =
+        filter
+          (\ServerOperator {operatorTag, enabled} -> enabled && operatorTag /= Just OTNome)
+          operators
   if
     | null enabledOperators -> Nothing
     | all conditionsAccepted enabledOperators ->
-        let acceptedForOperators = filter conditionsAccepted operators
+        let acceptedForOperators = filter conditionsAccepted enabledOperators
          in Just $ UCAAccepted acceptedForOperators
     | otherwise ->
         let acceptForOperators = filter (not . conditionsAccepted) enabledOperators
@@ -448,9 +453,9 @@ agentServerCfgs p opDomains = mapMaybe agentServer
           Just ServerCfg {server, enabled, operator = Nothing, roles = allRoles}
 
 matchingHost :: Text -> TransportHost -> Bool
-matchingHost d = \case
-  THDomainName h -> d `T.isSuffixOf` T.pack h
-  _ -> False
+matchingHost d h = case h of
+  THDomainName domain -> d `T.isSuffixOf` T.pack domain
+  _ -> d == safeDecodeUtf8 (strEncode h)
 
 operatorDomains :: [ServerOperator' s] -> [(Text, ServerOperator' s)]
 operatorDomains = foldr (\op ds -> foldr (\d -> ((d, op) :)) ds (serverDomains op)) []
@@ -491,15 +496,21 @@ groupByOperator_ (ops, smpSrvs, xftpSrvs, cRelays) = do
   where
     mkUS op = UserOperatorServers op [] [] []
     addServer :: [([Text], IORef (f UserOperatorServers))] -> IORef (f UserOperatorServers) -> (UserServer p -> UserOperatorServers -> UserOperatorServers) -> UserServer p -> IO ()
-    addServer ss custom add srv =
-      let v = maybe custom snd $ find (\(ds, _) -> any (\d -> any (matchingHost d) (srvHost srv)) ds) ss
-       in atomicModifyIORef'_ v (add srv <$>)
+    addServer ss custom add srv@UserServer {preset} =
+      case find (\(ds, _) -> any (\d -> any (matchingHost d) (srvHost srv)) ds) ss of
+        Just (_, target) -> atomicModifyIORef'_ target (add srv <$>)
+        Nothing
+          | preset -> pure ()
+          | otherwise -> atomicModifyIORef'_ custom (add srv <$>)
     addSMP srv s@UserOperatorServers {smpServers} = (s :: UserOperatorServers) {smpServers = srv : smpServers}
     addXFTP srv s@UserOperatorServers {xftpServers} = (s :: UserOperatorServers) {xftpServers = srv : xftpServers}
     addChatRelay :: [([Text], IORef (f UserOperatorServers))] -> IORef (f UserOperatorServers) -> UserChatRelay -> IO ()
-    addChatRelay ss custom chatRelay =
-      let v = maybe custom snd $ find (\(ds, _) -> any (`elem` domains chatRelay) ds) ss
-       in atomicModifyIORef'_ v (addCRelay <$>)
+    addChatRelay ss custom chatRelay@UserChatRelay {preset} =
+      case find (\(ds, _) -> any (`elem` domains chatRelay) ds) ss of
+        Just (_, target) -> atomicModifyIORef'_ target (addCRelay <$>)
+        Nothing
+          | preset -> pure ()
+          | otherwise -> atomicModifyIORef'_ custom (addCRelay <$>)
       where
         addCRelay s@UserOperatorServers {chatRelays} = (s :: UserOperatorServers) {chatRelays = chatRelay : chatRelays}
 

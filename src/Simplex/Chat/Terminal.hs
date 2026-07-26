@@ -8,18 +8,15 @@
 module Simplex.Chat.Terminal where
 
 import Control.Monad
-import qualified Data.List.NonEmpty as L
 import Simplex.Chat (defaultChatConfig)
 import Simplex.Chat.Controller
 import Simplex.Chat.Core
 import Simplex.Chat.Help (chatWelcome)
-import Simplex.Chat.Library.Commands (_defaultNtfServers)
 import Simplex.Chat.Operators
-import Simplex.Chat.Operators.Presets (operatorSimpleXChat, simplexChatRelays)
+import Simplex.Chat.Operators.Presets (nomeSMPServers, nomeXFTPServers, operatorNome)
 import Simplex.Chat.Options
 import Simplex.Chat.Terminal.Input
 import Simplex.Chat.Terminal.Output
-import Simplex.FileTransfer.Client.Presets (defaultXFTPServers)
 import Simplex.Messaging.Client (NetworkConfig (..), SMPProxyFallback (..), SMPProxyMode (..), defaultNetworkConfig)
 import Simplex.Messaging.Util (raceAny_)
 #if !defined(dbPostgres)
@@ -40,29 +37,23 @@ terminalChatConfig =
         PresetServers
           { operators =
               [ PresetOperator
-                  { operator = Just operatorSimpleXChat,
-                    smp =
-                      map
-                        (presetServer True)
-                        [ "smp://u2dS9sG8nMNURyZwqASV4yROM28Er0luVTx5X1CsMrU=@smp4.simplex.im,o5vmywmrnaxalvz6wi3zicyftgio6psuvyniis6gco6bp6ekl4cqj4id.onion",
-                          "smp://hpq7_4gGJiilmz5Rf-CswuU5kZGkm_zOIooSw6yALRg=@smp5.simplex.im,jjbyvoemxysm7qxap7m5d5m35jzv5qq6gnlv7s4rsn7tdwwmuqciwpid.onion",
-                          "smp://PQUV2eL0t7OStZOoAsPEV2QYWt4-xilbakvGUGOItUo=@smp6.simplex.im,bylepyau3ty4czmn77q4fglvperknl4bi2eb2fdy2bh4jxtf32kf73yd.onion"
-                        ],
-                    useSMP = 3,
-                    xftp = map (presetServer True) $ L.toList defaultXFTPServers,
-                    useXFTP = 3,
-                    chatRelays = simplexChatRelays,
-                    useChatRelays = 2
+                  { operator = Just operatorNome,
+                    smp = nomeSMPServers,
+                    useSMP = 1,
+                    xftp = nomeXFTPServers,
+                    useXFTP = 1,
+                    chatRelays = [],
+                    useChatRelays = 0
                   }
               ],
-            ntf = _defaultNtfServers,
+            ntf = [],
             netCfg =
               defaultNetworkConfig
                 { smpProxyMode = SPMUnknown,
                   smpProxyFallback = SPFAllowProtected
                 }
           },
-      deviceNameForRemote = "SimpleX CLI"
+      deviceNameForRemote = "Nome CLI"
     }
 
 simplexChatTerminal :: WithTerminal t => ChatConfig -> ChatOpts -> t -> IO ()

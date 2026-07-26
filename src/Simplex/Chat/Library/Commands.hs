@@ -58,6 +58,7 @@ import Simplex.Chat.Library.Subscriber
 import Simplex.Chat.Badges (BadgeCredential (..), LocalBadge (..), maxXFTPFileSize, mkBadgeStatus, verifyCredential)
 import Simplex.Chat.Call
 import Simplex.Chat.Controller
+import qualified Simplex.Chat.Controller as CC
 import Simplex.Chat.Delivery (DeliveryJobScope (..), DeliveryJobSpec (..), DeliveryWorkerScope (..))
 import Simplex.Chat.Files
 import Simplex.Chat.Markdown
@@ -108,7 +109,7 @@ import Simplex.Messaging.Crypto.Ratchet (PQEncryption (..), PQSupport (..), patt
 import Simplex.Messaging.Encoding
 import Simplex.Messaging.Encoding.String
 import Simplex.Messaging.Parsers (base64P)
-import Simplex.Messaging.Protocol (AProtoServerWithAuth (..), AProtocolType (..), MsgFlags (..), NtfServer, ProtoServerWithAuth (..), ProtocolServer, ProtocolType (..), ProtocolTypeI (..), SProtocolType (..), SubscriptionMode (..), UserProtocol, userProtocol)
+import Simplex.Messaging.Protocol (AProtoServerWithAuth (..), AProtocolType (..), MsgFlags (..), ProtoServerWithAuth (..), ProtocolServer, ProtocolType (..), ProtocolTypeI (..), SProtocolType (..), SubscriptionMode (..), UserProtocol, userProtocol)
 import Simplex.Messaging.ServiceScheme (ServiceScheme (..))
 import qualified Simplex.Messaging.TMap as TM
 import Simplex.Messaging.Transport.Client (defaultSocksProxyWithAuth)
@@ -139,13 +140,6 @@ import Simplex.Messaging.Agent.Client (SubInfo (..), agentClientStore, getAgentQ
 import Simplex.Messaging.Agent.Store.Common (withConnection)
 import Simplex.Messaging.Agent.Store.SQLite.DB (SlowQueryStats (..))
 #endif
-
-_defaultNtfServers :: [NtfServer]
-_defaultNtfServers =
-  [ -- "ntf://FB-Uop7RTaZZEG0ZLD2CIaTjsPh-Fw0zFAnb7QyA8Ks=@ntf2.simplex.im,5ex3mupcazy3zlky64ab27phjhijpemsiby33qzq3pliejipbtx5xgad.onion"
-    "ntf://KmpZNNXiVZJx_G2T7jRUmDFxWXM3OAnunz3uLT0tqAA=@ntf3.simplex.im,pxculznuryunjdvtvh6s6szmanyadumpbmvevgdpe4wk5c65unyt4yid.onion",
-    "ntf://CJ5o7X6fCxj2FFYRU2KuCo70y4jSqz7td2HYhLnXWbU=@ntf4.simplex.im,wtvuhdj26jwprmomnyfu5wfuq2hjkzfcc72u44vi6gdhrwxldt6xauad.onion"
-  ]
 
 maxImageSize :: Integer
 maxImageSize = 261120 * 2 -- auto-receive on mobiles
@@ -364,16 +358,11 @@ processChatCommand cxt nm = \case
     user <- withFastStore $ \db -> do
       user <- createUserRecordAt db (AgentUserId auId) p userChatRelay True ts
       mapM_ (setUserServers db user ts) uss
-      createPresetContactCards db cxt user `catchAllErrors` \_ -> pure ()
       createNoteFolder db user
       pure user
     atomically . writeTVar u $ Just user
     pure $ CRActiveUser user
     where
-      createPresetContactCards :: DB.Connection -> StoreCxt -> User -> ExceptT StoreError IO ()
-      createPresetContactCards db cxt user = do
-        createContact db cxt user simplexStatusContactProfile
-        createContact db cxt user simplexTeamContactProfile
       chooseServers :: Maybe User -> CM ([UpdatedUserOperatorServers], (NonEmpty (ServerCfg 'PSMP), NonEmpty (ServerCfg 'PXFTP)))
       chooseServers user_ = do
         as <- asks randomAgentServers
@@ -2246,9 +2235,8 @@ processChatCommand cxt nm = \case
       ct' <- withFastStore $ \db -> getContact db cxt user contactId
       toView $ CEvtChatInfoUpdated user (AChatInfo SCTDirect $ DirectChat ct')
       throwError e
-  ConnectSimplex incognito -> withUser $ \user -> do
-    plan <- contactRequestPlan user adminContactReq Nothing Nothing `catchAllErrors` const (pure $ CPContactAddress (CAPOk Nothing Nothing))
-    connectWithPlan user incognito (ACCL SCMContact (CCLink adminContactReq Nothing)) plan
+  ConnectSimplex _ -> withUser $ \_ ->
+    throwCmdError "Nome official support contact is not configured"
   DeleteContact cName cdm -> withContactName cName $ \ctId -> APIDeleteChat (ChatRef CTDirect ctId Nothing) cdm
   ClearContact cName -> withContactName cName $ \chatId -> APIClearChat $ ChatRef CTDirect chatId Nothing
   APIListContacts userId -> withUserId userId $ \user ->
@@ -3404,11 +3392,12 @@ processChatCommand cxt nm = \case
     pure $ CRAgentSubsTotal user subsTotal hasSession
   GetAgentServersSummary userId -> withUserId userId $ \user -> do
     agentServersSummary <- lift $ withAgent' getAgentServersSummary
+    PresetServers {ntf} <- asks (CC.presetServers . config)
     withStore' $ \db -> do
       users <- getUsers db
       smpServers <- getServers db user SPSMP
       xftpServers <- getServers db user SPXFTP
-      let presentedServersSummary = toPresentedServersSummary agentServersSummary users user smpServers xftpServers _defaultNtfServers
+      let presentedServersSummary = toPresentedServersSummary agentServersSummary users user smpServers xftpServers ntf
       pure $ CRAgentServersSummary user presentedServersSummary
     where
       getServers :: ProtocolTypeI p => DB.Connection -> User -> SProtocolType p -> IO [ProtocolServer p]

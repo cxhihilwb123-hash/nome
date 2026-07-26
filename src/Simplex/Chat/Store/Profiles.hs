@@ -751,6 +751,8 @@ updateServerOperator db currentTs ServerOperator {operatorId, enabled, smpRoles,
 
 getUpdateServerOperators :: DB.Connection -> NonEmpty PresetOperator -> Bool -> IO [(Maybe PresetOperator, Maybe ServerOperator)]
 getUpdateServerOperators db presetOps newUser = do
+  removeLegacyPresetRouting db
+  removeLegacySeedContacts db
   conds <- map toUsageConditions <$> DB.query_ db usageCondsQuery
   now <- getCurrentTime
   let (currentConds, condsToAdd) = usageConditionsToAdd newUser now conds
@@ -808,10 +810,196 @@ serverOperatorQuery =
     SELECT server_operator_id, server_operator_tag, trade_name, legal_name,
       server_domains, enabled, smp_role_storage, smp_role_proxy, xftp_role_storage, xftp_role_proxy
     FROM server_operators
+    WHERE server_operator_tag IS NULL OR server_operator_tag = 'nome'
   |]
 
 getServerOperators_ :: DB.Connection -> IO [ServerOperator]
 getServerOperators_ db = map toServerOperator <$> DB.query_ db serverOperatorQuery
+
+removeLegacyPresetRouting :: DB.Connection -> IO ()
+removeLegacyPresetRouting db = do
+  DB.execute_
+    db
+    [sql|
+      DELETE FROM protocol_servers
+      WHERE preset = 1
+        AND (
+          host = 'simplex.im'
+          OR host LIKE '%.simplex.im'
+          OR host LIKE 'simplex.im,%'
+          OR host LIKE '%.simplex.im,%'
+          OR host = 'simplexonflux.com'
+          OR host LIKE '%.simplexonflux.com'
+          OR host LIKE 'simplexonflux.com,%'
+          OR host LIKE '%.simplexonflux.com,%'
+        )
+    |]
+  DB.execute_
+    db
+    [sql|
+      UPDATE chat_relays
+      SET deleted = 1, enabled = 0, updated_at = datetime('now')
+      WHERE preset = 1
+        AND (
+          domains = 'simplex.im'
+          OR domains LIKE '%.simplex.im'
+          OR domains LIKE 'simplex.im,%'
+          OR domains LIKE '%.simplex.im,%'
+          OR domains = 'simplexonflux.com'
+          OR domains LIKE '%.simplexonflux.com'
+          OR domains LIKE 'simplexonflux.com,%'
+          OR domains LIKE '%.simplexonflux.com,%'
+        )
+        AND EXISTS (
+          SELECT 1
+          FROM group_relays
+          WHERE group_relays.chat_relay_id = chat_relays.chat_relay_id
+        )
+    |]
+  DB.execute_
+    db
+    [sql|
+      DELETE FROM chat_relays
+      WHERE preset = 1
+        AND (
+          domains = 'simplex.im'
+          OR domains LIKE '%.simplex.im'
+          OR domains LIKE 'simplex.im,%'
+          OR domains LIKE '%.simplex.im,%'
+          OR domains = 'simplexonflux.com'
+          OR domains LIKE '%.simplexonflux.com'
+          OR domains LIKE 'simplexonflux.com,%'
+          OR domains LIKE '%.simplexonflux.com,%'
+        )
+        AND NOT EXISTS (
+          SELECT 1
+          FROM group_relays
+          WHERE group_relays.chat_relay_id = chat_relays.chat_relay_id
+        )
+    |]
+  DB.execute_
+    db
+    [sql|
+      DELETE FROM operator_usage_conditions
+      WHERE server_operator_tag IN ('simplex', 'flux')
+         OR server_operator_id IN (
+           SELECT server_operator_id
+           FROM server_operators
+           WHERE server_operator_tag IN ('simplex', 'flux')
+         )
+    |]
+  DB.execute_
+    db
+    [sql|
+      DELETE FROM server_operators
+      WHERE server_operator_tag IN ('simplex', 'flux')
+    |]
+
+-- Remove only the two disconnected upstream contact cards that older builds
+-- inserted automatically. Any card with a connection, chat history, group
+-- membership or contact request is preserved, as is any user-created contact
+-- that merely has a similar name.
+removeLegacySeedContacts :: DB.Connection -> IO ()
+removeLegacySeedContacts db = do
+  DB.execute_
+    db
+    [sql|
+      CREATE TEMPORARY TABLE IF NOT EXISTS temp_nome_legacy_seed_contacts (
+        contact_id INTEGER PRIMARY KEY,
+        contact_profile_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
+        local_display_name TEXT NOT NULL
+      )
+    |]
+  DB.execute_ db "DELETE FROM temp_nome_legacy_seed_contacts"
+  DB.execute_
+    db
+    [sql|
+      INSERT INTO temp_nome_legacy_seed_contacts
+        (contact_id, contact_profile_id, user_id, local_display_name)
+      SELECT ct.contact_id, ct.contact_profile_id, ct.user_id, ct.local_display_name
+      FROM contacts ct
+      JOIN contact_profiles cp ON cp.contact_profile_id = ct.contact_profile_id
+      WHERE ct.is_user = 0
+        AND (
+          (
+            cp.display_name = 'Ask SimpleX Team'
+            AND cp.short_descr = 'Send questions about SimpleX Chat app and your suggestions'
+            AND cp.contact_link LIKE '%smp6.simplex.im%'
+          )
+          OR (
+            cp.display_name = 'SimpleX Status'
+            AND cp.short_descr = 'Automatic server status and app release updates'
+            AND cp.contact_link LIKE '%smp4.simplex.im%'
+          )
+        )
+        AND NOT EXISTS (
+          SELECT 1 FROM connections c WHERE c.contact_id = ct.contact_id
+        )
+        AND NOT EXISTS (
+          SELECT 1 FROM chat_items ci WHERE ci.contact_id = ct.contact_id
+        )
+        AND NOT EXISTS (
+          SELECT 1 FROM group_members gm WHERE gm.contact_id = ct.contact_id
+        )
+        AND NOT EXISTS (
+          SELECT 1 FROM contact_requests cr WHERE cr.contact_id = ct.contact_id
+        )
+    |]
+  DB.execute_
+    db
+    [sql|
+      DELETE FROM contacts
+      WHERE contact_id IN (
+        SELECT contact_id FROM temp_nome_legacy_seed_contacts
+      )
+    |]
+  DB.execute_
+    db
+    [sql|
+      DELETE FROM contact_profiles
+      WHERE contact_profile_id IN (
+          SELECT contact_profile_id FROM temp_nome_legacy_seed_contacts
+        )
+        AND contact_profile_id NOT IN (SELECT contact_profile_id FROM group_members)
+        AND contact_profile_id NOT IN (
+          SELECT member_profile_id FROM group_members WHERE member_profile_id IS NOT NULL
+        )
+        AND contact_profile_id NOT IN (
+          SELECT contact_profile_id FROM contacts WHERE contact_profile_id IS NOT NULL
+        )
+        AND contact_profile_id NOT IN (SELECT contact_profile_id FROM contact_requests)
+        AND contact_profile_id NOT IN (
+          SELECT custom_user_profile_id FROM connections WHERE custom_user_profile_id IS NOT NULL
+        )
+    |]
+  DB.execute_
+    db
+    [sql|
+      DELETE FROM display_names
+      WHERE (user_id, local_display_name) IN (
+          SELECT user_id, local_display_name FROM temp_nome_legacy_seed_contacts
+        )
+        AND (user_id, local_display_name) NOT IN (
+          SELECT user_id, local_display_name FROM group_members
+        )
+        AND (user_id, local_display_name) NOT IN (
+          SELECT user_id, local_display_name FROM contacts
+        )
+        AND (user_id, local_display_name) NOT IN (
+          SELECT user_id, local_display_name FROM users
+        )
+        AND (user_id, local_display_name) NOT IN (
+          SELECT user_id, local_display_name FROM groups
+        )
+        AND (user_id, local_display_name) NOT IN (
+          SELECT user_id, local_display_name FROM user_contact_links
+        )
+        AND (user_id, local_display_name) NOT IN (
+          SELECT user_id, local_display_name FROM contact_requests
+        )
+    |]
+  DB.execute_ db "DROP TABLE temp_nome_legacy_seed_contacts"
 
 toServerOperator :: (DBEntityId, Maybe OperatorTag, Text, Maybe Text, Text, BoolInt) :. (BoolInt, BoolInt) :. (BoolInt, BoolInt) -> ServerOperator
 toServerOperator ((operatorId, operatorTag, tradeName, legalName, domains, BI enabled) :. smpRoles' :. xftpRoles') =
@@ -830,6 +1018,8 @@ toServerOperator ((operatorId, operatorTag, tradeName, legalName, domains, BI en
     serverRoles (BI storage, BI proxy) = ServerRoles {storage, proxy}
 
 getOperatorConditions_ :: DB.Connection -> ServerOperator -> UsageConditions -> Maybe UsageConditions -> UTCTime -> IO ConditionsAcceptance
+getOperatorConditions_ _ ServerOperator {operatorTag = Just OTNome} _ _ _ =
+  pure $ CAAccepted Nothing False
 getOperatorConditions_ db ServerOperator {operatorId} UsageConditions {conditionsCommit = currentCommit, createdAt, notifiedAt} latestAcceptedConds_ now = do
   case latestAcceptedConds_ of
     Nothing -> pure $ CARequired Nothing -- no conditions accepted by any operator

@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PostfixOperators #-}
@@ -23,10 +24,15 @@ import Data.Time.Clock (UTCTime, addUTCTime, getCurrentTime, nominalDay)
 import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
 import Data.Time.Format (defaultTimeLocale, formatTime)
 import qualified Data.Map.Strict as M
+import Simplex.Chat (defaultChatConfig)
 import Simplex.Chat.Badges (BadgeCredential, BadgeInfo (..), BadgePurchase (..), BadgeRequest (..), BadgeType (..), generateMasterKey, issueBadge, verifyPayment)
-import Simplex.Chat.Controller (ChatConfig (..), ChatController (..), ChatHooks (..), defaultChatHooks, mkStoreCxt)
+import Simplex.Chat.Controller (ChatConfig (..), ChatController (..), ChatHooks (..), PresetServers (..), defaultChatHooks, mkStoreCxt)
+import qualified Simplex.Chat.Controller as CC
+import Simplex.Chat.Library.Internal (simplexStatusContactProfile, simplexTeamContactProfile)
+import Simplex.Chat.Operators (newUserServer, presetServer)
 import Simplex.Chat.Options (ChatOpts (..), CoreChatOpts (..))
 import Simplex.Chat.Protocol (currentChatVersion)
+import Simplex.Chat.Store.Profiles (getUpdateServerOperators, insertProtocolServer)
 import Simplex.Chat.Store.Shared (createContact)
 import Simplex.Chat.Types (ConnStatus (..), Profile (..), GroupRejectionReason (..))
 import qualified Simplex.Messaging.Crypto as C
@@ -34,8 +40,11 @@ import Simplex.Messaging.Crypto.BBS (BBSPublicKey, BBSSecretKey, bbsKeyGen)
 import Simplex.Chat.Types.Shared (GroupMemberRole (..))
 import Simplex.Chat.Types.UITheme
 import Simplex.Messaging.Agent.Env.SQLite
+import qualified Simplex.Messaging.Agent.Store.DB as DB
+import Simplex.Messaging.Agent.Store.DB (BoolInt (..))
 import Simplex.Messaging.Agent.RetryInterval
 import Simplex.Messaging.Encoding.String (StrEncoding (..))
+import Simplex.Messaging.Protocol (SProtocolType (..))
 import Simplex.Messaging.Server.Env.STM hiding (subscriptions)
 import Simplex.Messaging.Transport
 import Simplex.Messaging.Util (encodeJSON)
@@ -44,6 +53,8 @@ import Test.Hspec hiding (it)
 
 chatProfileTests :: SpecWith TestParams
 chatProfileTests = do
+  describe "Nome upgrade cleanup" $
+    it "removes only disconnected upstream seed contacts" testRemoveLegacySeedContacts
   describe "user profiles" $ do
     it "update user profile and notify contacts" testUpdateProfile
     it "update user profile with image" testUpdateProfileImage
@@ -156,6 +167,49 @@ shortLinkTests = do
   it "changing auto-reply message should update address short link data" testShortLinkAddressChangeAutoReply
   it "changing group profile should update short link data" testShortLinkGroupChangeProfile
   it "receiving group profile update should update short link data" testShortLinkGroupChangeProfileReceived
+
+testRemoveLegacySeedContacts :: HasCallStack => TestParams -> IO ()
+testRemoveLegacySeedContacts =
+  testChat aliceProfile $ \alice ->
+    withCCUser alice $ \user ->
+      withCCTransaction alice $ \db -> do
+        let TestCC {chatController = ChatController {config}} = alice
+            cxt = mkStoreCxt config
+            customContact =
+              simplexTeamContactProfile
+                { shortDescr = Just "Nome personal contact",
+                  contactLink = Nothing,
+                  image = Nothing
+                }
+            create profile =
+              runExceptT (createContact db cxt user profile) >>= \case
+                Left e -> expectationFailure $ "failed to create legacy contact fixture: " <> show e
+                Right () -> pure ()
+        mapM_ create [simplexTeamContactProfile, simplexStatusContactProfile, customContact]
+        now <- getCurrentTime
+        mapM_
+          (void . insertProtocolServer db SPSMP user now)
+          [ presetServer True "smp://abcd@smp8.simplex.im",
+            presetServer True "smp://abcd@smp8.simplex.im.example",
+            newUserServer "smp://abcd@smp9.simplex.im"
+          ]
+        let PresetServers {operators} = CC.presetServers defaultChatConfig
+        void $ getUpdateServerOperators db operators False
+        remaining <-
+          DB.query_
+            db
+            "SELECT cp.display_name, cp.short_descr FROM contacts ct JOIN contact_profiles cp ON cp.contact_profile_id = ct.contact_profile_id WHERE cp.display_name IN ('Ask SimpleX Team', 'SimpleX Status') ORDER BY cp.display_name, cp.short_descr"
+            :: IO [(T.Text, Maybe T.Text)]
+        remaining `shouldBe` [("Ask SimpleX Team", Just "Nome personal contact")]
+        remainingServers <-
+          DB.query_
+            db
+            "SELECT host, preset FROM protocol_servers WHERE host IN ('smp8.simplex.im', 'smp8.simplex.im.example', 'smp9.simplex.im') ORDER BY host"
+            :: IO [(T.Text, BoolInt)]
+        map (\(host, BI preset) -> (host, preset)) remainingServers
+          `shouldBe` [ ("smp8.simplex.im.example", True),
+                       ("smp9.simplex.im", False)
+                     ]
 
 testUpdateProfile :: HasCallStack => TestParams -> IO ()
 testUpdateProfile =
@@ -3835,14 +3889,15 @@ testShortLinkChangePreparedContactUser = testChat2 aliceProfile bobProfile test
       bob ##> ("/_prepare contact 1 " <> fullLink <> " " <> shortLink <> " " <> contactSLinkData)
       bob <## "alice: contact is prepared"
 
-      -- 2 ids are for "user contacts", 2 ids are for second user contact cards, so alice is id 5
-      bob ##> "/_set contact user @5 2"
+      -- Two ids are reserved for user contacts; without preset contacts the
+      -- prepared alice contact is id 3.
+      bob ##> "/_set contact user @3 2"
       bob <## "contact alice changed from user bob to user robert"
 
       bob ##> "/user robert"
       showActiveUser bob "robert"
 
-      bob ##> "/_connect contact @5 text hello"
+      bob ##> "/_connect contact @3 text hello"
       bob
         <### [ "alice: connection started",
                WithTime "@alice hello"
@@ -3856,8 +3911,8 @@ testShortLinkChangePreparedContactUser = testChat2 aliceProfile bobProfile test
 
       alice @@@ [("@robert", "hey")]
       alice `hasContactProfiles` ["alice", "robert"]
-      bob #$> ("/_get chats 2 pcc=on", chats, [("@alice", "hey"), ("@Ask SimpleX Team", ""), ("@SimpleX Status", ""), ("*", "")])
-      bob `hasContactProfiles` ["robert", "alice", "Ask SimpleX Team", "SimpleX Status"]
+      bob #$> ("/_get chats 2 pcc=on", chats, [("@alice", "hey"), ("*", "")])
+      bob `hasContactProfiles` ["robert", "alice"]
       bob ##> "/user bob"
       showActiveUser bob "bob (Bob)"
       bob @@@ []
@@ -3884,17 +3939,15 @@ testShortLinkChangePreparedContactUserDuplicate = testChat2 aliceProfile bobProf
       bob ##> ("/_prepare contact 1 " <> fullLink <> " " <> shortLink <> " " <> contactSLinkData)
       bob <## "alice: contact is prepared"
 
-      -- 2 ids are for "user contacts"
-      -- 2 ids are for second user contact cards
-      -- 1 for second user's alice
-      -- so this alice is id 6
-      bob ##> "/_set contact user @6 2"
+      -- Two ids are reserved for user contacts and the existing alice contact
+      -- is id 3, so the prepared duplicate is id 4.
+      bob ##> "/_set contact user @4 2"
       bob <## "contact alice changed from user bob to user robert, new local name: alice_1"
 
       bob ##> "/user robert"
       showActiveUser bob "robert"
 
-      bob ##> "/_connect contact @6 text hello"
+      bob ##> "/_connect contact @4 text hello"
       bob
         <### [ "alice_1: connection started",
                WithTime "@alice_1 hello"
@@ -3913,8 +3966,8 @@ testShortLinkChangePreparedContactUserDuplicate = testChat2 aliceProfile bobProf
 
       alice @@@ [("@robert", "hey"), ("@robert_1", "hey")]
       alice `hasContactProfiles` ["alice", "robert", "robert"]
-      bob #$> ("/_get chats 2 pcc=on", chats, [("@alice", "hey"), ("@alice_1", "hey"), ("@Ask SimpleX Team", ""), ("@SimpleX Status", ""), ("*", "")])
-      bob `hasContactProfiles` ["robert", "alice", "alice", "Ask SimpleX Team", "SimpleX Status"]
+      bob #$> ("/_get chats 2 pcc=on", chats, [("@alice", "hey"), ("@alice_1", "hey"), ("*", "")])
+      bob `hasContactProfiles` ["robert", "alice", "alice"]
       bob ##> "/user bob"
       showActiveUser bob "bob (Bob)"
       bob @@@ []
@@ -4007,8 +4060,8 @@ testShortLinkChangePreparedGroupUser = testChat3 aliceProfile bobProfile cathPro
 
       alice @@@ [("#team", "3"), ("@cath","sent invitation to join group team as admin")]
       alice `hasContactProfiles` ["alice", "cath", "robert"]
-      bob #$> ("/_get chats 2 pcc=on", chats, [("#team", "3"), ("@Ask SimpleX Team", ""), ("@SimpleX Status", ""), ("*", "")])
-      bob `hasContactProfiles` ["robert", "alice", "cath", "Ask SimpleX Team", "SimpleX Status"]
+      bob #$> ("/_get chats 2 pcc=on", chats, [("#team", "3"), ("*", "")])
+      bob `hasContactProfiles` ["robert", "alice", "cath"]
       cath @@@ [("#team", "3"), ("@alice","received invitation to join group team as admin")]
       cath `hasContactProfiles` ["cath", "alice", "robert"]
       bob ##> "/user bob"
@@ -4121,7 +4174,7 @@ testShortLinkChangePreparedGroupUserDuplicate = testChat3 aliceProfile bobProfil
 
       alice @@@ [("#team", "7"), ("@cath","sent invitation to join group team as admin")]
       alice `hasContactProfiles` ["alice", "cath", "robert", "robert"]
-      bob `hasContactProfiles` ["robert", "robert", "robert", "alice", "alice", "cath", "cath", "Ask SimpleX Team", "SimpleX Status"]
+      bob `hasContactProfiles` ["robert", "robert", "robert", "alice", "alice", "cath", "cath"]
       cath @@@ [("#team", "7"), ("@alice","received invitation to join group team as admin")]
       cath `hasContactProfiles` ["cath", "alice", "robert", "robert"]
       bob ##> "/user bob"

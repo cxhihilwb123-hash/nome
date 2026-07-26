@@ -16,11 +16,13 @@ module OperatorTests (operatorTests) where
 
 import Data.Bifunctor (second)
 import qualified Data.List.NonEmpty as L
+import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
 import Simplex.Chat
 import Simplex.Chat.Controller (ChatConfig (..), PresetServers (..))
 import Simplex.Chat.Operators
 import Simplex.Chat.Operators.Presets
 import Simplex.Chat.Protocol (RelayProfile (..), mkRelayProfile)
+import Simplex.Chat.Terminal (terminalChatConfig)
 import Simplex.Chat.Types
 import Simplex.FileTransfer.Client.Presets (defaultXFTPServers)
 import Simplex.Messaging.Agent.Env.SQLite (ServerRoles (..), allRoles)
@@ -33,6 +35,8 @@ operatorTests :: Spec
 operatorTests = describe "managing server operators" $ do
   validateServersTest
   updatedServersTest
+  usageConditionsTest
+  nomePresetConfigTest
 
 validateServersTest :: Spec
 validateServersTest = describe "validate user servers" $ do
@@ -70,40 +74,36 @@ updatedServersTest = describe "validate user servers" $ do
   it "adding preset operators on first start" $ do
     let ops' :: [(Maybe PresetOperator, Maybe AServerOperator)] =
           updatedServerOperators operators []
-    length ops' `shouldBe` 2
+    length ops' `shouldBe` 1
     all addedPreset ops' `shouldBe` True
     let ops'' :: [(Maybe PresetOperator, Maybe ServerOperator)] =
           saveOps ops' -- mock getUpdateServerOperators
     uss <- groupByOperator' (ops'', [], [], []) -- no stored servers or relays
-    length uss `shouldBe` 3
-    [op1, op2, op3] <- pure $ map updatedUserServers uss
-    [p1, p2] <- pure operators -- presets
+    length uss `shouldBe` 2
+    [op1, op2] <- pure $ map updatedUserServers uss
+    [p1] <- pure operators -- presets
     sameServers p1 op1
     sameRelays p1 op1
-    sameServers p2 op2
-    sameRelays p2 op2
-    null (servers' SPSMP op3) `shouldBe` True
-    null (servers' SPXFTP op3) `shouldBe` True
-    null (chatRelays' op3) `shouldBe` True
-  it "adding preset operators and assigning servers to operator for existing users" $ do
+    null (servers' SPSMP op2) `shouldBe` True
+    null (servers' SPXFTP op2) `shouldBe` True
+    null (chatRelays' op2) `shouldBe` True
+  it "assigns Nome presets, hides legacy presets and preserves custom servers" $ do
     let ops' = updatedServerOperators operators []
         ops'' = saveOps ops'
     uss <-
       groupByOperator'
         ( ops'',
-          saveSrvs $ take 3 simplexChatSMPServers <> [newUserServer "smp://abcd@smp.example.im"],
-          saveSrvs $ map (presetServer True) $ L.take 3 defaultXFTPServers,
+          saveSrvs $ nomeSMPServers <> take 3 simplexChatSMPServers <> [newUserServer "smp://abcd@smp.example.im"],
+          saveSrvs $ nomeXFTPServers <> map (presetServer True) (L.take 3 defaultXFTPServers),
           saveRelays $ take 2 simplexChatRelays <> [newChatRelay (mkRelayProfile "custom_relay" Nothing) ["example.im"] customRelayAddr]
         )
-    [op1, op2, op3] <- pure $ map updatedUserServers uss
-    [p1, p2] <- pure operators -- presets
+    [op1, op2] <- pure $ map updatedUserServers uss
+    [p1] <- pure operators -- presets
     sameServers p1 op1
     sameRelays p1 op1
-    sameServers p2 op2
-    sameRelays p2 op2
-    map srvHost' (servers' SPSMP op3) `shouldBe` [["smp.example.im"]]
-    null (servers' SPXFTP op3) `shouldBe` True
-    map relayName' (chatRelays' op3) `shouldBe` ["custom_relay"]
+    map srvHost' (servers' SPSMP op2) `shouldBe` [["smp.example.im"]]
+    null (servers' SPXFTP op2) `shouldBe` True
+    map relayName' (chatRelays' op2) `shouldBe` ["custom_relay"]
   where
     addedPreset = \case
       (Just PresetOperator {operator = Just op}, Just (ASO SDBNew op')) -> operatorTag op == operatorTag op'
@@ -121,6 +121,50 @@ updatedServersTest = describe "validate user servers" $ do
     relayName' (AUCR _ UserChatRelay {relayProfile = RelayProfile {displayName}}) = displayName
     PresetServers {operators} = presetServers defaultChatConfig
     customRelayAddr = either error id $ strDecode "https://relay.example.im/r#Pz9qz7ZVljMofoRxiDDpL_w2DZSazK8IgafxqnWKv6Y"
+
+usageConditionsTest :: Spec
+usageConditionsTest = describe "usage conditions" $ do
+  it "does not show upstream conditions for the Nome operator" $
+    case usageConditionsAction [nomeOperator] conditions now of
+      Nothing -> pure ()
+      action -> expectationFailure $ "unexpected conditions action: " <> show action
+  it "only includes non-Nome operators in review actions" $
+    case usageConditionsAction [nomeOperator, simplexOperator] conditions now of
+      Just UCAReview {operators = [op]} -> operatorTag op `shouldBe` Just OTSimplex
+      action -> expectationFailure $ "unexpected conditions action: " <> show action
+  it "only includes non-Nome operators in accepted actions" $
+    case usageConditionsAction [acceptedNomeOperator, acceptedSimplexOperator] conditions now of
+      Just UCAAccepted {operators = [op]} -> operatorTag op `shouldBe` Just OTSimplex
+      action -> expectationFailure $ "unexpected conditions action: " <> show action
+  where
+    now = posixSecondsToUTCTime 1721779200
+    conditions = UsageConditions 1 "test-commit" Nothing now
+    nomeOperator = operatorNome {operatorId = DBEntityId 1}
+    simplexOperator = operatorSimpleXChat {operatorId = DBEntityId 2}
+    acceptedNomeOperator = nomeOperator {conditionsAcceptance = CAAccepted (Just now) False}
+    acceptedSimplexOperator = simplexOperator {conditionsAcceptance = CAAccepted (Just now) False}
+
+nomePresetConfigTest :: Spec
+nomePresetConfigTest = describe "Nome preset configuration" $ do
+  it "uses only Nome routing in the app core" $
+    assertNomeConfig defaultChatConfig
+  it "uses only Nome routing in the terminal core" $ do
+    assertNomeConfig terminalChatConfig
+    deviceNameForRemote terminalChatConfig `shouldBe` "Nome CLI"
+  where
+    assertNomeConfig cfg = do
+      let PresetServers {operators = presetOps, ntf} = presetServers cfg
+      ntf `shouldBe` []
+      case presetOps of
+        [PresetOperator {operator = Just op, smp, useSMP, xftp, useXFTP, chatRelays, useChatRelays}] -> do
+          operatorTag op `shouldBe` Just OTNome
+          map srvHost smp `shouldBe` map srvHost nomeSMPServers
+          useSMP `shouldBe` 1
+          map srvHost xftp `shouldBe` map srvHost nomeXFTPServers
+          useXFTP `shouldBe` 1
+          null chatRelays `shouldBe` True
+          useChatRelays `shouldBe` 0
+        _ -> expectationFailure "expected one Nome preset operator"
 
 deriving instance Eq User
 

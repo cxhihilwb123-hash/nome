@@ -41,20 +41,12 @@ chatWelcome :: User -> [StyledString]
 chatWelcome user =
   map
     styleMarkdown
-    [ "                             __   __",
-      "  ___ ___ __  __ ___ _    ___" <> "\\ \\ / /" <> " ___ _  _   _ _____",
-      " / __|_ _|  \\/  | _ \\ |  | __ " <> "\\ V /" <> " / __| || | /_\\_   _|",
-      " \\__ \\| || |\\/| |  _/ |__| _|" <> " / . \\" <> "| (__| __ |/ _ \\| |",
-      " |___/___|_|  |_|_| |____|___" <> "/_/ \\_\\" <> "\\___|_||_/_/ \\_\\_|",
+    [ green "Nome",
       "",
       "Welcome " <> green userName <> "!",
-      "Thank you for installing SimpleX Chat!",
+      "Thank you for installing Nome!",
       "",
-      "Connect to SimpleX Chat developers for any questions - just type " <> highlight "/simplex",
-      "",
-      "Follow our updates:",
-      "> Reddit: https://www.reddit.com/r/SimpleXChat/",
-      "> Twitter: https://twitter.com/SimpleXChat",
+      "Private conversations stay between you and the people you choose.",
       "",
       "Type " <> highlight "/help" <> " for usage info, " <> highlight "/welcome" <> " to show this message"
     ]
@@ -66,7 +58,7 @@ chatHelpInfo :: [StyledString]
 chatHelpInfo =
   map
     styleMarkdown
-    [ highlight "Using SimpleX Chat",
+    [ highlight "Using Nome",
       "Follow these steps to set up a connection:",
       "",
       green "Step 1: " <> highlight "/connect" <> " - Alice adds a contact.",
@@ -93,7 +85,7 @@ chatHelpInfo =
       indent <> highlight "/delete <contact>" <> " - delete contact and all messages with them",
       indent <> highlight "/chats           " <> " - most recent chats",
       indent <> highlight "/markdown        " <> " - supported markdown syntax",
-      indent <> highlight "/version         " <> " - SimpleX Chat version",
+      indent <> highlight "/version         " <> " - Nome version",
       indent <> highlight "/quit            " <> " - quit chat",
       "",
       "The commands may be abbreviated: " <> listHighlight ["/c", "/f", "/g", "/p", "/ad"] <> ", etc."
@@ -234,7 +226,6 @@ incognitoHelpInfo =
       indent <> highlight "/connect incognito               " <> " - create new invitation link using incognito profile",
       indent <> highlight "/connect incognito <invitation>  " <> " - accept invitation using incognito profile",
       indent <> highlight "/accept incognito <name>         " <> " - accept contact request using incognito profile",
-      indent <> highlight "/simplex incognito               " <> " - connect to SimpleX Chat developers using incognito profile",
       "",
       "The commands may be abbreviated: " <> listHighlight ["/c i", "/c i <invitation>", "/ac i <name>"],
       "To find the profile used for an incognito connection, use " <> highlight "/info <contact>" <> "."

@@ -13,7 +13,39 @@ import Simplex.Chat.Protocol (mkRelayProfile)
 import Simplex.Messaging.Agent.Env.SQLite (ServerRoles (..), allRoles)
 import Simplex.Messaging.Agent.Store.Entity
 import Simplex.Messaging.Encoding.String
-import Simplex.Messaging.Protocol (ProtocolType (..), SMPServer)
+import Simplex.Messaging.Protocol (ProtoServerWithAuth (..), ProtocolType (..), SMPServer)
+
+operatorNome :: NewServerOperator
+operatorNome =
+  ServerOperator
+    { operatorId = DBNewEntity,
+      operatorTag = Just OTNome,
+      tradeName = "Nome",
+      legalName = Nothing,
+      serverDomains = ["nome.im"],
+      conditionsAcceptance = CARequired Nothing,
+      enabled = True,
+      smpRoles = allRoles,
+      xftpRoles = allRoles
+    }
+
+nomeSMPServers :: [NewUserServer 'PSMP]
+nomeSMPServers =
+  map
+    (\protocolServer -> presetServer True $ ProtoServerWithAuth protocolServer (Just "e0eabd5e5b046bd7e7082ad9d68e133c213281e9a9109c84"))
+    (L.toList nomeSMPServers_)
+
+nomeSMPServers_ :: NonEmpty SMPServer
+nomeSMPServers_ =
+  ["smp://RVzf_goDl1uPbeXQu7Mpi-gck_By0QhEGobrwPwULY8=@smp.nome.im"]
+
+nomeXFTPServers :: [NewUserServer 'PXFTP]
+nomeXFTPServers =
+  [ presetServer True $
+      ProtoServerWithAuth
+        "xftp://y00AWTizJH88sHCMioQ1m-d_xXWlwolHAek_Mc4MhYM=@xftp.nome.im"
+        (Just "accbd90c5c813d90facea657d3da87e022eae9ce07005b53")
+  ]
 
 operatorSimpleXChat :: NewServerOperator
 operatorSimpleXChat =
@@ -49,7 +81,7 @@ operatorFlux =
 -- !!! Also, if any servers need to be added, shortLinkPresetServers will need to be be split to two,
 -- so that option used for restoring links is updated earlier, for backward/forward compatibility.
 allPresetServers :: NonEmpty SMPServer
-allPresetServers = enabledSimplexChatSMPServers <> disabledSimplexChatSMPServers <> fluxSMPServers_
+allPresetServers = nomeSMPServers_ <> enabledSimplexChatSMPServers <> disabledSimplexChatSMPServers <> fluxSMPServers_
   -- added for testing, not preset in the clients
   <> ["smp://8Af90NX2TTkKEJAF1RCg69P_Odg2Z-6_J6DOKUqK3rQ=@smp7.simplex.im,dbxqutskmmbkbrs7ofi7pmopeyhgi5cxbjbh4ummgmep4r6bz4cbrcid.onion"]
 

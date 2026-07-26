@@ -10,7 +10,6 @@
 
 module RandomServers where
 
-import Control.Monad (replicateM)
 import Data.Foldable (foldMap')
 import Data.List (sortOn)
 import Data.List.NonEmpty (NonEmpty)
@@ -24,8 +23,8 @@ import Test.Hspec
 
 randomServersTests :: Spec
 randomServersTests = describe "choosig random servers" $ do
-  it "should choose 4 + 3 random SMP servers and keep the rest disabled" testRandomSMPServers
-  it "should choose 3 + 3 random XFTP servers and keep the rest disabled" testRandomXFTPServers
+  it "should enable the Nome SMP server" testRandomSMPServers
+  it "should enable the Nome XFTP server" testRandomXFTPServers
 
 deriving instance Eq ServerRoles
 
@@ -33,17 +32,13 @@ deriving instance Eq (UserServer' s p)
 
 testRandomSMPServers :: IO ()
 testRandomSMPServers = do
-  [srvs1, srvs2, srvs3] <-
-    replicateM 3 $
-      checkEnabled SPSMP 7 False =<< chooseRandomServers (presetServers defaultChatConfig)
-  (srvs1 == srvs2 && srvs2 == srvs3) `shouldBe` False -- && to avoid rare failures
+  _ <- checkEnabled SPSMP 1 True =<< chooseRandomServers (presetServers defaultChatConfig)
+  pure ()
 
 testRandomXFTPServers :: IO ()
 testRandomXFTPServers = do
-  [srvs1, srvs2, srvs3] <-
-    replicateM 3 $
-      checkEnabled SPXFTP 6 False =<< chooseRandomServers (presetServers defaultChatConfig)
-  (srvs1 == srvs2 && srvs2 == srvs3) `shouldBe` False -- && to avoid rare failures
+  _ <- checkEnabled SPXFTP 1 True =<< chooseRandomServers (presetServers defaultChatConfig)
+  pure ()
 
 checkEnabled :: UserProtocol p => SProtocolType p -> Int -> Bool -> NonEmpty (PresetOperator) -> IO [NewUserServer p]
 checkEnabled p n allUsed presetOps' = do
