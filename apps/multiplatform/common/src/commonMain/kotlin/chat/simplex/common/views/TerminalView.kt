@@ -71,6 +71,11 @@ fun TerminalLayout(
 ) {
   val smallFont = MaterialTheme.typography.body1.copy(color = MaterialTheme.colors.onBackground)
   val textStyle = remember { mutableStateOf(smallFont) }
+  val focusRequester = remember { FocusRequester() }
+
+  LaunchedEffect(Unit) {
+    focusRequester.requestFocus()
+  }
 
   fun onMessageChange(s: ComposeMessage) {
     composeState.value = composeState.value.copy(message = s)
@@ -113,7 +118,7 @@ fun TerminalLayout(
             onMessageChange = ::onMessageChange,
             onFilesPasted = {},
             textStyle = textStyle,
-            focusRequester = remember { FocusRequester() }
+            focusRequester = focusRequester
           )
         }
       }

@@ -10,6 +10,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.unit.*
+import chat.simplex.common.platform.appPlatform
 import chat.simplex.common.ui.theme.*
 import chat.simplex.common.views.chatlist.*
 import chat.simplex.res.MR
@@ -37,7 +38,9 @@ fun AppBarTitle(
     }
   }
   val theme = CurrentColors.collectAsState()
-  val titleColor = overrideTitleColor ?: MaterialTheme.appColors.title
+  val titleColor =
+    overrideTitleColor
+      ?: if (appPlatform.isDesktop) MaterialTheme.colors.primary else MaterialTheme.appColors.title
   val brush = if (overrideTitleColor != null)
     Brush.linearGradient(listOf(titleColor, titleColor), Offset(0f, Float.POSITIVE_INFINITY), Offset(Float.POSITIVE_INFINITY, 0f))
   else if (theme.value.base == DefaultTheme.SIMPLEX)

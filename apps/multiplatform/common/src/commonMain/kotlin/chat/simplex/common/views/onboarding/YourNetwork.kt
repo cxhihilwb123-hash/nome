@@ -55,9 +55,7 @@ fun YourNetworkView(chatModel: ChatModel) {
 
   val notificationMode = rememberSaveable { mutableStateOf(NotificationsMode.default) }
 
-  if (appPlatform.isDesktop) {
-    YourNetworkDesktop(serverOperators, selectedOperatorIds)
-  } else {
+  run {
     val configureOperators = {
       ModalManager.fullscreen.showCustomModal { close ->
         ChooseServerOperators(serverOperators, selectedOperatorIds, close)

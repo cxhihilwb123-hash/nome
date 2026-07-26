@@ -54,9 +54,7 @@ fun OnboardingConditionsView(chatModel: ChatModel) {
     })
   }
 
-  if (appPlatform.isDesktop) {
-    OnboardingConditionsDesktop(selectedOperatorIds)
-  } else {
+  run {
     val viewTerms = {
       ModalManager.fullscreen.showModal(endButtons = { ConditionsLinkButton() }) {
         SimpleConditionsView(rhId = null) {
@@ -69,7 +67,13 @@ fun OnboardingConditionsView(chatModel: ChatModel) {
       acceptEnabled = selectedOperatorIds.value.isNotEmpty(),
       onBack = { appPrefs.onboardingStage.set(OnboardingStage.Step3_ChooseServerOperators) },
       onViewTerms = viewTerms,
-      onAccept = { acceptConditions(selectedOperatorIds.value) },
+      onAccept = {
+        if (appPlatform.isDesktop) {
+          completeNomeDesktopOnboarding(selectedOperatorIds.value)
+        } else {
+          acceptConditions(selectedOperatorIds.value)
+        }
+      },
     ) {
       CompositionLocalProvider(LocalAppBarHandler provides rememberAppBarHandler()) {
         ModalView({}, showClose = false, showAppBar = false) {
@@ -320,6 +324,24 @@ private fun acceptConditions(selectedOperatorIds: Set<Long>) {
           completeOnboarding()
         }
       } else {
+        completeOnboarding()
+      }
+    }
+  }
+}
+
+private fun completeNomeDesktopOnboarding(selectedOperatorIds: Set<Long>) {
+  withBGApi {
+    val enabledOps = enabledOperators(chatModel.conditions.value.serverOperators, selectedOperatorIds)
+    if (enabledOps == null) {
+      completeOnboarding()
+    } else {
+      val updatedConditions = chatController.setServerOperators(
+        rh = chatModel.remoteHostId(),
+        operators = enabledOps,
+      )
+      if (updatedConditions != null) {
+        chatModel.conditions.value = updatedConditions
         completeOnboarding()
       }
     }

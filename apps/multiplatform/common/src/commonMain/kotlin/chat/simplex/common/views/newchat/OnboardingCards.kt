@@ -313,6 +313,11 @@ private fun OnboardingPageLayout(
 
 @Composable
 fun ConnectOnboardingView() {
+  if (appPlatform.isDesktop) {
+    NomeDesktopConnectOnboardingView()
+    return
+  }
+
   val pagerState = rememberPagerState(initialPage = 0) { 2 }
   val scope = rememberCoroutineScope()
 
@@ -407,19 +412,186 @@ fun ConnectOnboardingView() {
     }
   }
 
-  if (appPlatform.isDesktop) {
-    val maxContentWidth = DEFAULT_WINDOW_WIDTH - DEFAULT_START_MODAL_WIDTH * fontSizeSqrtMultiplier
-    Box(
-      Modifier.fillMaxSize().background(MaterialTheme.colors.background).padding(vertical = DEFAULT_PADDING).graphicsLayer { alpha = cardAlpha },
-      contentAlignment = Alignment.Center
+  Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    pager()
+  }
+}
+
+@Composable
+private fun NomeDesktopConnectOnboardingView() {
+  Box(
+    modifier =
+      Modifier
+        .fillMaxSize()
+        .background(Color(0xFFF5F7FA)),
+    contentAlignment = Alignment.TopCenter,
+  ) {
+    Column(
+      modifier =
+        Modifier
+          .widthIn(max = 820.dp)
+          .fillMaxWidth()
+          .verticalScroll(rememberScrollState())
+          .padding(horizontal = 44.dp, vertical = 40.dp),
     ) {
-      Box(Modifier.widthIn(max = maxContentWidth).fillMaxHeight()) {
-        pager()
+      Text(
+        text = stringResource(MR.strings.nome_desktop_new_connection_eyebrow),
+        color = Color(0xFF0A874D),
+        style = MaterialTheme.typography.caption,
+        fontWeight = FontWeight.Bold,
+      )
+      Text(
+        text = stringResource(MR.strings.nome_desktop_new_connection_title),
+        color = Color(0xFF0E1B2D),
+        style = MaterialTheme.typography.h1,
+        fontWeight = FontWeight.SemiBold,
+        modifier = Modifier.padding(top = 8.dp),
+      )
+      Text(
+        text = stringResource(MR.strings.nome_desktop_connect_landing_body),
+        color = Color(0xFF607084),
+        style = MaterialTheme.typography.body1,
+        modifier = Modifier.padding(top = 10.dp),
+      )
+
+      Surface(
+        modifier = Modifier.fillMaxWidth().padding(top = 30.dp),
+        color = Color.White,
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(1.dp, Color(0xFFE0E6EB)),
+        elevation = 0.dp,
+      ) {
+        Column {
+          NomeDesktopConnectAction(
+            icon = MR.images.ic_add_link,
+            title = stringResource(MR.strings.nome_desktop_new_connection_invite_title),
+            body = stringResource(MR.strings.nome_desktop_new_connection_invite_body),
+            onClick = {
+              ModalManager.start.showModalCloseable { close ->
+                NewChatView(
+                  chatModel.currentRemoteHost.value,
+                  NewChatOption.INVITE,
+                  onboarding = true,
+                  close = close,
+                )
+              }
+            },
+          )
+          Divider(Modifier.padding(start = 84.dp), color = Color(0xFFE0E6EB))
+          NomeDesktopConnectAction(
+            icon = MR.images.ic_qr_code_scanner,
+            title = stringResource(MR.strings.nome_desktop_new_connection_open_title),
+            body = stringResource(MR.strings.nome_desktop_new_connection_open_body),
+            onClick = {
+              ModalManager.start.showModalCloseable { close ->
+                NewChatView(
+                  chatModel.currentRemoteHost.value,
+                  NewChatOption.CONNECT,
+                  showQRCodeScanner = false,
+                  onboarding = true,
+                  close = close,
+                )
+              }
+            },
+          )
+          Divider(Modifier.padding(start = 84.dp), color = Color(0xFFE0E6EB))
+          NomeDesktopConnectAction(
+            icon = MR.images.ic_qr_code,
+            title = stringResource(MR.strings.nome_desktop_connect_address_title),
+            body = stringResource(MR.strings.nome_desktop_connect_address_body),
+            onClick = {
+              ModalManager.start.showModalCloseable { close ->
+                UserAddressView(
+                  chatModel = chatModel,
+                  shareViaProfile = false,
+                  autoCreateAddress = true,
+                  onboarding = true,
+                  close = close,
+                )
+              }
+            },
+          )
+        }
+      }
+
+      Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 18.dp),
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        Box(
+          modifier =
+            Modifier
+              .size(30.dp)
+              .background(Color(0xFFE8F6F0), RoundedCornerShape(10.dp)),
+          contentAlignment = Alignment.Center,
+        ) {
+          Icon(
+            painter = painterResource(MR.images.ic_lock),
+            contentDescription = null,
+            tint = Color(0xFF0A874D),
+            modifier = Modifier.size(16.dp),
+          )
+        }
+        Text(
+          text = stringResource(MR.strings.nome_desktop_connect_privacy),
+          color = Color(0xFF607084),
+          style = MaterialTheme.typography.caption,
+          modifier = Modifier.padding(start = 10.dp),
+        )
       }
     }
-  } else {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-      pager()
+  }
+}
+
+@Composable
+private fun NomeDesktopConnectAction(
+  icon: dev.icerock.moko.resources.ImageResource,
+  title: String,
+  body: String,
+  onClick: () -> Unit,
+) {
+  Row(
+    modifier =
+      Modifier
+        .fillMaxWidth()
+        .heightIn(min = 92.dp)
+        .clickable(onClick = onClick)
+        .padding(horizontal = 22.dp, vertical = 16.dp),
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    Box(
+      modifier =
+        Modifier
+          .size(44.dp)
+          .background(Color(0xFFE8F6F0), RoundedCornerShape(13.dp)),
+      contentAlignment = Alignment.Center,
+    ) {
+      Icon(
+        painter = painterResource(icon),
+        contentDescription = null,
+        tint = Color(0xFF0A874D),
+        modifier = Modifier.size(23.dp),
+      )
     }
+    Column(Modifier.padding(start = 18.dp).weight(1f)) {
+      Text(
+        text = title,
+        color = Color(0xFF0E1B2D),
+        style = MaterialTheme.typography.h3,
+        fontWeight = FontWeight.SemiBold,
+      )
+      Text(
+        text = body,
+        color = Color(0xFF607084),
+        style = MaterialTheme.typography.body2,
+        modifier = Modifier.padding(top = 4.dp),
+      )
+    }
+    Icon(
+      painter = painterResource(MR.images.ic_chevron_right),
+      contentDescription = null,
+      tint = Color(0xFF0A874D),
+      modifier = Modifier.padding(start = 16.dp).size(20.dp),
+    )
   }
 }

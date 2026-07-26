@@ -140,7 +140,7 @@ class ModalManager(private val placement: ModalPlacement? = null) {
     if (placement == ModalPlacement.CENTER) {
       ChatModel.chatId.value = null
     } else if (placement == ModalPlacement.END) {
-      desktopExpandWindowToWidth(DEFAULT_START_MODAL_WIDTH * sqrt(appPrefs.fontScale.get()) + DEFAULT_MIN_CENTER_MODAL_WIDTH + DEFAULT_END_MODAL_WIDTH * sqrt(appPrefs.fontScale.get()))
+      desktopExpandWindowToWidth(NOME_DESKTOP_NAV_RAIL_WIDTH + DEFAULT_START_MODAL_WIDTH * sqrt(appPrefs.fontScale.get()) + DEFAULT_MIN_CENTER_MODAL_WIDTH + DEFAULT_END_MODAL_WIDTH * sqrt(appPrefs.fontScale.get()))
     }
   }
 

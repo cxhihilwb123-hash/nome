@@ -49,16 +49,12 @@ fun SimpleXInfo(
   showVersion: () -> Unit = {},
 ) {
   if (onboarding) {
-    if (appPlatform.isDesktop) {
-      SimpleXInfoDesktop(chatModel)
-    } else {
-      CompositionLocalProvider(LocalAppBarHandler provides rememberAppBarHandler()) {
-        ModalView({}, showClose = false, showAppBar = false) {
-          SimpleXInfoLayout(
-            user = chatModel.currentUser.value,
-            onboardingStage = chatModel.controller.appPrefs.onboardingStage
-          )
-        }
+    CompositionLocalProvider(LocalAppBarHandler provides rememberAppBarHandler()) {
+      ModalView({}, showClose = false, showAppBar = false) {
+        SimpleXInfoLayout(
+          user = chatModel.currentUser.value,
+          onboardingStage = chatModel.controller.appPrefs.onboardingStage
+        )
       }
     }
   } else {

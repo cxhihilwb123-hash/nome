@@ -79,9 +79,6 @@ fun SettingsView(chatModel: ChatModel, setPerformLA: (Boolean) -> Unit, close: (
   }
 }
 
-val simplexTeamUri =
-  "simplex:/a#lrdvu2d8A1GumSmoKb2krQmtKhWXq-tyGpHuM7aMwsw?h=smp6.simplex.im"
-
 @Composable
 fun SettingsLayout(
   stopped: Boolean,
@@ -426,21 +423,23 @@ fun SettingsLayout(
             openHelp,
             disabled = stopped,
           )
-          SettingsActionItem(
-            painterResource(
-              MR.images.ic_add,
-            ),
-            stringResource(
-              MR.strings.whats_new,
-            ),
-            showCustomModal { _, close ->
-              WhatsNewView(
-                viaSettings = true,
-                close = close,
-              )
-            },
-            disabled = stopped,
-          )
+          if (!appPlatform.isDesktop) {
+            SettingsActionItem(
+              painterResource(
+                MR.images.ic_add,
+              ),
+              stringResource(
+                MR.strings.whats_new,
+              ),
+              showCustomModal { _, close ->
+                WhatsNewView(
+                  viaSettings = true,
+                  close = close,
+                )
+              },
+              disabled = stopped,
+            )
+          }
           SettingsActionItem(
             painterResource(
               MR.images.ic_info,
@@ -450,7 +449,7 @@ fun SettingsLayout(
             ),
             openAbout,
           )
-          if (!chatModel.desktopNoUserNoRemote) {
+          if (!appPlatform.isDesktop && !chatModel.desktopNoUserNoRemote) {
             SettingsActionItem(
               painterResource(
                 MR.images.ic_tag,
@@ -460,40 +459,44 @@ fun SettingsLayout(
               ),
               {
                 uriHandler.openVerifiedSimplexUri(
-                  simplexTeamUri,
+                  "simplex:/a#lrdvu2d8A1GumSmoKb2krQmtKhWXq-tyGpHuM7aMwsw?h=smp6.simplex.im",
                 )
               },
               textColor = MaterialTheme.colors.primary,
               disabled = stopped,
             )
           }
-          SettingsActionItem(
-            painterResource(
-              MR.images.ic_mail,
-            ),
-            stringResource(
-              MR.strings.send_us_an_email,
-            ),
-            {
-              uriHandler.openUriCatching(
-                "mailto:chat@simplex.chat",
-              )
-            },
-            textColor = MaterialTheme.colors.primary,
-          )
-        }
-        SectionDividerSpaced()
-
-        SectionView(
-          generalGetString(
-            MR.strings.settings_section_title_support,
-          ),
-        ) {
-          if (!BuildConfigCommon.ANDROID_BUNDLE) {
-            ContributeItem(uriHandler)
+          if (!appPlatform.isDesktop) {
+            SettingsActionItem(
+              painterResource(
+                MR.images.ic_mail,
+              ),
+              stringResource(
+                MR.strings.send_us_an_email,
+              ),
+              {
+                uriHandler.openUriCatching(
+                  "mailto:chat@simplex.chat",
+                )
+              },
+              textColor = MaterialTheme.colors.primary,
+            )
           }
-          RateAppItem(uriHandler)
-          StarOnGithubItem(uriHandler)
+        }
+        if (!appPlatform.isDesktop) {
+          SectionDividerSpaced()
+
+          SectionView(
+            generalGetString(
+              MR.strings.settings_section_title_support,
+            ),
+          ) {
+            if (!BuildConfigCommon.ANDROID_BUNDLE) {
+              ContributeItem(uriHandler)
+            }
+            RateAppItem(uriHandler)
+            StarOnGithubItem(uriHandler)
+          }
         }
         SectionDividerSpaced()
 

@@ -192,6 +192,9 @@ private fun ToolbarSegment(
 @Composable
 internal fun ChatListNoticeEffect(chatModel: ChatModel) {
   LaunchedEffect(Unit) {
+    // The historical release/conditions modal is upstream-owned. Nome macOS
+    // has no matching branded release feed or operator terms surface.
+    if (appPlatform.isDesktop) return@LaunchedEffect
     val showWhatsNew = shouldShowWhatsNew(chatModel)
     val showUpdatedConditions = chatModel.conditions.value.conditionsAction?.shouldShowNotice ?: false
     if (showWhatsNew || showUpdatedConditions) {
@@ -428,8 +431,8 @@ private fun ConnectBannerCard() {
 private fun BoxScope.ChatListWithLoadingScreen(searchText: MutableState<TextFieldValue>, listState: LazyListState) {
   if (chatModel.chatRunning.value == null) {
     Text(stringResource(MR.strings.loading_chats), Modifier.align(Alignment.Center), color = MaterialTheme.colors.secondary)
-  } else if (shouldShowOnboarding()) {
-    if (appPlatform.isAndroid) AndroidOnboardingCards()
+  } else if (showOnboardingInsteadOfChatList(shouldShowOnboarding(), appPlatform.isAndroid)) {
+    AndroidOnboardingCards()
   } else {
     if (!chatModel.desktopNoUserNoRemote) {
       ChatList(searchText = searchText, listState)
@@ -439,6 +442,9 @@ private fun BoxScope.ChatListWithLoadingScreen(searchText: MutableState<TextFiel
     }
   }
 }
+
+internal fun showOnboardingInsteadOfChatList(showOnboarding: Boolean, isAndroid: Boolean): Boolean =
+  showOnboarding && isAndroid
 
 @Composable
 private fun AndroidOnboardingCards() {
@@ -613,7 +619,7 @@ private fun ChatListToolbar(userPickerState: MutableStateFlow<AnimatedViewState>
       }
     },
     title = {
-      if (!shouldShowOnboarding()) {
+      if (appPlatform.isDesktop || !shouldShowOnboarding()) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(DEFAULT_SPACE_AFTER_ICON)) {
           Text(
             stringResource(MR.strings.your_chats),
@@ -1007,7 +1013,7 @@ private fun BoxScope.ChatList(searchText: MutableState<TextFieldValue>, listStat
         }
       }
     }
-    if (!oneHandUICardShown.value) {
+    if (!appPlatform.isDesktop && !oneHandUICardShown.value) {
       item {
         ToggleChatListCard()
       }
@@ -1018,7 +1024,7 @@ private fun BoxScope.ChatList(searchText: MutableState<TextFieldValue>, listStat
       } }
       ChatListNavLinkView(chat, nextChatSelected)
     }
-    if (!addressCreationCardShown.value) {
+    if (!appPlatform.isDesktop && !addressCreationCardShown.value) {
       item {
         ChatListFeatureCards()
       }
@@ -1037,7 +1043,7 @@ private fun BoxScope.ChatList(searchText: MutableState<TextFieldValue>, listStat
   } else {
     NavigationBarBackground(oneHandUI.value, true)
   }
-  if (!oneHandUICardShown.value) {
+  if (!appPlatform.isDesktop && !oneHandUICardShown.value) {
     LaunchedEffect(chats.size) {
       if (chats.size >= 3) {
         appPrefs.oneHandUICardShown.set(true)

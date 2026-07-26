@@ -500,7 +500,9 @@ fun OperatorInfoView(serverOperator: ServerOperator) {
             Text(d)
           }
           val website = serverOperator.info.website
-          Text(website, color = MaterialTheme.colors.primary, modifier = Modifier.clickable { uriHandler.openExternalLink(website) })
+          if (website.isNotBlank()) {
+            Text(website, color = MaterialTheme.colors.primary, modifier = Modifier.clickable { uriHandler.openExternalLink(website) })
+          }
         }
       }
     }
