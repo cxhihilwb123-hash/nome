@@ -166,11 +166,16 @@ android {
   }
   testOptions.targetSdk = 34
   lint.targetSdk = 34
-  val isAndroid = gradle.startParameter.taskNames.find {
-    val lower = it.lowercase()
-    lower.contains("release") || lower.startsWith("assemble") || lower.startsWith("install")
-  } != null
-  if (isAndroid) {
+  fun isAndroidOnlyTask(task: String): Boolean {
+    val lower = task.lowercase()
+    val explicitAndroidTask = lower.startsWith(":android:") || lower.startsWith("android:")
+    val rootAndroidLifecycleTask = !lower.contains(":") &&
+      (lower.startsWith("assemble") || lower.startsWith("install") || lower.startsWith("bundle"))
+    return explicitAndroidTask || rootAndroidLifecycleTask
+  }
+  val requestedTasks = gradle.startParameter.taskNames
+  val isAndroidOnlyInvocation = requestedTasks.isNotEmpty() && requestedTasks.all(::isAndroidOnlyTask)
+  if (isAndroidOnlyInvocation) {
     // This is not needed on Android but can't be moved to desktopMain because MR lib don't support this.
     // No other ways to exclude a file work, but it's large and should be excluded
     kotlin.sourceSets["commonMain"].resources.exclude("/MR/fonts/NotoColorEmoji-Regular.ttf")
