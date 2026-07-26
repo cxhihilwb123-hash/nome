@@ -99,10 +99,14 @@ class SimplexService: Service() {
     isServiceStarting = false
     isServiceStarted = false
     stopAfterStart = false
-    saveServiceState(this, ServiceState.STOPPED)
+    // The persisted state is the user's desired state, not the current process state.
+    // Explicit stops write STOPPED in safeStopService(); an unexpected termination
+    // keeps STARTED so ServiceStartWorker can restore the foreground service.
+    val shouldRestart =
+      getServiceState(this) == ServiceState.STARTED && SimplexApp.context.allowToStartServiceAfterAppExit()
 
     // If notification service is enabled and battery optimization is disabled, restart the service
-    if (SimplexApp.context.allowToStartServiceAfterAppExit())
+    if (shouldRestart)
       sendBroadcast(Intent(this, AutoRestartReceiver::class.java))
     super.onDestroy()
   }
@@ -219,6 +223,7 @@ class SimplexService: Service() {
     AppLock.clearAuthState()
 
     if (appPreferences.chatStopped.get()) {
+      saveServiceState(this, ServiceState.STOPPED)
       stopSelf()
       exitProcess(0)
     }
@@ -230,6 +235,7 @@ class SimplexService: Service() {
 
     val restartServiceIntent = Intent(applicationContext, SimplexService::class.java).also {
       it.setPackage(packageName)
+      it.action = Action.START.name
     };
     val restartServicePendingIntent: PendingIntent = PendingIntent.getService(this, 1, restartServiceIntent, PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE);
     val alarmService: AlarmManager = applicationContext.getSystemService(Context.ALARM_SERVICE) as AlarmManager;
@@ -293,7 +299,7 @@ class SimplexService: Service() {
         Log.d(TAG, "ServiceStartWorker: Failed, no application found (work ID: $id)")
         return Result.failure()
       }
-      if (getServiceState(context) == ServiceState.STARTED) {
+      if (getServiceState(context) == ServiceState.STARTED && SimplexApp.context.allowToStartServiceAfterAppExit()) {
         Log.d(TAG, "ServiceStartWorker: Starting foreground service (work ID: $id)")
         start()
       }
@@ -343,6 +349,7 @@ class SimplexService: Service() {
      * exception related to foreground services lifecycle
      * */
     fun safeStopService() {
+      saveServiceState(androidAppContext, ServiceState.STOPPED)
       if (isServiceStarted) {
         androidAppContext.stopService(Intent(androidAppContext, SimplexService::class.java))
       } else if (isServiceStarting) {

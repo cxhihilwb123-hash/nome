@@ -153,6 +153,7 @@ class SimplexApp: Application(), LifecycleEventObserver {
 
   fun allowToStartServiceAfterAppExit() = with(chatModel.controller) {
     appPrefs.notificationsMode.get() == NotificationsMode.SERVICE &&
+        !appPrefs.chatStopped.get() &&
         (!NotificationsMode.SERVICE.requiresIgnoringBattery || SimplexService.isBackgroundAllowed())
   }
 
