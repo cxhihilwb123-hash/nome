@@ -99,6 +99,22 @@ SWIFT_ACTIVE_COMPILATION_CONDITIONS = $(inherited) SIMPLEX_ASSETS
 
 The copy script (`scripts/ios/copy-assets.sh`) runs as a build phase on each build but exits immediately if `SIMPLEX_ASSETS` is not set.
 
+### Nome official servers
+
+Nome production builds inject the SMP and XFTP client addresses through the same
+gitignored `Local.xcconfig` file or CI build settings:
+
+```xcconfig
+NOME_SMP_SERVER = smp:$(NOME_URL_SLASH)$(NOME_URL_SLASH)<private SMP client address after the scheme>
+NOME_XFTP_SERVER = xftp:$(NOME_URL_SLASH)$(NOME_URL_SLASH)<private XFTP client address after the scheme>
+```
+
+When both values are present, iOS disables preset operators and enables only the
+configured Nome message and file servers for new connections. Never commit real
+server addresses or queue-creation credentials to this public repository. The
+`NOME_URL_SLASH` expansion is required because a literal `//` starts a comment
+in an Xcode configuration file.
+
 ### Updating assets
 
 When source images change, regenerate resized images (requires ImageMagick):

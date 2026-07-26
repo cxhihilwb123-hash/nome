@@ -1,0 +1,14 @@
+{
+  "score": 94,
+  "verdict": "pass",
+  "category_match": true,
+  "differences": [
+    "At the system maximum content-size category, less conversation history remains visible because trust and action controls correctly keep their full intrinsic height.",
+    "Physical-device VoiceOver focus order and activation remain outside screenshot evidence."
+  ],
+  "suggestions": [
+    "Keep the accepted light and dark maximum-size screenshots as the regression reference.",
+    "Complete the separate physical-device VoiceOver gate when a connected iPhone is available."
+  ],
+  "reasoning": "Accepted light and dark evidence preserves complete trust copy and controls without card, message, prompt or composer overlap; reduced history viewport at maximum text size is an expected accessibility tradeoff."
+}

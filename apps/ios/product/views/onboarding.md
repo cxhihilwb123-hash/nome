@@ -1,6 +1,7 @@
 # Onboarding
 
 > **Related spec:** [spec/client/navigation.md](../../spec/client/navigation.md) | [spec/architecture.md](../../spec/architecture.md)
+> **Nome overlay:** [Nome Product Experience](nome-experience.md)
 
 ## Purpose
 

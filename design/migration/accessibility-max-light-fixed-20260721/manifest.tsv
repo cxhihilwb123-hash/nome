@@ -1,0 +1,8 @@
+label	args	appearance	content_size	width	height	bytes	sha256	path
+01-home		light	accessibility-extra-extra-extra-large	1206	2622	739095	e9dc2ecffbc4073694cf3b6c3b2cc1b4c11fd5ba8e01d10ac5f023e91c5171fb	design/migration/accessibility-max-light-fixed-20260721/01-home.png
+02-onboarding-welcome	-NomeOnboardingWelcomePreview	light	accessibility-extra-extra-extra-large	1206	2622	337973	72a46c2c463c2b52fc502019742900a6182ac8a0b611e25a933efdb72f87e586	design/migration/accessibility-max-light-fixed-20260721/02-onboarding-welcome.png
+06-chat-list-existing	-NomeChatListPreview	light	accessibility-extra-extra-extra-large	1206	2622	631957	70a07650af28adf5f6b6a91239f719d7fd77086c427e94db85702035f59b6094	design/migration/accessibility-max-light-fixed-20260721/06-chat-list-existing.png
+07-conversation-preview	-NomeConversationPreview	light	accessibility-extra-extra-extra-large	1206	2622	969366	0e9ed5c2f6ea24b06dba25db237858f822804cdd7fe9f34316bf8382adb369ac	design/migration/accessibility-max-light-fixed-20260721/07-conversation-preview.png
+10-add-friend	-NomeAddFriendPreview	light	accessibility-extra-extra-extra-large	1206	2622	299384	f5197967056cd6ff8679c07764eb27896555007d3dfea2c682c9634192ca0456	design/migration/accessibility-max-light-fixed-20260721/10-add-friend.png
+12-public-contact	-NomePublicContactPreview	light	accessibility-extra-extra-extra-large	1206	2622	324807	146fdd8b564c7cf16e89633ac90305ca1c6bb296a1552b592fc6acc5d8d73807	design/migration/accessibility-max-light-fixed-20260721/12-public-contact.png
+13-settings	-NomeSettingsPreview	light	accessibility-extra-extra-extra-large	1206	2622	237815	04e6448ede183fae618a094f77e5674c09974e23dd2a41733d62747c64b6080f	design/migration/accessibility-max-light-fixed-20260721/13-settings.png

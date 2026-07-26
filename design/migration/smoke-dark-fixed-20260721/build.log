@@ -1,0 +1,7 @@
+/Users/forkman03/project/nome/simplex-chat-ios/apps/ios/Shared/Views/NewChat/NewChatView.swift:2398:28: warning: capture of 'alert' with non-Sendable type 'Alert?' in a '@Sendable' closure; this is an error in the Swift 6 language mode
+                    if let alert {
+                           ^
+Swift.Optional:1:21: note: generic enum 'Optional' does not conform to the 'Sendable' protocol
+@frozen public enum Optional<Wrapped> : ~Copyable, ~Escapable where Wrapped : ~Copyable, Wrapped : ~Escapable {
+                    ^
+note: Run script build phase 'Run Script' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'SimpleX (iOS)' from project 'SimpleX')

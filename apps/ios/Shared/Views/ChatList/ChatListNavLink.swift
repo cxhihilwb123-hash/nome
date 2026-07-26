@@ -46,9 +46,11 @@ struct ChatListNavLink: View {
     @EnvironmentObject var theme: AppTheme
     @EnvironmentObject var chatTagsModel: ChatTagsModel
     @Environment(\.dynamicTypeSize) private var userFont: DynamicTypeSize
+    @ScaledMetric(relativeTo: .body) private var nomeCompactRowHeight: CGFloat = 72
     @AppStorage(GROUP_DEFAULT_ONE_HAND_UI, store: groupDefaults) private var oneHandUI = false
     @ObservedObject var chat: Chat
     @Binding var parentSheet: SomeSheet<AnyView>?
+    var nomeCompactStyle = false
     @State private var showContactRequestDialog = false
     @State private var showJoinGroupDialog = false
     @State private var showContactConnectionInfo = false
@@ -60,7 +62,9 @@ struct ChatListNavLink: View {
     @State private var inProgress = false
     @State private var progressByTimeout = false
 
-    var dynamicRowHeight: CGFloat { dynamicSize(userFont).rowHeight }
+    var dynamicRowHeight: CGFloat {
+        nomeCompactStyle ? nomeCompactRowHeight : dynamicSize(userFont).rowHeight
+    }
 
     var body: some View {
         Group {
@@ -95,7 +99,11 @@ struct ChatListNavLink: View {
     private func contactNavLink(_ contact: Contact) -> some View {
         Group {
             if contact.isContactCard {
-                ChatPreviewView(chat: chat, progressByTimeout: Binding.constant(false))
+                ChatPreviewView(
+                    chat: chat,
+                    progressByTimeout: Binding.constant(false),
+                    nomeCompactStyle: nomeCompactStyle
+                )
                     .frameCompat(height: dynamicRowHeight)
                     .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                         Button {
@@ -121,7 +129,13 @@ struct ChatListNavLink: View {
                 NavLinkPlain(
                     chatId: chat.chatInfo.id,
                     selection: $chatModel.chatId,
-                    label: { ChatPreviewView(chat: chat, progressByTimeout: Binding.constant(false)) }
+                    label: {
+                        ChatPreviewView(
+                            chat: chat,
+                            progressByTimeout: Binding.constant(false),
+                            nomeCompactStyle: nomeCompactStyle
+                        )
+                    }
                 )
                 .frameCompat(height: dynamicRowHeight)
                 .if(!contact.nextAcceptContactRequest) { v in
@@ -217,7 +231,11 @@ struct ChatListNavLink: View {
     @ViewBuilder private func groupNavLink(_ groupInfo: GroupInfo) -> some View {
         switch (groupInfo.membership.memberStatus) {
         case .memInvited:
-            ChatPreviewView(chat: chat, progressByTimeout: $progressByTimeout)
+            ChatPreviewView(
+                chat: chat,
+                progressByTimeout: $progressByTimeout,
+                nomeCompactStyle: nomeCompactStyle
+            )
                 .frameCompat(height: dynamicRowHeight)
                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                     joinGroupButton()
@@ -237,7 +255,11 @@ struct ChatListNavLink: View {
                 }
                 .disabled(inProgress)
         case .memAccepted:
-            ChatPreviewView(chat: chat, progressByTimeout: Binding.constant(false))
+            ChatPreviewView(
+                chat: chat,
+                progressByTimeout: Binding.constant(false),
+                nomeCompactStyle: nomeCompactStyle
+            )
                 .frameCompat(height: dynamicRowHeight)
                 .onTapGesture {
                     AlertManager.shared.showAlert(groupInvitationAcceptedAlert())
@@ -255,7 +277,13 @@ struct ChatListNavLink: View {
             NavLinkPlain(
                 chatId: chat.chatInfo.id,
                 selection: $chatModel.chatId,
-                label: { ChatPreviewView(chat: chat, progressByTimeout: Binding.constant(false)) },
+                label: {
+                    ChatPreviewView(
+                        chat: chat,
+                        progressByTimeout: Binding.constant(false),
+                        nomeCompactStyle: nomeCompactStyle
+                    )
+                },
                 disabled: !groupInfo.ready
             )
             .frameCompat(height: dynamicRowHeight)
@@ -303,7 +331,13 @@ struct ChatListNavLink: View {
         NavLinkPlain(
             chatId: chat.chatInfo.id,
             selection: $chatModel.chatId,
-            label: { ChatPreviewView(chat: chat, progressByTimeout: Binding.constant(false)) },
+            label: {
+                ChatPreviewView(
+                    chat: chat,
+                    progressByTimeout: Binding.constant(false),
+                    nomeCompactStyle: nomeCompactStyle
+                )
+            },
             disabled: !noteFolder.ready
         )
         .frameCompat(height: dynamicRowHeight)

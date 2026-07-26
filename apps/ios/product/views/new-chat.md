@@ -1,6 +1,7 @@
 # New Chat / Connection
 
 > **Related spec:** [spec/client/navigation.md](../../spec/client/navigation.md)
+> **Nome overlay:** [Nome Product Experience](nome-experience.md)
 
 ## Purpose
 

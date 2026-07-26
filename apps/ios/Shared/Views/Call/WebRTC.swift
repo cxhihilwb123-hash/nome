@@ -494,15 +494,20 @@ func parseRTCIceServers(_ servers: [String]) -> [RTCIceServer]? {
 }
 
 func getIceServers() -> [RTCIceServer]? {
-    if let servers = UserDefaults.standard.stringArray(forKey: DEFAULT_WEBRTC_ICE_SERVERS) {
+    if let servers = configuredRTCIceServerStrings() {
         return parseRTCIceServers(servers)
     }
     return nil
 }
 
 func getWebRTCIceServers() -> [WebRTC.RTCIceServer]? {
-    if let servers = UserDefaults.standard.stringArray(forKey: DEFAULT_WEBRTC_ICE_SERVERS) {
+    if let servers = configuredRTCIceServerStrings() {
         return parseRTCIceServers(servers)?.toWebRTCIceServers()
     }
     return nil
+}
+
+private func configuredRTCIceServerStrings() -> [String]? {
+    UserDefaults.standard.stringArray(forKey: DEFAULT_WEBRTC_ICE_SERVERS)
+        ?? NomeServerConfiguration.webRTCIceServers
 }

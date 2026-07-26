@@ -83,6 +83,7 @@ struct SendMessageView: View {
         .overlay(alignment: .bottomTrailing) {
             if composeState.progressByTimeout {
                 ProgressView()
+                    .accessibilityIdentifier("chat-send-progress")
                     .scaleEffect(1.4)
                     .frame(width: 31, height: 31, alignment: .center)
                     .padding([.bottom, .trailing], 4)
@@ -186,6 +187,7 @@ struct SendMessageView: View {
             composeState.endLiveDisabled ||
             disableSendButton
         )
+        .accessibilityIdentifier("chat-send-button")
         .frame(width: 31, height: 31)
         .contextMenu{
             sendButtonContextMenuItems()

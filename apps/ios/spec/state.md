@@ -258,7 +258,7 @@ enum SecondaryItemsModelFilter {
 | `presetTags` | `[PresetTag: Int]` | Preset tag counts (groups, contacts, favorites, etc.) | [L194](../Shared/Model/ChatModel.swift#L194) |
 | `unreadTags` | `[Int64: Int]` | Unread count per user tag | [L195](../Shared/Model/ChatModel.swift#L195) |
 
-### [ActiveFilter](../Shared/Views/ChatList/ChatListView.swift#L52)
+### [ActiveFilter](../Shared/Views/ChatList/ChatListView.swift#L53)
 
 ```swift
 enum ActiveFilter {

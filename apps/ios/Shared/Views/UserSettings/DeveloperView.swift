@@ -29,7 +29,7 @@ struct DeveloperView: View {
                                 .frame(width: 24, height: 24)
                                 .opacity(0.5)
                                 .colorMultiply(theme.colors.secondary)
-                            Text("Install SimpleX Chat for terminal")
+                            Text("Install compatible terminal client")
                                 .padding(.leading, 36)
                         }
                     }

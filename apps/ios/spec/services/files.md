@@ -190,7 +190,7 @@ public let MAX_VOICE_MESSAGE_LENGTH = TimeInterval(300) // 5 minutes (300 second
 
 ## [7. CryptoFile -- At-Rest Encryption](../../SimpleXChat/ChatTypes.swift#L4241)
 
-When [`apiSetEncryptLocalFiles(enable: true)`](../../Shared/Model/SimpleXAPI.swift#L384) is configured, files stored on the device are AES-encrypted.
+When [`apiSetEncryptLocalFiles(enable: true)`](../../Shared/Model/SimpleXAPI.swift#L361) is configured, files stored on the device are AES-encrypted.
 
 ### [`CryptoFile`](../../SimpleXChat/ChatTypes.swift#L4241) Type
 

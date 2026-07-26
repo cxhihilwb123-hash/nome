@@ -14,8 +14,14 @@ struct ChatPreviewView: View {
     @EnvironmentObject var chatModel: ChatModel
     @EnvironmentObject var theme: AppTheme
     @Environment(\.dynamicTypeSize) private var userFont: DynamicTypeSize
+    @ScaledMetric(relativeTo: .body) private var nomeCompactRowHeight: CGFloat = 72
+    @ScaledMetric(relativeTo: .body) private var nomeCompactAvatarSize: CGFloat = 44
+    @ScaledMetric(relativeTo: .body) private var nomeCompactTitleSize: CGFloat = 16
+    @ScaledMetric(relativeTo: .body) private var nomeCompactSupportingSize: CGFloat = 13
+    @ScaledMetric(relativeTo: .body) private var nomeCompactIndicatorSize: CGFloat = 20
     @ObservedObject var chat: Chat
     @Binding var progressByTimeout: Bool
+    var nomeCompactStyle = false
     @State var deleting: Bool = false
     var darkGreen = Color(red: 0, green: 0.5, blue: 0)
     @State private var activeContentPreview: ActiveContentPreview? = nil
@@ -28,78 +34,84 @@ struct ChatPreviewView: View {
 
     var body: some View {
         let cItem = chat.chatItems.last
-        return ZStack {
-            HStack(spacing: 8) {
-                ZStack(alignment: .bottomTrailing) {
-                    ChatInfoImage(chat: chat, size: dynamicSize(userFont).profileImageSize)
-                    chatPreviewImageOverlayIcon()
-                        .padding([.bottom, .trailing], 1)
-                }
-                .padding(.leading, 4)
+        return Group {
+            if nomeCompactStyle {
+                compactPreview(cItem)
+            } else {
+                ZStack {
+                    HStack(spacing: 8) {
+                        ZStack(alignment: .bottomTrailing) {
+                            ChatInfoImage(chat: chat, size: dynamicSize(userFont).profileImageSize)
+                            chatPreviewImageOverlayIcon()
+                                .padding([.bottom, .trailing], 1)
+                        }
+                        .padding(.leading, 4)
 
-                let chatTs = if let cItem {
-                    cItem.meta.itemTs
-                } else {
-                    chat.chatInfo.chatTs
-                }
-                VStack(spacing: 0) {
-                    HStack(alignment: .top) {
-                        chatPreviewTitle()
-                        Spacer()
-                        (formatTimestampText(chatTs))
-                            .font(.subheadline)
-                            .frame(minWidth: 60, alignment: .trailing)
-                            .foregroundColor(theme.colors.secondary)
-                            .padding(.top, 4)
-                    }
-                    .padding(.bottom, 4)
-                    .padding(.horizontal, 8)
-
-                    ZStack(alignment: .topTrailing) {
-                        let chat = activeContentPreview?.chat ?? chat
-                        let ci = activeContentPreview?.ci ?? chat.chatItems.last
-                        let mc = ci?.content.msgContent
-                        HStack(alignment: .top) {
-                            let deleted = ci?.isDeletedContent == true || ci?.meta.itemDeleted != nil
-                            let showContentPreview = (showChatPreviews && chatModel.draftChatId != chat.id && !deleted) || activeContentPreview != nil
-                            if let ci, showContentPreview {
-                                chatItemContentPreview(chat, ci)
-                            }
-                            let mcIsVoice = switch mc { case .voice: true; default: false }
-                            if !mcIsVoice || !showContentPreview || mc?.text != "" || chatModel.draftChatId == chat.id {
-                                let hasFilePreview = if case .file = mc { true } else { false }
-                                chatMessagePreview(cItem, hasFilePreview)
-                            } else {
+                        let chatTs = if let cItem {
+                            cItem.meta.itemTs
+                        } else {
+                            chat.chatInfo.chatTs
+                        }
+                        VStack(spacing: 0) {
+                            HStack(alignment: .top) {
+                                chatPreviewTitle()
                                 Spacer()
-                                chatInfoIcon(chat).frame(minWidth: 37, alignment: .trailing)
+                                (formatTimestampText(chatTs))
+                                    .font(.subheadline)
+                                    .frame(minWidth: 60, alignment: .trailing)
+                                    .foregroundColor(theme.colors.secondary)
+                                    .padding(.top, 4)
                             }
+                            .padding(.bottom, 4)
+                            .padding(.horizontal, 8)
+
+                            ZStack(alignment: .topTrailing) {
+                                let chat = activeContentPreview?.chat ?? chat
+                                let ci = activeContentPreview?.ci ?? chat.chatItems.last
+                                let mc = ci?.content.msgContent
+                                HStack(alignment: .top) {
+                                    let deleted = ci?.isDeletedContent == true || ci?.meta.itemDeleted != nil
+                                    let showContentPreview = (showChatPreviews && chatModel.draftChatId != chat.id && !deleted) || activeContentPreview != nil
+                                    if let ci, showContentPreview {
+                                        chatItemContentPreview(chat, ci)
+                                    }
+                                    let mcIsVoice = switch mc { case .voice: true; default: false }
+                                    if !mcIsVoice || !showContentPreview || mc?.text != "" || chatModel.draftChatId == chat.id {
+                                        let hasFilePreview = if case .file = mc { true } else { false }
+                                        chatMessagePreview(cItem, hasFilePreview)
+                                    } else {
+                                        Spacer()
+                                        chatInfoIcon(chat).frame(minWidth: 37, alignment: .trailing)
+                                    }
+                                }
+                                .onChange(of: chatModel.stopPreviousRecPlay?.path) { _ in
+                                    checkActiveContentPreview(chat, ci, mc)
+                                }
+                                .onChange(of: activeContentPreview) { _ in
+                                    checkActiveContentPreview(chat, ci, mc)
+                                }
+                                .onChange(of: showFullscreenGallery) { _ in
+                                    checkActiveContentPreview(chat, ci, mc)
+                                }
+                                chatStatusImage()
+                                    .padding(.top, dynamicChatInfoSize * 1.44)
+                                    .frame(maxWidth: .infinity, alignment: .trailing)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.trailing, 8)
+
+                            Spacer()
                         }
-                        .onChange(of: chatModel.stopPreviousRecPlay?.path) { _ in
-                            checkActiveContentPreview(chat, ci, mc)
-                        }
-                        .onChange(of: activeContentPreview) { _ in
-                            checkActiveContentPreview(chat, ci, mc)
-                        }
-                        .onChange(of: showFullscreenGallery) { _ in
-                            checkActiveContentPreview(chat, ci, mc)
-                        }
-                        chatStatusImage()
-                            .padding(.top, dynamicChatInfoSize * 1.44)
-                            .frame(maxWidth: .infinity, alignment: .trailing)
+                        .frame(maxHeight: .infinity)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.trailing, 8)
+                    .opacity(deleting ? 0.4 : 1)
+                    .padding(.bottom, -8)
 
-                    Spacer()
+                    if deleting {
+                        ProgressView()
+                            .scaleEffect(2)
+                    }
                 }
-                .frame(maxHeight: .infinity)
-            }
-            .opacity(deleting ? 0.4 : 1)
-            .padding(.bottom, -8)
-
-            if deleting {
-                ProgressView()
-                    .scaleEffect(2)
             }
         }
         .onChange(of: chatModel.deletedChats.contains(chat.chatInfo.id)) { contains in
@@ -132,6 +144,102 @@ struct ChatPreviewView: View {
                 activeContentPreview = nil
             }
         }
+    }
+
+    private func compactPreview(_ cItem: ChatItem?) -> some View {
+        let chatTs = cItem?.meta.itemTs ?? chat.chatInfo.chatTs
+        let unreadCount = chat.chatStats.unreadCount
+        let unreadChat = chat.chatStats.unreadChat
+        let isFavorite = chat.chatInfo.chatSettings?.favorite == true
+        let notificationMode = chat.chatInfo.chatSettings?.enableNtfs
+        let nomeAction = Color(red: 10.0 / 255.0, green: 135.0 / 255.0, blue: 77.0 / 255.0)
+
+        return HStack(spacing: 12) {
+            ChatInfoImage(chat: chat, size: nomeCompactAvatarSize)
+
+            VStack(alignment: .leading, spacing: 1) {
+                HStack(spacing: 6) {
+                    Text(chat.chatInfo.chatViewName)
+                        .font(.system(size: nomeCompactTitleSize, weight: .medium))
+                        .foregroundColor(theme.colors.onBackground)
+                        .lineLimit(1)
+
+                    if case .group = chat.chatInfo {
+                        HStack(spacing: 3) {
+                            Image(systemName: "person.2.fill")
+                            Text("群")
+                        }
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(nomeAction)
+                        .padding(.horizontal, 6)
+                        .frame(height: 18)
+                        .background(Capsule().fill(nomeAction.opacity(0.11)))
+                        .fixedSize()
+                        .accessibilityLabel(Text("群聊"))
+                    }
+                }
+
+                Text(compactPreviewText(cItem))
+                    .font(.system(size: nomeCompactSupportingSize, weight: .regular))
+                    .foregroundColor(theme.colors.secondary)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            VStack(alignment: .trailing, spacing: 4) {
+                HStack(spacing: 4) {
+                    if isFavorite {
+                        Image(systemName: "star.fill")
+                            .font(.system(size: nomeCompactSupportingSize, weight: .semibold))
+                            .foregroundColor(.blue)
+                    }
+
+                    formatTimestampText(chatTs)
+                        .font(.system(size: nomeCompactSupportingSize, weight: .regular))
+                        .foregroundColor(theme.colors.secondary)
+                }
+
+                if unreadCount > 0 {
+                    Text("\(unreadCount)")
+                        .font(.system(size: nomeCompactSupportingSize, weight: .regular))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 5)
+                        .frame(minWidth: nomeCompactIndicatorSize, minHeight: nomeCompactIndicatorSize)
+                        .background(Capsule().fill(nomeAction))
+                } else if unreadChat {
+                    Circle()
+                        .fill(nomeAction)
+                        .frame(width: 8, height: 8)
+                        .frame(height: nomeCompactIndicatorSize)
+                } else if notificationMode != nil && notificationMode != .all {
+                    Image(systemName: notificationMode == .mentions ? "at" : "bell.slash.fill")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(theme.colors.secondary)
+                        .frame(height: nomeCompactIndicatorSize)
+                } else {
+                    Color.clear.frame(width: 1, height: nomeCompactIndicatorSize)
+                }
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .frame(minHeight: nomeCompactRowHeight)
+        .opacity(deleting ? 0.4 : 1)
+        .overlay {
+            if deleting {
+                ProgressView()
+            }
+        }
+    }
+
+    private func compactPreviewText(_ cItem: ChatItem?) -> String {
+        if chatModel.draftChatId == chat.id, let draft = chatModel.draft {
+            return draft.message
+        }
+        guard showChatPreviews, let cItem else {
+            return ""
+        }
+        return cItem.text(isChannel: chat.chatInfo.isChannel)
     }
 
     @ViewBuilder private func chatPreviewImageOverlayIcon() -> some View {

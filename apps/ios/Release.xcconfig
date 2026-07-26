@@ -1,1 +1,5 @@
+NOME_URL_SLASH = /
+NOME_SMP_SERVER =
+NOME_XFTP_SERVER =
+NOME_WEBRTC_ICE_SERVERS =
 #include? "Local.xcconfig"

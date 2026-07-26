@@ -49,7 +49,7 @@ private let versionDescriptions: [VersionDescription] = [
             .feature(Description(
                 icon: "checkmark.shield",
                 title: "Security assessment",
-                description: "SimpleX Chat security was audited by Trail of Bits."
+                description: "The underlying communication protocol was audited by Trail of Bits."
             )),
             .feature(Description(
                 icon: "person.2",
@@ -494,7 +494,7 @@ private let versionDescriptions: [VersionDescription] = [
             .feature(Description(
                 icon: "checkmark.shield",
                 title: "Better security ✅",
-                description: "SimpleX protocols reviewed by Trail of Bits."
+                description: "The underlying protocols were reviewed by Trail of Bits."
             )),
             .feature(Description(
                 icon: "video",
@@ -627,7 +627,7 @@ private let versionDescriptions: [VersionDescription] = [
             )),
             .view(FeatureView(
                 icon: nil,
-                title: "Short SimpleX address",
+                title: "Short contact address",
                 view: { CreateUpdateAddressShortLink() }
             ))
         ]
@@ -660,7 +660,7 @@ private let versionDescriptions: [VersionDescription] = [
             .feature(Description(
                 icon: "network",
                 title: "Non-profit governance",
-                description: "To make SimpleX Network last."
+                description: "To support long-term protocol stewardship."
             ))
         ]
     ),
@@ -708,7 +708,7 @@ fileprivate struct CreateUpdateAddressShortLink: View {
                     .symbolRenderingMode(.monochrome)
                     .foregroundColor(theme.colors.secondary)
                     .frame(minWidth: 30, alignment: .center)
-                Text("Short SimpleX address").font(.title3).bold()
+                Text("Short contact address").font(.title3).bold()
             }
             Group {
                 if let addr = chatModel.userAddress {
@@ -732,7 +732,7 @@ fileprivate struct CreateUpdateAddressShortLink: View {
         .sheet(isPresented: $showAddressSheet) {
             NavigationView {
                 UserAddressView(autoCreate: true)
-                    .navigationTitle("SimpleX address")
+                    .navigationTitle("Contact address")
                     .navigationBarTitleDisplayMode(.large)
                     .modifier(ThemedBackground(grouped: true))
             }

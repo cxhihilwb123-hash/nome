@@ -271,12 +271,44 @@ public class CodableDefault<T: Codable> {
 
 let networkProxyDefault: CodableDefault<NetworkProxy> = CodableDefault(defaults: UserDefaults.standard, forKey: DEFAULT_NETWORK_PROXY, withDefault: NetworkProxy.def)
 
+private enum NomeSettingsPalette {
+    static let navy = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor.label.resolvedColor(with: traits)
+            : UIColor(red: 14.0 / 255.0, green: 27.0 / 255.0, blue: 45.0 / 255.0, alpha: 1)
+    })
+    static let green = Color(red: 22.0 / 255.0, green: 174.0 / 255.0, blue: 102.0 / 255.0)
+    static let blue = Color(red: 39.0 / 255.0, green: 107.0 / 255.0, blue: 255.0 / 255.0)
+
+    static func canvas(_ theme: AppTheme) -> Color {
+        theme.colors.background.asGroupedBackground(theme.base.mode)
+    }
+
+    static func surface(_ theme: AppTheme) -> Color {
+        theme.colors.background
+    }
+
+    static func primaryText(_ theme: AppTheme) -> Color {
+        theme.colors.onBackground
+    }
+
+    static func border(_ theme: AppTheme) -> Color {
+        theme.colors.onBackground.opacity(theme.colors.isLight ? 0.08 : 0.22)
+    }
+
+    static func divider(_ theme: AppTheme) -> Color {
+        theme.colors.secondary.opacity(theme.colors.isLight ? 0.18 : 0.30)
+    }
+}
+
 struct SettingsView: View {
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var chatModel: ChatModel
     @EnvironmentObject var sceneDelegate: SceneDelegate
     @EnvironmentObject var theme: AppTheme
+    var embeddedInNomeTab: Bool = false
+    @StateObject private var nomeSaveableSettings = SaveableSettings()
     @State private var showProgress: Bool = false
 
     var body: some View {
@@ -288,87 +320,137 @@ struct SettingsView: View {
         }
     }
 
+    @ViewBuilder
     func settingsView() -> some View {
-        List {
+        if embeddedInNomeTab {
+            nomeSettingsTabView()
+                .environmentObject(nomeSaveableSettings)
+                .onDisappear {
+                    chatModel.showingTerminal = false
+                    chatModel.terminalItems = []
+                }
+        } else {
+            List {
             let user = chatModel.currentUser
-            Section(header: Text("Settings").foregroundColor(theme.colors.secondary)) {
+            if embeddedInNomeTab {
+                NomeSettingsLogoHeader()
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 16, leading: 16, bottom: 12, trailing: 16))
+            }
+            NomeSettingsHeader(user: user)
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 12, trailing: 16))
+
+            Section(header: Text("设置").foregroundColor(theme.colors.secondary)) {
                 NavigationLink {
                     NotificationsView()
-                        .navigationTitle("Notifications")
+                        .navigationTitle("通知")
                         .modifier(ThemedBackground(grouped: true))
                 } label: {
                     HStack {
                         notificationsIcon()
-                        Text("Notifications")
+                        Text("通知")
                     }
                 }
                 .disabled(chatModel.chatRunning != true)
 
                 NavigationLink {
-                    NetworkAndServers()
-                        .navigationTitle("Network & servers")
+                    NomeBackupAndMigrationView(
+                        showProgressOnSettings: $showProgress,
+                        dismissSettingsSheet: dismiss,
+                        chatItemTTL: chatModel.chatItemTTL
+                    )
                         .modifier(ThemedBackground(grouped: true))
                 } label: {
-                    settingsRow("externaldrive.connected.to.line.below", color: theme.colors.secondary) { Text("Network & servers") }
+                    NomeSettingsActionRow(
+                        icon: "icloud.and.arrow.up",
+                        title: "备份与迁移",
+                        subtitle: "数据只保存在你的设备上",
+                        trailing: nil
+                    )
                 }
-                .disabled(chatModel.chatRunning != true)
 
                 NavigationLink {
-                    CallSettings()
-                        .navigationTitle("Your calls")
+                    ConnectDesktopView()
+                        .navigationTitle("连接桌面")
                         .modifier(ThemedBackground(grouped: true))
                 } label: {
-                    settingsRow("video", color: theme.colors.secondary) { Text("Audio & video calls") }
+                    NomeSettingsActionRow(
+                        icon: "desktopcomputer",
+                        title: "连接桌面",
+                        subtitle: "在电脑上安全使用 Nome",
+                        trailing: "未连接"
+                    )
                 }
                 .disabled(chatModel.chatRunning != true)
+            }
 
+            Section(header: Text("隐私与安全").foregroundColor(theme.colors.secondary)) {
                 NavigationLink {
                     PrivacySettings()
-                        .navigationTitle("Your privacy")
+                        .navigationTitle("隐私与安全")
                         .modifier(ThemedBackground(grouped: true))
                 } label: {
-                    settingsRow("lock", color: theme.colors.secondary) { Text("Privacy & security") }
+                    NomeSettingsActionRow(
+                        icon: "checkmark.shield",
+                        title: "隐私与安全",
+                        subtitle: "消息、阅后即焚、权限管理",
+                        trailing: nil
+                    )
+                }
+                .disabled(chatModel.chatRunning != true)
+
+                NavigationLink {
+                    NetworkAndServers()
+                        .navigationTitle("服务器与 Tor")
+                        .modifier(ThemedBackground(grouped: true))
+                } label: {
+                    NomeSettingsActionRow(
+                        icon: "globe",
+                        title: "服务器与 Tor",
+                        subtitle: "路由设置，提升连接隐私",
+                        trailing: nil
+                    )
+                }
+                .disabled(chatModel.chatRunning != true)
+            }
+
+            Section(header: Text("更多").foregroundColor(theme.colors.secondary)) {
+                NavigationLink {
+                    CallSettings()
+                        .navigationTitle("通话")
+                        .modifier(ThemedBackground(grouped: true))
+                } label: {
+                    settingsRow("video", color: theme.colors.secondary) { Text("音频与视频通话") }
                 }
                 .disabled(chatModel.chatRunning != true)
 
                 if UIApplication.shared.supportsAlternateIcons {
                     NavigationLink {
                         AppearanceSettings()
-                            .navigationTitle("Appearance")
+                            .navigationTitle("外观")
                             .modifier(ThemedBackground(grouped: true))
                     } label: {
-                        settingsRow("sun.max", color: theme.colors.secondary) { Text("Appearance") }
+                        settingsRow("sun.max", color: theme.colors.secondary) { Text("外观") }
                     }
                     .disabled(chatModel.chatRunning != true)
                 }
             }
 
-            Section(header: Text("Chat database").foregroundColor(theme.colors.secondary)) {
+            Section(header: Text("高级备份").foregroundColor(theme.colors.secondary)) {
                 chatDatabaseRow()
-                NavigationLink {
-                    MigrateFromDevice(showProgressOnSettings: $showProgress)
-                        .toolbar {
-                            // Redaction broken for `.navigationTitle` - using a toolbar item instead.
-                            ToolbarItem(placement: .principal) {
-                                Text("Migrate device").font(.headline)
-                            }
-                        }
-                        .modifier(ThemedBackground(grouped: true))
-                        .navigationBarTitleDisplayMode(.large)
-                } label: {
-                    settingsRow("tray.and.arrow.up", color: theme.colors.secondary) { Text("Migrate to another device") }
-                }
             }
 
-            Section(header: Text("Help").foregroundColor(theme.colors.secondary)) {
-                if let user = user {
+            Section(header: Text("帮助").foregroundColor(theme.colors.secondary)) {
+                if user != nil {
                     NavigationLink {
-                        ChatHelp(dismissSettingsSheet: dismiss)
-                            .navigationTitle("Welcome \(user.displayName)!")
+                        NomeHelpView(dismissSettingsSheet: dismiss)
                             .modifier(ThemedBackground())
                             .frame(maxHeight: .infinity, alignment: .top)
                     } label: {
-                        settingsRow("questionmark", color: theme.colors.secondary) { Text("How to use it") }
+                        settingsRow("questionmark", color: theme.colors.secondary) { Text("使用帮助") }
                     }
                 }
                 NavigationLink {
@@ -376,18 +458,17 @@ struct SettingsView: View {
                         .modifier(ThemedBackground())
                         .navigationBarTitleDisplayMode(.inline)
                 } label: {
-                    settingsRow("plus", color: theme.colors.secondary) { Text("What's new") }
+                    settingsRow("plus", color: theme.colors.secondary) { Text("更新内容") }
                 }
                 NavigationLink {
-                    SimpleXInfo(onboarding: false)
-                        .navigationBarTitle("", displayMode: .inline)
+                    NomeAboutView()
                         .modifier(ThemedBackground())
                         .frame(maxHeight: .infinity, alignment: .top)
                 } label: {
-                    settingsRow("info", color: theme.colors.secondary) { Text("About SimpleX Chat") }
+                    settingsRow("info", color: theme.colors.secondary) { Text("关于 Nome") }
                 }
                 settingsRow("number", color: theme.colors.secondary) {
-                    Button("Send questions and ideas") {
+                    Button("发送问题和建议") {
                         dismiss()
                         DispatchQueue.main.async {
                             // simplexTeamURL targets this same app; route to the in-app connect flow
@@ -397,15 +478,15 @@ struct SettingsView: View {
                     }
                 }
                 .disabled(chatModel.chatRunning != true)
-                settingsRow("envelope", color: theme.colors.secondary) { Text("[Send us email](mailto:chat@simplex.chat)") }
+                settingsRow("envelope", color: theme.colors.secondary) { Text("[给我们发邮件](mailto:chat@simplex.chat)") }
             }
 
-            Section(header: Text("Support SimpleX Chat").foregroundColor(theme.colors.secondary)) {
+            Section(header: Text("社区与反馈").foregroundColor(theme.colors.secondary)) {
                 settingsRow("keyboard", color: theme.colors.secondary) {
-                    ExternalLink("Contribute", destination: URL(string: "https://github.com/simplex-chat/simplex-chat#contribute")!)
+                    ExternalLink("参与开发", destination: URL(string: "https://github.com/simplex-chat/simplex-chat#contribute")!)
                 }
                 settingsRow("star", color: theme.colors.secondary) {
-                    Button("Rate the app") {
+                    Button("评价 Nome") {
                         if let scene = sceneDelegate.windowScene {
                             SKStoreReviewController.requestReview(in: scene)
                         }
@@ -418,47 +499,173 @@ struct SettingsView: View {
                             .frame(width: 24, height: 24)
                             .opacity(0.5)
                             .colorMultiply(theme.colors.secondary)
-                        Text("Star on GitHub")
+                        Text("GitHub 项目")
                             .padding(.leading, indent)
                     }
                 }
             }
 
-            Section(header: Text("Develop").foregroundColor(theme.colors.secondary)) {
+            Section(header: Text("开发").foregroundColor(theme.colors.secondary)) {
                 NavigationLink {
                     DeveloperView()
-                        .navigationTitle("Developer tools")
+                        .navigationTitle("开发者工具")
                         .modifier(ThemedBackground(grouped: true))
                 } label: {
-                    settingsRow("chevron.left.forwardslash.chevron.right", color: theme.colors.secondary) { Text("Developer tools") }
+                    settingsRow("chevron.left.forwardslash.chevron.right", color: theme.colors.secondary) { Text("开发者工具") }
                 }
                 NavigationLink {
                     VersionView()
-                        .navigationBarTitle("App version")
+                        .navigationBarTitle("应用版本")
                         .modifier(ThemedBackground())
                 } label: {
                     Text("v\(appVersion ?? "?") (\(appBuild ?? "?"))")
                 }
             }
+            }
+            .modifier(ThemedBackground(grouped: true))
+            .navigationTitle("设置")
+            .onDisappear {
+                chatModel.showingTerminal = false
+                chatModel.terminalItems = []
+            }
         }
-        .navigationTitle("Your settings")
-        .modifier(ThemedBackground(grouped: true))
-        .onDisappear {
-            chatModel.showingTerminal = false
-            chatModel.terminalItems = []
+    }
+
+    private func nomeSettingsTabView() -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                NomeSettingsLogoHeader()
+                    .padding(.top, 18)
+
+                NavigationLink {
+                    UserProfile()
+                        .modifier(ThemedBackground(grouped: true))
+                } label: {
+                    NomeSettingsHeader(user: chatModel.currentUser)
+                }
+                .buttonStyle(.plain)
+
+                NomeSettingsTabSection(title: "设置") {
+                    NavigationLink {
+                        NotificationsView()
+                            .navigationTitle("通知")
+                            .modifier(ThemedBackground(grouped: true))
+                    } label: {
+                        NomeSettingsTabRow(icon: "bell", title: "通知", subtitle: nil, trailing: nil)
+                    }
+                    .disabled(chatModel.chatRunning != true)
+
+                    Divider().background(NomeSettingsPalette.divider(theme)).padding(.leading, 52)
+
+                    NavigationLink {
+                        NomeBackupAndMigrationView(
+                            showProgressOnSettings: $showProgress,
+                            dismissSettingsSheet: dismiss,
+                            chatItemTTL: chatModel.chatItemTTL
+                        )
+                            .modifier(ThemedBackground(grouped: true))
+                    } label: {
+                        NomeSettingsTabRow(icon: "icloud.and.arrow.up", title: "备份与迁移", subtitle: "数据只保存在你的设备上", trailing: nil)
+                    }
+
+                    Divider().background(NomeSettingsPalette.divider(theme)).padding(.leading, 52)
+
+                    NavigationLink {
+                        DatabaseView(dismissSettingsSheet: dismiss, chatItemTTL: chatModel.chatItemTTL)
+                            .navigationTitle("数据与存储")
+                            .modifier(ThemedBackground(grouped: true))
+                    } label: {
+                        NomeSettingsTabRow(icon: "internaldrive", title: "数据与存储", subtitle: "数据库密码、导出与本地文件", trailing: nil)
+                    }
+
+                    Divider().background(NomeSettingsPalette.divider(theme)).padding(.leading, 52)
+
+                    NavigationLink {
+                        ConnectDesktopView()
+                            .navigationTitle("连接桌面")
+                            .modifier(ThemedBackground(grouped: true))
+                    } label: {
+                        NomeSettingsTabRow(icon: "desktopcomputer", title: "连接桌面", subtitle: "在电脑上安全使用 Nome", trailing: "未连接")
+                    }
+                    .disabled(chatModel.chatRunning != true)
+                }
+
+                NomeSettingsTabSection(title: "隐私与安全") {
+                    NavigationLink {
+                        PrivacySettings()
+                            .navigationTitle("隐私与安全")
+                            .modifier(ThemedBackground(grouped: true))
+                    } label: {
+                        NomeSettingsTabRow(icon: "checkmark.shield", title: "隐私与安全", subtitle: "消息、阅后即焚、权限管理", trailing: nil)
+                    }
+                    .disabled(chatModel.chatRunning != true)
+
+                    Divider().background(NomeSettingsPalette.divider(theme)).padding(.leading, 52)
+
+                    NavigationLink {
+                        NetworkAndServers()
+                            .environmentObject(nomeSaveableSettings)
+                            .navigationTitle("服务器与 Tor")
+                            .modifier(ThemedBackground(grouped: true))
+                    } label: {
+                        NomeSettingsTabRow(icon: "globe", title: "服务器与 Tor", subtitle: "路由设置，提升连接隐私", trailing: nil)
+                    }
+                    .disabled(chatModel.chatRunning != true)
+                }
+
+                NomeSettingsTabSection(title: "高级") {
+                    NavigationLink {
+                        SettingsView()
+                            .navigationTitle("完整设置")
+                            .modifier(ThemedBackground(grouped: true))
+                    } label: {
+                        NomeSettingsTabRow(
+                            icon: "slider.horizontal.3",
+                            title: "完整设置",
+                            subtitle: "查看通话、外观、开发者工具和全部安全控制",
+                            trailing: nil
+                        )
+                    }
+                }
+
+                NomeSettingsTabSection(title: nil) {
+                    if chatModel.currentUser != nil {
+                        NavigationLink {
+                            NomeHelpView(dismissSettingsSheet: dismiss)
+                                .modifier(ThemedBackground())
+                                .frame(maxHeight: .infinity, alignment: .top)
+                        } label: {
+                            NomeSettingsTabRow(icon: "questionmark.circle", title: "帮助与反馈", subtitle: nil, trailing: nil)
+                        }
+                    }
+
+                    Divider().background(NomeSettingsPalette.divider(theme)).padding(.leading, 52)
+
+                    NavigationLink {
+                        NomeAboutView()
+                            .modifier(ThemedBackground())
+                            .frame(maxHeight: .infinity, alignment: .top)
+                    } label: {
+                        NomeSettingsTabRow(icon: "info.circle", title: "关于 Nome", subtitle: "版本 \(appVersion ?? "?")（本地版）", trailing: nil)
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 98)
         }
+        .background(NomeSettingsPalette.canvas(theme).ignoresSafeArea())
     }
     
     private func chatDatabaseRow() -> some View {
         NavigationLink {
             DatabaseView(dismissSettingsSheet: dismiss, chatItemTTL: chatModel.chatItemTTL)
-                .navigationTitle("Your chat database")
+                .navigationTitle("聊天数据库")
                 .modifier(ThemedBackground(grouped: true))
         } label: {
             let color: Color = chatModel.chatDbEncrypted == false ? .orange : theme.colors.secondary
             settingsRow("internaldrive", color: color) {
                 HStack {
-                    Text("Database passphrase & export")
+                    Text("数据库密码与导出")
                     Spacer()
                     if chatModel.chatRunning == false {
                         Image(systemName: "exclamationmark.octagon.fill").foregroundColor(.red)
@@ -513,6 +720,600 @@ struct SettingsView: View {
         return Image(systemName: icon)
             .padding(.trailing, 9)
             .foregroundColor(color)
+    }
+}
+
+private struct NomeSettingsLogoHeader: View {
+    var body: some View {
+        HStack {
+            Spacer()
+            Image("nome_header_logo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 138)
+                .accessibilityHidden(true)
+            Spacer()
+        }
+        .padding(.top, 6)
+    }
+}
+
+private struct NomeSettingsHeader: View {
+    @Environment(\.colorScheme) var colorScheme
+    @EnvironmentObject var theme: AppTheme
+    let user: User?
+
+    var body: some View {
+        HStack(spacing: 14) {
+            if let user {
+                ProfileImage(imageStr: user.image, size: 74, color: NomeSettingsPalette.canvas(theme))
+            } else {
+                Image(colorScheme == .light ? "icon-light" : "icon-dark")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 74, height: 74)
+                    .accessibilityHidden(true)
+            }
+
+            VStack(alignment: .leading, spacing: 5) {
+                Text("主身份")
+                    .font(.title3.weight(.bold))
+                    .foregroundColor(NomeSettingsPalette.primaryText(theme))
+                    .lineLimit(1)
+                Text(user?.displayName ?? "当前设备上的身份")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 0)
+            Image(systemName: "chevron.right")
+                .foregroundColor(.secondary)
+                .font(.headline.weight(.semibold))
+        }
+        .padding(16)
+        .frame(minHeight: 112)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(NomeSettingsPalette.surface(theme))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(NomeSettingsPalette.border(theme), lineWidth: 1)
+        )
+    }
+}
+
+private struct NomeSettingsActionRow: View {
+    @EnvironmentObject var theme: AppTheme
+    let icon: String
+    let title: LocalizedStringKey
+    let subtitle: LocalizedStringKey
+    let trailing: LocalizedStringKey?
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.system(size: 22, weight: .medium))
+                .foregroundColor(NomeSettingsPalette.primaryText(theme))
+                .frame(width: 34, height: 34)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.body.weight(.semibold))
+                    .foregroundColor(NomeSettingsPalette.primaryText(theme))
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 0)
+
+            if let trailing {
+                Text(trailing)
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(NomeSettingsPalette.blue)
+                    .padding(.horizontal, 10)
+                    .frame(height: 26)
+                    .background(Capsule().fill(NomeSettingsPalette.blue.opacity(0.1)))
+            }
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+private struct NomeSettingsTabSection<Content: View>: View {
+    @EnvironmentObject var theme: AppTheme
+    let title: LocalizedStringKey?
+    let content: Content
+
+    init(title: LocalizedStringKey?, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let title {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundColor(.secondary)
+                    .padding(.leading, 2)
+            }
+
+            VStack(spacing: 0) {
+                content
+            }
+            .padding(.vertical, 6)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(NomeSettingsPalette.surface(theme))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(NomeSettingsPalette.border(theme), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct NomeSettingsTabRow: View {
+    @EnvironmentObject var theme: AppTheme
+    let icon: String
+    let title: LocalizedStringKey
+    let subtitle: LocalizedStringKey?
+    let trailing: LocalizedStringKey?
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.system(size: 23, weight: .medium))
+                .foregroundColor(NomeSettingsPalette.primaryText(theme))
+                .frame(width: 38, height: 46)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.body.weight(.semibold))
+                    .foregroundColor(NomeSettingsPalette.primaryText(theme))
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            Spacer(minLength: 0)
+
+            if let trailing {
+                Text(trailing)
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(NomeSettingsPalette.blue)
+                    .padding(.horizontal, 10)
+                    .frame(height: 26)
+                    .background(Capsule().fill(NomeSettingsPalette.blue.opacity(0.1)))
+            }
+
+            Image(systemName: "chevron.right")
+                .font(.footnote.weight(.semibold))
+                .foregroundColor(.secondary)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 9)
+        .contentShape(Rectangle())
+    }
+}
+
+private struct NomeBackupAndMigrationView: View {
+    @EnvironmentObject var chatModel: ChatModel
+    @Binding var showProgressOnSettings: Bool
+    let dismissSettingsSheet: DismissAction
+    let chatItemTTL: ChatItemTTL
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                backupIntroCard
+
+                NomeSettingsTabSection(title: "常用操作") {
+                    NavigationLink {
+                        DatabaseView(dismissSettingsSheet: dismissSettingsSheet, chatItemTTL: chatItemTTL)
+                            .navigationTitle("数据与存储")
+                            .modifier(ThemedBackground(grouped: true))
+                    } label: {
+                        NomeSettingsTabRow(
+                            icon: "square.and.arrow.up",
+                            title: "导出或导入数据库",
+                            subtitle: "生成本地备份文件，或从备份文件恢复",
+                            trailing: nil
+                        )
+                    }
+
+                    Divider().padding(.leading, 52)
+
+                    NavigationLink {
+                        MigrateFromDevice(showProgressOnSettings: $showProgressOnSettings)
+                            .toolbar {
+                                ToolbarItem(placement: .principal) {
+                                    Text("迁移到新设备").font(.headline)
+                                }
+                            }
+                            .modifier(ThemedBackground(grouped: true))
+                            .navigationBarTitleDisplayMode(.large)
+                    } label: {
+                        NomeSettingsTabRow(
+                            icon: "iphone.and.arrow.forward",
+                            title: "迁移到新设备",
+                            subtitle: "生成加密迁移二维码；开始后会暂时停止聊天",
+                            trailing: nil
+                        )
+                    }
+                    .disabled(chatModel.chatRunning != true)
+                }
+
+                receiveMigrationCard
+                backupSafetyCard
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 18)
+            .padding(.bottom, 40)
+        }
+        .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
+        .navigationTitle("备份与迁移")
+        .navigationBarTitleDisplayMode(.large)
+    }
+
+    private var backupIntroCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                Image(systemName: "lock.shield")
+                    .font(.system(size: 28, weight: .semibold))
+                    .foregroundColor(NomeSettingsPalette.green)
+                    .frame(width: 42, height: 42)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(NomeSettingsPalette.green.opacity(0.12))
+                    )
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("你的 Nome 数据只在本机")
+                        .font(.headline)
+                        .foregroundColor(NomeSettingsPalette.navy)
+                    Text("备份和迁移都会使用现有数据库与加密流程。")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color(uiColor: .systemBackground))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(Color.black.opacity(0.06), lineWidth: 1)
+        )
+    }
+
+    private var receiveMigrationCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("在新设备接收")
+                .font(.subheadline.weight(.semibold))
+                .foregroundColor(.secondary)
+            Text("在新 iPhone 首次设置 Nome 时，选择从另一台设备迁入，然后扫描这里生成的迁移二维码。")
+                .font(.callout)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color(uiColor: .systemBackground))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(Color.black.opacity(0.06), lineWidth: 1)
+        )
+    }
+
+    private var backupSafetyCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("安全提示")
+                .font(.subheadline.weight(.semibold))
+                .foregroundColor(.secondary)
+            Text("导出的数据库文件需要妥善保存。迁移到新设备时，旧设备会先准备加密归档，再通过二维码或安全链接交给新设备。")
+                .font(.callout)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color(uiColor: .systemBackground))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(Color.black.opacity(0.06), lineWidth: 1)
+        )
+    }
+}
+
+private struct NomeAboutView: View {
+    @EnvironmentObject var theme: AppTheme
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .center, spacing: 16) {
+                    Image("nome_header_logo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 150)
+                        .accessibilityHidden(true)
+
+                    Text("私密连接，简单使用")
+                        .font(.title3.weight(.bold))
+                        .foregroundColor(NomeSettingsPalette.primaryText(theme))
+                        .multilineTextAlignment(.center)
+
+                    Text("Nome 是一款重视隐私的通信应用，把连接、身份和备份说得更清楚。")
+                        .font(.callout)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(18)
+                .frame(maxWidth: .infinity)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(NomeSettingsPalette.surface(theme))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .stroke(NomeSettingsPalette.border(theme), lineWidth: 1)
+                )
+
+                NomeAboutSection(title: "版本") {
+                    NomeAboutInfoRow(
+                        icon: "app.badge",
+                        title: "Nome",
+                        subtitle: "v\(appVersion ?? "?") (\(appBuild ?? "?"))"
+                    )
+                }
+
+                NomeAboutSection(title: "安全边界") {
+                    NomeAboutInfoRow(
+                        icon: "link.badge.plus",
+                        title: "一次性连接",
+                        subtitle: "用一次性链接或二维码添加联系人，避免公开账号 ID。"
+                    )
+
+                    Divider().padding(.leading, 52)
+
+                    NomeAboutInfoRow(
+                        icon: "lock.shield",
+                        title: "本机数据",
+                        subtitle: "聊天数据库、备份和迁移继续使用现有加密机制。"
+                    )
+
+                    Divider().padding(.leading, 52)
+
+                    NomeAboutInfoRow(
+                        icon: "network",
+                        title: "私密连接",
+                        subtitle: "一次性邀请、公开联系方式和分散式消息传递共同减少关系暴露。"
+                    )
+                }
+
+                NomeAboutSection(title: "开源与许可") {
+                    NomeAboutInfoRow(
+                        icon: "curlybraces",
+                        title: "开源技术",
+                        subtitle: "Nome 使用开源通信技术构建，许可证与源代码信息保持公开。"
+                    )
+
+                    Divider().padding(.leading, 52)
+
+                    Link(destination: URL(string: "https://github.com/simplex-chat/simplex-chat")!) {
+                        NomeAboutInfoRow(
+                            icon: "arrow.up.forward.app",
+                            title: "查看源代码与许可",
+                            subtitle: "GitHub 开源仓库"
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 18)
+            .padding(.bottom, 40)
+        }
+        .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
+        .navigationTitle("关于 Nome")
+        .navigationBarTitleDisplayMode(.large)
+    }
+}
+
+private struct NomeAboutSection<Content: View>: View {
+    let title: String
+    let content: Content
+
+    init(title: String, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(verbatim: title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundColor(.secondary)
+                .padding(.leading, 2)
+
+            VStack(spacing: 0) {
+                content
+            }
+            .padding(.vertical, 6)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Color(uiColor: .systemBackground))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(Color.black.opacity(0.06), lineWidth: 1)
+            )
+        }
+    }
+}
+
+private struct NomeAboutInfoRow: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.system(size: 22, weight: .medium))
+                .foregroundColor(NomeSettingsPalette.navy)
+                .frame(width: 38, height: 46)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(verbatim: title)
+                    .font(.body.weight(.semibold))
+                    .foregroundColor(NomeSettingsPalette.navy)
+                Text(verbatim: subtitle)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .lineLimit(3)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 9)
+        .contentShape(Rectangle())
+    }
+}
+
+private struct NomeHelpView: View {
+    let dismissSettingsSheet: DismissAction
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("先完成三件事")
+                        .font(.title3.weight(.bold))
+                        .foregroundColor(NomeSettingsPalette.navy)
+                    Text("添加一个朋友、保存自己的公开联系方式、确认备份方式。这样 Nome 就能进入日常使用。")
+                        .font(.callout)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(18)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(Color(uiColor: .systemBackground))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .stroke(Color.black.opacity(0.06), lineWidth: 1)
+                )
+
+                NomeAboutSection(title: "开始使用") {
+                    NomeAboutInfoRow(
+                        icon: "link.badge.plus",
+                        title: "添加朋友",
+                        subtitle: "用一次性链接或二维码连接一个联系人。链接只适合发给你信任的人。"
+                    )
+
+                    Divider().padding(.leading, 52)
+
+                    NomeAboutInfoRow(
+                        icon: "qrcode.viewfinder",
+                        title: "加入群组",
+                        subtitle: "粘贴或扫描群组邀请，先确认来源，再加入或等待审批。"
+                    )
+
+                    Divider().padding(.leading, 52)
+
+                    NomeAboutInfoRow(
+                        icon: "person.text.rectangle",
+                        title: "公开联系方式",
+                        subtitle: "需要长期被别人找到时使用；一对一邀请仍建议用一次性链接。"
+                    )
+                }
+
+                NomeAboutSection(title: "保护自己") {
+                    NomeAboutInfoRow(
+                        icon: "person.crop.circle.badge.checkmark",
+                        title: "身份中心",
+                        subtitle: "把不同社交场景分开；隐身身份适合临时或低信任连接。"
+                    )
+
+                    Divider().padding(.leading, 52)
+
+                    NomeAboutInfoRow(
+                        icon: "lock.shield",
+                        title: "隐私与安全",
+                        subtitle: "检查 Nome Lock、链接预览、屏幕保护、阅后即焚和权限设置。"
+                    )
+
+                    Divider().padding(.leading, 52)
+
+                    NomeAboutInfoRow(
+                        icon: "externaldrive.badge.icloud",
+                        title: "备份与迁移",
+                        subtitle: "聊天数据主要在本机。换机或重装前，先导出数据库或准备迁移二维码。"
+                    )
+                }
+
+                NomeAboutSection(title: "反馈") {
+                    Button {
+                        dismissSettingsSheet()
+                        DispatchQueue.main.async {
+                            ChatModel.shared.appOpenUrl = simplexTeamURL
+                        }
+                    } label: {
+                        NomeAboutInfoRow(
+                            icon: "bubble.left.and.exclamationmark.bubble.right",
+                            title: "发送问题和建议",
+                            subtitle: "连接到项目支持对话，反馈 Nome 使用中的困惑。"
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    Divider().padding(.leading, 52)
+
+                    Link(destination: URL(string: "mailto:chat@simplex.chat")!) {
+                        NomeAboutInfoRow(
+                            icon: "envelope",
+                            title: "邮件联系",
+                            subtitle: "chat@simplex.chat"
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 18)
+            .padding(.bottom, 40)
+        }
+        .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
+        .navigationTitle("帮助与反馈")
+        .navigationBarTitleDisplayMode(.large)
     }
 }
 

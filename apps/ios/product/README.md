@@ -6,15 +6,20 @@
 
 ## Table of Contents
 
-1. [Vision](#vision)
-2. [Target Users](#target-users)
-3. [Capability Map](#capability-map)
-4. [Navigation Map](#navigation-map)
-5. [Related Specifications](#related-specifications)
+1. [Nome Product Overlay](#nome-product-overlay)
+2. [Vision](#vision)
+3. [Target Users](#target-users)
+4. [Capability Map](#capability-map)
+5. [Navigation Map](#navigation-map)
+6. [Related Specifications](#related-specifications)
 
 ## Executive Summary
 
 SimpleX Chat is the first messaging platform with no user identifiers of any kind -- not even random numbers. It provides end-to-end encrypted messaging (with optional post-quantum cryptography), audio/video calls, file sharing, and group communication through a fully decentralized architecture where users control their own SMP relay servers. The iOS app is a native SwiftUI application backed by a Haskell core library.
+
+## Nome Product Overlay
+
+This branch also carries the native Nome product presentation on top of the official SimpleX iOS core. The overlay changes brand assets, Chinese-first copy, information hierarchy and selected SwiftUI layouts while preserving core messaging and compatibility identifiers. See [Nome Product Experience](views/nome-experience.md) for the product boundary and evidence rules.
 
 ---
 
@@ -253,6 +258,8 @@ UserPicker
 - [glossary.md](glossary.md) -- Domain term glossary
 - [spec/README.md](../spec/README.md) -- Technical specification overview
 - [spec/architecture.md](../spec/architecture.md) -- Architecture specification
+- [Nome Product Experience](views/nome-experience.md) -- Nome presentation, preview boundary and release status
+- [Nome overlay specification](../spec/client/nome-brand-overlay.md) -- Technical overlay boundary and source mapping
 - Haskell core: `../../src/Simplex/Chat/Controller.hs`, `../../src/Simplex/Chat/Types.hs`
 - Swift model: `Shared/Model/ChatModel.swift`, `SimpleXChat/ChatTypes.swift`
 - Swift API bridge: `SimpleXChat/API.swift`, `Shared/Model/SimpleXAPI.swift`

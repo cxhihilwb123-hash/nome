@@ -184,8 +184,8 @@
 		64C3B0212A0D359700E19930 /* CustomTimePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64C3B0202A0D359700E19930 /* CustomTimePicker.swift */; };
 		64C8299D2D54AEEE006B9E89 /* libgmp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 64C829982D54AEED006B9E89 /* libgmp.a */; };
 		64C8299E2D54AEEE006B9E89 /* libffi.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 64C829992D54AEEE006B9E89 /* libffi.a */; };
-		64C8299F2D54AEEE006B9E89 /* libHSsimplex-chat-6.5.6.1-AHNtWMpWy1qCojVTgyCNik-ghc9.6.3.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 64C8299A2D54AEEE006B9E89 /* libHSsimplex-chat-6.5.6.1-AHNtWMpWy1qCojVTgyCNik-ghc9.6.3.a */; };
-		64C829A02D54AEEE006B9E89 /* libHSsimplex-chat-6.5.6.1-AHNtWMpWy1qCojVTgyCNik.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 64C8299B2D54AEEE006B9E89 /* libHSsimplex-chat-6.5.6.1-AHNtWMpWy1qCojVTgyCNik.a */; };
+		64C8299F2D54AEEE006B9E89 /* libHSsimplex-chat-6.5.6.1-9AkeJLQXnDo2qMAZrPTWYx-ghc8.10.7.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 64C8299A2D54AEEE006B9E89 /* libHSsimplex-chat-6.5.6.1-9AkeJLQXnDo2qMAZrPTWYx-ghc8.10.7.a */; };
+		64C829A02D54AEEE006B9E89 /* libHSsimplex-chat-6.5.6.1-9AkeJLQXnDo2qMAZrPTWYx.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 64C8299B2D54AEEE006B9E89 /* libHSsimplex-chat-6.5.6.1-9AkeJLQXnDo2qMAZrPTWYx.a */; };
 		64C829A12D54AEEE006B9E89 /* libgmpxx.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 64C8299C2D54AEEE006B9E89 /* libgmpxx.a */; };
 		64D0C2C029F9688300B38D5F /* UserAddressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64D0C2BF29F9688300B38D5F /* UserAddressView.swift */; };
 		64D0C2C229FA57AB00B38D5F /* UserAddressLearnMore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64D0C2C129FA57AB00B38D5F /* UserAddressLearnMore.swift */; };
@@ -563,8 +563,8 @@
 		64C3B0202A0D359700E19930 /* CustomTimePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTimePicker.swift; sourceTree = "<group>"; };
 		64C829982D54AEED006B9E89 /* libgmp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libgmp.a; sourceTree = "<group>"; };
 		64C829992D54AEEE006B9E89 /* libffi.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libffi.a; sourceTree = "<group>"; };
-		64C8299A2D54AEEE006B9E89 /* libHSsimplex-chat-6.5.6.1-AHNtWMpWy1qCojVTgyCNik-ghc9.6.3.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libHSsimplex-chat-6.5.6.1-AHNtWMpWy1qCojVTgyCNik-ghc9.6.3.a"; sourceTree = "<group>"; };
-		64C8299B2D54AEEE006B9E89 /* libHSsimplex-chat-6.5.6.1-AHNtWMpWy1qCojVTgyCNik.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libHSsimplex-chat-6.5.6.1-AHNtWMpWy1qCojVTgyCNik.a"; sourceTree = "<group>"; };
+		64C8299A2D54AEEE006B9E89 /* libHSsimplex-chat-6.5.6.1-9AkeJLQXnDo2qMAZrPTWYx-ghc8.10.7.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libHSsimplex-chat-6.5.6.1-9AkeJLQXnDo2qMAZrPTWYx-ghc8.10.7.a"; sourceTree = "<group>"; };
+		64C8299B2D54AEEE006B9E89 /* libHSsimplex-chat-6.5.6.1-9AkeJLQXnDo2qMAZrPTWYx.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libHSsimplex-chat-6.5.6.1-9AkeJLQXnDo2qMAZrPTWYx.a"; sourceTree = "<group>"; };
 		64C8299C2D54AEEE006B9E89 /* libgmpxx.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libgmpxx.a; sourceTree = "<group>"; };
 		64D0C2BF29F9688300B38D5F /* UserAddressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserAddressView.swift; sourceTree = "<group>"; };
 		64D0C2C129FA57AB00B38D5F /* UserAddressLearnMore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserAddressLearnMore.swift; sourceTree = "<group>"; };
@@ -733,8 +733,8 @@
 				64C8299D2D54AEEE006B9E89 /* libgmp.a in Frameworks */,
 				64C8299E2D54AEEE006B9E89 /* libffi.a in Frameworks */,
 				64C829A12D54AEEE006B9E89 /* libgmpxx.a in Frameworks */,
-				64C8299F2D54AEEE006B9E89 /* libHSsimplex-chat-6.5.6.1-AHNtWMpWy1qCojVTgyCNik-ghc9.6.3.a in Frameworks */,
-				64C829A02D54AEEE006B9E89 /* libHSsimplex-chat-6.5.6.1-AHNtWMpWy1qCojVTgyCNik.a in Frameworks */,
+				64C8299F2D54AEEE006B9E89 /* libHSsimplex-chat-6.5.6.1-9AkeJLQXnDo2qMAZrPTWYx-ghc8.10.7.a in Frameworks */,
+				64C829A02D54AEEE006B9E89 /* libHSsimplex-chat-6.5.6.1-9AkeJLQXnDo2qMAZrPTWYx.a in Frameworks */,
 				CE38A29C2C3FCD72005ED185 /* SwiftyGif in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -820,8 +820,8 @@
 				64C829992D54AEEE006B9E89 /* libffi.a */,
 				64C829982D54AEED006B9E89 /* libgmp.a */,
 				64C8299C2D54AEEE006B9E89 /* libgmpxx.a */,
-				64C8299A2D54AEEE006B9E89 /* libHSsimplex-chat-6.5.6.1-AHNtWMpWy1qCojVTgyCNik-ghc9.6.3.a */,
-				64C8299B2D54AEEE006B9E89 /* libHSsimplex-chat-6.5.6.1-AHNtWMpWy1qCojVTgyCNik.a */,
+				64C8299A2D54AEEE006B9E89 /* libHSsimplex-chat-6.5.6.1-9AkeJLQXnDo2qMAZrPTWYx-ghc8.10.7.a */,
+				64C8299B2D54AEEE006B9E89 /* libHSsimplex-chat-6.5.6.1-9AkeJLQXnDo2qMAZrPTWYx.a */,
 			);
 			path = Libraries;
 			sourceTree = "<group>";
@@ -2077,7 +2077,7 @@
 				CLANG_TIDY_MISC_REDUNDANT_EXPRESSION = YES;
 				CODE_SIGN_ENTITLEMENTS = "SimpleX (iOS).entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 337;
+				CURRENT_PROJECT_VERSION = 349;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 5NN7GUYB6T;
 				ENABLE_BITCODE = NO;
@@ -2085,11 +2085,12 @@
 				GCC_OPTIMIZATION_LEVEL = s;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "SimpleX--iOS--Info.plist";
-				INFOPLIST_KEY_NSCameraUsageDescription = "SimpleX needs camera access to scan QR codes to connect to other users and for video calls.";
-				INFOPLIST_KEY_NSFaceIDUsageDescription = "SimpleX uses Face ID for local authentication";
-				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "SimpleX uses local network access to allow using user chat profile via desktop app on the same network.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "SimpleX needs microphone access for audio and video calls, and to record voice messages.";
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "SimpleX needs access to Photo Library for saving captured and received media";
+				INFOPLIST_KEY_CFBundleDisplayName = Nome;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Nome needs camera access to scan QR codes to connect to other users and for video calls.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Nome uses Face ID for local authentication";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Nome uses local network access to allow using your mobile identity from the desktop app on the same network.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Nome needs microphone access for audio and video calls, and to record voice messages.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Nome needs access to Photo Library for saving captured and received media";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -2105,7 +2106,8 @@
 				MARKETING_VERSION = 6.5.6;
 				OTHER_LDFLAGS = "-Wl,-stack_size,0x1000000";
 				PRODUCT_BUNDLE_IDENTIFIER = chat.simplex.app;
-				PRODUCT_NAME = SimpleX;
+				PRODUCT_MODULE_NAME = SimpleX;
+				PRODUCT_NAME = Nome;
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
@@ -2127,7 +2129,7 @@
 				CLANG_TIDY_MISC_REDUNDANT_EXPRESSION = YES;
 				CODE_SIGN_ENTITLEMENTS = "SimpleX (iOS).entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 337;
+				CURRENT_PROJECT_VERSION = 349;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 5NN7GUYB6T;
 				ENABLE_BITCODE = NO;
@@ -2135,11 +2137,12 @@
 				ENABLE_PREVIEWS = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "SimpleX--iOS--Info.plist";
-				INFOPLIST_KEY_NSCameraUsageDescription = "SimpleX needs camera access to scan QR codes to connect to other users and for video calls.";
-				INFOPLIST_KEY_NSFaceIDUsageDescription = "SimpleX uses Face ID for local authentication";
-				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "SimpleX uses local network access to allow using user chat profile via desktop app on the same network.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "SimpleX needs microphone access for audio and video calls, and to record voice messages.";
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "SimpleX needs access to Photo Library for saving captured and received media";
+				INFOPLIST_KEY_CFBundleDisplayName = Nome;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Nome needs camera access to scan QR codes to connect to other users and for video calls.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Nome uses Face ID for local authentication";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Nome uses local network access to allow using your mobile identity from the desktop app on the same network.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Nome needs microphone access for audio and video calls, and to record voice messages.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Nome needs access to Photo Library for saving captured and received media";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -2155,7 +2158,8 @@
 				MARKETING_VERSION = 6.5.6;
 				OTHER_LDFLAGS = "-Wl,-stack_size,0x1000000";
 				PRODUCT_BUNDLE_IDENTIFIER = chat.simplex.app;
-				PRODUCT_NAME = SimpleX;
+				PRODUCT_MODULE_NAME = SimpleX;
+				PRODUCT_NAME = Nome;
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -2169,7 +2173,7 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 337;
+				CURRENT_PROJECT_VERSION = 349;
 				DEVELOPMENT_TEAM = 5NN7GUYB6T;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
@@ -2189,7 +2193,7 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 337;
+				CURRENT_PROJECT_VERSION = 349;
 				DEVELOPMENT_TEAM = 5NN7GUYB6T;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
@@ -2214,13 +2218,13 @@
 				CODE_SIGN_ENTITLEMENTS = "SimpleX NSE/SimpleX NSE.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 337;
+				CURRENT_PROJECT_VERSION = 349;
 				DEVELOPMENT_TEAM = 5NN7GUYB6T;
 				ENABLE_BITCODE = NO;
 				GCC_OPTIMIZATION_LEVEL = s;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "SimpleX NSE/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "SimpleX NSE";
+				INFOPLIST_KEY_CFBundleDisplayName = "Nome Notifications";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022 SimpleX Chat. All rights reserved.";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -2251,13 +2255,13 @@
 				CODE_SIGN_ENTITLEMENTS = "SimpleX NSE/SimpleX NSE.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 337;
+				CURRENT_PROJECT_VERSION = 349;
 				DEVELOPMENT_TEAM = 5NN7GUYB6T;
 				ENABLE_BITCODE = NO;
 				ENABLE_CODE_COVERAGE = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "SimpleX NSE/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "SimpleX NSE";
+				INFOPLIST_KEY_CFBundleDisplayName = "Nome Notifications";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022 SimpleX Chat. All rights reserved.";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -2288,7 +2292,7 @@
 				CLANG_TIDY_BUGPRONE_REDUNDANT_BRANCH_CONDITION = YES;
 				CLANG_TIDY_MISC_REDUNDANT_EXPRESSION = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 337;
+				CURRENT_PROJECT_VERSION = 349;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = 5NN7GUYB6T;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -2339,7 +2343,7 @@
 				CLANG_TIDY_BUGPRONE_REDUNDANT_BRANCH_CONDITION = YES;
 				CLANG_TIDY_MISC_REDUNDANT_EXPRESSION = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 337;
+				CURRENT_PROJECT_VERSION = 349;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = 5NN7GUYB6T;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -2393,13 +2397,13 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CODE_SIGN_ENTITLEMENTS = "SimpleX SE/SimpleX SE.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 337;
+				CURRENT_PROJECT_VERSION = 349;
 				DEVELOPMENT_TEAM = 5NN7GUYB6T;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "SimpleX SE/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "SimpleX SE";
+				INFOPLIST_KEY_CFBundleDisplayName = "Nome Share";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2024 SimpleX Chat. All rights reserved.";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -2427,13 +2431,13 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CODE_SIGN_ENTITLEMENTS = "SimpleX SE/SimpleX SE.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 337;
+				CURRENT_PROJECT_VERSION = 349;
 				DEVELOPMENT_TEAM = 5NN7GUYB6T;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "SimpleX SE/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "SimpleX SE";
+				INFOPLIST_KEY_CFBundleDisplayName = "Nome Share";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2024 SimpleX Chat. All rights reserved.";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
