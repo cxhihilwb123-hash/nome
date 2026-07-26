@@ -67,7 +67,7 @@ fun ChatListView(
 
 ### Route-level notice and initialization
 
-- [`ChatListNoticeEffect`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatListView.kt#L177-L186) runs from `StartPartOfScreen` above the platform seam, preserving the "What's New"/updated-conditions modal and 1-second delay for either platform home renderer.
+- [`ChatListNoticeEffect`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatListView.kt) runs from `StartPartOfScreen` above the platform seam. Android preserves the historical "What's New"/updated-conditions modal and 1-second delay. Nome macOS exits before opening that upstream-owned surface.
 - On desktop, closing a chat resets audio/video players.
 
 ### Layout Modes
@@ -328,7 +328,7 @@ Uses `AnimatedViewState` (`GONE`, `VISIBLE`, `HIDING`) with a `MutableStateFlow`
 
 ### Source-set split
 
-[`PlatformHomeRoute()`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.kt#L16-L22) is deliberately only an `expect` seam. `StartPartOfScreen` keeps the original WhatsNew/updated-conditions effect above that seam and passes the existing `ChatListView` as `defaultContent`; the [Android actual](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeRoute.android.kt#L63-L123) renders Nome, and the [Desktop actual](../../common/src/desktopMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.desktop.kt#L9-L17) calls `defaultContent()` unchanged. The matching Desktop regression test executes the actual composable and observes that `defaultContent` is invoked because this is a narrowly justified `commonMain` wrapper, not a Desktop redesign.
+[`PlatformHomeRoute()`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.kt#L16-L22) is deliberately only an `expect` seam. `StartPartOfScreen` keeps the notice effect above that seam, with an explicit desktop return that prevents upstream release/conditions content from opening. The [Android actual](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeRoute.android.kt#L63-L123) renders Nome, and the [Desktop actual](../../common/src/desktopMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.desktop.kt) owns the Nome rail while retaining shared chat/model owners.
 
 ### Typed truth and stale-row boundary
 
@@ -383,3 +383,13 @@ The exact Batch 2 contract tests are [`NomeHomeStateAdapterTest`](../../android/
 The debug-only [`NomeHomeEvidenceActivity`](../../android/src/debug/java/chat/simplex/app/nome/home/NomeHomeEvidenceActivity.kt#L45-L253) hosts the production renderer with an explicit “not live core” badge, localized synthetic profile, case locale, and stable cross-year row timestamp. [`NomeHomeScreenshotTest`](../../android/src/androidTest/java/chat/simplex/app/nome/home/NomeHomeScreenshotTest.kt#L18-L177) defines and executed an API 35/Asia-Shanghai matrix of 10 states × 2 locales × 2 themes × 2 font scales = 80 captures, including unavailable-with-cached, and asserts a device year newer than the fixture. The batch evidence root records the capture, comparison, real-core, and release-isolation execution artifacts without treating the fixture as live core. Formal review status is owned only by that root's `review-rounds.md` and is not asserted by this specification.
 
 This batch does not implement the one-time locale marker, favorite/profile/connection mutations, search, filter controls, composer/send, Haskell/native core changes, database-format changes, or protocol/command/event additions. Its first-use and filtered-no-result renderer tests therefore do not substitute for production-route evidence.
+
+---
+
+## Nome macOS presentation
+
+The later authorized macOS ARM64 batch uses the same `ChatModel`, `ChatListView`, chat-open
+helpers, and modal owners inside `PlatformHomeRoute.desktop`. It adds the Nome rail, neutral
+desktop surfaces, and compact empty/new-connection actions. Mobile-only one-hand-layout cards and
+the blue promotional feature card are not rendered on Desktop. Empty state still means an
+authoritative loaded empty list; the presentation change does not rewrite failure as empty.

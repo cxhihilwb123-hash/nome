@@ -236,6 +236,19 @@ Lifecycle callbacks in `SimplexApp` (implements `LifecycleEventObserver`):
 
 [`NomeProductionShell`](../android/src/main/java/chat/simplex/app/nome/NomeProductionShell.kt#L17-L23) does not replace the application root. It synchronizes Android system-bar appearance and delegates immediately to `AppScreen`. The shared root still owns authentication, onboarding, calls, overlays, safe-area behavior, back dispatch, the delivery-receipts gate, and share-intent routing. Inside that root, [`StartPartOfScreen`](../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L449-L475) selects the narrow `PlatformHomeRoute` seam only where the ordinary chat-list route was already selected.
 
+### Nome Android server bootstrap
+
+Android calls [`NomeServerConfiguration.applyBeforeNetwork`](../common/src/commonMain/kotlin/chat/simplex/common/model/NomeServerConfiguration.kt)
+from `ChatController.startChat` before receiver startup or any user-facing network action. The core
+server APIs reject reads with `chatNotStarted`, so a stopped controller is first entered into a
+bounded bootstrap-running phase; configuration is applied immediately, and a failed bootstrap
+stops the controller again.
+The policy is state-based rather than preference-version based: repeating it produces no write once
+the current Nome entries and disabled managed operators already match. This also makes a failed
+attempt naturally retryable from the application, foreground service, and periodic worker startup
+paths. Only recognized Nome IP/domain endpoints are migrated; unrelated custom addresses and chat
+relays remain unchanged.
+
 ### Desktop
 
 Entry: [`main()`](../desktop/src/jvmMain/kotlin/chat/simplex/desktop/Main.kt#L22)
@@ -456,3 +469,49 @@ var platform: PlatformInterface = object : PlatformInterface {}
 | File | Path | Key Contents |
 |---|---|---|
 | ThemeManager.kt | [`common/src/commonMain/kotlin/chat/simplex/common/ui/theme/ThemeManager.kt`](../common/src/commonMain/kotlin/chat/simplex/common/ui/theme/ThemeManager.kt) | Theme resolution, system/light/dark/custom, per-user overrides |
+
+### Nome macOS ARM64 presentation boundary
+
+`PlatformHomeRoute.desktop.kt`, `PlatformNomeOnboardingPages.desktop.kt`, and
+`PlatformNewChatHub.desktop.kt` own macOS presentation only. Shared chat, navigation, modal, and
+connection owners remain in common code. The Haskell native core owns real first-user defaults;
+Kotlin does not synthesize server or contact state. Compatibility identifiers such as package
+paths, database filenames, and `simplex:` protocol URIs remain unchanged.
+
+[`defaultChatConfig`](../../src/Simplex/Chat.hs#L59-L129) and
+[`terminalChatConfig`](../../src/Simplex/Chat/Terminal.hs#L34-L58) each select the same Nome
+operator and exact SMP/XFTP trust anchors, with no default chat relay. The larger historical server
+sets remain in [`allPresetServers`](../../src/Simplex/Chat/Operators/Presets.hs#L71-L79) only for
+short-link compatibility; they are not active routes.
+
+During controller initialization, [`getUpdateServerOperators`](../../src/Simplex/Chat/Store/Profiles.hs#L752-L805)
+calls the bounded [`removeLegacyPresetRouting`](../../src/Simplex/Chat/Store/Profiles.hs#L819-L896)
+before operator reconciliation. Routing cleanup deletes only upstream-domain protocol/relay rows
+marked `preset = 1`, upstream operator-condition rows, and the upstream operator rows. Untagged
+custom operators and `preset = 0` user servers are outside those deletion queries. A preset chat
+relay still referenced by `group_relays` is disabled and soft-deleted so the group record is not
+cascaded; unreferenced legacy preset relays are physically removed. The operator read query then
+exposes only untagged custom operators and Nome.
+
+The adjacent [`removeLegacySeedContacts`](../../src/Simplex/Chat/Store/Profiles.hs#L898-L1002)
+removes only the two exact upstream cards inserted by older builds when they remain disconnected
+and have no messages, group membership, or contact request. Connected contacts, conversations,
+profiles referenced elsewhere, and user-created contacts with a similar name are preserved.
+
+Nome does not inherit the embedded upstream operator conditions. The core represents Nome as
+ungated in [`getOperatorConditions_`](../../src/Simplex/Chat/Store/Profiles.hs#L1020-L1045), and
+[`usageConditionsAction`](../../src/Simplex/Chat/Operators.hs#L119-L134) excludes Nome before
+constructing review/accepted actions. This prevents automatic notices and the re-enable terms gate
+without recording a false upstream acceptance row.
+
+The client artifact currently includes the shared SMP/XFTP creation credentials and TURN access
+credential required for zero-configuration service use. These values are distributed client
+capabilities, not secrets: a released binary or public source can disclose them. Server
+administrator credentials, TLS private keys, and APNs keys must never be compiled into the client.
+Production readiness therefore requires rate limits, abuse monitoring, and a rotation path in
+addition to application-level create-queue/create-file tests; TCP reachability and TLS identity
+alone are insufficient.
+
+The agent-server diagnostics command reads notification servers from the active `ChatConfig`
+instead of a second hard-coded presentation list. A Nome desktop/terminal configuration with
+`ntf = []` therefore cannot surface or imply use of the historical upstream notification service.

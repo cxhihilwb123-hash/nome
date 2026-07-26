@@ -4,13 +4,13 @@
 
 ## Purpose
 
-Create new contacts, groups, or connect with others via one-time invitation links or by scanning/pasting SimpleX links. This is the primary entry point for establishing new E2E encrypted connections.
+Create new contacts, groups, or connect with others via Nome one-time invitations or by scanning/pasting Nome invitations. This is the primary entry point for establishing new E2E encrypted connections.
 
 ## Route / Navigation
 
 - **Entry point**: Tap the new chat button (pencil icon) in `ChatListView` toolbar or FAB
 - **Presented by**: `NewChatSheet` modal from `ChatListView` via `showNewChatSheet()`; Android
-  renders the Nome P10 hub and Desktop delegates the official legacy content unchanged
+  renders the Nome P10 hub and macOS renders a compact four-row Nome action panel
 - **Internal navigation**: `NewChatSheet` owns 4 existing action callbacks:
   - "Create 1-time link" -- opens `NewChatView` with `INVITE` tab (generate and share a one-time invitation link)
   - "Scan / paste link" -- opens `NewChatView` with `CONNECT` tab (scan QR code or paste a received link)
@@ -18,8 +18,8 @@ Create new contacts, groups, or connect with others via one-time invitation link
   - "Create channel" -- opens `AddChannelView`
 - **Routes within NewChatView**: the official `NewChatOption.INVITE` and
   `NewChatOption.CONNECT` owners remain shared. Android presents them as the Nome P11/P12 page
-  pair through `PlatformNewChatRoute`; Desktop keeps the upstream `HorizontalPager`/`TabRow`
-  content unchanged.
+  pair through `PlatformNewChatRoute`; macOS keeps those owners but enters them from the compact
+  Nome hub and uses a compact Nome empty-state action list.
 - **Swipe gesture**: Android's P11/P12 presentation retains left/right paging between the two
   official options.
 - **Dismiss behavior**: On dispose, a `DisposableEffect` shows an alert dialog (via `AlertManager.shared.showAlertDialog`) asking whether to keep an unused invitation link or delete it via `controller.deleteChat()`
@@ -34,8 +34,8 @@ contact address, or infer network health.
 
 The P10 visual-acceptance baseline governs composition, hierarchy, spacing, typography, icon and
 action sizing. Copy follows the actual callback where the baseline is semantically inaccurate:
-the group row starts group creation and does not claim that an existing group was joined. Desktop
-calls `legacyContent()` and receives no Nome presentation.
+the group row starts group creation and does not claim that an existing group was joined. macOS
+uses the same four real callbacks in a desktop-density panel without large blue cards.
 
 ## Nome Android P11/P12 Pages
 

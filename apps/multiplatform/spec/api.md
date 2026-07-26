@@ -309,11 +309,35 @@ member connections are established.
 | `getServerOperators` | `rh: Long?` | Get server operator conditions detail | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1302) |
 | `setServerOperators` | `rh: Long?, operators: List<ServerOperator>` | Update the list of server operators | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1309) |
 | `getUserServers` | `rh: Long?` | Get the user's configured servers per operator | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1316) |
-| `setUserServers` | `rh: Long?, userServers: List<UserOperatorServers>` | Save user's configured servers per operator | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1324) |
+| `setUserServers` | `rh: Long?, userServers: List<UserOperatorServers>, showError: Boolean = true` | Save user's configured servers per operator; startup migration can suppress interactive alerts and retry | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1328) |
 | `validateServers` | `rh: Long?, userServers: List<UserOperatorServers>` | Validate server configuration for errors | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1336) |
 | `getUsageConditions` | `rh: Long?` | Get current and accepted usage conditions | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1344) |
 | `setConditionsNotified` | `rh: Long?, conditionsId: Long` | Mark conditions as shown to user | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1351) |
 | `acceptConditions` | `rh: Long?, conditionsId: Long, operatorIds: List<Long>` | Accept usage conditions for operators | [source](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt#L1358) |
+
+#### Nome operator contract
+
+For a Nome-managed local profile, `getServerOperators` returns the Nome operator plus any untagged
+custom operator only. Its `conditionsAction` is `null` when Nome is the only enabled managed
+operator, and Nome's compatibility `conditionsAcceptance` value is accepted with no timestamp.
+That value means “not gated by the embedded upstream conditions”; it does not create an
+`operator_usage_conditions` acceptance record. Upstream tagged operators and preset routing rows
+are removed during core initialization before this response is produced. User-added
+`preset = false` servers are preserved. Kotlin continues to decode the historical `simplex` and
+`flux` enum tags for stored/wire compatibility, but only Nome has branded operator-info metadata;
+unknown, custom, or historical tags use a neutral DNS icon with no upstream description or URL.
+
+#### Nome Android startup configuration
+
+Before Android starts normal chat networking, `NomeServerConfiguration` reads the active user's
+server state, produces an idempotent migration, validates it, and saves it through the same public
+server APIs used by settings. Legacy Nome IP/domain endpoints are upgraded to `smp.nome.im` and
+`xftp.nome.im`; managed preset-operator routes are disabled. Entries in the untagged custom group
+whose hosts are not Nome-managed are preserved byte-for-byte, including their enabled/deleted/test
+state. A transient failure is retried during the current startup and remains eligible on every
+later startup; normal chat networking is not started while the configuration is still pending.
+Read-only server surfaces render hostnames; the explicit custom-server editor keeps the complete
+address required by the core.
 
 ### 2.11 Archive
 
@@ -481,3 +505,20 @@ sealed class ArchiveError {
 | Cryptor.desktop.kt | Desktop: placeholder (no-op) encryption | `common/src/desktopMain/kotlin/chat/simplex/common/platform/Cryptor.desktop.kt` |
 
 All paths are relative to `apps/multiplatform/`.
+
+## 7. Nome default-service contract
+
+No command or response shape changes. The native core default configuration changes only the
+initial preset data:
+
+- one Nome SMP preset and one Nome XFTP preset, both with exact certificate fingerprints;
+- no default NTF or chat relay is claimed for this release;
+- user-created custom endpoints remain supported;
+- old preset host data remains available for URI compatibility but is not an active new-user
+  route;
+- `CreateActiveUser` creates the local note folder and no longer creates upstream support/status
+  contacts;
+- upgraded profiles remove the two exact legacy support/status cards only when they have no
+  connection, message history, group membership, or contact request.
+
+`OperatorTag.Nome` serializes as `"nome"` across the native response and Kotlin model.

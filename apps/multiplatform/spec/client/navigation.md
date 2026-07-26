@@ -348,7 +348,7 @@ enum class OnboardingStage {
 | `Step2_CreateProfile` | `CreateFirstProfile` -- display name, optional image | `Step2_5_SetupDatabasePassphrase` or `Step3_ChooseServerOperators` |
 | `LinkAMobile` | `LinkAMobile` -- desktop linking to mobile device | `Step2_CreateProfile` |
 | `Step2_5_SetupDatabasePassphrase` | `SetupDatabasePassphrase` -- optional DB encryption | `Step3_ChooseServerOperators` |
-| `Step3_ChooseServerOperators` | `OnboardingConditionsView` -- server operator selection, T&C | `Step3_CreateSimpleXAddress` or `Step4_SetNotificationsMode` |
+| `Step3_ChooseServerOperators` | `OnboardingConditionsView` -- service selection; Nome macOS renders a local commitment without upstream T&C | `Step3_CreateSimpleXAddress` or `Step4_SetNotificationsMode` |
 | `Step3_CreateSimpleXAddress` | `SetNotificationsMode` (legacy backcompat) | `Step4_SetNotificationsMode` |
 | `Step4_SetNotificationsMode` | `SetNotificationsMode` -- notification permission setup | `OnboardingComplete` |
 | `OnboardingComplete` | Main app screen | -- |
@@ -359,7 +359,10 @@ Onboarding uses `AnimatedContent` with directional transitions:
 - Forward: `fromEndToStartTransition` (slide left).
 - Backward: `fromStartToEndTransition` (slide right).
 
-The stage value is stored in `appPrefs.onboardingStage` and persisted across app restarts.
+The stage value is stored in `appPrefs.onboardingStage` and persisted across app restarts. On Nome
+macOS, the commitment action applies any changed Nome operator selection through
+`setServerOperators` and completes the stage without invoking the upstream `acceptConditions`
+command or opening its conditions document.
 
 ---
 
@@ -375,7 +378,7 @@ The stage value is stored in `appPrefs.onboardingStage` and persisted across app
 | `views/WelcomeView.kt` | Step 2: Profile creation (CreateFirstProfile) |
 | `views/onboarding/LinkAMobileView.kt` | Desktop: Link a mobile device |
 | `views/onboarding/SetupDatabasePassphrase.kt` | Step 2.5: Database passphrase |
-| `views/onboarding/ChooseServerOperators.kt` | Step 3: Server operators and conditions |
+| `views/onboarding/ChooseServerOperators.kt` | Step 3: server selection; Nome macOS local commitment |
 | `views/onboarding/SetNotificationsMode.kt` | Step 4: Notification setup |
 | `views/chatlist/PlatformHomeRoute.kt` + platform actual | StartPartOfScreen home selection; Android Nome renderer or Desktop `ChatListView` fallback |
 | `views/chatlist/PlatformHomeRoute.kt` | Narrow platform-selectable normal-home seam |
@@ -487,3 +490,21 @@ The raw URI and owner signature are closure-only and never become navigation arg
 state, semantics, or evidence labels. P13 does not alter P08 `FIRST_USE` or
 `FILTERED_NO_RESULT`, create a P10 home control, implement P12 camera behavior, or absorb P16 group
 details.
+
+---
+
+## 13. Nome macOS ARM64 Navigation
+
+The authorized macOS correction keeps the shared navigation owners and adds a desktop
+presentation shell:
+
+```text
+PlatformHomeRoute.desktop
+  -> Nome rail destination
+  -> existing ChatListView / UserPicker / SettingsView / NewChatSheet owner
+  -> existing shared modal and conversation navigation
+```
+
+The rail does not create a second chat model or protocol route. The compact New Chat hub forwards
+the four existing callbacks for invitation creation, invitation opening, group creation, and
+channel creation. First-run pages still advance by the persisted `OnboardingStage` enum.

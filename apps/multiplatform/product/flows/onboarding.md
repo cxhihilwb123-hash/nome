@@ -103,8 +103,8 @@ enum class OnboardingStage {
 
 ### 3.1 Step1_SimpleXInfo
 
-1. The `SimpleXInfo` screen is shown.
-2. Explains what SimpleX Chat is: privacy, no user identifiers, decentralized.
+1. The compatibility-named `SimpleXInfo` route is shown with the Nome presentation.
+2. Explains Nome privacy properties: local profile data, separate connection identities, and encrypted routing.
 3. User taps "Create your profile" to proceed.
 4. On Desktop, a "Link a Mobile" option is also available.
 
@@ -140,13 +140,14 @@ enum class OnboardingStage {
 ### 3.5 Step3_ChooseServerOperators
 
 1. The `ChooseServerOperators` screen is shown.
-2. User selects which preset server operators to use for messaging and file transfer.
-3. Server operator conditions may need to be accepted.
-4. The selection is saved via the server configuration APIs.
+2. The Nome build presents the official Nome service for messaging and file transfer.
+3. Nome macOS shows a local-use commitment and does not open or accept the embedded upstream
+   operator conditions.
+4. The selection is saved via the server configuration APIs and onboarding completes.
 
 ### 3.6 Step3_CreateSimpleXAddress
 
-1. User is prompted to create a SimpleX address for receiving contact requests.
+1. User is prompted to create a Nome address for receiving contact requests.
 2. This calls the address creation API.
 3. Can be skipped.
 
@@ -164,9 +165,18 @@ enum class OnboardingStage {
 
 1. `appPrefs.onboardingStage` is set to `OnboardingComplete`.
 2. The shared home selection (`PlatformHomeRoute`) is shown: Android uses the bounded Nome home,
-   while Desktop invokes the official `ChatListView` fallback.
+   while macOS uses the Nome navigation rail around the official chat and modal owners.
 3. On Android, `SimplexService.showBackgroundServiceNoticeIfNeeded()` may show additional setup prompts.
 4. On Android with `NotificationsMode.SERVICE`, `SimplexService.start()` is called.
+
+### Nome macOS first-user defaults
+
+- `CreateActiveUser` creates the local note folder but does not create the upstream
+  `Ask SimpleX Team` or `SimpleX Status` preset contacts.
+- The default operator set contains only Nome with one SMP and one XFTP endpoint.
+- Unmatched legacy preset endpoints are not surfaced as custom endpoints; user-created custom
+  endpoints remain available.
+- Protocol URI formats and old preset-host recognition remain for link compatibility.
 
 ---
 
@@ -174,22 +184,31 @@ enum class OnboardingStage {
 
 After the user is created and onboarding progresses, `ChatController.startChat(user)` orchestrates the final setup:
 
-1. `apiSetNetworkConfig(getNetCfg())` applies network configuration.
-2. `apiCheckChatRunning()` checks if the core is already running.
-3. `listUsers(null)` loads all user profiles into `ChatModel.users`.
-4. If chat is not running:
+1. `ChatModel.currentUser` is set to the selected user.
+2. On Android, a new controller is started in a bounded bootstrap phase because the server APIs
+   reject reads while the controller is stopped. No receiver or user-facing network action starts
+   in this phase. `NomeServerConfiguration.applyBeforeNetwork` then runs before normal network work.
+   It disables managed preset-operator routes, upgrades legacy Nome endpoints, enables the current
+   `smp.nome.im` and `xftp.nome.im` addresses, and preserves every non-Nome custom server entry.
+   The operation is idempotent, retries transient failure during the same startup, and is attempted
+   again on later starts when it did not succeed. If all attempts fail, chat networking remains
+   stopped rather than starting with an unapplied default.
+3. `apiSetNetworkConfig(getNetCfg())` applies network configuration.
+4. `apiCheckChatRunning()` checks if the core is already running.
+5. `listUsers(null)` loads all user profiles into `ChatModel.users`.
+6. If chat is not running:
    - `ChatModel.currentUser` is set.
    - `apiStartChat()` starts the core's message processing.
    - `startReceiver()` begins the message receive loop.
    - `setLocalDeviceName` sets the device name for remote access.
-5. `beginChatListLoad` records the current user/host generation, then
+7. `beginChatListLoad` records the current user/host generation, then
    `apiGetChatsResult` loads a typed success/failure/no-user result.
-6. `applyChatListLoadResult` updates the UI only if that result still matches the current
+8. `applyChatListLoadResult` updates the UI only if that result still matches the current
    generation.
-7. User address and chat item TTL are loaded.
-8. `appPrefs.chatLastStart` is updated.
-9. `ChatModel.chatRunning` is set to `true`.
-10. `platform.androidChatInitializedAndStarted()` is called for Android-specific post-start tasks.
+9. User address and chat item TTL are loaded.
+10. `appPrefs.chatLastStart` is updated.
+11. `ChatModel.chatRunning` is set to `true`.
+12. `platform.androidChatInitializedAndStarted()` is called for Android-specific post-start tasks.
 
 ---
 

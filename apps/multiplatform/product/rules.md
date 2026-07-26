@@ -18,6 +18,7 @@ This document specifies invariants enforced by the Android and Desktop (Kotlin/C
 10. [Nome Android Internal Invitation and Scan Truth (RULE-22)](#10-nome-android-internal-invitation-and-scan-truth)
 11. [Nome Android Request and Public-Address Truth (RULE-23)](#11-nome-android-request-and-public-address-truth)
 12. [Nome Android Group Invitation Truth (RULE-24)](#12-nome-android-group-invitation-truth)
+13. [Nome macOS Official Routing Truth (RULE-29)](#13-nome-macos-official-routing-truth)
 
 ---
 
@@ -605,3 +606,36 @@ cover existing-route dispatch, 48dp controls, stopped-chat migration gating, and
 synthetic copy. Disposable API 28/API 35 fixtures cover export cancellation/save, import
 round-trip/key re-entry, platform MIME selectability, migration abort, cleanup, and cold-start
 data preservation.
+
+## 13. Nome macOS Official Routing Truth
+
+### RULE-29: Official Defaults Must Not Reintroduce Upstream Routing or Terms
+
+**Invariant:** A fresh Nome macOS profile and the bundled Nome terminal configuration MUST use
+only the Nome official SMP/XFTP trust anchors. Loading an upgraded profile MUST remove legacy
+SimpleX/Flux preset operator, SMP, XFTP, relay, and operator-condition rows from active
+configuration while preserving user-added servers, all real user contacts, and group-relay
+referential integrity. The two exact upstream seed cards MAY be removed only when they are
+disconnected and have no messages, group membership, or contact request. Nome MUST NOT display or
+require the embedded upstream operator conditions. Server administrator credentials, TLS private
+keys, and APNs keys MUST NOT be compiled into the client. Any shared client access credential
+embedded for zero-configuration routing MUST be treated as publicly distributed and MUST NOT be
+the server's only abuse-control boundary.
+
+**Enforcement:** The Haskell preset configuration owns the exact Nome endpoints and certificate
+fingerprints. `getUpdateServerOperators` performs the bounded preset cleanup before reconciling
+operators; a preset chat relay referenced by a group is disabled and soft-deleted instead of
+cascading through `group_relays`. The seed-card cleanup uses exact profile/link fingerprints plus
+negative connection/history/group/request guards. `getOperatorConditions_` represents Nome as not
+gated by upstream conditions. `terminalChatConfig` reuses the same Nome presets. Unit and
+integration tests cover default selection, upgrade cleanup, custom-server and real-contact
+preservation, conditions filtering, and terminal/core regression. Server diagnostics summarize
+the notification servers from the active `ChatConfig`; they do not inject a separate upstream
+display list. Desktop settings and chat-list startup suppress the upstream release/support/update
+surfaces until Nome owns equivalent destinations. The Nome macOS onboarding commitment completes
+through `setServerOperators` and never calls the upstream `acceptConditions` path.
+
+**Operational boundary:** A reachable TCP/TLS endpoint is not proof that the service can create a
+queue or upload a file. If the official SMP/XFTP service requires a creation password that is not
+securely provisioned to the client, the release must report that blocker and MUST NOT claim
+end-to-end service readiness.

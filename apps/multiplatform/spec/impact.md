@@ -420,9 +420,10 @@ Path prefix: `common/src/commonMain/kotlin/chat/simplex/common/`
 | `App.kt` | PC1 through PC32 | High | Root composable — navigation scaffold for all features; Nome must preserve gate order |
 | `AppLock.kt` | PC22 | Medium | App lock state and authorization lifecycle |
 | `model/ChatModel.kt` | PC1 through PC32 | High | Central state object; PC32 adds generation-scoped chat-list load/result reconciliation without a second model |
-| `model/SimpleXAPI.kt` | PC1 through PC32 | High | FFI bridge to Haskell core; PC32 adds typed client results around unchanged get-chats and P13 plan/connect commands |
+| `model/SimpleXAPI.kt` | PC1 through PC32 | High | FFI bridge to Haskell core; Android startChat now gates normal networking behind the idempotent Nome server bootstrap, and startup saves can suppress interactive alerts |
+| `model/NomeServerConfiguration.kt` | PC1, PC17, PC25 | High | Android application-layer Nome SMP/XFTP bootstrap, legacy endpoint migration, custom-server preservation, validation, and bounded retry policy |
 | `model/CryptoFile.kt` | PC10, PC23 | Medium | Encrypted file read/write helpers |
-| `platform/Core.kt` | PC1 through PC31 | High | Native FFI declarations (`chatMigrateInit`, `chatSendCmd`, etc.) — all API traffic |
+| `platform/Core.kt` | PC1 through PC31 | High | Native FFI declarations and controller startup; Android post-start callbacks now run only after chat actually reaches running state |
 | `platform/AppCommon.kt` | PC1 through PC31 | Medium | Shared app initialization logic |
 | `platform/Files.kt` | PC10, PC23, PC26 | Medium | File path resolution, temp dirs, encryption utilities |
 | `platform/NtfManager.kt` | PC18 | High | Notification manager expect declarations |
@@ -931,3 +932,31 @@ The Haskell core is compiled as a shared native library (`libsimplex.so` / `libs
 | `src/Simplex/Chat/Help.hs` | — | Low | Terminal help text |
 | `src/Simplex/Chat/Bot.hs` | — | Low | Chat bot framework |
 | `src/Simplex/Chat/Bot/KnownContacts.hs` | — | Low | Bot known contacts |
+
+---
+
+## 5. Nome macOS ARM64 Brand and Default-Service Correction
+
+This user-authorized batch supersedes historical statements above that Desktop must render the
+upstream fallback unchanged. It is limited to the macOS ARM64 product presentation and shared
+first-user defaults; protocol compatibility remains unchanged.
+
+| Source | Concepts | Risk | Required verification |
+|---|---|---|---|
+| `common/src/desktopMain/**/PlatformHomeRoute.desktop.kt` | PC1, PC24 | High | Rail navigation, conversation ownership, empty/populated states |
+| `common/src/desktopMain/**/PlatformNomeOnboardingPages.desktop.kt` | PC1, PC19, PC23, PC24, PC25 | High | Every first-run step, errors, back/skip/continue |
+| `common/src/desktopMain/**/PlatformNewChatHub.desktop.kt` | PC12, PC24 | Medium | Four callbacks map one-to-one to existing owners |
+| `common/src/commonMain/**/OnboardingCards.kt` | PC12, PC24 | Medium | Compact desktop branch; Android unchanged |
+| `common/src/commonMain/**/chatlist/ChatListView.kt` | PC1, PC24, PC25 | Medium | Desktop keeps the shared list but does not auto-open the upstream release/conditions modal |
+| `common/src/commonMain/resources/MR/{base,zh-rCN}/strings.xml` | PC1 through PC31 | High | English/Chinese visible-brand audit and text expansion |
+| `common/src/commonMain/**/model/SimpleXAPI.kt` | PC25 | Medium | Decode legacy operator tags but expose only Nome branded metadata; neutral fallback for custom/legacy tags |
+| `src/Simplex/Chat.hs`, `Operators.hs`, `Operators/Presets.hs` | PC25 | High | Exact Nome trust anchors, one SMP/XFTP enabled, Nome excluded from upstream conditions actions, compatibility-only historical lists |
+| `src/Simplex/Chat/Store/Profiles.hs` | PC1, PC2, PC25 | High | Bounded removal of legacy upstream preset routing/conditions and disconnected exact seed cards, custom-server/real-contact preservation, Nome conditions ungated |
+| `src/Simplex/Chat/Terminal.hs` | PC25 | High | CLI defaults use the same Nome SMP/XFTP presets and no default chat relay |
+| `src/Simplex/Chat/Library/Commands.hs` | PC1, PC2, PC19, PC25 | High | New user has note folder and no upstream seed contacts; diagnostics use active configured NTF servers rather than a separate upstream list |
+
+The release gate requires isolated fresh-profile runtime evidence, direct server tests, arm64
+architecture checks for the app and native library, and combined source/runtime visual review.
+TCP/TLS reachability is not a passing direct-service test: SMP queue creation and XFTP file creation
+must both succeed. If the client contains a shared creation credential, release review must treat it
+as public and verify server-side rate limits, abuse monitoring, and credential rotation.

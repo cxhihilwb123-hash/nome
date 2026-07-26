@@ -21,12 +21,16 @@ Configure all aspects of app behavior including notifications, network/servers, 
 | Notifications | Full notification mode selection (instant/periodic/off) | Notification settings |
 | Use from desktop/mobile | "Use from desktop" option in UserPicker | "Link a mobile" / "Linked mobiles" option in UserPicker |
 | Database migration | "Migrate to another device" with auth | Same |
+| Help and support | Full official mobile help/support set | Nome usage guide and Nome about page only; upstream changelog, founder chat, upstream email and upstream store/GitHub promotions are hidden |
+| App updates | Store/manual distribution | Hidden until Nome has its own signed and notarized update feed; the upstream update feed is never offered |
 
 Android's "Connect desktop" route uses the Nome full-page/grouped settings-detail presentation
 while retaining the official device-name, QR/address connect, discovery, verification,
 connected-session, disconnect, switch-local, and linked-device owners. Its title follows the real
 session state. The unpaired scanner state is not a paired or connected result. Removing a linked
-desktop requires destructive confirmation. Desktop keeps the established modal composition.
+desktop requires destructive confirmation. macOS keeps the established modal owners inside the
+Nome navigation shell and uses Nome labels for tray, about, privacy lock, addresses, and service
+configuration.
 
 ## Page Sections
 
@@ -37,7 +41,7 @@ desktop requires destructive confirmation. Desktop keeps the established modal c
 | Notifications | `ic_bolt` / `ic_bolt_off` | `NotificationsSettingsView` | Push notification mode and preview settings |
 | Network & servers | `ic_wifi_tethering` | `NetworkAndServersView` | SMP/XFTP servers, proxy, .onion hosts, advanced network |
 | Audio & video calls | `ic_videocam` | `CallSettingsView` | WebRTC relay policy, ICE servers |
-| Privacy & security | `ic_lock` | `PrivacySettingsView` | SimpleX Lock, delivery receipts, link previews, auto-accept |
+| Privacy & security | `ic_lock` | `PrivacySettingsView` | Nome Lock, delivery receipts, link previews, auto-accept |
 | Appearance | `ic_light_mode` | `AppearanceView` | Theme, language, profile images, chat bubbles |
 
 All rows disabled when `chatModel.chatRunning != true` (except Appearance).
@@ -61,6 +65,20 @@ All rows disabled when `chatModel.chatRunning != true` (except Appearance).
 
 Sub-files: `NetworkAndServers.kt`, `ProtocolServersView.kt`, `ProtocolServerView.kt`, `NewServerView.kt`, `ScanProtocolServer.kt`, `AdvancedNetworkSettings.kt`, `OperatorView.kt`
 
+On Nome macOS, an isolated fresh profile contains one enabled Nome operator backed by the official
+SMP and XFTP trust anchors. Opening an upgraded profile first removes only legacy upstream rows
+that were stored as presets; user-added (`preset = false`) servers are retained. The two upstream
+support/status cards inserted by older clients are removed only when they are still disconnected
+and contain no messages, group membership, or request. Real conversations and similarly named
+user contacts are preserved. Nome is not subject to the embedded upstream operator conditions, so
+no upstream conditions notice, review row, or re-enable gate is shown for the Nome operator.
+Legacy operator tags remain decodable for protocol/database compatibility but have no branded
+upstream description, website, or logo metadata in the Nome client.
+
+The desktop settings page and chat-list launch path do not expose or auto-open the historical
+upstream “What’s new”, support, email, update-feed, or operator-conditions modal. Nome macOS will
+add those surfaces only when Nome-owned destinations and release content exist.
+
 #### Audio & Video Calls (`CallSettingsView`)
 
 | Setting | Description |
@@ -76,7 +94,7 @@ Organized in sections:
 
 | Setting | Description |
 |---|---|
-| SimpleX Lock | `SimplexLockView` -- app lock with system auth or passcode (`LAMode.SYSTEM` / `LAMode.PASSCODE`) |
+| Nome Lock | `SimplexLockView` -- app lock with system auth or passcode (`LAMode.SYSTEM` / `LAMode.PASSCODE`) |
 
 **Chats Section**:
 
@@ -123,11 +141,11 @@ Database icon shows warning color (`WarningOrange`) when database is not encrypt
 
 | Row | Icon | Destination | Description |
 |---|---|---|---|
-| How to use SimpleX Chat | `ic_help` | `HelpView` | Usage guide |
-| What's new | `ic_add` | `WhatsNewView` | Version changelog |
-| About SimpleX Chat | `ic_info` | `SimpleXInfo` (non-onboarding mode) | App information |
-| Chat with the founder | `ic_tag` | Opens SimpleX link | Direct chat with SimpleX team |
-| Send us an email | `ic_mail` | Opens mailto: | Email support |
+| How to use Nome | `ic_help` | `HelpView` | Nome usage guide |
+| What's new | `ic_add` | `WhatsNewView` | Mobile-only version changelog; hidden on Nome macOS |
+| About Nome | `ic_info` | `SimpleXInfo` (non-onboarding mode) | Nome app and protocol-attribution information |
+| Chat with the founder | `ic_tag` | Opens upstream link | Mobile-only upstream route; hidden on Nome macOS |
+| Send us an email | `ic_mail` | Opens upstream mailto | Mobile-only upstream route; hidden on Nome macOS |
 
 ### Support Section
 
@@ -143,11 +161,11 @@ Platform-specific section (expect/actual composable):
 
 | Row | Description |
 |---|---|
-| App updates (Desktop) | App update checker and installer |
+| App updates (Desktop) | Hidden and forced disabled until a Nome-owned signed/notarized update feed exists |
 | Developer tools | Toggle developer mode |
 | Chat console | Opens `ChatConsoleView` terminal |
 | Terminal always visible (Desktop) | Keep terminal window open |
-| Install terminal app | Link to CLI app on GitHub |
+| Install terminal app | Upstream link is not exposed by the current Nome macOS settings surface |
 | Reset all hints | Reset dismissed hint/card preferences |
 | App version | Version string with build info; taps open `VersionInfoView` |
 

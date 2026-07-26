@@ -598,3 +598,11 @@ their existing renderer-only production-reachability boundary.
 | NetworkObserver.kt | [`common/src/androidMain/kotlin/chat/simplex/common/helpers/NetworkObserver.kt`](../common/src/androidMain/kotlin/chat/simplex/common/helpers/NetworkObserver.kt) | Direct Android network observation with explicit unknown-before-first-observation state |
 | PlatformConnectionPreview.kt | [`common/src/commonMain/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreview.kt`](../common/src/commonMain/kotlin/chat/simplex/common/views/newchat/PlatformConnectionPreview.kt) | Safe P13 model, branch policy, callbacks, and platform seam |
 | NomeConnectionPreviewStateAdapter.kt | [`common/src/androidMain/kotlin/chat/simplex/common/ui/nome/connection/NomeConnectionPreviewStateAdapter.kt`](../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/connection/NomeConnectionPreviewStateAdapter.kt) | Android-only pure P13 presentation reducer |
+
+## 8. Nome server-operator state
+
+For a fresh user, the core persists the Nome operator plus its SMP/XFTP user-server rows. A stored
+server with `preset=True` that no longer matches an enabled operator is omitted from the grouped
+settings presentation; it is not reclassified as a user custom server. A stored server with
+`preset=False` remains in the custom group. Existing contacts and chats are not deleted by this
+state transition.

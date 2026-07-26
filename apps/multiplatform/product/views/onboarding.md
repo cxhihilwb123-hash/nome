@@ -4,7 +4,7 @@
 
 ## Purpose
 
-First-time setup flow for new users. Guides through app introduction, profile creation, database passphrase setup (Desktop), server operator conditions acceptance, SimpleX address creation, and notification configuration (Android). Also provides an entry point for device migration.
+First-time setup flow for new users. Guides through the Nome introduction, profile creation, database passphrase setup (Desktop), official-service selection, a local-use commitment, Nome address creation, and notification configuration (Android). Also provides an entry point for device migration.
 
 ## Route / Navigation
 
@@ -23,20 +23,20 @@ The `OnboardingStage` enum defines the flow:
 | `Step2_CreateProfile` | Create first user profile |
 | `LinkAMobile` | Desktop-only: link a mobile device |
 | `Step2_5_SetupDatabasePassphrase` | Desktop-only: set database encryption passphrase |
-| `Step3_ChooseServerOperators` | Accept server operator conditions |
-| `Step3_CreateSimpleXAddress` | Create a SimpleX contact address |
+| `Step3_ChooseServerOperators` | Confirm the Nome official service and local-use commitment |
+| `Step3_CreateSimpleXAddress` | Create a Nome contact address |
 | `Step4_SetNotificationsMode` | Android-only: configure notification mode |
 | `OnboardingComplete` | Onboarding finished |
 
 ## Page Sections
 
-### Step 1: Welcome / SimpleX Info (`SimpleXInfo`)
+### Step 1: Welcome / Nome Info (`SimpleXInfo`)
 
 **Stage**: `Step1_SimpleXInfo`
 
 | Element | Description |
 |---|---|
-| Logo | `SimpleXLogo` -- SimpleX Chat logo (light/dark variant based on `isInDarkTheme()`) |
+| Logo | `SimpleXLogo` -- compatibility-named renderer that presents the transparent Nome mark |
 | Info button | `OnboardingInformationButton` -- "The next generation of private messaging"; taps open `HowItWorks` fullscreen modal |
 | Privacy redefined | `InfoRow` with privacy icon: "No user identifiers" |
 | Immune to spam | `InfoRow` with shield icon: "You decide who can connect" |
@@ -44,7 +44,9 @@ The `OnboardingStage` enum defines the flow:
 | **Create your profile** button | `OnboardingActionButton` -- primary action; advances to profile creation |
 | **Migrate from another device** button | `TextButtonBelowOnboardingButton` -- opens `MigrateToDeviceView` fullscreen modal |
 
-Layout: `ColumnWithScrollBar` with `DEFAULT_ONBOARDING_HORIZONTAL_PADDING`, max width constrained (250dp Android, 500dp Desktop).
+Android keeps the bounded shared flow. Nome macOS uses `PlatformNomeWelcomePage` and the neutral
+desktop onboarding shell: no legacy blue gradient panel, a transparent mark, white content
+surfaces, green primary actions, and step-specific footer controls.
 
 ### Step 2: Create Profile
 
@@ -78,25 +80,27 @@ Profile is stored locally and only shared with contacts.
 | QR code | Connection QR code for mobile scanning |
 | Skip button | Skip this step |
 
-### Step 3: Choose Server Operators
+### Step 3: Choose Nome Service
 
 **Stage**: `Step3_ChooseServerOperators`
 
 | Element | Description |
 |---|---|
-| Operator list | Available server operators with conditions |
-| Conditions text | Terms of service for selected operators |
-| Accept button | Accept conditions and continue |
+| Operator list | The enabled Nome official message and file service |
+| Commitment | Local privacy, connection-safety, and data-recovery reminders |
+| Continue button | Keep the selected service and complete onboarding |
 
-Managed by `ChooseServerOperators.kt`.
+Managed by `ChooseServerOperators.kt`. Nome macOS does not show or accept the embedded upstream
+operator conditions; its commitment is local product guidance and completion only persists the
+selected Nome operator configuration.
 
-### Step 3b: Create SimpleX Address
+### Step 3b: Create Nome Address
 
 **Stage**: `Step3_CreateSimpleXAddress`
 
 | Element | Description |
 |---|---|
-| Address creation | Auto-creates a SimpleX contact address |
+| Address creation | Auto-creates a Nome contact address |
 | QR code | Displays the created address as QR code |
 | Share button | Share address link |
 | Skip button | Skip address creation |
@@ -123,9 +127,9 @@ Shown after onboarding or when triggered from Settings:
 | Updated conditions | Notice about updated server operator conditions (if applicable) |
 | Close button | Dismisses the view |
 
-`StartPartOfScreen` runs `ChatListNoticeEffect` above the platform home seam; that effect calls
-`shouldShowWhatsNew()` and preserves the existing 1-second delay for both Android and Desktop
-home content.
+`StartPartOfScreen` runs `ChatListNoticeEffect` above the platform home seam. Android retains the
+upstream-compatible release/conditions notice behavior. Nome macOS exits the effect before opening
+those upstream-owned surfaces.
 
 ## Source Files
 
@@ -138,4 +142,6 @@ home content.
 | `SetNotificationsMode.kt` | `views/onboarding/SetNotificationsMode.kt` |
 | `ChooseServerOperators.kt` | `views/onboarding/ChooseServerOperators.kt` |
 | `WhatsNewView.kt` | `views/onboarding/WhatsNewView.kt` |
+| `PlatformNomeOnboardingPages.desktop.kt` | `desktopMain/views/onboarding/PlatformNomeOnboardingPages.desktop.kt` |
+| `PlatformOnboardingBrand.desktop.kt` | `desktopMain/views/onboarding/PlatformOnboardingBrand.desktop.kt` |
 | `LinkAMobileView.kt` | `views/onboarding/LinkAMobileView.kt` |

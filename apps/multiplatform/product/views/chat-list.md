@@ -4,26 +4,25 @@
 
 ## Purpose
 
-Main screen of the SimpleX Chat Android and Desktop apps. Displays all conversations sorted by
-last activity and serves as the navigation root. Desktop continues to use the complete official
-shared chat list described below. Nome Android uses the frozen P07/P08 renderer at the same root
-and now adds P09 loaded-chat search plus the P10 New Chat entry without replacing the official
-model, route helpers, or action owners.
+Main screen of Nome on Android and macOS. Displays all conversations sorted by last activity and
+serves as the navigation root. Nome Android uses the frozen P07/P08 renderer. Nome macOS wraps the
+official chat and modal owners in the branded navigation rail and compact desktop empty states,
+without replacing the shared model or navigation helpers.
 
 ## Route / Navigation
 
 - **Entry point**: App launch (root view), or back-navigation from any chat
-- **Presented by**: `PlatformHomeRoute` when `chatModel.chatId == null`; Android uses the bounded Nome renderer and Desktop invokes `ChatListView` as `defaultContent`
+- **Presented by**: `PlatformHomeRoute` when `chatModel.chatId == null`; Android uses the bounded Nome renderer and macOS uses the Nome desktop shell
 - **Navigation**: Android Nome uses the existing ready-chat helpers with core/deletion guards; Desktop `ChatListNavLinkView` retains the complete upstream routing
-- **UserPicker**: Nome Home's current-profile control opens the existing Android `UserPicker`;
-  Desktop retains the upstream avatar/sidebar behavior
+- **UserPicker**: Nome Home's current-profile control opens the existing platform `UserPicker`;
+  macOS exposes the same owner from the rail profile action
 
 ## Platform Layout
 
 | Platform | Layout |
 |---|---|
 | Android | Nome single-column P07/P08 header/status/list with P09 local loaded-chat search, current-profile entry, and P10 New Chat FAB |
-| Desktop | 3-column layout: chat list (left), chat view (center), info/detail panel (right via `ModalManager.end`) |
+| macOS | Nome rail + chat list + conversation workspace; detail panels remain owned by `ModalManager.end` |
 
 ## Nome Android P07/P08 Production Slice
 
@@ -38,9 +37,9 @@ model, route helpers, or action owners.
 | Layer | Responsibility |
 |---|---|
 | Android Activity host | [`MainActivity`](../../android/src/main/java/chat/simplex/app/MainActivity.kt#L60-L65) wraps the existing `AppScreen` in the thin [`NomeProductionShell`](../../android/src/main/java/chat/simplex/app/nome/NomeProductionShell.kt#L9-L23). The shell synchronizes window appearance; it does not own root state, navigation, authentication, calls, intents, overlays, safe areas, or back dispatch. |
-| Shared route seam | [`StartPartOfScreen`](../../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L449-L475) keeps delivery-receipt and share-intent branches intact, runs the original WhatsNew/updated-conditions notice effect above the seam, and delegates only the existing home selection to [`PlatformHomeRoute`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.kt#L8-L22). The declaration contains no Nome UI or duplicate model/controller. |
+| Shared route seam | [`StartPartOfScreen`](../../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L449-L475) keeps delivery-receipt and share-intent branches intact, runs the notice effect above the seam, and delegates only the existing home selection to [`PlatformHomeRoute`](../../common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.kt#L8-L22). Android retains the historical notice behavior; Nome macOS suppresses the upstream release/conditions modal until Nome owns equivalent content. The declaration contains no duplicate model/controller. |
 | Android actual | [`NomeHomeRoute.android.kt`](../../common/src/androidMain/kotlin/chat/simplex/common/ui/nome/home/NomeHomeRoute.android.kt#L63-L123) applies the Nome theme inside the selected home route and consumes the existing `ChatModel`, user picker state, navigation helpers, and notification addition. |
-| Desktop actual | [`PlatformHomeRoute.desktop.kt`](../../common/src/desktopMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.desktop.kt#L8-L17) invokes `defaultContent()` unchanged, so the official Desktop chat list remains the fallback. |
+| Desktop actual | [`PlatformHomeRoute.desktop.kt`](../../common/src/desktopMain/kotlin/chat/simplex/common/views/chatlist/PlatformHomeRoute.desktop.kt) provides the Nome rail and delegates conversation/list actions to the existing owners. |
 
 The common seam exists only because an app-module overlay cannot safely replace a home route owned inside the shared root. Nome presentation remains in `androidMain`; the shared change is the narrow platform selection contract plus typed load provenance needed by every caller of the existing chat-list load.
 
