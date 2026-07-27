@@ -50,7 +50,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import chat.simplex.common.R
-import chat.simplex.common.activation.ActivationAccess
 import chat.simplex.common.activation.ActivationCapability
 import chat.simplex.common.activation.ActivationGate
 import chat.simplex.common.helpers.NetworkObserver
@@ -337,7 +336,6 @@ fun NomeHomeRouteContent(
   onManageUserList: (ChatTag) -> Unit = {},
 ) {
   val dimensions = NomeTheme.dimensions
-  val activationState = ActivationGate.state.collectAsState().value
   val pendingActivationIntent = ActivationGate.pendingIntent.collectAsState().value
   val scope = rememberCoroutineScope()
   val pendingDeletionChats = chatModel.deletedChats.value.toSet()
@@ -495,15 +493,7 @@ fun NomeHomeRouteContent(
           }
         }
 
-        if (activationState.shouldShowActivation) {
-          item {
-            NomeActivationCard(
-              checking = activationState.access == ActivationAccess.CHECK_REQUIRED,
-              migrationRequired = activationState.access == ActivationAccess.MIGRATION_REQUIRED,
-              modifier = Modifier.padding(top = dimensions.space12),
-            )
-          }
-        } else if (pendingActivationIntent?.capability == ActivationCapability.DEEP_LINK) {
+        if (pendingActivationIntent?.capability == ActivationCapability.DEEP_LINK) {
           item {
             NomePendingLinkCard(
               modifier = Modifier.padding(top = dimensions.space12),
@@ -660,49 +650,6 @@ fun NomeHomeRouteContent(
         }
       },
     )
-  }
-}
-
-@Composable
-private fun NomeActivationCard(
-  checking: Boolean,
-  migrationRequired: Boolean,
-  modifier: Modifier = Modifier,
-) {
-  NomeSurface(
-    modifier = modifier.fillMaxWidth(),
-    shape = NomeTheme.shapes.control,
-    color = NomeTheme.colors.input,
-    border = BorderStroke(1.dp, NomeTheme.colors.action),
-  ) {
-    Column(
-      modifier = Modifier.padding(16.dp),
-      verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-      Text(
-        text = stringResource(R.string.nome_activation_card_title),
-        style = NomeTheme.typography.title,
-        color = NomeTheme.colors.textPrimary,
-      )
-      Text(
-        text = stringResource(
-          when {
-            migrationRequired -> R.string.nome_activation_card_migration
-            checking -> R.string.nome_activation_card_checking
-            else -> R.string.nome_activation_card_body
-          },
-        ),
-        style = NomeTheme.typography.body,
-        color = NomeTheme.colors.textSecondary,
-      )
-      Button(onClick = { ActivationGate.showActivation("home_activation_card") }) {
-        Text(
-          stringResource(
-            if (migrationRequired) R.string.nome_activation_migrate else R.string.nome_activation_activate,
-          ),
-        )
-      }
-    }
   }
 }
 
