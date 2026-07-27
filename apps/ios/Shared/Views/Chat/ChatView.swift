@@ -105,55 +105,54 @@ private struct NomeChatSecurityBanner: View {
     }
 
     private func content(showChevron: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            header(showChevron: showChevron)
-            statusChips
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 7) {
+                    header(showChevron: showChevron)
+                    statusChips
+                }
+            } else {
+                HStack(spacing: 8) {
+                    securityIcon
+                    headerCopy
+                        .layoutPriority(1)
+                    Spacer(minLength: 2)
+                    statusChips
+                    disclosureChevron(show: showChevron)
+                }
+            }
         }
-        .padding(12)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
         .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(Color(uiColor: .systemBackground).opacity(0.96))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .stroke(NomeChatPalette.border, lineWidth: 1)
         )
-        .shadow(color: NomeChatPalette.navy.opacity(0.06), radius: 10, x: 0, y: 5)
-        .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .shadow(color: NomeChatPalette.navy.opacity(0.04), radius: 6, x: 0, y: 3)
+        .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .fixedSize(horizontal: false, vertical: true)
     }
 
     @ViewBuilder private func header(showChevron: Bool) -> some View {
-        if dynamicTypeSize.isAccessibilitySize {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .top, spacing: 10) {
-                    securityIcon
-                    headerCopy
-                    Spacer(minLength: 0)
-                    disclosureChevron(show: showChevron)
-                }
-
-                NomeChatStatusChip(icon: verificationIcon, title: verificationTitle, tint: verificationTint)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        } else {
-            HStack(spacing: 10) {
-                securityIcon
-                headerCopy
-                Spacer(minLength: 0)
-                NomeChatStatusChip(icon: verificationIcon, title: verificationTitle, tint: verificationTint)
-                disclosureChevron(show: showChevron)
-            }
+        HStack(alignment: .top, spacing: 8) {
+            securityIcon
+            headerCopy
+            Spacer(minLength: 0)
+            disclosureChevron(show: showChevron)
         }
     }
 
     private var securityIcon: some View {
         Image(systemName: icon)
-            .font(.system(size: 15, weight: .semibold))
+            .font(.system(size: 14, weight: .semibold))
             .foregroundColor(.white)
-            .frame(width: 30, height: 30)
+            .frame(width: 28, height: 28)
             .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
                     .fill(tint)
             )
     }
@@ -184,56 +183,68 @@ private struct NomeChatSecurityBanner: View {
 
     @ViewBuilder private var statusChips: some View {
         if dynamicTypeSize.isAccessibilitySize {
-            VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 4) {
                 statusChipViews
             }
         } else {
-            HStack(spacing: 6) {
+            HStack(spacing: 4) {
                 statusChipViews
             }
+            .fixedSize(horizontal: true, vertical: false)
         }
     }
 
     @ViewBuilder private var statusChipViews: some View {
         ForEach(statusItems) { item in
             NomeChatStatusChip(icon: item.icon, title: item.title, tint: item.tint)
-                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
     private var statusItems: [NomeChatStatusItem] {
         switch chatInfo {
-        case .direct, .group:
-            var items = [
-                NomeChatStatusItem(icon: "lock.fill", title: "端到端加密", tint: NomeChatPalette.green)
+        case let .direct(contact):
+            return [
+                NomeChatStatusItem(
+                    icon: contact.verified ? "checkmark.shield.fill" : "shield",
+                    title: contact.verified ? "已核对" : "可核对",
+                    tint: contact.verified ? NomeChatPalette.green : NomeChatPalette.blue
+                ),
+                retentionStatusItem
             ]
-            if let ttlText = chatTTLText {
-                items.append(NomeChatStatusItem(icon: "timer", title: "自动删除 \(ttlText)", tint: .orange))
-            } else if chatInfo.featureEnabled(.timedMessages) {
-                items.append(NomeChatStatusItem(icon: "stopwatch", title: "限时消息可用", tint: NomeChatPalette.blue))
-            } else {
-                items.append(NomeChatStatusItem(icon: "tray.full", title: "消息保留", tint: NomeChatPalette.navy.opacity(0.72)))
-            }
-            return items
+        case .group:
+            return [
+                NomeChatStatusItem(icon: "person.2.badge.key", title: "可核对", tint: NomeChatPalette.blue),
+                retentionStatusItem
+            ]
         case .local:
             return [
-                NomeChatStatusItem(icon: "iphone", title: "本机保存", tint: NomeChatPalette.navy),
-                NomeChatStatusItem(icon: "tray.full", title: "消息保留", tint: NomeChatPalette.navy.opacity(0.72))
+                NomeChatStatusItem(icon: "iphone", title: "仅本机", tint: NomeChatPalette.blue),
+                NomeChatStatusItem(icon: "tray.full", title: "消息保留", tint: NomeChatPalette.green)
             ]
         case .contactRequest:
             return [
-                NomeChatStatusItem(icon: "person.badge.plus", title: "等待确认", tint: NomeChatPalette.purple),
-                NomeChatStatusItem(icon: "lock.open", title: "尚未建立会话", tint: .secondary)
+                NomeChatStatusItem(icon: "person.badge.plus", title: "待确认", tint: NomeChatPalette.purple),
+                NomeChatStatusItem(icon: "lock.open", title: "未建立", tint: .secondary)
             ]
         case .contactConnection:
             return [
-                NomeChatStatusItem(icon: "link", title: "邀请已发送", tint: NomeChatPalette.purple),
-                NomeChatStatusItem(icon: "clock", title: "等待对方接受", tint: .secondary)
+                NomeChatStatusItem(icon: "link", title: "已发送", tint: NomeChatPalette.purple),
+                NomeChatStatusItem(icon: "clock", title: "待接受", tint: .secondary)
             ]
         case .invalidJSON:
             return [
-                NomeChatStatusItem(icon: "exclamationmark.triangle", title: "需要检查", tint: .orange)
+                NomeChatStatusItem(icon: "exclamationmark.triangle", title: "需检查", tint: .orange)
             ]
+        }
+    }
+
+    private var retentionStatusItem: NomeChatStatusItem {
+        if let ttlText = chatTTLText {
+            NomeChatStatusItem(icon: "timer", title: "删除 \(ttlText)", tint: .orange)
+        } else if chatInfo.featureEnabled(.timedMessages) {
+            NomeChatStatusItem(icon: "stopwatch", title: "限时消息", tint: NomeChatPalette.blue)
+        } else {
+            NomeChatStatusItem(icon: "tray.full", title: "消息保留", tint: NomeChatPalette.navy.opacity(0.72))
         }
     }
 
@@ -250,7 +261,7 @@ private struct NomeChatSecurityBanner: View {
 
     private var tint: Color {
         switch chatInfo {
-        case .local: NomeChatPalette.navy
+        case .local: NomeChatPalette.blue
         case .direct: NomeChatPalette.green
         case .group: NomeChatPalette.blue
         case .contactRequest, .contactConnection: NomeChatPalette.purple
@@ -285,38 +296,6 @@ private struct NomeChatSecurityBanner: View {
         }
     }
 
-    private var verificationIcon: String {
-        switch chatInfo {
-        case let .direct(contact): contact.verified ? "checkmark.shield.fill" : "shield"
-        case .group: "person.2.badge.key"
-        case .local: "iphone"
-        case .contactRequest: "person.crop.circle.badge.questionmark"
-        case .contactConnection: "link"
-        case .invalidJSON: "exclamationmark.triangle"
-        }
-    }
-
-    private var verificationTitle: String {
-        switch chatInfo {
-        case let .direct(contact): contact.verified ? "安全码已核对" : "安全码可核对"
-        case .group: "成员可核对"
-        case .local: "本机保存"
-        case .contactRequest: "需要确认"
-        case .contactConnection: "等待接受"
-        case .invalidJSON: "需要检查"
-        }
-    }
-
-    private var verificationTint: Color {
-        switch chatInfo {
-        case let .direct(contact): contact.verified ? NomeChatPalette.green : NomeChatPalette.blue
-        case .group: NomeChatPalette.blue
-        case .local: NomeChatPalette.navy
-        case .contactRequest, .contactConnection: NomeChatPalette.purple
-        case .invalidJSON: .orange
-        }
-    }
-
     private var chatTTLText: String? {
         switch chatTTL {
         case let .chat(ttl), let .userDefault(ttl):
@@ -343,17 +322,17 @@ private struct NomeChatStatusChip: View {
     var body: some View {
         HStack(spacing: 4) {
             Image(systemName: icon)
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(size: 9, weight: .semibold))
             Text(title)
-                .font(.caption2.weight(.medium))
+                .font(.system(size: 10, weight: .medium))
                 .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
-                .minimumScaleFactor(dynamicTypeSize.isAccessibilitySize ? 1 : 0.72)
+                .minimumScaleFactor(dynamicTypeSize.isAccessibilitySize ? 1 : 0.82)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .foregroundColor(tint)
-        .padding(.horizontal, 8)
-        .padding(.vertical, dynamicTypeSize.isAccessibilitySize ? 6 : 0)
-        .frame(minHeight: 24)
+        .padding(.horizontal, 6)
+        .padding(.vertical, dynamicTypeSize.isAccessibilitySize ? 5 : 0)
+        .frame(minHeight: 22)
         .background(Capsule().fill(tint.opacity(0.1)))
         .accessibilityElement(children: .combine)
     }
