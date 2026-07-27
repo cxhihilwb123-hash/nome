@@ -1,9 +1,11 @@
 package chat.simplex.app.nome
 
+import android.content.ComponentName
 import android.content.pm.PackageManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import chat.simplex.app.BuildConfig
+import chat.simplex.app.SimplexService
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -38,6 +40,37 @@ class NomeAndroidPackagingTest {
       "Unexpected foundation harness placement: ${harnessActivity.name}",
       harnessActivity.name == HARNESS_ACTIVITY_NAME,
     )
+  }
+
+  @Test
+  fun serviceReceiversUseTheRuntimeApplicationId() {
+    val targetContext = InstrumentationRegistry.getInstrumentation().targetContext
+    val packageManager = targetContext.packageManager
+    val receivers = listOf(
+      ComponentName(targetContext, SimplexService.StartReceiver::class.java),
+      ComponentName(targetContext, SimplexService.AppUpdateReceiver::class.java),
+    )
+    val previousStates = receivers.associateWith(packageManager::getComponentEnabledSetting)
+
+    try {
+      SimplexService.StartReceiver.toggleReceiver(true)
+      SimplexService.AppUpdateReceiver.toggleReceiver(true)
+      receivers.forEach { component ->
+        assertEquals(targetContext.packageName, component.packageName)
+        assertEquals(
+          PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+          packageManager.getComponentEnabledSetting(component),
+        )
+      }
+    } finally {
+      previousStates.forEach { (component, state) ->
+        packageManager.setComponentEnabledSetting(
+          component,
+          state,
+          PackageManager.DONT_KILL_APP,
+        )
+      }
+    }
   }
 
   private companion object {

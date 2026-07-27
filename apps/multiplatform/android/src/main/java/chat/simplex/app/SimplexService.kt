@@ -162,7 +162,7 @@ class SimplexService: Service() {
         Log.w(TAG, "Starting foreground service")
         val chatDbStatus = chatController.chatModel.chatDbStatus.value
         if (chatDbStatus != DBMigrationResult.OK) {
-          Log.w(chat.simplex.app.TAG, "SimplexService: problem with the database: $chatDbStatus")
+          Log.w(TAG, "SimplexService: problem with the database: $chatDbStatus")
           showPassphraseNotification(chatDbStatus)
           androidAppContext.getWorkManagerInstance().cancelUniqueWork(SimplexService.SERVICE_START_WORKER_WORK_NAME_PERIODIC)
           safeStopService()
@@ -270,7 +270,7 @@ class SimplexService: Service() {
     companion object {
       fun toggleReceiver(enable: Boolean) {
         Log.d(TAG, "StartReceiver: toggleReceiver enabled: $enable")
-        val component = ComponentName(BuildConfig.APPLICATION_ID, StartReceiver::class.java.name)
+        val component = ComponentName(SimplexApp.context, StartReceiver::class.java)
         SimplexApp.context.packageManager.setComponentEnabledSetting(
           component,
           if (enable) PackageManager.COMPONENT_ENABLED_STATE_ENABLED else PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
@@ -301,7 +301,7 @@ class SimplexService: Service() {
     companion object {
       fun toggleReceiver(enable: Boolean) {
         Log.d(TAG, "AppUpdateReceiver: toggleReceiver enabled: $enable")
-        val component = ComponentName(BuildConfig.APPLICATION_ID, AppUpdateReceiver::class.java.name)
+        val component = ComponentName(SimplexApp.context, AppUpdateReceiver::class.java)
         SimplexApp.context.packageManager.setComponentEnabledSetting(
           component,
           if (enable) PackageManager.COMPONENT_ENABLED_STATE_ENABLED else PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
