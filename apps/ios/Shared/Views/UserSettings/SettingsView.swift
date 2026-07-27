@@ -281,11 +281,11 @@ private enum NomeSettingsPalette {
     static let blue = Color(red: 39.0 / 255.0, green: 107.0 / 255.0, blue: 255.0 / 255.0)
 
     static func canvas(_ theme: AppTheme) -> Color {
-        theme.colors.background.asGroupedBackground(theme.base.mode)
+        NomeShellPalette.canvas
     }
 
     static func surface(_ theme: AppTheme) -> Color {
-        theme.colors.background
+        NomeShellPalette.surface
     }
 
     static func primaryText(_ theme: AppTheme) -> Color {
@@ -307,6 +307,7 @@ struct SettingsView: View {
     @EnvironmentObject var chatModel: ChatModel
     @EnvironmentObject var sceneDelegate: SceneDelegate
     @EnvironmentObject var theme: AppTheme
+    @ObservedObject private var activationStore = NomeActivationStore.shared
     var embeddedInNomeTab: Bool = false
     @StateObject private var nomeSaveableSettings = SaveableSettings()
     @State private var showProgress: Bool = false
@@ -344,6 +345,20 @@ struct SettingsView: View {
                 .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 12, trailing: 16))
 
             Section(header: Text("设置").foregroundColor(theme.colors.secondary)) {
+                if activationStore.needsActivation {
+                    Button {
+                        activationStore.present(.message)
+                    } label: {
+                        NomeSettingsActionRow(
+                            icon: "person.badge.key",
+                            title: "邀请码",
+                            subtitle: "用于消息与联网功能",
+                            trailing: "未激活"
+                        )
+                    }
+                    .accessibilityIdentifier("nome.activation.settings")
+                }
+
                 NavigationLink {
                     NotificationsView()
                         .navigationTitle("通知")
@@ -546,6 +561,23 @@ struct SettingsView: View {
                 .buttonStyle(.plain)
 
                 NomeSettingsTabSection(title: "设置") {
+                    if activationStore.needsActivation {
+                        Button {
+                            activationStore.present(.message)
+                        } label: {
+                            NomeSettingsTabRow(
+                                icon: "person.badge.key",
+                                title: "邀请码",
+                                subtitle: "用于消息与联网功能",
+                                trailing: "未激活"
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("nome.activation.settings")
+
+                        Divider().background(NomeSettingsPalette.divider(theme)).padding(.leading, 52)
+                    }
+
                     NavigationLink {
                         NotificationsView()
                             .navigationTitle("通知")

@@ -237,7 +237,7 @@ struct ChatListView: View {
         let tm = ToolbarMaterial.material(toolbarMaterial)
         return withToolbar(tm) {
             chatList
-                .background(theme.colors.background)
+                .background(NomeShellPalette.canvas)
                 .navigationBarTitleDisplayMode(.inline)
                 .navigationBarHidden(true)
         }
@@ -416,10 +416,6 @@ struct ChatListView: View {
         chatModel.chatRunning == true || activationStore.effectiveAccess != .full
     }
 
-    private var showsActivationCard: Bool {
-        activationStore.needsActivation
-    }
-
     @ViewBuilder private var chatList: some View {
         if nomeHomeTab == .settings {
             SettingsView(embeddedInNomeTab: true)
@@ -449,15 +445,6 @@ struct ChatListView: View {
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 12, trailing: 20))
-
-            if showsActivationCard {
-                NomeActivationCard {
-                    activationStore.present(.connect)
-                }
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 14, trailing: 20))
-            }
 
             ChatListSearchBar(
                 searchMode: $searchMode,
@@ -543,15 +530,6 @@ struct ChatListView: View {
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)
                     .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 12, trailing: 20))
-
-                    if showsActivationCard {
-                        NomeActivationCard {
-                            activationStore.present(.connect)
-                        }
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 14, trailing: 20))
-                    }
 
                     ChatListSearchBar(
                         searchMode: $searchMode,
@@ -833,48 +811,6 @@ struct ChatListView: View {
     }
 }
 
-private struct NomeActivationCard: View {
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 14) {
-                Image(systemName: "person.badge.key.fill")
-                    .font(.system(size: 21, weight: .semibold))
-                    .foregroundColor(NomeHomePalette.green)
-                    .frame(width: 42, height: 42)
-                    .background(Circle().fill(NomeHomePalette.green.opacity(0.12)))
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Nome 目前采用邀请制")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(NomeHomePalette.navy)
-                    Text("可先浏览本机内容，输入邀请码后开始聊天。")
-                        .font(.system(size: 13))
-                        .foregroundColor(NomeHomePalette.textSecondary)
-                        .multilineTextAlignment(.leading)
-                }
-
-                Spacer(minLength: 8)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(NomeHomePalette.textSecondary)
-            }
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(NomeHomePalette.surfaceContainer)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(NomeHomePalette.green.opacity(0.24), lineWidth: 1)
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("nome.activation.card")
-    }
-}
-
 private enum NomeHomePalette {
     static let navy = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark
@@ -888,16 +824,8 @@ private enum NomeHomePalette {
             ? UIColor(red: 113.0 / 255.0, green: 220.0 / 255.0, blue: 159.0 / 255.0, alpha: 1)
             : UIColor(red: 10.0 / 255.0, green: 135.0 / 255.0, blue: 77.0 / 255.0, alpha: 1)
     })
-    static let canvas = Color(uiColor: UIColor { traits in
-        traits.userInterfaceStyle == .dark
-            ? UIColor(red: 14.0 / 255.0, green: 27.0 / 255.0, blue: 45.0 / 255.0, alpha: 1)
-            : UIColor.white
-    })
-    static let surface = Color(uiColor: UIColor { traits in
-        traits.userInterfaceStyle == .dark
-            ? UIColor(red: 18.0 / 255.0, green: 31.0 / 255.0, blue: 50.0 / 255.0, alpha: 1)
-            : UIColor.white
-    })
+    static let canvas = NomeShellPalette.canvas
+    static let surface = NomeShellPalette.surface
     static let surfaceContainer = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark
             ? UIColor(red: 23.0 / 255.0, green: 39.0 / 255.0, blue: 60.0 / 255.0, alpha: 1)

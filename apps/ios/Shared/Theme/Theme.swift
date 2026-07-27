@@ -16,6 +16,20 @@ var CurrentColors: ThemeManager.ActiveTheme = ThemeManager.currentColors(nil, ni
 var MenuTextColor: Color { if isInDarkTheme() { AppTheme.shared.colors.onBackground.opacity(0.8) } else { Color.black } }
 var NoteFolderIconColor: Color { AppTheme.shared.appColors.primaryVariant2 }
 
+enum NomeShellPalette {
+    static let canvas = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 14.0 / 255.0, green: 27.0 / 255.0, blue: 45.0 / 255.0, alpha: 1)
+            : UIColor.white
+    })
+
+    static let surface = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 18.0 / 255.0, green: 31.0 / 255.0, blue: 50.0 / 255.0, alpha: 1)
+            : UIColor.white
+    })
+}
+
 func isInDarkTheme() -> Bool { !CurrentColors.colors.isLight }
 
 // Spec: spec/services/theme.md#AppTheme
