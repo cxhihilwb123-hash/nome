@@ -1,6 +1,8 @@
 package chat.simplex.common.activation
 
 import android.content.Context
+import android.app.backup.BackupManager
+import android.provider.Settings
 import android.util.Base64
 import chat.simplex.common.BuildConfigCommon
 import kotlinx.coroutines.CancellationException
@@ -88,6 +90,15 @@ class ActivationApiException(
 private data class RedeemRequest(
   val inviteCode: String,
   val installationId: String,
+  val restoreBindingId: String,
+  val platform: String,
+  val appVersion: String,
+)
+
+@Serializable
+private data class RecoverRequest(
+  val installationId: String,
+  val restoreBindingId: String,
   val platform: String,
   val appVersion: String,
 )
@@ -95,6 +106,7 @@ private data class RedeemRequest(
 @Serializable
 private data class MigrateRequest(
   val newInstallationId: String,
+  val restoreBindingId: String,
   val appVersion: String,
   val platform: String,
 )
@@ -119,6 +131,9 @@ private data class ActivationStatusResponse(
   val offlineGraceUntil: Instant? = null,
   val serverTime: Instant,
 )
+
+@Serializable
+private data class RecoveryRegistrationResponse(val registered: Boolean)
 
 @Serializable
 private data class ErrorEnvelope(val error: ErrorBody)
@@ -162,6 +177,7 @@ class AndroidActivationApiClient(
   suspend fun redeem(
     inviteCode: String,
     installationId: String,
+    restoreBindingId: String,
     appVersion: String,
     idempotencyKey: String,
   ): ActivationTokenGrant {
@@ -170,7 +186,9 @@ class AndroidActivationApiClient(
         method = "POST",
         url = "$baseUrl/api/v1/activations/redeem",
         headers = mapOf("Idempotency-Key" to idempotencyKey),
-        body = json.encodeToString(RedeemRequest(inviteCode, installationId, platform = "android", appVersion = appVersion)),
+        body = json.encodeToString(
+          RedeemRequest(inviteCode, installationId, restoreBindingId, platform = "android", appVersion = appVersion),
+        ),
       ),
     ) { json.decodeFromString<ActivationTokenResponse>(it) }
     return response.toGrant()
@@ -203,17 +221,68 @@ class AndroidActivationApiClient(
     return response.toGrant()
   }
 
-  suspend fun migrate(
-    token: String,
-    newInstallationId: String,
+  suspend fun recover(
+    recoveryKey: String,
+    installationId: String,
+    restoreBindingId: String,
     appVersion: String,
   ): ActivationTokenGrant {
     val response = execute(
       ActivationHttpRequest(
         method = "POST",
+        url = "$baseUrl/api/v1/activations/recover",
+        headers = mapOf("Idempotency-Key" to recoveryKey),
+        body = json.encodeToString(
+          RecoverRequest(installationId, restoreBindingId, platform = "android", appVersion = appVersion),
+        ),
+      ),
+    ) { json.decodeFromString<ActivationTokenResponse>(it) }
+    return response.toGrant()
+  }
+
+  suspend fun registerRecovery(
+    token: String,
+    recoveryKey: String,
+    installationId: String,
+    restoreBindingId: String,
+    appVersion: String,
+  ) {
+    val response = execute(
+      ActivationHttpRequest(
+        method = "POST",
+        url = "$baseUrl/api/v1/activations/recovery",
+        headers = mapOf(
+          "Authorization" to "Bearer $token",
+          "Idempotency-Key" to recoveryKey,
+        ),
+        body = json.encodeToString(
+          RecoverRequest(installationId, restoreBindingId, platform = "android", appVersion = appVersion),
+        ),
+      ),
+    ) { json.decodeFromString<RecoveryRegistrationResponse>(it) }
+    if (!response.registered) {
+      throw ActivationApiException("recovery_registration_failed", "Activation recovery was not registered")
+    }
+  }
+
+  suspend fun migrate(
+    token: String,
+    newInstallationId: String,
+    restoreBindingId: String,
+    appVersion: String,
+    recoveryKey: String,
+  ): ActivationTokenGrant {
+    val response = execute(
+      ActivationHttpRequest(
+        method = "POST",
         url = "$baseUrl/api/v1/activations/migrate",
-        headers = mapOf("Authorization" to "Bearer $token"),
-        body = json.encodeToString(MigrateRequest(newInstallationId, appVersion, platform = "android")),
+        headers = mapOf(
+          "Authorization" to "Bearer $token",
+          "Idempotency-Key" to recoveryKey,
+        ),
+        body = json.encodeToString(
+          MigrateRequest(newInstallationId, restoreBindingId, appVersion, platform = "android"),
+        ),
       ),
     ) { json.decodeFromString<ActivationTokenResponse>(it) }
     return response.toGrant()
@@ -263,9 +332,15 @@ data class StoredActivationCredential(
   val entitlement: ActivationEntitlement,
 )
 
+data class StoredActivationRestoreCredential(
+  val recoveryKey: String,
+  val installationId: String,
+)
+
 interface ActivationStorage {
   fun installationId(): String
   fun replaceInstallationId(newInstallationId: String)
+  fun restoreBindingId(): String
   fun redeemIdempotencyKey(): String
   fun clearRedeemIdempotencyKey()
   fun migrationInstallationId(): String
@@ -276,6 +351,9 @@ interface ActivationStorage {
   fun readCredential(): StoredActivationCredential?
   fun writeCredential(credential: StoredActivationCredential)
   fun clearCredential()
+  fun readRestoreCredential(): StoredActivationRestoreCredential?
+  fun writeRestoreCredential(credential: StoredActivationRestoreCredential)
+  fun clearRestoreCredential()
   fun lastPolicyRefreshAt(): Instant?
   fun setLastPolicyRefreshAt(at: Instant)
 }
@@ -285,6 +363,9 @@ class AndroidActivationStorage(
   private val json: Json = Json { ignoreUnknownKeys = true; explicitNulls = false },
 ) : ActivationStorage {
   private val preferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
+  private val restorePreferences = context.getSharedPreferences(RESTORE_PREFERENCES_NAME, Context.MODE_PRIVATE)
+  private val backupManager = BackupManager(context)
+  private val contentResolver = context.contentResolver
   private val secureTokenStore = AndroidKeyStoreTokenStore(preferences)
 
   override fun installationId(): String = synchronized(this) {
@@ -298,6 +379,11 @@ class AndroidActivationStorage(
     require(newInstallationId.isNotBlank())
     check(preferences.edit().putString(KEY_INSTALLATION_ID, newInstallationId).commit())
   }
+
+  override fun restoreBindingId(): String =
+    Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
+      ?.takeIf { it.length in 8..256 }
+      ?: installationId()
 
   override fun redeemIdempotencyKey(): String = synchronized(this) {
     preferences.getString(KEY_REDEEM_IDEMPOTENCY, null)?.takeIf { it.length in 16..200 }
@@ -374,6 +460,33 @@ class AndroidActivationStorage(
     check(preferences.edit().remove(KEY_ENTITLEMENT).commit())
   }
 
+  override fun readRestoreCredential(): StoredActivationRestoreCredential? {
+    val recoveryKey = restorePreferences.getString(KEY_RESTORE_RECOVERY_KEY, null)
+      ?.takeIf { it.length in 16..200 }
+      ?: return null
+    val installationId = restorePreferences.getString(KEY_RESTORE_INSTALLATION_ID, null)
+      ?.takeIf { it.length in 16..256 }
+      ?: return null
+    return StoredActivationRestoreCredential(recoveryKey, installationId)
+  }
+
+  override fun writeRestoreCredential(credential: StoredActivationRestoreCredential) {
+    require(credential.recoveryKey.length in 16..200)
+    require(credential.installationId.length in 16..256)
+    check(
+      restorePreferences.edit()
+        .putString(KEY_RESTORE_RECOVERY_KEY, credential.recoveryKey)
+        .putString(KEY_RESTORE_INSTALLATION_ID, credential.installationId)
+        .commit(),
+    )
+    backupManager.dataChanged()
+  }
+
+  override fun clearRestoreCredential() {
+    check(restorePreferences.edit().clear().commit())
+    backupManager.dataChanged()
+  }
+
   override fun lastPolicyRefreshAt(): Instant? =
     preferences.getString(KEY_POLICY_REFRESH_AT, null)?.let { runCatching { Instant.parse(it) }.getOrNull() }
 
@@ -402,6 +515,7 @@ class AndroidActivationStorage(
 
   private companion object {
     const val PREFERENCES_NAME = "nome_activation_v1"
+    const val RESTORE_PREFERENCES_NAME = "nome_activation_restore_v1"
     const val KEY_INSTALLATION_ID = "installation_id"
     const val KEY_INSTALLATION_COHORT = "activation_gate_migration_v1"
     const val KEY_REDEEM_IDEMPOTENCY = "redeem_idempotency_key"
@@ -409,6 +523,8 @@ class AndroidActivationStorage(
     const val KEY_POLICY = "policy"
     const val KEY_ENTITLEMENT = "entitlement"
     const val KEY_POLICY_REFRESH_AT = "policy_refresh_at"
+    const val KEY_RESTORE_RECOVERY_KEY = "recovery_key"
+    const val KEY_RESTORE_INSTALLATION_ID = "installation_id"
   }
 }
 
@@ -488,6 +604,7 @@ class AndroidActivationRuntime(
   @Volatile private var policyChecked = false
   @Volatile private var cohort = ActivationInstallationCohort.FRESH
   @Volatile private var credential: StoredActivationCredential? = null
+  @Volatile private var restorationPending = false
   private var schedulerStarted = false
 
   fun initialize(hasUsableLocalDatabase: Boolean) {
@@ -497,12 +614,9 @@ class AndroidActivationRuntime(
       cohort = storage.installationCohort(hasUsableLocalDatabase)
       policy = storage.readPolicy()
       policyChecked = policy != null
-      credential = if (hasUsableLocalDatabase) {
-        storage.readCredential()
-      } else {
-        storage.clearCredential()
-        null
-      }
+      credential = storage.readCredential()
+      restorationPending = !hasUsableLocalDatabase &&
+        (credential != null || storage.readRestoreCredential() != null)
     } catch (_: Throwable) {
       policy = null
       policyChecked = false
@@ -516,11 +630,15 @@ class AndroidActivationRuntime(
     if (!schedulerStarted) {
       schedulerStarted = true
       scope.launch {
+        recoverInstallationIfNeeded()
+        registerRecoveryIfNeeded()
         refreshPolicy(force = false)
         refreshEntitlementIfDue(force = true)
         while (true) {
           val seconds = nextSchedulerDelaySeconds()
           delay(seconds * 1_000)
+          recoverInstallationIfNeeded()
+          registerRecoveryIfNeeded()
           refreshPolicy(force = true)
           refreshEntitlementIfDue(force = true)
           ActivationGate.publish(evaluate())
@@ -570,15 +688,20 @@ class AndroidActivationRuntime(
       return@withLock ActivationOperationResult.Failure("invalid_invite_code", "Enter an invite code")
     }
     val previousCredential = credential
+    val installationId = storage.installationId()
+    val recoveryKey = storage.redeemIdempotencyKey()
     ActivationGate.publish(evaluate().copy(operationInProgress = true, lastErrorCode = null))
     return@withLock try {
       val grant = client.redeem(
         inviteCode = code,
-        installationId = storage.installationId(),
+        installationId = installationId,
+        restoreBindingId = storage.restoreBindingId(),
         appVersion = appVersion,
-        idempotencyKey = storage.redeemIdempotencyKey(),
+        idempotencyKey = recoveryKey,
       )
       applyGrant(grant)
+      storage.writeRestoreCredential(StoredActivationRestoreCredential(recoveryKey, installationId))
+      restorationPending = false
       runCatching { storage.clearRedeemIdempotencyKey() }
       val next = evaluate()
       ActivationGate.publish(next)
@@ -631,6 +754,7 @@ class AndroidActivationRuntime(
           )
           credential = current.copy(entitlement = entitlement)
           storage.writeCredential(credential!!)
+          restorationPending = false
           if (
             entitlement.status == ActivationEntitlementStatus.ACTIVE &&
             expiresAt.epochSeconds - clock.now().epochSeconds <= 3_600
@@ -657,6 +781,7 @@ class AndroidActivationRuntime(
             ),
           )
           storage.writeCredential(credential!!)
+          restorationPending = false
           val next = evaluate().copy(lastErrorCode = e.code)
           ActivationGate.publish(next)
           ActivationOperationResult.Failure(e.code, e.message)
@@ -694,14 +819,31 @@ class AndroidActivationRuntime(
     ActivationGate.publish(evaluate())
   }
 
+  suspend fun recoverInstallation(): ActivationOperationResult? =
+    recoverInstallationIfNeeded()
+
+  suspend fun registerRecovery(): ActivationOperationResult? =
+    registerRecoveryIfNeeded()
+
   override suspend fun migrateInstallation(): ActivationOperationResult = operationMutex.withLock {
     val current = credential
       ?: return@withLock ActivationOperationResult.Failure("not_activated", "This installation is not activated")
     return@withLock try {
       val newInstallationId = storage.migrationInstallationId()
-      val grant = client.migrate(current.token, newInstallationId, appVersion)
+      val recoveryKey = storage.readRestoreCredential()?.recoveryKey
+        ?: storage.redeemIdempotencyKey()
+      val grant = client.migrate(
+        current.token,
+        newInstallationId,
+        storage.restoreBindingId(),
+        appVersion,
+        recoveryKey,
+      )
       storage.replaceInstallationId(newInstallationId)
       applyGrant(grant)
+      storage.writeRestoreCredential(
+        StoredActivationRestoreCredential(recoveryKey, newInstallationId),
+      )
       runCatching { storage.clearMigrationInstallationId() }
       val next = evaluate()
       ActivationGate.publish(next)
@@ -746,6 +888,82 @@ class AndroidActivationRuntime(
       ),
     )
     storage.writeCredential(credential!!)
+    restorationPending = false
+  }
+
+  private suspend fun recoverInstallationIfNeeded(): ActivationOperationResult? = operationMutex.withLock {
+    if (!restorationPending || credential != null) return@withLock null
+    val restore = runCatching { storage.readRestoreCredential() }.getOrNull()
+      ?: run {
+        restorationPending = false
+        return@withLock null
+      }
+    return@withLock try {
+      val grant = client.recover(
+        recoveryKey = restore.recoveryKey,
+        installationId = restore.installationId,
+        restoreBindingId = storage.restoreBindingId(),
+        appVersion = appVersion,
+      )
+      storage.replaceInstallationId(restore.installationId)
+      applyGrant(grant)
+      val next = evaluate()
+      ActivationGate.publish(next)
+      ActivationOperationResult.Success(next)
+    } catch (e: ActivationApiException) {
+      if (e.statusCode in listOf(400, 401, 403, 404, 409)) {
+        restorationPending = false
+        runCatching { storage.clearRestoreCredential() }
+      }
+      val next = evaluate().copy(lastErrorCode = e.code)
+      ActivationGate.publish(next)
+      ActivationOperationResult.Failure(e.code, e.message)
+    } catch (e: CancellationException) {
+      throw e
+    } catch (_: Throwable) {
+      val next = evaluate().copy(lastErrorCode = "secure_storage_unavailable")
+      ActivationGate.publish(next)
+      ActivationOperationResult.Failure(
+        "secure_storage_unavailable",
+        "Secure activation storage is unavailable",
+      )
+    }
+  }
+
+  private suspend fun registerRecoveryIfNeeded(): ActivationOperationResult? = operationMutex.withLock {
+    val current = credential ?: return@withLock null
+    if (storage.readRestoreCredential() != null) return@withLock null
+    val installationId = storage.installationId()
+    val recoveryKey = storage.redeemIdempotencyKey()
+    return@withLock try {
+      client.registerRecovery(
+        token = current.token,
+        recoveryKey = recoveryKey,
+        installationId = installationId,
+        restoreBindingId = storage.restoreBindingId(),
+        appVersion = appVersion,
+      )
+      storage.writeRestoreCredential(
+        StoredActivationRestoreCredential(recoveryKey, installationId),
+      )
+      runCatching { storage.clearRedeemIdempotencyKey() }
+      val next = evaluate()
+      ActivationGate.publish(next)
+      ActivationOperationResult.Success(next)
+    } catch (e: ActivationApiException) {
+      val next = evaluate().copy(lastErrorCode = e.code)
+      ActivationGate.publish(next)
+      ActivationOperationResult.Failure(e.code, e.message)
+    } catch (e: CancellationException) {
+      throw e
+    } catch (_: Throwable) {
+      val next = evaluate().copy(lastErrorCode = "secure_storage_unavailable")
+      ActivationGate.publish(next)
+      ActivationOperationResult.Failure(
+        "secure_storage_unavailable",
+        "Secure activation storage is unavailable",
+      )
+    }
   }
 
   private suspend fun refreshEntitlementIfDue(force: Boolean): ActivationOperationResult? =
@@ -770,8 +988,8 @@ class AndroidActivationRuntime(
     return delays.minOrNull() ?: 300
   }
 
-  private fun evaluate(): ActivationRuntimeState =
-    ActivationPolicyEvaluator.evaluate(
+  private fun evaluate(): ActivationRuntimeState {
+    val evaluated = ActivationPolicyEvaluator.evaluate(
       policy = policy,
       policyChecked = policyChecked,
       cohort = cohort,
@@ -781,6 +999,16 @@ class AndroidActivationRuntime(
       observedWouldBlockCount = wouldBlockCount.get(),
       lastObservedWouldBlockCapability = lastWouldBlockCapability,
     )
+    return if (restorationPending) {
+      evaluated.copy(
+        access = ActivationAccess.LOCAL_ONLY,
+        reason = "restore_validation_pending",
+        wouldBlockInEnforcedMode = false,
+      )
+    } else {
+      evaluated
+    }
+  }
 
   private fun validatePolicy(value: ActivationPolicy) {
     require(value.schemaVersion == 1)

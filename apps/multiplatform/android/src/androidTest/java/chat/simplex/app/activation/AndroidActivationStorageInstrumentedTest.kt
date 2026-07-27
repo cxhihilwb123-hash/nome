@@ -7,6 +7,7 @@ import chat.simplex.common.activation.ActivationEntitlementStatus
 import chat.simplex.common.activation.ActivationInstallationCohort
 import chat.simplex.common.activation.AndroidActivationStorage
 import chat.simplex.common.activation.StoredActivationCredential
+import chat.simplex.common.activation.StoredActivationRestoreCredential
 import kotlinx.datetime.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -16,6 +17,24 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class AndroidActivationStorageInstrumentedTest {
+  @Test
+  fun restoreCredentialRoundTripsInDedicatedBackupPreferences() {
+    val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+    val storage = AndroidActivationStorage(context)
+    val expected = StoredActivationRestoreCredential(
+      recoveryKey = "instrumented-recovery-key-0001",
+      installationId = "instrumented-installation-0001",
+    )
+    try {
+      storage.writeRestoreCredential(expected)
+
+      assertEquals(expected, storage.readRestoreCredential())
+      assertNotNull(storage.restoreBindingId())
+    } finally {
+      storage.clearRestoreCredential()
+    }
+  }
+
   @Test
   fun redeemIdempotencyKeyIsStableUntilSuccessfulRedeemClearsIt() {
     val context = ApplicationProvider.getApplicationContext<android.content.Context>()

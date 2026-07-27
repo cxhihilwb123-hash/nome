@@ -17,6 +17,7 @@ import chat.simplex.common.activation.AndroidActivationApiClient
 import chat.simplex.common.activation.AndroidActivationRuntime
 import chat.simplex.common.activation.ActivationGate
 import chat.simplex.common.activation.StoredActivationCredential
+import chat.simplex.common.activation.StoredActivationRestoreCredential
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -214,15 +215,73 @@ class AndroidActivationRuntimeTest {
   }
 
   @Test
-  fun initializeWithoutLocalDatabaseClearsPersistedCredentialAndFailsClosed() {
+  fun initializeWithoutLocalDatabasePreservesCredentialButFailsClosedUntilServerValidation() {
     val storage = MemoryActivationStorage(expiredCredential())
     val runtime = runtime(storage, RoutingTransport { error("unexpected network") })
 
     runtime.initialize(hasUsableLocalDatabase = false)
 
-    assertEquals(1, storage.clearCredentialCalls)
-    assertEquals(null, storage.credential)
+    assertEquals(0, storage.clearCredentialCalls)
+    assertEquals("expired-token", storage.credential?.token)
     assertEquals(ActivationAccess.LOCAL_ONLY, ActivationGate.state.value.access)
+  }
+
+  @Test
+  fun restoredRecoveryCredentialReissuesTokenOnlyAfterServerValidation() = runBlocking {
+    val transport = RoutingTransport { request ->
+      assertEquals("POST", request.method)
+      assertTrue(request.url.endsWith("/api/v1/activations/recover"))
+      assertEquals("restore-recovery-key-00000001", request.headers["Idempotency-Key"])
+      assertTrue(request.body.orEmpty().contains("\"restoreBindingId\":\"android-binding-0001\""))
+      ActivationHttpResponse(
+        200,
+        """{
+          "activationToken":"restored-token",
+          "expiresAt":"2026-07-28T12:00:00Z",
+          "graceUntil":"2026-08-04T12:00:00Z",
+          "status":"active",
+          "recovered":true
+        }""",
+      )
+    }
+    val storage = MemoryActivationStorage(
+      credential = null,
+      restoreCredential = StoredActivationRestoreCredential(
+        recoveryKey = "restore-recovery-key-00000001",
+        installationId = "restored-installation-00000001",
+      ),
+    )
+    val runtime = runtime(storage, transport)
+    runtime.initialize(hasUsableLocalDatabase = false)
+
+    assertEquals(ActivationAccess.LOCAL_ONLY, ActivationGate.state.value.access)
+    val result = runtime.recoverInstallation()
+
+    assertTrue(result is ActivationOperationResult.Success)
+    assertEquals("restored-token", storage.credential?.token)
+    assertEquals("restored-installation-00000001", storage.installationId)
+    assertEquals(ActivationAccess.FULL, ActivationGate.state.value.access)
+  }
+
+  @Test
+  fun existingActivationRegistersRestoreCredentialBeforeFutureReinstall() = runBlocking {
+    val transport = RoutingTransport { request ->
+      assertTrue(request.url.endsWith("/api/v1/activations/recovery"))
+      assertEquals("Bearer expired-token", request.headers["Authorization"])
+      ActivationHttpResponse(200, """{"registered":true}""")
+    }
+    val storage = MemoryActivationStorage(expiredCredential())
+    val runtime = runtime(storage, transport)
+    runtime.initialize(hasUsableLocalDatabase = true)
+
+    val result = runtime.registerRecovery()
+
+    assertTrue(result is ActivationOperationResult.Success)
+    assertEquals(
+      "00000000-0000-0000-0000-000000000003",
+      storage.restoreCredential?.recoveryKey,
+    )
+    assertEquals(storage.installationId, storage.restoreCredential?.installationId)
   }
 
   private fun runtime(
@@ -251,6 +310,7 @@ class AndroidActivationRuntimeTest {
 
   private class MemoryActivationStorage(
     var credential: StoredActivationCredential?,
+    var restoreCredential: StoredActivationRestoreCredential? = null,
   ): ActivationStorage {
     private val policy = ActivationPolicy(
       schemaVersion = 1,
@@ -273,6 +333,7 @@ class AndroidActivationRuntimeTest {
 
     override fun installationId(): String = installationId
     override fun replaceInstallationId(newInstallationId: String) { installationId = newInstallationId }
+    override fun restoreBindingId(): String = "android-binding-0001"
     override fun redeemIdempotencyKey(): String = "00000000-0000-0000-0000-000000000003"
     override fun clearRedeemIdempotencyKey() { idempotencyCleared = true }
     override fun migrationInstallationId(): String = "00000000-0000-0000-0000-000000000004"
@@ -286,6 +347,11 @@ class AndroidActivationRuntimeTest {
       clearCredentialCalls += 1
       credential = null
     }
+    override fun readRestoreCredential(): StoredActivationRestoreCredential? = restoreCredential
+    override fun writeRestoreCredential(credential: StoredActivationRestoreCredential) {
+      restoreCredential = credential
+    }
+    override fun clearRestoreCredential() { restoreCredential = null }
     override fun lastPolicyRefreshAt(): Instant = refreshedAt
     override fun setLastPolicyRefreshAt(at: Instant) { refreshedAt = at }
   }

@@ -55,6 +55,7 @@ class AndroidActivationApiClientTest {
     val grant = AndroidActivationApiClient(fake, "https://example.test").redeem(
       inviteCode = "INVITE-123",
       installationId = "install-456",
+      restoreBindingId = "android-binding-456",
       appVersion = "6.4.0",
       idempotencyKey = "idem-789",
     )
@@ -67,8 +68,54 @@ class AndroidActivationApiClientTest {
     val body = fake.lastRequest?.body.orEmpty()
     assertTrue(body.contains("\"platform\":\"android\""))
     assertTrue(body.contains("\"installationId\":\"install-456\""))
+    assertTrue(body.contains("\"restoreBindingId\":\"android-binding-456\""))
     assertTrue(body.contains("\"inviteCode\":\"INVITE-123\""))
     assertFalse(fake.lastRequest?.headers.orEmpty().containsKey("Authorization"))
+  }
+
+  @Test
+  fun recoverUsesDedicatedRouteRecoveryKeyAndDeviceBinding() = runBlocking {
+    val fake = FakeTransport(
+      """{
+        "activationToken":"restored-token",
+        "expiresAt":"2026-07-28T12:00:00Z",
+        "graceUntil":"2026-08-04T12:00:00Z",
+        "status":"active",
+        "recovered":true
+      }""",
+    )
+
+    val grant = AndroidActivationApiClient(fake, "https://example.test").recover(
+      recoveryKey = "recovery-key-0000000001",
+      installationId = "installation-0000000001",
+      restoreBindingId = "android-binding-0001",
+      appVersion = "6.4.0",
+    )
+
+    assertEquals("restored-token", grant.token)
+    assertEquals("https://example.test/api/v1/activations/recover", fake.lastRequest?.url)
+    assertEquals("recovery-key-0000000001", fake.lastRequest?.headers?.get("Idempotency-Key"))
+    val body = fake.lastRequest?.body.orEmpty()
+    assertTrue(body.contains("\"installationId\":\"installation-0000000001\""))
+    assertTrue(body.contains("\"restoreBindingId\":\"android-binding-0001\""))
+  }
+
+  @Test
+  fun registerRecoveryAuthenticatesExistingActivationAndSendsNoInviteCode() = runBlocking {
+    val fake = FakeTransport("""{"registered":true}""")
+
+    AndroidActivationApiClient(fake, "https://example.test").registerRecovery(
+      token = "signed-token",
+      recoveryKey = "recovery-key-0000000002",
+      installationId = "installation-0000000002",
+      restoreBindingId = "android-binding-0002",
+      appVersion = "6.4.0",
+    )
+
+    assertEquals("https://example.test/api/v1/activations/recovery", fake.lastRequest?.url)
+    assertEquals("Bearer signed-token", fake.lastRequest?.headers?.get("Authorization"))
+    assertEquals("recovery-key-0000000002", fake.lastRequest?.headers?.get("Idempotency-Key"))
+    assertFalse(fake.lastRequest?.body.orEmpty().contains("inviteCode"))
   }
 
   @Test
@@ -125,16 +172,20 @@ class AndroidActivationApiClientTest {
     val grant = AndroidActivationApiClient(fake, "https://example.test").migrate(
       token = "signed-token",
       newInstallationId = "00000000-0000-0000-0000-000000000002",
+      restoreBindingId = "android-binding-0002",
       appVersion = "6.4.0",
+      recoveryKey = "migration-recovery-key-0002",
     )
 
     assertEquals("migrated-token", grant.token)
     assertEquals("POST", fake.lastRequest?.method)
     assertEquals("https://example.test/api/v1/activations/migrate", fake.lastRequest?.url)
     assertEquals("Bearer signed-token", fake.lastRequest?.headers?.get("Authorization"))
+    assertEquals("migration-recovery-key-0002", fake.lastRequest?.headers?.get("Idempotency-Key"))
     val body = fake.lastRequest?.body.orEmpty()
     assertTrue(body.contains("\"platform\":\"android\""))
     assertTrue(body.contains("\"newInstallationId\":\"00000000-0000-0000-0000-000000000002\""))
+    assertTrue(body.contains("\"restoreBindingId\":\"android-binding-0002\""))
   }
 
   private class FakeTransport(private val body: String): ActivationHttpTransport {
