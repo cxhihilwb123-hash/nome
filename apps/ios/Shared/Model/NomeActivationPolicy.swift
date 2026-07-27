@@ -57,6 +57,7 @@ struct NomeActivationPolicy: Codable, Equatable {
 struct NomeActivationReceipt: Codable, Equatable {
     var state: NomeActivationReceiptState
     var expiresAt: Date?
+    var entitlementEnd: Date? = nil
     var graceUntil: Date?
     var updatedAt: Date
     var reason: String?
@@ -159,7 +160,9 @@ enum NomeActivationRefreshReducer {
             receipt.updatedAt = now
             return receipt
         case let .server(code)
-            where code == "ACTIVATION_TOKEN_EXPIRED" && (receipt.graceUntil ?? .distantPast) < now:
+            where code == "ACTIVATION_TOKEN_EXPIRED" &&
+                (receipt.entitlementEnd.map { $0 <= now } == true ||
+                 (receipt.graceUntil ?? .distantPast) < now):
             var receipt = receipt
             receipt.state = .expired
             receipt.updatedAt = now
@@ -197,7 +200,10 @@ enum NomeActivationPolicyEvaluator {
         now: Date = .now
     ) -> (access: NomeActivationEffectiveAccess, wouldBlock: Bool) {
         func activeReceiptIsUsable() -> Bool {
-            [receipt.expiresAt, receipt.graceUntil]
+            if let entitlementEnd = receipt.entitlementEnd, entitlementEnd <= now {
+                return false
+            }
+            return [receipt.expiresAt, receipt.graceUntil]
                 .compactMap { $0 }
                 .max()
                 .map { $0 >= now } ?? false

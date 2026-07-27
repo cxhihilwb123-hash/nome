@@ -596,9 +596,11 @@ struct NomeActivationSheetView: View {
                         Image(systemName: "person.badge.key.fill")
                             .font(.system(size: 34, weight: .semibold))
                             .foregroundColor(.green)
-                        Text(action.title)
+                        Text(activationStore.hasActiveInvitation ? "延长 Nome 使用期限" : action.title)
                             .font(.title3.weight(.semibold))
-                        Text("你仍可浏览本机已有内容和调整本地设置。输入邀请码后，才能连接好友、发送消息、加入群组、传输文件或使用通话。")
+                        Text(activationStore.hasActiveInvitation
+                             ? "输入新的邀请码可在现有到期日基础上续期。永久授权不会被限时邀请码缩短。"
+                             : "你仍可浏览本机已有内容和调整本地设置。输入邀请码后，才能连接好友、发送消息、加入群组、传输文件或使用通话。")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                     }
@@ -624,7 +626,9 @@ struct NomeActivationSheetView: View {
                             if activationStore.isRedeeming {
                                 ProgressView().padding(.trailing, 6)
                             }
-                            Text(activationStore.isRedeeming ? "正在激活…" : "激活 Nome")
+                            Text(activationStore.isRedeeming
+                                 ? "正在兑换…"
+                                 : activationStore.hasActiveInvitation ? "兑换并续期" : "激活 Nome")
                                 .fontWeight(.semibold)
                             Spacer()
                         }
@@ -662,7 +666,7 @@ struct NomeActivationSheetView: View {
                         .foregroundColor(.secondary)
                 }
             }
-            .navigationTitle("激活 Nome")
+            .navigationTitle(activationStore.hasActiveInvitation ? "邀请码续期" : "激活 Nome")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

@@ -345,15 +345,15 @@ struct SettingsView: View {
                 .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 12, trailing: 16))
 
             Section(header: Text("设置").foregroundColor(theme.colors.secondary)) {
-                if activationStore.needsActivation {
+                if activationStore.shouldShowInvitationSettings {
                     Button {
                         activationStore.present(.message)
                     } label: {
                         NomeSettingsActionRow(
                             icon: "person.badge.key",
                             title: "邀请码",
-                            subtitle: "用于消息与联网功能",
-                            trailing: "未激活"
+                            subtitle: "使用权限与续期",
+                            trailing: activationStore.invitationStatusLabel
                         )
                     }
                     .accessibilityIdentifier("nome.activation.settings")
@@ -561,15 +561,15 @@ struct SettingsView: View {
                 .buttonStyle(.plain)
 
                 NomeSettingsTabSection(title: "设置") {
-                    if activationStore.needsActivation {
+                    if activationStore.shouldShowInvitationSettings {
                         Button {
                             activationStore.present(.message)
                         } label: {
                             NomeSettingsTabRow(
                                 icon: "person.badge.key",
                                 title: "邀请码",
-                                subtitle: "用于消息与联网功能",
-                                trailing: "未激活"
+                                subtitle: "使用权限与续期",
+                                trailing: activationStore.invitationStatusLabel
                             )
                         }
                         .buttonStyle(.plain)
@@ -820,7 +820,7 @@ private struct NomeSettingsActionRow: View {
     let icon: String
     let title: LocalizedStringKey
     let subtitle: LocalizedStringKey
-    let trailing: LocalizedStringKey?
+    let trailing: String?
 
     var body: some View {
         HStack(spacing: 14) {
@@ -897,7 +897,7 @@ private struct NomeSettingsTabRow: View {
     let icon: String
     let title: LocalizedStringKey
     let subtitle: LocalizedStringKey?
-    let trailing: LocalizedStringKey?
+    let trailing: String?
 
     var body: some View {
         HStack(spacing: 14) {

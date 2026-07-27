@@ -22,7 +22,7 @@ struct NomeActivationPolicyTests {
             failures.forEach { fputs("FAIL: \($0)\n", stderr) }
             exit(1)
         }
-        print("PASS: NomeActivationPolicyReducers (27 cases)")
+        print("PASS: NomeActivationPolicyReducers (28 cases)")
     }
 
     private static func runPolicyEvaluatorTests() {
@@ -46,6 +46,14 @@ struct NomeActivationPolicyTests {
             state: .active,
             expiresAt: now.addingTimeInterval(-120),
             graceUntil: now.addingTimeInterval(-60),
+            updatedAt: now,
+            reason: nil
+        )
+        let accessPeriodExpired = NomeActivationReceipt(
+            state: .active,
+            expiresAt: now.addingTimeInterval(3_600),
+            entitlementEnd: now.addingTimeInterval(-1),
+            graceUntil: now.addingTimeInterval(86_400),
             updatedAt: now,
             reason: nil
         )
@@ -77,6 +85,8 @@ struct NomeActivationPolicyTests {
                          policy: policy(.enforced), receipt: activeInGrace, marker: .freshInstall)
         expectEvaluation("expired token and grace are blocked", .localOnly, false,
                          policy: policy(.enforced), receipt: activeExpired, marker: .freshInstall)
+        expectEvaluation("entitlement end overrides token and offline grace", .localOnly, false,
+                         policy: policy(.enforced), receipt: accessPeriodExpired, marker: .freshInstall)
         expectEvaluation("pending migration has a distinct recovery state", .migrationRequired, false,
                          policy: policy(.enforced), receipt: pendingMigration, marker: .freshInstall)
         expectEvaluation("disabled platform cannot enforce", .full, false,

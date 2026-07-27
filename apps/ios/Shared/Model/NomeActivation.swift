@@ -54,6 +54,7 @@ struct NomeActivationPendingCallIntent: Equatable {
 struct NomeActivationCredentialResponse: Decodable {
     let activationToken: String
     let expiresAt: Date
+    let entitlementEnd: Date?
     let graceUntil: Date
     let status: NomeActivationReceiptState
 }
@@ -427,6 +428,24 @@ final class NomeActivationStore: ObservableObject {
 
     var needsActivation: Bool { effectiveAccess != .full }
 
+    var shouldShowInvitationSettings: Bool {
+        guard let policy else { return false }
+        return policy.mode != .disabled
+    }
+
+    var invitationStatusLabel: String {
+        if receipt.state == .expired || receipt.entitlementEnd.map({ $0 <= now() }) == true {
+            return "已到期"
+        }
+        guard receipt.state == .active else { return "未激活" }
+        guard let entitlementEnd = receipt.entitlementEnd else { return "永久" }
+        return "有效至 \(entitlementEnd.formatted(date: .numeric, time: .omitted))"
+    }
+
+    var hasActiveInvitation: Bool {
+        receipt.state == .active && effectiveAccess == .full
+    }
+
     var policyLabel: String {
         guard let policy else { return "等待检查邀请策略" }
         switch policy.mode {
@@ -539,6 +558,7 @@ final class NomeActivationStore: ObservableObject {
             receipt = NomeActivationReceipt(
                 state: response.status,
                 expiresAt: response.expiresAt,
+                entitlementEnd: response.entitlementEnd,
                 graceUntil: response.graceUntil,
                 updatedAt: now(),
                 reason: nil
@@ -582,6 +602,7 @@ final class NomeActivationStore: ObservableObject {
             receipt = NomeActivationReceipt(
                 state: response.status,
                 expiresAt: response.expiresAt,
+                entitlementEnd: response.entitlementEnd,
                 graceUntil: response.graceUntil,
                 updatedAt: now(),
                 reason: nil
@@ -620,9 +641,7 @@ final class NomeActivationStore: ObservableObject {
                 let status = try await client.status(token)
                 guard !Task.isCancelled else { return }
                 receipt.state = status.status
-                if let entitlementEnd = status.entitlementEnd {
-                    receipt.expiresAt = entitlementEnd
-                }
+                receipt.entitlementEnd = status.entitlementEnd
                 receipt.graceUntil = status.offlineGraceUntil
                 receipt.updatedAt = now()
                 cache.setReceipt(receipt)
@@ -637,6 +656,7 @@ final class NomeActivationStore: ObservableObject {
                     receipt = NomeActivationReceipt(
                         state: refreshed.status,
                         expiresAt: refreshed.expiresAt,
+                        entitlementEnd: refreshed.entitlementEnd,
                         graceUntil: refreshed.graceUntil,
                         updatedAt: now(),
                         reason: nil
