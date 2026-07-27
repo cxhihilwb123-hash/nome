@@ -10,10 +10,12 @@
   <string name="nome_activation_renew_body">Enter another invite code to extend access from the current end date. A timed code never shortens permanent access.</string>
   <string name="nome_activation_check_required">Connect to the internet to check access, or enter an invite code if you already have one.</string>
   <string name="nome_activation_invite_code">Invite code</string>
+  <string name="nome_activation_close">Close</string>
   <string name="nome_activation_activate">Activate</string>
-  <string name="nome_activation_renew">Redeem and renew</string>
+  <string name="nome_activation_renew">Confirm renewal</string>
   <string name="nome_activation_settings_title">Invitation code</string>
   <string name="nome_activation_settings_not_active">Not activated · local use only</string>
+  <string name="nome_activation_settings_not_required">Available · invitation not currently required</string>
   <string name="nome_activation_settings_expired">Expired · enter a new invitation code</string>
   <string name="nome_activation_settings_permanent">Active · permanent</string>
   <string name="nome_activation_settings_until">Active until %1$s</string>

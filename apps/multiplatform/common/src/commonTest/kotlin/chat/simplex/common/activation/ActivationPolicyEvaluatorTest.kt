@@ -64,6 +64,20 @@ class ActivationPolicyEvaluatorTest {
   }
 
   @Test
+  fun allUnactivatedAudienceBlocksGrandfatheredInstallationWithoutEntitlement() {
+    val state = ActivationPolicyEvaluator.evaluate(
+      policy = policy(audience = ActivationAudience.ALL_UNACTIVATED),
+      policyChecked = true,
+      cohort = ActivationInstallationCohort.GRANDFATHERED,
+      entitlement = ActivationEntitlement(),
+      now = now,
+    )
+    assertEquals(ActivationAccess.LOCAL_ONLY, state.access)
+    assertFalse(state.permitsChatNetworking)
+    assertEquals("unactivated", state.reason)
+  }
+
+  @Test
   fun enforcedUnactivatedAndRevokedInstallationsAreLocalOnly() {
     assertEquals(ActivationAccess.LOCAL_ONLY, evaluate(policy()).access)
     assertEquals(

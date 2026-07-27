@@ -6,6 +6,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
@@ -96,6 +97,9 @@ class AndroidActivationOverlayInstrumentedTest {
     val context = ApplicationProvider.getApplicationContext<android.content.Context>()
     val title = context.getString(R.string.nome_activation_sheet_title)
     val activate = context.getString(R.string.nome_activation_activate)
+    val close = context.getString(R.string.nome_activation_close)
+    val retry = context.getString(R.string.nome_activation_retry)
+    val notNow = context.getString(R.string.nome_activation_not_now)
 
     composeRule.setContent {
       MaterialTheme {
@@ -104,6 +108,9 @@ class AndroidActivationOverlayInstrumentedTest {
     }
 
     composeRule.onNodeWithText(title).assertIsDisplayed()
+    composeRule.onNodeWithContentDescription(close).assertIsDisplayed()
+    composeRule.onNodeWithText(retry).assertDoesNotExist()
+    composeRule.onNodeWithText(notNow).assertDoesNotExist()
     composeRule.onNodeWithText(activate).assertIsNotEnabled()
 
     composeRule.onNode(hasSetTextAction()).performTextInput("INVITE-TEST")
