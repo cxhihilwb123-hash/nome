@@ -140,7 +140,12 @@ private func baseItemQuery(forKey key: String, accessGroup: String) -> [NSString
     query[kSecClass] = kSecClassGenericPassword
     query[kSecAttrAccount] = key as AnyObject?
     #if os(iOS) && !targetEnvironment(simulator)
-        query[kSecAttrAccessGroup] = accessGroup
+        let useDefaultAccessGroup = Bundle.main.object(
+            forInfoDictionaryKey: "NomeUseDefaultKeychainAccessGroup"
+        ) as? Bool ?? false
+        if !useDefaultAccessGroup {
+            query[kSecAttrAccessGroup] = accessGroup as AnyObject
+        }
     #endif
     return query
 }

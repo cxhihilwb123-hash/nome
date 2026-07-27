@@ -54,7 +54,8 @@ public func getDocumentsDirectory() -> URL {
 
 // Spec: spec/database.md#getGroupContainerDirectory
 public func getGroupContainerDirectory() -> URL {
-    FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: APP_GROUP_NAME)!
+    FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: APP_GROUP_NAME)
+        ?? getDocumentsDirectory()
 }
 
 func getAppDirectory() -> URL {
