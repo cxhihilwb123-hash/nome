@@ -836,8 +836,8 @@ enum NomeActivationJSON {
 }
 
 extension ChatCommand {
-    /// Explicit allow-list for local reads and safe teardown. Any new or
-    /// unclassified command is protected by default while activation is enforced.
+    /// Explicit allow-list for local reads, offline bootstrap configuration, and safe teardown.
+    /// Any new or unclassified command is protected by default while activation is enforced.
     var nomeAllowedWithoutActivation: Bool {
         switch self {
         case .showActiveUser,
@@ -875,12 +875,14 @@ extension ChatCommand {
              .apiGetGroupRelays,
              .apiListMembers,
              .apiGetServerOperators,
+             .apiSetServerOperators,
              .apiGetUserServers,
              .apiGetUsageConditions,
              .apiSetConditionsNotified,
              .apiAcceptConditions,
              .apiGetChatItemTTL,
              .apiGetNetworkConfig,
+             .apiSetNetworkInfo,
              .apiContactInfo,
              .apiGroupMemberInfo,
              .apiContactQueueInfo,
