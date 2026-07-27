@@ -145,6 +145,12 @@ private func baseItemQuery(forKey key: String, accessGroup: String) -> [NSString
         ) as? Bool ?? false
         if !useDefaultAccessGroup {
             query[kSecAttrAccessGroup] = accessGroup as AnyObject
+            // Personal development profiles cannot use the official release access groups.
+            // Detect that signing mismatch at runtime so a re-signed build safely falls back to
+            // its own default Keychain group even if the packaging override was omitted.
+            if SecItemCopyMatching(query as CFDictionary, nil) == errSecMissingEntitlement {
+                query.removeValue(forKey: kSecAttrAccessGroup)
+            }
         }
     #endif
     return query
