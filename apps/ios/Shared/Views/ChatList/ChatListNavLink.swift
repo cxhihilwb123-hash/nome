@@ -562,7 +562,7 @@ struct ChatListNavLink: View {
 
     // Spec: spec/client/chat-list.md#contactConnectionNavLink
     private func contactConnectionNavLink(_ contactConnection: PendingContactConnection) -> some View {
-        ContactConnectionView(chat: chat)
+        ContactConnectionView(chat: chat, nomeCompactStyle: nomeCompactStyle)
         .frameCompat(height: dynamicRowHeight)
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button {

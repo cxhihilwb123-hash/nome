@@ -14,13 +14,66 @@ struct ContactConnectionView: View {
     @ObservedObject var chat: Chat
     @EnvironmentObject var theme: AppTheme
     @Environment(\.dynamicTypeSize) private var userFont: DynamicTypeSize
+    @ScaledMetric(relativeTo: .body) private var nomeCompactRowHeight: CGFloat = 72
+    @ScaledMetric(relativeTo: .body) private var nomeCompactIconSize: CGFloat = 44
+    @ScaledMetric(relativeTo: .body) private var nomeCompactTitleSize: CGFloat = 16
+    @ScaledMetric(relativeTo: .body) private var nomeCompactSupportingSize: CGFloat = 13
+    var nomeCompactStyle = false
     @State private var localAlias = ""
     @FocusState private var aliasTextFieldFocused: Bool
 
     var body: some View {
         if case let .contactConnection(conn) = chat.chatInfo {
-            contactConnectionView(conn)
+            if nomeCompactStyle {
+                nomeCompactConnectionView(conn)
+            } else {
+                contactConnectionView(conn)
+            }
         }
+    }
+
+    private func nomeCompactConnectionView(_ contactConnection: PendingContactConnection) -> some View {
+        HStack(alignment: .center, spacing: 12) {
+            Image(systemName: contactConnection.initiated ? "link.badge.plus" : "link")
+                .font(.system(size: 28, weight: .medium))
+                .foregroundColor(theme.colors.secondary.opacity(0.62))
+                .frame(width: nomeCompactIconSize, height: nomeCompactIconSize)
+
+            HStack(alignment: .top, spacing: 8) {
+                VStack(alignment: .leading, spacing: 1) {
+                    HStack(spacing: 5) {
+                        Text(contactConnection.chatViewName)
+                            .font(.system(size: nomeCompactTitleSize, weight: .medium))
+                            .foregroundColor(theme.colors.secondary)
+                            .lineLimit(1)
+
+                        if contactConnection.incognito {
+                            Image(systemName: "theatermasks")
+                                .font(.system(size: nomeCompactSupportingSize, weight: .medium))
+                                .foregroundColor(theme.colors.secondary)
+                                .accessibilityHidden(true)
+                        }
+                    }
+
+                    Text(contactConnection.description)
+                        .font(.system(size: nomeCompactSupportingSize, weight: .regular))
+                        .foregroundColor(theme.colors.onBackground)
+                        .lineLimit(1)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                formatTimestampText(contactConnection.updatedAt)
+                    .font(.system(size: nomeCompactSupportingSize, weight: .regular))
+                    .foregroundColor(theme.colors.secondary)
+                    .frame(minWidth: 48, alignment: .trailing)
+                    .padding(.top, 1)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .frame(minHeight: nomeCompactRowHeight)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
     }
 
     func contactConnectionView(_ contactConnection: PendingContactConnection) -> some View {
@@ -76,7 +129,15 @@ struct ContactConnectionView: View {
 
 struct ContactConnectionView_Previews: PreviewProvider {
     static var previews: some View {
-        ContactConnectionView(chat: Chat(chatInfo: ChatInfo.sampleData.contactConnection))
-            .previewLayout(.fixed(width: 360, height: 80))
+        Group {
+            ContactConnectionView(chat: Chat(chatInfo: ChatInfo.sampleData.contactConnection))
+                .previewDisplayName("Legacy")
+            ContactConnectionView(
+                chat: Chat(chatInfo: ChatInfo.sampleData.contactConnection),
+                nomeCompactStyle: true
+            )
+            .previewDisplayName("Nome compact")
+        }
+        .previewLayout(.fixed(width: 360, height: 80))
     }
 }
