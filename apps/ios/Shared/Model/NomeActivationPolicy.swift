@@ -93,7 +93,11 @@ enum NomeActivationBootstrapReducer {
         hasActivationToken: Bool,
         now: Date = .now
     ) -> NomeActivationBootstrapResult {
-        let shouldClearCredentials = marker == nil && !hasUsableLocalProfile
+        // App data is removed by an iOS uninstall, but the activation token and installation ID
+        // can remain in Keychain. Preserve that credential on a same-device reinstall so the app
+        // can validate it with the activation service before restoring network access. A fresh
+        // install without a surviving token still performs the defensive cleanup path.
+        let shouldClearCredentials = marker == nil && !hasUsableLocalProfile && !hasActivationToken
         var resolvedMarker = marker
         var resolvedReceipt = receipt ?? .unactivated(now: now)
 

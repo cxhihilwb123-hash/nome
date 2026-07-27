@@ -149,16 +149,16 @@ struct NomeActivationPolicyTests {
             expectedShouldClearCredentials: false
         )
         expectBootstrap(
-            "bootstrap clears leftover credentials on reinstall before profile creation",
+            "bootstrap preserves a surviving keychain token for same-device reinstall validation",
             marker: nil,
-            receipt: activeWithoutToken,
+            receipt: nil,
             hasUsableLocalProfile: false,
             hasActivationToken: true,
             policy: enforcedNewInstallations,
             expectedMarker: .freshInstall,
             expectedReceiptState: .unactivated,
             expectedAccess: .localOnly,
-            expectedShouldClearCredentials: true
+            expectedShouldClearCredentials: false
         )
     }
 
