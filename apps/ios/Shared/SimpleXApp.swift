@@ -149,6 +149,20 @@ struct SimpleXApp: App {
             NomeConversationPreviewHost()
                 .environmentObject(chatModel)
                 .environmentObject(AppTheme.shared)
+                .environmentObject(activationStore)
+                .sheet(item: $activationStore.presentation) { presentation in
+                    NomeActivationSheetView(action: presentation.action)
+                        .environmentObject(activationStore)
+                }
+                .overlay(alignment: .topLeading) {
+                    Text(activationStore.effectiveAccess.rawValue)
+                        .font(.system(size: 1))
+                        .opacity(0.001)
+                        .accessibilityIdentifier("nome.activation.previewAccess")
+                }
+                .task {
+                    await activationStore.refreshIfNeeded(force: true)
+                }
         } else if isNomeContactsPreview {
             NomeChatListPreviewHost(showContacts: true)
                 .environmentObject(chatModel)

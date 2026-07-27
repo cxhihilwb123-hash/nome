@@ -20,6 +20,8 @@ class Tests_iOS: XCTestCase {
 
     private let diagnosticRunIDKey = "NOME_REAL_CORE_DIAGNOSTIC_RUN_ID"
     private let diagnosticRoundsKey = "NOME_REAL_CORE_DIAGNOSTIC_ROUNDS"
+    private let activationBaseURLKey = "NOME_ACTIVATION_BASE_URL"
+    private let activationInviteCodeKey = "NOME_ACTIVATION_INVITE_CODE"
     private let callContactKey = "NOME_CALL_DIAGNOSTIC_CONTACT"
     private let callMediaKey = "NOME_CALL_DIAGNOSTIC_MEDIA"
 
@@ -48,6 +50,8 @@ class Tests_iOS: XCTestCase {
     func testNomeActivationFormFailsClosedWithoutEndpoint() throws {
         let app = XCUIApplication()
         app.launchArguments.append("-NomeActivationPreview")
+        // Override any build-time production URL so this test proves the explicit no-endpoint path.
+        app.launchEnvironment[activationBaseURLKey] = ""
         app.launch()
 
         let codeField = app.textFields["nome.activation.inviteCode"]
@@ -68,6 +72,138 @@ class Tests_iOS: XCTestCase {
             activationError.waitForExistence(timeout: 10),
             "A build without an activation endpoint must fail closed with an actionable error"
         )
+    }
+
+    func testNomeActivationBlocksRedeemsAndPersistsAcrossRelaunch() throws {
+        let environment = ProcessInfo.processInfo.environment
+        let baseURL = environment[activationBaseURLKey] ?? "http://127.0.0.1:33073"
+        let inviteCode = environment[activationInviteCodeKey] ?? "NOME-2345-6789-ABCD-EFGH-JKMN"
+        try requireActivationE2EServer(baseURL: baseURL, expectedMode: "enforced")
+
+        let app = XCUIApplication()
+        app.launchArguments.append("-NomeConversationPreview")
+        app.launchEnvironment[activationBaseURLKey] = baseURL
+        app.launch()
+        skipQuiescenceWaits(in: app)
+
+        let access = app.staticTexts["nome.activation.previewAccess"].firstMatch
+        XCTAssertTrue(access.waitForExistence(timeout: 10), "Activation preview access marker is missing")
+        let policyEnforced = expectation(
+            for: NSPredicate(format: "label == %@", "local_only"),
+            evaluatedWith: access
+        )
+        wait(for: [policyEnforced], timeout: 10)
+
+        let editor = app.textViews["chat-compose-editor"].firstMatch
+        XCTAssertTrue(editor.waitForExistence(timeout: 15), "Conversation preview composer is missing")
+        editor.tap()
+        editor.typeText("activation-gate-probe")
+
+        let sendButton = app.buttons["chat-send-button"].firstMatch
+        XCTAssertTrue(sendButton.waitForExistence(timeout: 10), "Send button is missing")
+        XCTAssertTrue(sendButton.isEnabled, "Send button must be enabled before the gate handles the action")
+        sendButton.tap()
+
+        let codeField = app.textFields["nome.activation.inviteCode"].firstMatch
+        XCTAssertTrue(codeField.waitForExistence(timeout: 10), "Unactivated send must open the invitation-code sheet")
+        attachDiagnosticScreenshot(app, name: "activation-e2e-blocked")
+
+        codeField.tap()
+        codeField.typeText(inviteCode)
+        let redeemButton = app.buttons["nome.activation.redeem"].firstMatch
+        XCTAssertTrue(redeemButton.waitForExistence(timeout: 5), "Activation action is missing")
+        XCTAssertTrue(redeemButton.isEnabled, "A valid invitation code must enable activation")
+        redeemButton.tap()
+
+        let sheetDismissed = expectation(
+            for: NSPredicate(format: "exists == false"),
+            evaluatedWith: codeField
+        )
+        wait(for: [sheetDismissed], timeout: 20)
+        XCTAssertFalse(app.descendants(matching: .any)["nome.activation.error"].firstMatch.exists)
+        attachDiagnosticScreenshot(app, name: "activation-e2e-redeemed")
+
+        XCTAssertTrue(sendButton.waitForExistence(timeout: 10), "Send button did not return after activation")
+        sendButton.tap()
+        XCTAssertFalse(
+            app.textFields["nome.activation.inviteCode"].firstMatch.waitForExistence(timeout: 3),
+            "The same send action must not be blocked after activation"
+        )
+
+        app.terminate()
+        app.launch()
+        skipQuiescenceWaits(in: app)
+
+        let relaunchedEditor = app.textViews["chat-compose-editor"].firstMatch
+        XCTAssertTrue(relaunchedEditor.waitForExistence(timeout: 15), "Composer is missing after relaunch")
+        relaunchedEditor.tap()
+        relaunchedEditor.typeText("activation-relaunch-probe")
+        let relaunchedSend = app.buttons["chat-send-button"].firstMatch
+        XCTAssertTrue(relaunchedSend.waitForExistence(timeout: 10), "Send button is missing after relaunch")
+        relaunchedSend.tap()
+        XCTAssertFalse(
+            app.textFields["nome.activation.inviteCode"].firstMatch.waitForExistence(timeout: 3),
+            "Activation must persist across an application relaunch"
+        )
+        attachDiagnosticScreenshot(app, name: "activation-e2e-relaunch-persisted")
+    }
+
+    func testNomeActivationDisabledPolicyAllowsMessageWithoutInvite() throws {
+        let baseURL = ProcessInfo.processInfo.environment[activationBaseURLKey] ?? "http://127.0.0.1:33073"
+        try requireActivationE2EServer(baseURL: baseURL, expectedMode: "disabled")
+
+        let app = XCUIApplication()
+        app.launchArguments.append("-NomeConversationPreview")
+        app.launchEnvironment[activationBaseURLKey] = baseURL
+        app.launch()
+        skipQuiescenceWaits(in: app)
+
+        let access = app.staticTexts["nome.activation.previewAccess"].firstMatch
+        XCTAssertTrue(access.waitForExistence(timeout: 10), "Activation preview access marker is missing")
+        let policyDisabled = expectation(
+            for: NSPredicate(format: "label == %@", "full"),
+            evaluatedWith: access
+        )
+        wait(for: [policyDisabled], timeout: 10)
+
+        let editor = app.textViews["chat-compose-editor"].firstMatch
+        XCTAssertTrue(editor.waitForExistence(timeout: 10), "Conversation preview composer is missing")
+        editor.tap()
+        editor.typeText("activation-disabled-policy-probe")
+        let sendButton = app.buttons["chat-send-button"].firstMatch
+        XCTAssertTrue(sendButton.waitForExistence(timeout: 10), "Send button is missing")
+        sendButton.tap()
+        XCTAssertFalse(
+            app.textFields["nome.activation.inviteCode"].firstMatch.waitForExistence(timeout: 3),
+            "A disabled activation policy must not block message sending"
+        )
+        attachDiagnosticScreenshot(app, name: "activation-e2e-policy-disabled")
+    }
+
+    private func requireActivationE2EServer(baseURL: String, expectedMode: String) throws {
+        guard let url = URL(string: "\(baseURL)/__e2e/summary") else {
+            XCTFail("Invalid activation E2E base URL: \(baseURL)")
+            throw DiagnosticFailure.invalidConfiguration
+        }
+
+        let ready = expectation(description: "activation E2E server readiness")
+        var available = false
+        var observedMode: String?
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 2
+        URLSession.shared.dataTask(with: request) { data, response, _ in
+            available = (response as? HTTPURLResponse)?.statusCode == 200
+            if let data,
+               let body = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let policy = body["policy"] as? [String: Any] {
+                observedMode = policy["mode"] as? String
+            }
+            ready.fulfill()
+        }.resume()
+        wait(for: [ready], timeout: 3)
+        guard available, observedMode == expectedMode else {
+            throw XCTSkip("Start the local activation E2E server in \(expectedMode) mode at \(baseURL) to enable this test")
+        }
     }
 
     func testSendRealCoreDiagnosticMessages() throws {
@@ -186,6 +322,9 @@ class Tests_iOS: XCTestCase {
         let app = XCUIApplication()
         app.launchEnvironment[diagnosticRunIDKey] = configuration.runID
         app.launchEnvironment[diagnosticRoundsKey] = String(configuration.rounds)
+        if let baseURL = ProcessInfo.processInfo.environment[activationBaseURLKey] {
+            app.launchEnvironment[activationBaseURLKey] = baseURL
+        }
 
         skipQuiescenceWaits(in: app)
         return app

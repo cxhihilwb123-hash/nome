@@ -1465,6 +1465,15 @@ struct ComposeView: View {
         guard chat.chatInfo.chatType == .local || NomeActivationGate.require(.message) else {
             return nil
         }
+        #if DEBUG
+        // The conversation preview has no Core controller. Once the activation gate allows the
+        // action, finish it locally so UI automation can verify the unlocked path without calling
+        // an intentionally absent chat engine.
+        if ProcessInfo.processInfo.arguments.contains("-NomeConversationPreview") {
+            composeState = ComposeState()
+            return nil
+        }
+        #endif
         var sent: ChatItem?
         let msgText = text ?? composeState.message
         let liveMessage = composeState.liveMessage
