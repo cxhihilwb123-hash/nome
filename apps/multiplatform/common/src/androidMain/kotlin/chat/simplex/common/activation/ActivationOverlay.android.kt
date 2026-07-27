@@ -37,7 +37,7 @@ actual fun PlatformActivationOverlay() {
   val state by ActivationGate.state.collectAsState()
   val pendingReviewVisible by ActivationGate.pendingReviewVisible.collectAsState()
   val pendingIntent by ActivationGate.pendingIntent.collectAsState()
-  if (!visible || !state.shouldShowActivation) {
+  if (!visible) {
     if (
       pendingReviewVisible &&
       state.permitsChatNetworking &&
@@ -52,6 +52,7 @@ actual fun PlatformActivationOverlay() {
   var errorMessage by remember { mutableStateOf<String?>(null) }
   val scope = rememberCoroutineScope()
   val migrationRequired = state.access == ActivationAccess.MIGRATION_REQUIRED
+  val proactiveRenewal = state.access == ActivationAccess.FULL
   val dismiss = {
     inviteCode = ""
     errorMessage = null
@@ -59,14 +60,19 @@ actual fun PlatformActivationOverlay() {
   }
   AlertDialog(
     onDismissRequest = dismiss,
-    title = { Text(stringResource(R.string.nome_activation_sheet_title)) },
+    title = {
+      Text(stringResource(if (proactiveRenewal) R.string.nome_activation_renew_title else R.string.nome_activation_sheet_title))
+    },
     text = {
       Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
           stringResource(
             when {
               migrationRequired -> R.string.nome_activation_migration_body
+              proactiveRenewal -> R.string.nome_activation_renew_body
               state.access == ActivationAccess.CHECK_REQUIRED -> R.string.nome_activation_check_required
+              state.entitlement.status == ActivationEntitlementStatus.EXPIRED ||
+                state.reason == "entitlement_expired" -> R.string.nome_activation_expired_body
               else -> R.string.nome_activation_sheet_body
             },
           ),
@@ -117,7 +123,11 @@ actual fun PlatformActivationOverlay() {
         } else {
           Text(
             stringResource(
-              if (migrationRequired) R.string.nome_activation_migrate else R.string.nome_activation_activate,
+              when {
+                migrationRequired -> R.string.nome_activation_migrate
+                proactiveRenewal -> R.string.nome_activation_renew
+                else -> R.string.nome_activation_activate
+              },
             ),
           )
         }

@@ -115,6 +115,7 @@ private data class MigrateRequest(
 private data class ActivationTokenResponse(
   val activationToken: String,
   val expiresAt: Instant,
+  val entitlementEnd: Instant? = null,
   val graceUntil: Instant? = null,
   val offlineGraceUntil: Instant? = null,
   val status: ActivationEntitlementStatus,
@@ -148,12 +149,14 @@ private data class ErrorBody(
 data class ActivationTokenGrant(
   val token: String,
   val expiresAt: Instant,
+  val entitlementEnd: Instant?,
   val offlineGraceUntil: Instant?,
   val status: ActivationEntitlementStatus,
 )
 
 data class ActivationStatusGrant(
   val status: ActivationEntitlementStatus,
+  val entitlementEnd: Instant?,
   val tokenExpiresAt: Instant?,
   val offlineGraceUntil: Instant?,
   val serverTime: Instant,
@@ -204,6 +207,7 @@ class AndroidActivationApiClient(
     ) { json.decodeFromString<ActivationStatusResponse>(it) }
     return ActivationStatusGrant(
       status = response.status,
+      entitlementEnd = response.entitlementEnd,
       tokenExpiresAt = response.expiresAt,
       offlineGraceUntil = response.offlineGraceUntil ?: response.graceUntil,
       serverTime = response.serverTime,
@@ -321,6 +325,7 @@ class AndroidActivationApiClient(
     return ActivationTokenGrant(
       token = activationToken,
       expiresAt = expiresAt,
+      entitlementEnd = entitlementEnd,
       offlineGraceUntil = grace,
       status = status,
     )
@@ -748,6 +753,7 @@ class AndroidActivationRuntime(
         if (status != null) {
           val entitlement = current.entitlement.copy(
             status = status.status,
+            entitlementEnd = status.entitlementEnd ?: current.entitlement.entitlementEnd,
             tokenExpiresAt = status.tokenExpiresAt ?: current.entitlement.tokenExpiresAt,
             offlineGraceUntil = status.offlineGraceUntil ?: current.entitlement.offlineGraceUntil,
             lastServerCheckAt = status.serverTime,
@@ -882,6 +888,7 @@ class AndroidActivationRuntime(
       token = grant.token,
       entitlement = ActivationEntitlement(
         status = grant.status,
+        entitlementEnd = grant.entitlementEnd,
         tokenExpiresAt = grant.expiresAt,
         offlineGraceUntil = grant.offlineGraceUntil,
         lastServerCheckAt = clock.now(),
@@ -984,6 +991,7 @@ class AndroidActivationRuntime(
     credential?.entitlement?.let { entitlement ->
       entitlement.tokenExpiresAt?.let { delays += (it.epochSeconds - now - 3_600).coerceAtLeast(60) }
       entitlement.offlineGraceUntil?.let { delays += (it.epochSeconds - now).coerceAtLeast(60) }
+      entitlement.entitlementEnd?.let { delays += (it.epochSeconds - now).coerceAtLeast(60) }
     }
     return delays.minOrNull() ?: 300
   }

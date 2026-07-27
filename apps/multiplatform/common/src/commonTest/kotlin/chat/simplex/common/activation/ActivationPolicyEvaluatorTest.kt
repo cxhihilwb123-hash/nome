@@ -94,8 +94,27 @@ class ActivationPolicyEvaluatorTest {
     assertEquals(ActivationAccess.FULL, graceState.access)
     assertTrue(graceState.usingOfflineGrace)
 
-    val expired = grace.copy(offlineGraceUntil = Instant.parse("2026-07-27T11:30:00Z"))
-    assertEquals(ActivationAccess.LOCAL_ONLY, evaluate(policy(), expired).access)
+    val expired = grace.copy(
+      entitlementEnd = Instant.parse("2026-08-27T12:00:00Z"),
+      offlineGraceUntil = Instant.parse("2026-07-27T11:30:00Z"),
+    )
+    val expiredTokenState = evaluate(policy(), expired)
+    assertEquals(ActivationAccess.LOCAL_ONLY, expiredTokenState.access)
+    assertEquals("activation_expired", expiredTokenState.reason)
+  }
+
+  @Test
+  fun entitlementEndCannotBeExtendedByTokenOrOfflineGrace() {
+    val expiredEntitlement = ActivationEntitlement(
+      status = ActivationEntitlementStatus.ACTIVE,
+      entitlementEnd = Instant.parse("2026-07-27T11:59:59Z"),
+      tokenExpiresAt = Instant.parse("2026-07-28T13:00:00Z"),
+      offlineGraceUntil = Instant.parse("2026-08-03T13:00:00Z"),
+    )
+    val state = evaluate(policy(), expiredEntitlement)
+    assertEquals(ActivationAccess.LOCAL_ONLY, state.access)
+    assertEquals("entitlement_expired", state.reason)
+    assertFalse(state.usingOfflineGrace)
   }
 
   @Test

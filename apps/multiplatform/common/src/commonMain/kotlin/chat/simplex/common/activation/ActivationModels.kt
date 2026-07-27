@@ -58,6 +58,7 @@ enum class ActivationEntitlementStatus {
 @Serializable
 data class ActivationEntitlement(
   val status: ActivationEntitlementStatus = ActivationEntitlementStatus.UNACTIVATED,
+  val entitlementEnd: Instant? = null,
   val tokenExpiresAt: Instant? = null,
   val offlineGraceUntil: Instant? = null,
   val lastServerCheckAt: Instant? = null,
@@ -211,7 +212,7 @@ object ActivationPolicyEvaluator {
       cohort = cohort,
       entitlement = entitlement,
       access = entitlementAccess.first,
-      reason = entitlementReason(entitlement, entitlementAccess.second),
+      reason = entitlementReason(entitlement, entitlementAccess.second, now),
       usingOfflineGrace = entitlementAccess.second,
       wouldBlockInEnforcedMode = wouldBlock,
     )
@@ -227,6 +228,9 @@ object ActivationPolicyEvaluator {
       }
       return ActivationAccess.LOCAL_ONLY to false
     }
+    if (entitlement.entitlementEnd?.let { now >= it } == true) {
+      return ActivationAccess.LOCAL_ONLY to false
+    }
     val expiresAt = entitlement.tokenExpiresAt ?: return ActivationAccess.LOCAL_ONLY to false
     if (now <= expiresAt) return ActivationAccess.FULL to false
     val graceUntil = entitlement.offlineGraceUntil
@@ -240,8 +244,10 @@ object ActivationPolicyEvaluator {
   private fun entitlementReason(
     entitlement: ActivationEntitlement,
     usingOfflineGrace: Boolean,
+    now: Instant,
   ): String = when {
     usingOfflineGrace -> "offline_grace"
+    entitlement.entitlementEnd?.let { now >= it } == true -> "entitlement_expired"
     entitlement.status == ActivationEntitlementStatus.ACTIVE -> "activation_expired"
     else -> entitlement.status.name.lowercase()
   }

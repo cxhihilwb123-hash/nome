@@ -56,6 +56,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import chat.simplex.common.R
+import chat.simplex.common.activation.ActivationEntitlementStatus
+import chat.simplex.common.activation.ActivationGate
+import chat.simplex.common.activation.ActivationPolicyMode
 import chat.simplex.common.model.User
 import chat.simplex.common.platform.BackHandler
 import chat.simplex.common.ui.nome.accessibility.nomeMinimumTouchTarget
@@ -152,6 +155,7 @@ fun NomeSettingsHomeContent(
   var query by remember { mutableStateOf("") }
   val focusRequester = remember { FocusRequester() }
   val focusManager = LocalFocusManager.current
+  val activationState by ActivationGate.state.collectAsState()
   val notificationBody =
     androidx.compose.ui.res.stringResource(
       if (notificationsEnabled) {
@@ -175,8 +179,37 @@ fun NomeSettingsHomeContent(
           R.string.nome_p23_language_system
       },
     )
+  val invitationEntries =
+    if (activationState.policy?.mode != null && activationState.policy?.mode != ActivationPolicyMode.DISABLED) {
+      val invitationBody =
+        when {
+          activationState.entitlement.status == ActivationEntitlementStatus.EXPIRED ||
+            activationState.reason == "entitlement_expired" ->
+            androidx.compose.ui.res.stringResource(R.string.nome_activation_settings_expired)
+          activationState.entitlement.status != ActivationEntitlementStatus.ACTIVE ->
+            androidx.compose.ui.res.stringResource(R.string.nome_activation_settings_not_active)
+          activationState.entitlement.entitlementEnd == null ->
+            androidx.compose.ui.res.stringResource(R.string.nome_activation_settings_permanent)
+          else ->
+            androidx.compose.ui.res.stringResource(
+              R.string.nome_activation_settings_until,
+              activationState.entitlement.entitlementEnd.toString().take(10),
+            )
+        }
+      listOf(
+        NomeSettingsEntry(
+          title = androidx.compose.ui.res.stringResource(R.string.nome_activation_settings_title),
+          body = invitationBody,
+          icon = painterResource(MR.images.ic_vpn_key_filled),
+          enabled = true,
+          onClick = { ActivationGate.showActivation("settings") },
+        ),
+      )
+    } else {
+      emptyList()
+    }
   val generalEntries =
-    listOf(
+    invitationEntries + listOf(
       NomeSettingsEntry(
         title =
           androidx.compose.ui.res.stringResource(

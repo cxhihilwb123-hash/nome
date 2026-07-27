@@ -7,6 +7,7 @@ import chat.simplex.common.activation.ActivationHttpTransport
 import chat.simplex.common.activation.ActivationPolicyMode
 import chat.simplex.common.activation.AndroidActivationApiClient
 import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -142,6 +143,7 @@ class AndroidActivationApiClientTest {
       """{
         "activationToken":"refreshed-token",
         "expiresAt":"2026-07-28T12:00:00Z",
+        "entitlementEnd":"2026-08-26T12:00:00Z",
         "graceUntil":"2026-08-04T12:00:00Z",
         "status":"active"
       }""",
@@ -150,6 +152,7 @@ class AndroidActivationApiClientTest {
     val grant = AndroidActivationApiClient(fake, "https://example.test").refresh("signed-token")
 
     assertEquals("refreshed-token", grant.token)
+    assertEquals(Instant.parse("2026-08-26T12:00:00Z"), grant.entitlementEnd)
     assertEquals("POST", fake.lastRequest?.method)
     assertEquals("https://example.test/api/v1/activations/refresh", fake.lastRequest?.url)
     assertEquals("Bearer signed-token", fake.lastRequest?.headers?.get("Authorization"))
