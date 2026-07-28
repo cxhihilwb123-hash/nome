@@ -48,6 +48,13 @@ Android keeps the bounded shared flow. Nome macOS uses `PlatformNomeWelcomePage`
 desktop onboarding shell: no legacy blue gradient panel, a transparent mark, white content
 surfaces, green primary actions, and step-specific footer controls.
 
+### Migrate from another device (Desktop entry)
+
+The Desktop migration entry keeps the existing archive-link and local-archive owners, but presents
+them in the same Nome shell as first-run setup. The page has a named Back control, a short local-data
+explanation, and explicit **Paste archive link** and **Import database** buttons. Other platforms and
+all later migration states keep their existing renderers and migration behavior.
+
 ### Step 2: Create Profile
 
 **Stage**: `Step2_CreateProfile`
@@ -87,12 +94,13 @@ Profile is stored locally and only shared with contacts.
 | Element | Description |
 |---|---|
 | Operator list | The enabled Nome official message and file service |
-| Commitment | Local privacy, connection-safety, and data-recovery reminders |
+| Usage confirmation | Local privacy, connection-safety, and data-recovery reminders, plus a link to detailed information |
 | Continue button | Keep the selected service and complete onboarding |
 
 Managed by `ChooseServerOperators.kt`. Nome macOS does not show or accept the embedded upstream
-operator conditions; its commitment is local product guidance and completion only persists the
-selected Nome operator configuration.
+operator conditions. This checkbox is an informational acknowledgement rather than a legal consent
+record: Nome does not attach an acceptance timestamp or legal-policy version. Completion only
+persists the selected Nome operator configuration.
 
 ### Step 3b: Create Nome Address
 
@@ -145,3 +153,4 @@ those upstream-owned surfaces.
 | `PlatformNomeOnboardingPages.desktop.kt` | `desktopMain/views/onboarding/PlatformNomeOnboardingPages.desktop.kt` |
 | `PlatformOnboardingBrand.desktop.kt` | `desktopMain/views/onboarding/PlatformOnboardingBrand.desktop.kt` |
 | `LinkAMobileView.kt` | `views/onboarding/LinkAMobileView.kt` |
+| `MigrateToDevice.kt` | `views/migration/MigrateToDevice.kt` |

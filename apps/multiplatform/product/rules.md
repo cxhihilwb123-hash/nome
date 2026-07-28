@@ -632,8 +632,15 @@ integration tests cover default selection, upgrade cleanup, custom-server and re
 preservation, conditions filtering, and terminal/core regression. Server diagnostics summarize
 the notification servers from the active `ChatConfig`; they do not inject a separate upstream
 display list. Desktop settings and chat-list startup suppress the upstream release/support/update
-surfaces until Nome owns equivalent destinations. The Nome macOS onboarding commitment completes
-through `setServerOperators` and never calls the upstream `acceptConditions` path.
+surfaces until Nome owns equivalent destinations. The Nome macOS onboarding usage confirmation is
+an informational acknowledgement, not a versioned or timestamped legal acceptance record. It completes
+through `setServerOperators` and never calls the upstream `acceptConditions` path. The in-app
+terminal stores only pre-rendered command/response text and replaces the authority portion of any
+SMP/XFTP URI with a redaction marker, so shared client access credentials are not retained in its
+history or copy/share surface. Android and Desktop both run the same bounded, idempotent Nome
+server migration before starting the normal receiver; a failed migration leaves chat stopped for a
+later retry instead of silently continuing on stale managed routes. On both platforms, an opaque
+fullscreen modal also removes the obscured root from the accessibility tree until the modal closes.
 
 **Operational boundary:** A reachable TCP/TLS endpoint is not proof that the service can create a
 queue or upload a file. If the official SMP/XFTP service requires a creation password that is not

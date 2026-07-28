@@ -12,7 +12,7 @@
 
 ## Executive Summary
 
-WebRTC calling in SimpleX Chat operates over SMP (SimpleX Messaging Protocol) for signaling, with platform-specific WebRTC media implementations. Android uses a WebView-based approach with a dedicated `CallActivity` and foreground `CallService`, while Desktop opens the system browser and communicates via a NanoWSD WebSocket server on localhost. Both platforms share a common `CallManager` for call lifecycle and a `CallState` enum for state tracking. Call commands and responses are serialized as JSON and exchanged between the native layer and the WebRTC JavaScript layer.
+WebRTC calling in Nome operates over SMP (SimpleX Messaging Protocol) for signaling, with platform-specific WebRTC media implementations. Android uses a WebView-based approach with a dedicated `CallActivity` and foreground `CallService`, while Desktop opens the system browser and communicates via a NanoWSD WebSocket server on localhost. Both platforms share a common `CallManager` for call lifecycle and a `CallState` enum for state tracking. Call commands and responses are serialized as JSON and exchanged between the native layer and the WebRTC JavaScript layer.
 
 ---
 
@@ -21,7 +21,7 @@ WebRTC calling in SimpleX Chat operates over SMP (SimpleX Messaging Protocol) fo
 Call signaling uses the same SMP protocol on all platforms -- call invitations, offers, answers, ICE candidates, and status updates flow through the chat backend via API commands. The WebRTC media plane, however, is implemented differently per platform:
 
 - **Android**: WebView loads `call.html` from bundled assets; a `@JavascriptInterface` bridge (`WebRTCInterface`) forwards JSON messages between Kotlin and JavaScript.
-- **Desktop**: The system browser opens `http://localhost:50395/simplex/call/`; a NanoWSD HTTP+WebSocket server serves `call.html` from classpath resources and relays JSON commands/responses over WebSocket.
+- **Desktop**: The system browser opens `http://127.0.0.1:50395/simplex/call/`; a loopback-only NanoWSD HTTP+WebSocket server serves `call.html` from classpath resources and relays authenticated JSON commands/responses over WebSocket.
 
 Both platforms share the [`CallManager`](../../common/src/commonMain/kotlin/chat/simplex/common/views/call/CallManager.kt) class (119 lines), which orchestrates incoming call acceptance, call ending, and notification management.
 
@@ -113,15 +113,17 @@ The `actual` platform implementation of `ActiveCallView()` and supporting compos
 
 ## 4. Desktop Implementation
 
-### 4.1 CallView.desktop.kt (263 lines)
+### 4.1 CallView.desktop.kt
 
 [`CallView.desktop.kt`](../../common/src/desktopMain/kotlin/chat/simplex/common/views/call/CallView.desktop.kt)
 
 Desktop calls run WebRTC in the system browser, not an embedded WebView:
 
-- **NanoWSD server** ([line 209](../../common/src/desktopMain/kotlin/chat/simplex/common/views/call/CallView.desktop.kt#L209)): `startServer()` creates a `NanoWSD` instance bound to `localhost:50395`. If that port is already in use it falls back to an OS-assigned free port (`port 0`); `WebRTCController` reads `server.listeningPort` for the browser URL. The server serves `call.html` from JAR resources at `/assets/www/desktop/call.html` for the path `/simplex/call/`. All other paths serve resources from `/assets/www/`.
-- **WebSocket communication** ([line 238](../../common/src/desktopMain/kotlin/chat/simplex/common/views/call/CallView.desktop.kt#L238)): `MyWebSocket` handles WebSocket frames from the browser. `onMessage` deserializes JSON into `WVAPIMessage` and forwards to the response handler. `onClose` triggers `WCallResponse.End`.
-- **WebRTCController** ([line 153](../../common/src/desktopMain/kotlin/chat/simplex/common/views/call/CallView.desktop.kt#L153)): Starts the server, then opens `http://localhost:<listeningPort>/simplex/call/` (normally `50395`) via `LocalUriHandler`. Processes `WCallCommand` queue by sending JSON over WebSocket to all active connections. On dispose, sends `WCallCommand.End` and stops the server.
+- **NanoWSD server** ([source](../../common/src/desktopMain/kotlin/chat/simplex/common/views/call/CallView.desktop.kt)): `startServer()` binds to `127.0.0.1:50395`. If that port is already in use it falls back to an OS-assigned free port (`port 0`); `WebRTCController` reads `server.listeningPort` for the browser URL. The server serves the Nome-branded `call.html` from JAR resources at `/assets/www/desktop/call.html` for the path `/simplex/call/`. All other paths serve resources from `/assets/www/`.
+- **WebSocket authorization** ([source](../../common/src/desktopMain/kotlin/chat/simplex/common/views/call/CallView.desktop.kt)): Each server instance creates independent random 256-bit bootstrap and authorization values. The browser is opened once with the bootstrap value; only an exact loopback `GET` may consume it and receive a dynamic page that injects an unpredictable WebSocket path into JavaScript memory. The page immediately removes the bootstrap query from browser history. No bearer cookie is used, because cookies for `127.0.0.1` are shared across ports. Ordinary page requests never receive the path, bootstrap replay is rejected, and page responses use `frame-ancestors 'none'`, `X-Frame-Options: DENY`, and `no-store`. Upgrades require a loopback peer, the exact `http://127.0.0.1:<listeningPort>` origin, and the matching path. Only one live browser client is reserved at a time.
+- **WebSocket communication** ([source](../../common/src/desktopMain/kotlin/chat/simplex/common/views/call/CallView.desktop.kt)): `MyWebSocket` handles authorized WebSocket frames from the browser. `onMessage` deserializes JSON into `WVAPIMessage` and forwards to the response handler. `onClose` releases the client reservation and triggers `WCallResponse.End`.
+- **WebRTCController** ([source](../../common/src/desktopMain/kotlin/chat/simplex/common/views/call/CallView.desktop.kt)): Starts the server and opens the one-time bootstrap URL via `LocalUriHandler` (normally on port `50395`). The authorized page keeps its per-call path only in JavaScript memory and connects to the same-origin WebSocket. The controller sends its `WCallCommand` queue over that connection; on dispose it sends `WCallCommand.End` and stops the server.
+- **Safe diagnostics** ([source](../../common/src/desktopMain/kotlin/chat/simplex/common/views/call/CallLogRedaction.desktop.kt)): Browser-bridge logs summarize only event types, safe enum/boolean fields, presence, and payload lengths. They never render `Call`, `WVAPIMessage`, `WCallCommand`, WebSocket frames, SDP/ICE data, AES keys, TURN credentials, contacts, bootstrap values, authorization paths, or exception messages.
 - **SendStateUpdates** ([line 137](../../common/src/desktopMain/kotlin/chat/simplex/common/views/call/CallView.desktop.kt#L137)): Sends `WCallCommand.Description` with call state and encryption info text to the browser for display.
 - **ActiveCallView** ([line 28](../../common/src/desktopMain/kotlin/chat/simplex/common/views/call/CallView.desktop.kt#L28)): Handles `WCallResponse` messages identically to Android (same state machine), plus a `WCallCommand.Permission` message on `Capabilities` error for browser permission denial guidance.
 

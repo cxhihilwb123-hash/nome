@@ -36,6 +36,8 @@ The P10 visual-acceptance baseline governs composition, hierarchy, spacing, typo
 action sizing. Copy follows the actual callback where the baseline is semantically inaccurate:
 the group row starts group creation and does not claim that an existing group was joined. macOS
 uses the same four real callbacks in a desktop-density panel without large blue cards.
+Each macOS action row and its visible back action expose button semantics; their visible title and
+description remain the accessible label instead of an unlabeled icon-only target.
 
 ## Nome Android P11/P12 Pages
 

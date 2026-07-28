@@ -112,6 +112,8 @@ Contains:
 - `main()` entry point
 - `initHaskell()` -- loads native library and calls `initHS()`
 - Window management (VLC library loading on Windows)
+- Apple Silicon packaging filters the transitive macOS x64 Compose Desktop runtime so the DMG
+  runtime graph stays arm64-only while preserving the arm64 runtime and native libraries.
 
 ---
 
@@ -236,13 +238,15 @@ Lifecycle callbacks in `SimplexApp` (implements `LifecycleEventObserver`):
 
 [`NomeProductionShell`](../android/src/main/java/chat/simplex/app/nome/NomeProductionShell.kt#L17-L23) does not replace the application root. It synchronizes Android system-bar appearance and delegates immediately to `AppScreen`. The shared root still owns authentication, onboarding, calls, overlays, safe-area behavior, back dispatch, the delivery-receipts gate, and share-intent routing. Inside that root, [`StartPartOfScreen`](../common/src/commonMain/kotlin/chat/simplex/common/App.kt#L449-L475) selects the narrow `PlatformHomeRoute` seam only where the ordinary chat-list route was already selected.
 
-### Nome Android server bootstrap
+### Nome Android and Desktop server bootstrap
 
-Android calls [`NomeServerConfiguration.applyBeforeNetwork`](../common/src/commonMain/kotlin/chat/simplex/common/model/NomeServerConfiguration.kt)
+Android and Desktop call [`NomeServerConfiguration.applyBeforeNetwork`](../common/src/commonMain/kotlin/chat/simplex/common/model/NomeServerConfiguration.kt)
 from `ChatController.startChat` before receiver startup or any user-facing network action. The core
 server APIs reject reads with `chatNotStarted`, so a stopped controller is first entered into a
 bounded bootstrap-running phase; configuration is applied immediately, and a failed bootstrap
-stops the controller again.
+stops the controller again. Exhausting the bounded attempts is a typed retryable chat-start state,
+not an uncaught startup exception: the shared root presents a credential-free retry action and a
+successful retry resumes through the same `ChatController.startChat` gate.
 The policy is state-based rather than preference-version based: repeating it produces no write once
 the current Nome entries and disabled managed operators already match. This also makes a failed
 attempt naturally retryable from the application, foreground service, and periodic worker startup
@@ -510,7 +514,8 @@ capabilities, not secrets: a released binary or public source can disclose them.
 administrator credentials, TLS private keys, and APNs keys must never be compiled into the client.
 Production readiness therefore requires rate limits, abuse monitoring, and a rotation path in
 addition to application-level create-queue/create-file tests; TCP reachability and TLS identity
-alone are insufficient.
+alone are insufficient. The in-app terminal keeps only redacted text snapshots for commands and
+responses; it never retains complete SMP/XFTP authority data in its history or copy/share surface.
 
 The agent-server diagnostics command reads notification servers from the active `ChatConfig`
 instead of a second hard-coded presentation list. A Nome desktop/terminal configuration with

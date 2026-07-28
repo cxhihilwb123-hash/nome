@@ -12,7 +12,7 @@
 
 ## Executive Summary
 
-SimpleX Chat uses two file transfer mechanisms: inline SMP transfers for small files (embedded in message bodies) and XFTP (eXtended File Transfer Protocol) for larger files up to 1 GB. Files are optionally encrypted at rest using `CryptoFile` functions backed by the chat core's native crypto library. File storage paths are platform-specific: Android uses `Context.dataDir`-based directories while Desktop uses platform-appropriate data directories (XDG on Linux, AppData on Windows, Application Support on macOS). Auto-receive logic automatically accepts images, voice messages, and videos below configurable size thresholds.
+Nome uses two SimpleX-core file transfer mechanisms: inline SMP transfers for small files (embedded in message bodies) and XFTP (eXtended File Transfer Protocol) for larger files up to 1 GB. Files are optionally encrypted at rest using `CryptoFile` functions backed by the chat core's native crypto library. The macOS desktop stores Nome data in its own `chat.nome.app` profile rather than an upstream `simplex` directory. Auto-receive logic automatically accepts images, voice messages, and videos below configurable size thresholds.
 
 ---
 
@@ -131,16 +131,20 @@ All functions delegate to native C library functions through the chat core JNI b
 
 | Property | Value |
 |---|---|
-| `dataDir` | `desktopPlatform.dataPath` (XDG_DATA_HOME on Linux, AppData on Windows, Application Support on macOS) |
-| `tmpDir` | `java.io.tmpdir/simplex` (deleted on exit) |
+| `dataDir` | macOS: `~/Library/Application Support/chat.nome.app/data`; explicit XDG: `$XDG_DATA_HOME/chat.nome.app` |
+| `tmpDir` | macOS: `java.io.tmpdir/chat.nome.app/<profile-scope>` (reset at startup and registered for `deleteOnExit`) |
 | `filesDir` | `dataDir/simplex_v1_files` |
 | `appFilesDir` | Same as `filesDir` |
 | `wallpapersDir` | `dataDir/simplex_v1_assets/wallpapers` |
 | `coreTmpDir` | `dataDir/tmp` |
 | `dbAbsolutePrefixPath` | `dataDir/simplex_v1` |
-| `preferencesDir` | `desktopPlatform.configPath` |
+| `preferencesDir` | macOS: `~/Library/Application Support/chat.nome.app/config`; explicit XDG: `$XDG_CONFIG_HOME/chat.nome.app` |
 | `databaseExportDir` | Same as `tmpDir` |
 | `remoteHostsDir` | `dataDir/remote_hosts` |
+
+Nome does not automatically inspect, migrate, delete, or rewrite legacy `simplex` data/config/temp siblings. The macOS profile scope is derived from normalized config and data paths, keeping concurrent XDG test profiles separate.
+
+On POSIX filesystems, all listed private directories are forced to mode `0700`. Databases, backups, SQLite journal/WAL/SHM sidecars, `settings.properties`, `themes.properties`, and `themes.yaml` are forced to `0600`; macOS permission failures fail closed. Property and YAML writers re-apply protection after their atomic move, and native database initialization/migration is followed immediately by the same protection pass.
 
 ### Helper functions (common)
 
@@ -151,7 +155,7 @@ All functions delegate to native C library functions through the chat core JNI b
 | `getLoadedFilePath` | [L105](../../common/src/commonMain/kotlin/chat/simplex/common/platform/Files.kt#L105) | Returns path if file exists and is fully loaded |
 | `getLoadedFileSource` | [L115](../../common/src/commonMain/kotlin/chat/simplex/common/platform/Files.kt#L115) | Returns `CryptoFile` source if file is loaded |
 | `readThemeOverrides` | [L125](../../common/src/commonMain/kotlin/chat/simplex/common/platform/Files.kt#L125) | Reads theme overrides from `themes.yaml` |
-| `writeThemeOverrides` | [L151](../../common/src/commonMain/kotlin/chat/simplex/common/platform/Files.kt#L151) | Atomically writes theme overrides to `themes.yaml` |
+| `writeThemeOverrides` | [L151](../../common/src/commonMain/kotlin/chat/simplex/common/platform/Files.kt#L151) | Atomically writes theme overrides to `themes.yaml`, then re-applies private-file protection |
 | `copyFileToFile` | [L47](../../common/src/commonMain/kotlin/chat/simplex/common/platform/Files.kt#L47) | Copies a `File` to a `URI` destination with toast feedback |
 | `copyBytesToFile` | [L63](../../common/src/commonMain/kotlin/chat/simplex/common/platform/Files.kt#L63) | Copies a `ByteArrayInputStream` to a `URI` destination |
 

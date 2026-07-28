@@ -67,7 +67,9 @@ external fun chatRecvMsgWait(ctrl: ChatCtrl, timeout: Int): String
 2. Serializes the `CC` command to its `cmdString`.
 3. Dispatches to `Dispatchers.IO`; calls `chatSendCmdRetry` (local) or `chatSendRemoteCmdRetry` (remote host).
 4. Decodes the returned JSON string into `API`.
-5. Logs the result to the terminal item list.
+5. Logs the result to the terminal item list. Terminal items retain only pre-rendered text; SMP,
+   XFTP, TURN, and TURNS URI user information is redacted from commands and responses before it
+   reaches terminal history or the terminal copy/share action.
 
 <a id="startReceiver"></a>
 <a id="recvMsg"></a>
@@ -327,9 +329,9 @@ are removed during core initialization before this response is produced. User-ad
 `flux` enum tags for stored/wire compatibility, but only Nome has branded operator-info metadata;
 unknown, custom, or historical tags use a neutral DNS icon with no upstream description or URL.
 
-#### Nome Android startup configuration
+#### Nome Android and Desktop startup configuration
 
-Before Android starts normal chat networking, `NomeServerConfiguration` reads the active user's
+Before Android or Desktop starts normal chat networking, `NomeServerConfiguration` reads the active user's
 server state, produces an idempotent migration, validates it, and saves it through the same public
 server APIs used by settings. Legacy Nome IP/domain endpoints are upgraded to `smp.nome.im` and
 `xftp.nome.im`; managed preset-operator routes are disabled. Entries in the untagged custom group
@@ -338,6 +340,17 @@ state. A transient failure is retried during the current startup and remains eli
 later startup; normal chat networking is not started while the configuration is still pending.
 Read-only server surfaces render hostnames; the explicit custom-server editor keeps the complete
 address required by the core.
+
+When the bounded application attempts are exhausted, `ChatController.startChat` restores the prior
+user/running state and publishes `RetryableChatStart` for the shared root UI. The retry prompt does
+not expose the complete server address or a stack trace; retrying executes the same idempotent gate.
+
+The server API command/response objects necessarily carry complete addresses in memory while the
+request is active. `TerminalItem` does not retain those objects: it snapshots redacted text and
+removes SMP/XFTP/TURN URI user information while preserving the protocol and hostname for
+diagnostics. Call setup logs also replace separate ICE `username` and `credential` fields with
+placeholders. This applies to server tests, reads, writes, validation responses, errors containing a
+server URI, and call offer/answer diagnostics.
 
 ### 2.11 Archive
 

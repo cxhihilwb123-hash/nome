@@ -24,6 +24,10 @@ without replacing the shared model or navigation helpers.
 | Android | Nome single-column P07/P08 header/status/list with P09 local loaded-chat search, current-profile entry, and P10 New Chat FAB |
 | macOS | Nome rail + chat list + conversation workspace; detail panels remain owned by `ModalManager.end` |
 
+The macOS rail exposes each destination as a named button with selected state, and exposes the
+profile avatar as a named profile button, so keyboard and assistive-technology users receive the
+same navigation contract as pointer users.
+
 ## Nome Android P07/P08 Production Slice
 
 > **Status:** The authorized Batch 2 P07/P08 production-home slice is frozen under its evidence

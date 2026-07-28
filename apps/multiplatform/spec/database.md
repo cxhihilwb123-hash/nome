@@ -15,7 +15,7 @@
 
 ## 1. Overview
 
-SimpleX Chat uses **two SQLite databases** managed entirely by the Haskell core. Kotlin code **never reads or writes the databases directly** -- all data access goes through the JNI command/response protocol defined in [SimpleXAPI.kt](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt).
+Nome uses **two SQLite databases** managed entirely by its SimpleX-derived Haskell core. Kotlin code **never reads or writes the databases directly** -- all data access goes through the JNI command/response protocol defined in [SimpleXAPI.kt](../common/src/commonMain/kotlin/chat/simplex/common/model/SimpleXAPI.kt).
 
 The two databases are:
 
@@ -81,8 +81,8 @@ From [Files.desktop.kt](../common/src/desktopMain/kotlin/chat/simplex/common/pla
 
 | Variable | Value | Notes |
 |----------|-------|-------|
-| `dataDir` | `desktopPlatform.dataPath` | XDG_DATA_HOME (Linux), AppData (Windows), Application Support (macOS) |
-| `tmpDir` | `java.io.tmpdir/simplex` | System temp with `deleteOnExit` |
+| `dataDir` | `desktopPlatform.dataPath` | On macOS: `~/Library/Application Support/chat.nome.app/data`, or `$XDG_DATA_HOME/chat.nome.app` when explicitly overridden |
+| `tmpDir` | `java.io.tmpdir/chat.nome.app/<profile-scope>` | Profile-scoped Nome runtime temp on macOS; reset at startup and registered for `deleteOnExit` |
 | `filesDir` | `dataDir/simplex_v1_files` | Flat file storage |
 | `appFilesDir` | Same as `filesDir` | No subdirectory on desktop |
 | `wallpapersDir` | `dataDir/simplex_v1_assets/wallpapers` | Custom wallpaper images |
@@ -92,7 +92,7 @@ From [Files.desktop.kt](../common/src/desktopMain/kotlin/chat/simplex/common/pla
 | `agentDatabaseFileName` | `"simplex_v1_agent.db"` | Full filename: `simplex_v1_agent.db` |
 | `databaseExportDir` | Same as `tmpDir` | Temp location for archive export |
 | `remoteHostsDir` | `dataDir/remote_hosts` | Remote host file staging |
-| `preferencesDir` | `desktopPlatform.configPath` | Platform config directory |
+| `preferencesDir` | `desktopPlatform.configPath` | On macOS: `~/Library/Application Support/chat.nome.app/config`, or `$XDG_CONFIG_HOME/chat.nome.app` when explicitly overridden |
 
 ### Resulting Database Paths
 
@@ -100,8 +100,12 @@ From [Files.desktop.kt](../common/src/desktopMain/kotlin/chat/simplex/common/pla
 |----------|---------|----------|
 | Android | `/data/data/<pkg>/files_chat.db` | `/data/data/<pkg>/files_agent.db` |
 | Desktop (Linux) | `~/.local/share/simplex/simplex_v1_chat.db` | `~/.local/share/simplex/simplex_v1_agent.db` |
-| Desktop (macOS) | `~/Library/Application Support/simplex/simplex_v1_chat.db` | ... |
+| Desktop (macOS) | `~/Library/Application Support/chat.nome.app/data/simplex_v1_chat.db` | `~/Library/Application Support/chat.nome.app/data/simplex_v1_agent.db` |
 | Desktop (Windows) | `%APPDATA%/simplex/simplex_v1_chat.db` | ... |
+
+The macOS Nome profile is intentionally separate from upstream/legacy `simplex` directories. Startup does not scan, migrate, delete, or rewrite those sibling profiles automatically. Explicit XDG overrides remain isolated under their own `chat.nome.app` child and receive a distinct temp/Keychain profile scope.
+
+On POSIX desktop filesystems, Nome creates application directories with mode `0700` and protects databases, SQLite sidecars/backups, settings, and theme files with mode `0600`. macOS treats any failure to apply those permissions as a startup/write failure. The Kotlin layer calls `protectAppDataFiles()` immediately after every native app-database initialization or migration attempt, including an explicitly confirmed rerun.
 
 ---
 
@@ -148,10 +152,11 @@ The full initialization sequence is in [Core.kt#L62](../common/src/commonMain/ko
 1. Obtain the DB encryption key from `DatabaseUtils.useDatabaseKey()`.
 2. Determine the confirmation mode (default: `YesUp`; developer mode with confirm upgrades: `Error`).
 3. Call `chatMigrateInit(dbAbsolutePrefixPath, dbKey, "error")` -- first attempt with `Error` to detect pending migrations.
-4. Parse the result as `DBMigrationResult`.
-5. If the result is `ErrorMigration` with an `Upgrade` error and confirmation allows it, re-run `chatMigrateInit` with the appropriate confirmation (`"yesUp"`).
-6. If `OK`, store the `ChatCtrl` handle, set `chatDbEncrypted`, and proceed to start the chat.
-7. If not `OK`, handle special case: if the `newDatabaseInitialized` preference is not set AND the database was only partially initialized (single DB file exists), remove both files and retry once.
+4. Protect any database files created or changed by the native call before parsing its result.
+5. Parse the result as `DBMigrationResult`.
+6. If the result is `ErrorMigration` with an `Upgrade` error and confirmation allows it, re-run `chatMigrateInit` with the appropriate confirmation (`"yesUp"`) and protect the files again.
+7. If `OK`, store the `ChatCtrl` handle, set `chatDbEncrypted`, and proceed to start the chat.
+8. If not `OK`, handle the special case where an incomplete first initialization created only one database: remove the pair and retry once.
 
 <a id="DBMigrationResult"></a>
 
@@ -278,18 +283,7 @@ internal class Cryptor: CryptorInterface {
 
 [Cryptor.desktop.kt](../common/src/desktopMain/kotlin/chat/simplex/common/platform/Cryptor.desktop.kt):
 
-- **Placeholder/no-op implementation** -- data is returned as-is
-- No actual encryption of the stored passphrase on desktop
-- `decryptData` returns `String(data)` without decryption
-- `encryptText` returns the raw bytes without encryption
-
-```kotlin
-actual val cryptor: CryptorInterface = object : CryptorInterface {
-  override fun decryptData(data: ByteArray, iv: ByteArray, alias: String): String? = String(data)
-  override fun encryptText(text: String, alias: String) = text.toByteArray() to text.toByteArray()
-  override fun deleteKey(alias: String) {}
-}
-```
+The macOS ARM release stores credential values in macOS Keychain under service `chat.nome.app.credentials`. Each account combines its alias with a SHA-256-derived scope of the normalized config/data paths, so independent XDG test profiles do not share secrets. Preferences contain only non-secret Keychain markers. The exact legacy desktop plaintext shape can be migrated into Keychain for the current Nome profile. Linux/Windows retain the legacy implementation only so upstream desktop source continues to compile; they are not Nome release targets.
 
 ### Passphrase Management
 
@@ -319,7 +313,7 @@ Declared in [Files.kt](../common/src/commonMain/kotlin/chat/simplex/common/platf
 | App files | `appFilesDir` | `dataDir/files/app_files` | `dataDir/simplex_v1_files` | Chat file attachments (images, videos, documents) |
 | Wallpapers | `wallpapersDir` | `dataDir/files/assets/wallpapers` | `dataDir/simplex_v1_assets/wallpapers` | Custom chat wallpaper images |
 | Core temp | `coreTmpDir` | `dataDir/files/temp_files` | `dataDir/tmp` | Haskell core temporary files (in-progress transfers) |
-| App temp | `tmpDir` | `getDir("temp", MODE_PRIVATE)` | `java.io.tmpdir/simplex` | Application-level temporary files |
+| App temp | `tmpDir` | `getDir("temp", MODE_PRIVATE)` | macOS: `java.io.tmpdir/chat.nome.app/<profile-scope>` | Profile-isolated application temporary files |
 | Remote hosts | `remoteHostsDir` | `tmpDir/remote_hosts` | `dataDir/remote_hosts` | Files staged for remote host sessions |
 | DB export | `databaseExportDir` | `androidAppContext.cacheDir` | Same as `tmpDir` | Temporary storage for database archive ZIP |
 | Preferences | `preferencesDir` | `dataDir/shared_prefs` | `desktopPlatform.configPath` | User preferences, theme YAML |

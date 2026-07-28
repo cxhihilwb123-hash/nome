@@ -417,11 +417,11 @@ Path prefix: `common/src/commonMain/kotlin/chat/simplex/common/`
 
 | Source File | Product Concepts Affected | Risk Level | Notes |
 |-------------|--------------------------|------------|-------|
-| `App.kt` | PC1 through PC32 | High | Root composable — navigation scaffold for all features; Nome must preserve gate order |
+| `App.kt` | PC1 through PC32 | High | Root composable — navigation scaffold for all features; Nome must preserve gate order and hide obscured root semantics behind fullscreen overlays on Android and Desktop |
 | `AppLock.kt` | PC22 | Medium | App lock state and authorization lifecycle |
 | `model/ChatModel.kt` | PC1 through PC32 | High | Central state object; PC32 adds generation-scoped chat-list load/result reconciliation without a second model |
-| `model/SimpleXAPI.kt` | PC1 through PC32 | High | FFI bridge to Haskell core; Android startChat now gates normal networking behind the idempotent Nome server bootstrap, and startup saves can suppress interactive alerts |
-| `model/NomeServerConfiguration.kt` | PC1, PC17, PC25 | High | Android application-layer Nome SMP/XFTP bootstrap, legacy endpoint migration, custom-server preservation, validation, and bounded retry policy |
+| `model/SimpleXAPI.kt` | PC1 through PC32 | High | FFI bridge to Haskell core; Android and Desktop startChat gate normal networking behind the idempotent Nome server bootstrap, startup saves can suppress interactive alerts, and terminal history snapshots redact SMP/XFTP credentials from commands and responses |
+| `model/NomeServerConfiguration.kt` | PC1, PC17, PC25 | High | Android/Desktop application-layer Nome SMP/XFTP bootstrap, legacy endpoint migration, custom-server preservation, validation, and bounded retry policy |
 | `model/CryptoFile.kt` | PC10, PC23 | Medium | Encrypted file read/write helpers |
 | `platform/Core.kt` | PC1 through PC31 | High | Native FFI declarations and controller startup; Android post-start callbacks now run only after chat actually reaches running state |
 | `platform/AppCommon.kt` | PC1 through PC31 | Medium | Shared app initialization logic |
@@ -822,7 +822,7 @@ Path prefix: `common/src/desktopMain/kotlin/chat/simplex/common/`
 | `platform/Log.desktop.kt` | — | Low | Desktop log output |
 | `platform/Modifier.desktop.kt` | — | Low | Desktop modifier extensions |
 | `platform/Resources.desktop.kt` | — | Low | Desktop resource loading |
-| `views/call/CallView.desktop.kt` | PC17 | Medium | Desktop WebView-based WebRTC call |
+| `views/call/CallView.desktop.kt` | PC17 | Medium | Desktop browser-based WebRTC call; bundled page title and browser-visible branding must remain Nome-owned |
 | `views/chat/ComposeView.desktop.kt` | PC4, PC10 | Low | Desktop compose view (drag-and-drop, paste) |
 | `views/chat/SendMsgView.desktop.kt` | PC4 | Low | Desktop send shortcut (Enter key handling) |
 | `views/chat/item/ChatItemView.desktop.kt` | PC2, PC3 | Low | Desktop chat item extensions |
@@ -832,6 +832,8 @@ Path prefix: `common/src/desktopMain/kotlin/chat/simplex/common/`
 | `views/chat/item/EmojiItemView.desktop.kt` | PC5 | Low | Desktop emoji rendering |
 | `views/chat/item/ImageFullScreenView.desktop.kt` | PC10 | Low | Desktop full-screen image |
 | `views/chatlist/ChatListView.desktop.kt` | PC1 | Low | Desktop chat list extensions |
+| `views/chatlist/PlatformHomeRoute.desktop.kt` | PC1, PC19 | Medium | Nome rail shell; destinations expose button role and selected state, and the profile avatar is named |
+| `views/newchat/PlatformNewChatHub.desktop.kt` | PC1 | Medium | Nome desktop connection hub; action rows and back control expose button roles |
 | `views/chatlist/ChatListNavLinkView.desktop.kt` | PC1 | Low | Desktop chat list navigation |
 | `views/chatlist/TagListView.desktop.kt` | PC28 | Low | Desktop tag list extensions |
 | `views/chatlist/UserPicker.desktop.kt` | PC19 | Low | Desktop profile picker |
@@ -943,8 +945,10 @@ first-user defaults; protocol compatibility remains unchanged.
 
 | Source | Concepts | Risk | Required verification |
 |---|---|---|---|
+| `common/src/commonMain/**/App.kt` | PC1, PC24 | High | Opaque fullscreen overlays hide obscured root semantics on Android and Desktop |
 | `common/src/desktopMain/**/PlatformHomeRoute.desktop.kt` | PC1, PC24 | High | Rail navigation, conversation ownership, empty/populated states |
 | `common/src/desktopMain/**/PlatformNomeOnboardingPages.desktop.kt` | PC1, PC19, PC23, PC24, PC25 | High | Every first-run step, errors, back/skip/continue |
+| `common/src/commonMain/**/migration/MigrateToDevice.kt` | PC24, PC26 | High | Desktop start state uses the Nome shell and accessible paste/import actions; other platforms and later migration states are unchanged |
 | `common/src/desktopMain/**/PlatformNewChatHub.desktop.kt` | PC12, PC24 | Medium | Four callbacks map one-to-one to existing owners |
 | `common/src/commonMain/**/OnboardingCards.kt` | PC12, PC24 | Medium | Compact desktop branch; Android unchanged |
 | `common/src/commonMain/**/chatlist/ChatListView.kt` | PC1, PC24, PC25 | Medium | Desktop keeps the shared list but does not auto-open the upstream release/conditions modal |
@@ -954,6 +958,8 @@ first-user defaults; protocol compatibility remains unchanged.
 | `src/Simplex/Chat/Store/Profiles.hs` | PC1, PC2, PC25 | High | Bounded removal of legacy upstream preset routing/conditions and disconnected exact seed cards, custom-server/real-contact preservation, Nome conditions ungated |
 | `src/Simplex/Chat/Terminal.hs` | PC25 | High | CLI defaults use the same Nome SMP/XFTP presets and no default chat relay |
 | `src/Simplex/Chat/Library/Commands.hs` | PC1, PC2, PC19, PC25 | High | New user has note folder and no upstream seed contacts; diagnostics use active configured NTF servers rather than a separate upstream list |
+| `desktop/build.gradle.kts` | PC32 | Medium | Selects the arm64 Compose runtime and removes unused x64 native payloads from DMG task inputs before jpackage/signing |
+| `desktop/src/jvmMain/resources/distribute/simplex.icns` | PC24, PC32 | Low | Nome macOS icon uses the approved mark on a mint brand surface instead of the legacy white tile |
 
 The release gate requires isolated fresh-profile runtime evidence, direct server tests, arm64
 architecture checks for the app and native library, and combined source/runtime visual review.

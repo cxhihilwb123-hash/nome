@@ -4,7 +4,7 @@
 
 ## Overview
 
-SimpleX Chat supports audio and video calls using WebRTC, with signaling delivered over the existing SMP messaging channels. Calls are end-to-end encrypted with an additional shared key layer on top of WebRTC's SRTP encryption.
+Nome supports audio and video calls using WebRTC, with signaling delivered over the existing SMP messaging channels. Calls are end-to-end encrypted with an additional shared key layer on top of WebRTC's SRTP encryption.
 
 The architecture differs by platform:
 - **Android**: Calls run in a dedicated `CallActivity` (separate from `MainActivity`) with a `WebView` hosting the WebRTC JavaScript. A foreground `CallService` keeps the process alive and shows a persistent notification.
@@ -159,9 +159,11 @@ Incoming: InvitationAccepted -> OfferReceived -> Negotiated -> Connected -> Ende
 
 ### 6.1 NanoWSD Embedded Server
 
-1. When a call starts, `startServer(onResponse)` creates a `NanoWSD` server on `localhost:50395`.
-2. The server serves static WebRTC HTML/JS from bundled resources at `/assets/www/desktop/call.html`.
-3. The system browser is opened to `http://localhost:50395/simplex/call/`.
+1. When a call starts, `startServer(onResponse)` creates a `NanoWSD` server bound only to `127.0.0.1:50395` (or an OS-assigned fallback port).
+2. The server serves static WebRTC HTML/JS from bundled resources at `/assets/www/desktop/call.html`; the browser page title is branded `Nome call`.
+3. The system browser is opened with a random one-time bootstrap value. Only the exact loopback `GET` may consume it and receive a dynamic page containing a separate unpredictable WebSocket path in JavaScript memory. The page removes the bootstrap query from browser history. Ordinary page requests never receive this path and bootstrap replay is rejected.
+4. Call-page responses are non-cacheable and deny framing with CSP `frame-ancestors 'none'` plus `X-Frame-Options: DENY`.
+5. WebSocket upgrades must come from loopback, use the unpredictable per-call path, and present the exact `http://127.0.0.1:<port>` origin; a second simultaneous browser client is rejected. No host cookie carries the bearer, preventing a different loopback port from receiving it.
 
 ### 6.2 WebSocket Communication
 
@@ -173,6 +175,7 @@ Incoming: InvitationAccepted -> OfferReceived -> Negotiated -> Connected -> Ende
    - Sends them to the browser via the WebSocket connection.
    - Processes responses through the same `WCallResponse` handling as Android.
 5. On dispose, `WCallCommand.End` is sent, the server is stopped, and connections are cleared.
+6. Desktop diagnostics log only call event types, safe enums/booleans, presence, and payload lengths; SDP, ICE, keys, TURN credentials, contacts, WebSocket payloads, bootstrap values, authorization paths, and exception messages are never rendered.
 
 ---
 

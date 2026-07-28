@@ -439,7 +439,7 @@ behavior, or second locale preference.
 | Key | Type | Default | Purpose |
 |---|---|---|---|
 | `networkUseSocksProxy` | `Boolean` | `false` | Enable SOCKS proxy |
-| `networkProxy` | `NetworkProxy` | localhost:9050 | Proxy host/port |
+| `networkProxy` | `NetworkProxy` | localhost:9050 | Proxy configuration; macOS settings store only Keychain markers and fail closed when a configured credential cannot be recovered. Explicit encrypted settings archives can include credentials and must be handled as sensitive data; migration QR/link metadata always omits proxy usernames and passwords and asks the receiving device to re-enter them. |
 | `networkSessionMode` | `TransportSessionMode` | default | Session mode |
 | `networkSMPProxyMode` | `SMPProxyMode` | default | SMP proxy mode |
 | `networkSMPProxyFallback` | `SMPProxyFallback` | default | Proxy fallback policy |
@@ -521,7 +521,7 @@ behavior, or second locale preference.
 
 | Key | Type | Default | Purpose |
 |---|---|---|---|
-| `migrationToStage` | `String?` | null | Migration-to-device progress |
+| `migrationToStage` | `String?` | null | Migration-to-device progress. Bearer file links are never persisted for the restart-discarded Onion/download stages. On macOS, proxy userinfo is excluded, a Keychain reference is persisted instead, and both state and referenced credential are cleared on terminal cleanup. |
 | `migrationFromStage` | `String?` | null | Migration-from-device progress |
 
 #### Updates and Versioning (lines 184-186, 235-237)
