@@ -106,8 +106,11 @@ class CallManager(val chatModel: ChatModel) {
         ntfManager.cancelCallNotification()
       }
       withBGApi {
-        if (!controller.apiRejectCall(invitation.remoteHostId, invitation.contact)) {
-          Log.e(TAG, "apiRejectCall error")
+        // Bundled legacy cores only update the receiver when rejecting and do
+        // not notify the caller. Ending the pending call emits XCallEnd on both
+        // legacy and fixed cores, so the caller leaves the connecting screen.
+        if (!controller.apiEndCall(invitation.remoteHostId, invitation.contact)) {
+          Log.e(TAG, "apiEndCall invitation error")
         }
       }
     }
