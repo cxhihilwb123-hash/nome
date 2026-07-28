@@ -76,136 +76,163 @@ fun DatabaseErrorView(
     Text(String.format(generalGetString(MR.strings.database_migrations), ms.joinToString(", ")))
   }
 
-  ColumnWithScrollBarNoAppBar(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center) {
-    val buttonEnabled = validKey(dbKey.value) && !progressIndicator.value
-    when (val status = chatDbStatus.value) {
-      is DBMigrationResult.ErrorNotADatabase ->
-        if (useKeychain && !storedDBKey.isNullOrEmpty()) {
-          DatabaseErrorDetails(MR.strings.wrong_passphrase) {
-            Text(generalGetString(MR.strings.passphrase_is_different))
-            DatabaseKeyField(dbKey, buttonEnabled) {
-              saveAndRunChatOnClick()
-            }
-            SaveAndOpenButton(buttonEnabled, ::saveAndRunChatOnClick)
-            SectionSpacer()
-            FileNameText(status.dbFile)
-          }
-        } else {
-          DatabaseErrorDetails(MR.strings.encrypted_database) {
-            Text(generalGetString(MR.strings.database_passphrase_is_required))
-            if (useKeychain) {
-              DatabaseKeyField(dbKey, buttonEnabled, ::saveAndRunChatOnClick)
+  fun confirmRestoreDatabase() {
+    AlertManager.shared.showAlertDialog(
+      title = generalGetString(MR.strings.restore_database_alert_title),
+      text = generalGetString(MR.strings.restore_database_alert_desc),
+      confirmText = generalGetString(MR.strings.restore_database_alert_confirm),
+      onConfirm = { restoreDb(restoreDbFromBackup, appPreferences) },
+      destructive = true,
+    )
+  }
+
+  @Composable
+  fun LegacyDatabaseErrorContent() {
+    ColumnWithScrollBarNoAppBar(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center) {
+      val buttonEnabled = validKey(dbKey.value) && !progressIndicator.value
+      when (val status = chatDbStatus.value) {
+        is DBMigrationResult.ErrorNotADatabase ->
+          if (useKeychain && !storedDBKey.isNullOrEmpty()) {
+            DatabaseErrorDetails(MR.strings.wrong_passphrase) {
+              Text(generalGetString(MR.strings.passphrase_is_different))
+              DatabaseKeyField(dbKey, buttonEnabled) {
+                saveAndRunChatOnClick()
+              }
               SaveAndOpenButton(buttonEnabled, ::saveAndRunChatOnClick)
-            } else {
-              DatabaseKeyField(dbKey, buttonEnabled) { callRunChat() }
-              OpenChatButton(buttonEnabled) { callRunChat() }
+              SectionSpacer()
+              FileNameText(status.dbFile)
             }
-          }
-        }
-      is DBMigrationResult.ErrorMigration -> when (val err = status.migrationError) {
-        is MigrationError.Upgrade -> {
-          DatabaseErrorDetails(MR.strings.database_upgrade) {
-            TextButton({ callRunChat(confirmMigrations = MigrationConfirmation.YesUp) }, Modifier.align(Alignment.CenterHorizontally), enabled = !progressIndicator.value) {
-              Text(generalGetString(MR.strings.upgrade_and_open_chat))
-            }
-            Spacer(Modifier.height(20.dp))
-            FileNameText(status.dbFile)
-            MigrationsText(err.upMigrations.map { it.upName })
-            AppVersionText()
-          }
-          OpenDatabaseDirectoryButton()
-        }
-        is MigrationError.Downgrade -> {
-          val warnings = downMigrationWarnings(err.downMigrations).reversed()
-          DatabaseErrorDetails(MR.strings.database_downgrade) {
-            TextButton({ callRunChat(confirmMigrations = MigrationConfirmation.YesUpDown) }, Modifier.align(Alignment.CenterHorizontally), enabled = !progressIndicator.value) {
-              Text(generalGetString(MR.strings.downgrade_and_open_chat))
-            }
-            Spacer(Modifier.height(20.dp))
-            Icon(
-              painterResource(MR.images.ic_warning_filled),
-              contentDescription = null,
-              Modifier.size(40.dp).align(Alignment.CenterHorizontally),
-              tint = Color.Red
-            )
-            Spacer(Modifier.height(12.dp))
-            Text(generalGetString(MR.strings.database_downgrade_warning), fontWeight = FontWeight.Bold)
-            if (warnings.isNotEmpty()) {
-              warnings.forEach { warning ->
-                Text(warning, fontWeight = FontWeight.Bold)
+          } else {
+            DatabaseErrorDetails(MR.strings.encrypted_database) {
+              Text(generalGetString(MR.strings.database_passphrase_is_required))
+              if (useKeychain) {
+                DatabaseKeyField(dbKey, buttonEnabled, ::saveAndRunChatOnClick)
+                SaveAndOpenButton(buttonEnabled, ::saveAndRunChatOnClick)
+              } else {
+                DatabaseKeyField(dbKey, buttonEnabled) { callRunChat() }
+                OpenChatButton(buttonEnabled) { callRunChat() }
               }
             }
+          }
+        is DBMigrationResult.ErrorMigration -> when (val err = status.migrationError) {
+          is MigrationError.Upgrade -> {
+            DatabaseErrorDetails(MR.strings.database_upgrade) {
+              TextButton({ callRunChat(confirmMigrations = MigrationConfirmation.YesUp) }, Modifier.align(Alignment.CenterHorizontally), enabled = !progressIndicator.value) {
+                Text(generalGetString(MR.strings.upgrade_and_open_chat))
+              }
+              Spacer(Modifier.height(20.dp))
+              FileNameText(status.dbFile)
+              MigrationsText(err.upMigrations.map { it.upName })
+              AppVersionText()
+            }
+            OpenDatabaseDirectoryButton()
+          }
+          is MigrationError.Downgrade -> {
+            val warnings = downMigrationWarnings(err.downMigrations).reversed()
+            DatabaseErrorDetails(MR.strings.database_downgrade) {
+              TextButton({ callRunChat(confirmMigrations = MigrationConfirmation.YesUpDown) }, Modifier.align(Alignment.CenterHorizontally), enabled = !progressIndicator.value) {
+                Text(generalGetString(MR.strings.downgrade_and_open_chat))
+              }
+              Spacer(Modifier.height(20.dp))
+              Icon(
+                painterResource(MR.images.ic_warning_filled),
+                contentDescription = null,
+                Modifier.size(40.dp).align(Alignment.CenterHorizontally),
+                tint = Color.Red
+              )
+              Spacer(Modifier.height(12.dp))
+              Text(generalGetString(MR.strings.database_downgrade_warning), fontWeight = FontWeight.Bold)
+              if (warnings.isNotEmpty()) {
+                warnings.forEach { warning ->
+                  Text(warning, fontWeight = FontWeight.Bold)
+                }
+              }
+              FileNameText(status.dbFile)
+              MigrationsText(err.downMigrations)
+              AppVersionText()
+            }
+            OpenDatabaseDirectoryButton()
+          }
+          is MigrationError.Error -> {
+            DatabaseErrorDetails(MR.strings.incompatible_database_version) {
+              FileNameText(status.dbFile)
+              Text(String.format(generalGetString(MR.strings.error_with_info), mtrErrorDescription(err.mtrError)))
+            }
+            OpenDatabaseDirectoryButton()
+          }
+        }
+        is DBMigrationResult.ErrorSQL -> {
+          DatabaseErrorDetails(MR.strings.database_error) {
             FileNameText(status.dbFile)
-            MigrationsText(err.downMigrations)
-            AppVersionText()
+            Text(String.format(generalGetString(MR.strings.error_with_info), status.migrationSQLError))
           }
           OpenDatabaseDirectoryButton()
         }
-        is MigrationError.Error -> {
-          DatabaseErrorDetails(MR.strings.incompatible_database_version) {
-            FileNameText(status.dbFile)
-            Text(String.format(generalGetString(MR.strings.error_with_info), mtrErrorDescription(err.mtrError)))
+        is DBMigrationResult.ErrorKeychain -> {
+          DatabaseErrorDetails(MR.strings.keychain_error) {
+            Text(generalGetString(MR.strings.cannot_access_keychain))
           }
           OpenDatabaseDirectoryButton()
         }
-      }
-      is DBMigrationResult.ErrorSQL -> {
-        DatabaseErrorDetails(MR.strings.database_error) {
-          FileNameText(status.dbFile)
-          Text(String.format(generalGetString(MR.strings.error_with_info), status.migrationSQLError))
+        is DBMigrationResult.InvalidConfirmation -> {
+          DatabaseErrorDetails(MR.strings.invalid_migration_confirmation) {
+            // this can only happen if incorrect parameter is passed
+          }
+          OpenDatabaseDirectoryButton()
         }
-        OpenDatabaseDirectoryButton()
-      }
-      is DBMigrationResult.ErrorKeychain -> {
-        DatabaseErrorDetails(MR.strings.keychain_error) {
-          Text(generalGetString(MR.strings.cannot_access_keychain))
+        is DBMigrationResult.Unknown -> {
+          DatabaseErrorDetails(MR.strings.database_error) {
+            Text(String.format(generalGetString(MR.strings.unknown_database_error_with_info), status.json))
+          }
+          OpenDatabaseDirectoryButton()
         }
-        OpenDatabaseDirectoryButton()
+        is DBMigrationResult.OK -> {}
+        null -> {}
       }
-      is DBMigrationResult.InvalidConfirmation -> {
-        DatabaseErrorDetails(MR.strings.invalid_migration_confirmation) {
-          // this can only happen if incorrect parameter is passed
-        }
-        OpenDatabaseDirectoryButton()
+      if (restoreDbFromBackup.value) {
+        SectionSpacer()
+        Text(generalGetString(MR.strings.database_backup_can_be_restored))
+        Spacer(Modifier.size(DEFAULT_PADDING))
+        RestoreDbButton(::confirmRestoreDatabase)
       }
-      is DBMigrationResult.Unknown -> {
-        DatabaseErrorDetails(MR.strings.database_error) {
-          Text(String.format(generalGetString(MR.strings.unknown_database_error_with_info), status.json))
-        }
-        OpenDatabaseDirectoryButton()
-      }
-      is DBMigrationResult.OK -> {}
-      null -> {}
+      SectionBottomSpacer()
     }
-    if (restoreDbFromBackup.value) {
-      SectionSpacer()
-      Text(generalGetString(MR.strings.database_backup_can_be_restored))
-      Spacer(Modifier.size(DEFAULT_PADDING))
-      RestoreDbButton {
-        AlertManager.shared.showAlertDialog(
-          title = generalGetString(MR.strings.restore_database_alert_title),
-          text = generalGetString(MR.strings.restore_database_alert_desc),
-          confirmText = generalGetString(MR.strings.restore_database_alert_confirm),
-          onConfirm = { restoreDb(restoreDbFromBackup, appPreferences) },
-          destructive = true,
+    if (progressIndicator.value) {
+      Box(
+        Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+      ) {
+        CircularProgressIndicator(
+          Modifier
+            .padding(horizontal = 2.dp)
+            .size(30.dp),
+          color = MaterialTheme.colors.secondary,
+          strokeWidth = 2.5.dp
         )
       }
     }
-    SectionBottomSpacer()
   }
-  if (progressIndicator.value) {
-    Box(
-      Modifier.fillMaxSize(),
-      contentAlignment = Alignment.Center
-    ) {
-      CircularProgressIndicator(
-        Modifier
-          .padding(horizontal = 2.dp)
-          .size(30.dp),
-        color = MaterialTheme.colors.secondary,
-        strokeWidth = 2.5.dp
-      )
-    }
+
+  val status = chatDbStatus.value
+  if (status is DBMigrationResult.ErrorNotADatabase) {
+    PlatformDatabaseUnlockView(
+      dbKey = dbKey,
+      buttonEnabled = validKey(dbKey.value) && !progressIndicator.value,
+      progress = progressIndicator.value,
+      storedKeyRejected = useKeychain && !storedDBKey.isNullOrEmpty(),
+      backupAvailable = restoreDbFromBackup.value,
+      onOpen = {
+        if (useKeychain) {
+          saveAndRunChatOnClick()
+        } else {
+          callRunChat()
+        }
+      },
+      onRestore = ::confirmRestoreDatabase,
+      legacyContent = { LegacyDatabaseErrorContent() },
+    )
+  } else {
+    LegacyDatabaseErrorContent()
   }
 }
 

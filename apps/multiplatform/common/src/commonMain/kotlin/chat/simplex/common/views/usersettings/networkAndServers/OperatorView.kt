@@ -221,7 +221,7 @@ fun OperatorViewLayout(
         ServersWarningFooter(serversWarn)
       }
     } else {
-      val footerText = when (val c = operator.conditionsAcceptance) {
+      val footerText = if (appPlatform.isDesktop) null else when (val c = operator.conditionsAcceptance) {
         is ConditionsAcceptance.Accepted -> if (c.acceptedAt != null) {
           String.format(generalGetString(MR.strings.operator_conditions_accepted_on), localDate(c.acceptedAt))
         } else null
@@ -476,6 +476,11 @@ fun OperatorViewLayout(
 
 @Composable
 fun OperatorInfoView(serverOperator: ServerOperator) {
+  if (appPlatform.isDesktop && serverOperator.operatorTag != OperatorTag.Nome) {
+    NomeUsageInformationView()
+    return
+  }
+
   ColumnWithScrollBar {
     AppBarTitle(stringResource(MR.strings.operator_info_title))
 
@@ -496,8 +501,13 @@ fun OperatorInfoView(serverOperator: ServerOperator) {
     SectionView {
       SectionItemView {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-          serverOperator.info.description.forEach { d ->
-            Text(d)
+          if (serverOperator.operatorTag == OperatorTag.Nome) {
+            Text(stringResource(MR.strings.nome_usage_information_routing_body))
+            Text(stringResource(MR.strings.nome_usage_information_endpoints_body))
+          } else {
+            serverOperator.info.description.forEach { d ->
+              Text(d)
+            }
           }
           val website = serverOperator.info.website
           if (website.isNotBlank()) {
@@ -541,30 +551,27 @@ private fun UseOperatorToggle(
       onCheckedChange = { enabled ->
         val operator = userServers.value[operatorIndex].operator
         if (enabled) {
-          when (val conditionsAcceptance = operator?.conditionsAcceptance) {
-            is ConditionsAcceptance.Accepted -> {
-              changeOperatorEnabled(userServers, operatorIndex, true)
-            }
-
-            is ConditionsAcceptance.Required -> {
-              if (conditionsAcceptance.deadline == null) {
-                ModalManager.start.showModalCloseable(endButtons = { ConditionsLinkButton() }) { close ->
-                  SingleOperatorUsageConditionsView(
-                    currUserServers = currUserServers,
-                    userServers = userServers,
-                    serverErrors = serverErrors,
-                    serverWarnings = serverWarnings,
-                    operatorIndex = operatorIndex,
-                    rhId = rhId,
-                    close = close
-                  )
-                }
-              } else {
-                changeOperatorEnabled(userServers, operatorIndex, true)
+          when (operatorEnableDestination(appPlatform, operator)) {
+            OperatorEnableDestination.Enable -> changeOperatorEnabled(userServers, operatorIndex, true)
+            OperatorEnableDestination.NomeLocalInformation -> {
+              ModalManager.start.showModalCloseable { _ ->
+                NomeUsageInformationView()
               }
             }
-
-            else -> {}
+            OperatorEnableDestination.LegacyConditions -> {
+              ModalManager.start.showModalCloseable(endButtons = { ConditionsLinkButton() }) { close ->
+                SingleOperatorUsageConditionsView(
+                  currUserServers = currUserServers,
+                  userServers = userServers,
+                  serverErrors = serverErrors,
+                  serverWarnings = serverWarnings,
+                  operatorIndex = operatorIndex,
+                  rhId = rhId,
+                  close = close
+                )
+              }
+            }
+            OperatorEnableDestination.Ignore -> Unit
           }
         } else {
           changeOperatorEnabled(userServers, operatorIndex, false)
@@ -584,6 +591,11 @@ private fun SingleOperatorUsageConditionsView(
   rhId: Long?,
   close: () -> Unit
 ) {
+  if (appPlatform.isDesktop) {
+    NomeUsageInformationView()
+    return
+  }
+
   val operatorsWithConditionsAccepted = remember { chatModel.conditions.value.serverOperators.filter { it.conditionsAcceptance.conditionsAccepted } }
   val operator = remember { userServers.value[operatorIndex].operator_ }
   val scope = rememberCoroutineScope()
@@ -688,6 +700,11 @@ val defaultConditionsLink = "https://github.com/simplex-chat/simplex-chat/blob/s
 fun ConditionsTextView(
   rhId: Long?
 ) {
+  if (appPlatform.isDesktop) {
+    NomeUsageInformationView()
+    return
+  }
+
   val conditionsData = remember { mutableStateOf<Triple<UsageConditionsDetail, String?, UsageConditionsDetail?>?>(null) }
   val failedToLoad = remember { mutableStateOf(false) }
   val scope = rememberCoroutineScope()
@@ -815,6 +832,8 @@ private fun ConditionsAppliedToOtherOperatorsText(userServers: List<UserOperator
 
 @Composable
 fun ConditionsLinkButton() {
+  if (appPlatform.isDesktop) return
+
   val showMenu = remember { mutableStateOf(false) }
   val uriHandler = LocalUriHandler.current
   val oneHandUI = remember { appPrefs.oneHandUI.state }

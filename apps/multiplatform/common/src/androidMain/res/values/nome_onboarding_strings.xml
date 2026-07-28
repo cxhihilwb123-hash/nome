@@ -50,8 +50,8 @@
     <string name="nome_p05_advanced_body">More provider, relay and Tor controls remain available in Settings</string>
     <string name="nome_p05_continue">Continue</string>
 
-    <string name="nome_p06_title">Network commitment</string>
-    <string name="nome_p06_intro">Before using Nome, confirm that you understand these basic commitments.</string>
+    <string name="nome_p06_title">Network and privacy check</string>
+    <string name="nome_p06_intro">Before continuing, review how this Nome build routes traffic and stores messages.</string>
     <string name="nome_p06_private_title">Respect privacy</string>
     <string name="nome_p06_private_body">Do not use Nome to harass, track or impersonate anyone.</string>
     <string name="nome_p06_connection_title">Connect carefully</string>
@@ -59,8 +59,8 @@
     <string name="nome_p06_data_title">Protect your data</string>
     <string name="nome_p06_data_body">Servers cannot recover local messages after they are lost.</string>
     <string name="nome_p06_channel_note">Public channels are not end-to-end encrypted. This is explained again before joining.</string>
-    <string name="nome_p06_consent">I have read and accept the network commitment</string>
-    <string name="nome_p06_terms">View full terms</string>
-    <string name="nome_p06_accept">Accept and enter Nome</string>
+    <string name="nome_p06_consent">I understand the operational information above</string>
+    <string name="nome_p06_terms">View network and privacy information</string>
+    <string name="nome_p06_accept">Continue to Nome</string>
     <string name="nome_back">Back</string>
 </resources>

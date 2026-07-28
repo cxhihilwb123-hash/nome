@@ -147,8 +147,8 @@
   <string name="no_media_servers_configured_for_private_routing">No servers to receive files.</string>
   <string name="for_chat_profile">For chat profile %s:</string>
   <string name="errors_in_servers_configuration">Errors in servers configuration.</string>
-  <string name="no_chat_relays_enabled">No chat relays enabled.</string>
-  <string name="server_warning">Server warning</string>
+  <string name="no_chat_relays_enabled">Channel relays are not configured. Channel creation is currently unavailable.</string>
+  <string name="server_warning">Channel feature notice</string>
   <string name="error_accepting_operator_conditions">Error accepting conditions</string>
   <string name="blocking_reason_spam">Spam</string>
   <string name="blocking_reason_content">Content violates conditions of use</string>
@@ -793,12 +793,14 @@
   <string name="you_can_connect_to_simplex_chat_founder"><![CDATA[You can <font color="#0A874D">connect to the Nome team for help and product updates</font>.]]></string>
   <string name="to_start_a_new_chat_help_header">To start a new chat</string>
   <string name="chat_help_tap_button">Tap button</string>
+  <string name="chat_help_click_button">Click</string>
   <string name="above_then_preposition_continuation">above, then:</string>
   <string name="add_contact_button_to_create_link_or_connect_via_link"><![CDATA[<b>Add contact</b>: to create a new invitation link, or connect via a link you received.]]></string>
   <string name="create_group_button_to_create_new_group"><![CDATA[<b>Create group</b>: to create a new group.]]></string>
   <string name="to_connect_via_link_title">To connect via link</string>
   <string name="if_you_received_simplex_invitation_link_you_can_open_in_browser">If you received a Nome invitation, you can open it in your browser:</string>
   <string name="desktop_scan_QR_code_from_app_via_scan_QR_code"><![CDATA[💻 desktop: scan displayed QR code from the app, via <b>Scan QR code</b>.]]></string>
+  <string name="desktop_paste_invitation_link_from_clipboard"><![CDATA[💻 desktop: copy the invitation link, then use <b>Paste invitation link</b> in Nome.]]></string>
   <string name="mobile_tap_open_in_mobile_app_then_tap_connect_in_app"><![CDATA[📱 mobile: tap <b>Open in mobile app</b>, then tap <b>Connect</b> in the app.]]></string>
 
   <!-- Contact Request Alert Dialogue - ChatListNavLinkView.kt -->
@@ -990,7 +992,7 @@
   <string name="create_chat_profile">Create chat profile</string>
   <string name="database_passphrase_and_export">Database passphrase &amp; export</string>
   <string name="about_simplex_chat">About Nome</string>
-  <string name="how_to_use_simplex_chat">How to use it</string>
+  <string name="how_to_use_simplex_chat">How to use Nome</string>
   <string name="markdown_help">Markdown help</string>
   <string name="markdown_in_messages">Markdown in messages</string>
   <string name="chat_with_the_founder">Send questions and ideas</string>
@@ -1044,6 +1046,8 @@
   <string name="configure_ICE_servers">Configure ICE servers</string>
   <string name="enter_one_ICE_server_per_line">ICE servers (one per line)</string>
   <string name="error_saving_ICE_servers">Error saving ICE servers</string>
+  <string name="ice_server_credentials_unavailable_title">Custom call servers unavailable</string>
+  <string name="ice_server_credentials_unavailable_body">Nome cannot read the protected custom call-server credentials. Calls are blocked until you reset or re-enter these servers.</string>
   <string name="ensure_ICE_server_address_are_correct_format_and_unique">Make sure WebRTC ICE server addresses are in correct format, line separated and are not duplicated.</string>
   <string name="save_servers_button">Save</string>
   <string name="network_and_servers">Network &amp; servers</string>
@@ -1051,6 +1055,8 @@
   <string name="network_settings_title">Advanced settings</string>
   <string name="network_socks_proxy">SOCKS proxy</string>
   <string name="network_socks_proxy_settings">SOCKS proxy settings</string>
+  <string name="network_proxy_credentials_unavailable_title">Proxy credentials unavailable</string>
+  <string name="network_proxy_credentials_unavailable_text">Nome cannot recover the saved proxy credential from macOS Keychain. Networking remains blocked until you enter and save the proxy settings again.</string>
   <string name="network_socks_toggle_use_socks_proxy">Use SOCKS proxy</string>
   <string name="network_proxy_auth">Proxy authentication</string>
   <string name="network_proxy_random_credentials">Use random credentials</string>
@@ -1122,7 +1128,7 @@
   <string name="app_version_name">App version: v%s</string>
   <string name="app_version_code">App build: %s</string>
   <string name="core_version">Core version: v%s</string>
-  <string name="core_simplexmq_version">simplexmq: v%s (%2s)</string>
+  <string name="core_simplexmq_version">Nome Core: v%s (%2s)</string>
   <string name="app_check_for_updates">Check for updates</string>
   <string name="app_check_for_updates_disabled">Disabled</string>
   <string name="app_check_for_updates_stable">Stable</string>
@@ -1366,8 +1372,8 @@
   <!-- ChooseServerOperators.kt -->
   <string name="onboarding_conditions_private_chats_not_accessible">Operators commit to:\n- Be independent\n- Minimize metadata usage\n- Run verified open-source code</string>
   <string name="onboarding_conditions_by_using_you_agree">You commit to:\n- Only legal content in public groups\n- Respect other users — no spam</string>
-  <string name="onboarding_conditions_privacy_policy_and_conditions_of_use">Privacy policy and conditions of use.</string>
-  <string name="onboarding_conditions_accept">Accept</string>
+  <string name="onboarding_conditions_privacy_policy_and_conditions_of_use">Network and privacy information</string>
+  <string name="onboarding_conditions_accept">Confirm</string>
   <string name="onboarding_choose_server_operators">Server operators</string>
   <string name="onboarding_network_operators">Network operators</string>
   <string name="onboarding_network_operators_simplex_flux_agreement">Nome uses official message and file services selected for this release.</string>
@@ -1497,6 +1503,7 @@
   <string name="submit_passcode">Submit</string>
   <string name="confirm_passcode">Confirm passcode</string>
   <string name="incorrect_passcode">Incorrect passcode</string>
+  <string name="local_auth_retry_later">Too many attempts. Please wait before trying again.</string>
   <string name="new_passcode">New Passcode</string>
   <string name="authentication_cancelled">Authentication cancelled</string>
   <string name="la_mode_system">System</string>
@@ -1508,6 +1515,8 @@
   <string name="passcode_not_changed">Passcode not changed!</string>
   <string name="change_lock_mode">Change lock mode</string>
   <string name="self_destruct">Self-destruct</string>
+  <string name="self_destruct_recovery_required">Secure cleanup needs attention</string>
+  <string name="self_destruct_wipe_incomplete">Your passcode was accepted, but Nome could not verify that secure cleanup finished. Nome remains locked and will retry cleanup before opening local data.</string>
   <string name="enabled_self_destruct_passcode">Enable self-destruct passcode</string>
   <string name="change_self_destruct_mode">Change self-destruct mode</string>
   <string name="change_self_destruct_passcode">Change self-destruct passcode</string>
@@ -1562,7 +1571,7 @@
   <string name="settings_section_title_settings">SETTINGS</string>
   <string name="settings_section_title_chat_database">CHAT DATABASE</string>
   <string name="settings_section_title_help">HELP</string>
-  <string name="settings_section_title_support">SUPPORT NOME</string>
+  <string name="settings_section_title_support">Support Nome</string>
   <string name="settings_section_title_app">APP</string>
   <string name="settings_section_title_device">DEVICE</string>
   <string name="settings_section_title_chats">CHATS</string>
@@ -1582,14 +1591,15 @@
   <string name="nome_device_network_status_unknown">Network status not observed yet</string>
   <string name="nome_desktop_nav_messages">Messages</string>
   <string name="nome_desktop_nav_contacts">Contacts</string>
-  <string name="nome_desktop_nav_profile">Profile</string>
-  <string name="nome_desktop_new_connection_eyebrow">NOME CONNECTION</string>
+  <string name="nome_desktop_nav_settings">Settings</string>
+  <string name="nome_desktop_new_connection_eyebrow">Nome connection</string>
+  <string name="nome_desktop_private_notes_subtitle">Only visible to you</string>
   <string name="nome_desktop_new_connection_title">Start a new connection</string>
   <string name="nome_desktop_new_connection_body">Choose how you want to connect. Nome only creates a conversation after both sides confirm the invitation.</string>
   <string name="nome_desktop_new_connection_invite_title">Create a Nome invitation</string>
   <string name="nome_desktop_new_connection_invite_body">Generate a one-time link or QR code for someone you trust.</string>
   <string name="nome_desktop_new_connection_open_title">Open a Nome invitation</string>
-  <string name="nome_desktop_new_connection_open_body">Paste an invitation link or open one from a QR code.</string>
+  <string name="nome_desktop_new_connection_open_body">Paste an invitation link to connect.</string>
   <string name="nome_desktop_new_connection_group_title">Create a private group</string>
   <string name="nome_desktop_new_connection_group_body">Bring trusted contacts into one encrypted conversation.</string>
   <string name="nome_desktop_new_connection_channel_title">Create a channel</string>
@@ -1614,6 +1624,18 @@
   <string name="nome_desktop_welcome_route_body">Independent relays deliver messages without a central user directory.</string>
   <string name="nome_desktop_welcome_create">Create local identity</string>
   <string name="nome_desktop_welcome_migrate">Transfer from another device</string>
+  <string name="nome_desktop_unlock_eyebrow">SECURE UNLOCK</string>
+  <string name="nome_desktop_unlock_brand_title">Your conversations are yours</string>
+  <string name="nome_desktop_unlock_brand_body">Your local message database is protected with encryption.</string>
+  <string name="nome_desktop_unlock_title">Welcome back</string>
+  <string name="nome_desktop_unlock_body">Enter your database password to continue using Nome.</string>
+  <string name="nome_desktop_unlock_retry_body">The saved password could not open this database. Enter the current password.</string>
+  <string name="nome_desktop_unlock_password_placeholder">Enter database password</string>
+  <string name="nome_desktop_unlock_open">Open Nome</string>
+  <string name="nome_desktop_unlock_security">Your password never leaves this Mac</string>
+  <string name="nome_desktop_unlock_return">Press Return to continue</string>
+  <string name="nome_desktop_unlock_show_password">Show password</string>
+  <string name="nome_desktop_unlock_hide_password">Hide password</string>
   <string name="nome_desktop_identity_title">Create your local identity</string>
   <string name="nome_desktop_identity_body">This is the name people see when they connect with you. You can change it later.</string>
   <string name="nome_desktop_identity_preview">IDENTITY PREVIEW</string>
@@ -1637,17 +1659,33 @@
   <string name="nome_desktop_network_configure_notifications">Configure notifications</string>
   <string name="nome_desktop_network_scope">Configuration is shown here. Connectivity and server health are checked separately.</string>
   <string name="nome_desktop_network_continue">Continue</string>
-  <string name="nome_desktop_commitment_title">One clear commitment</string>
-  <string name="nome_desktop_commitment_body">Before entering Nome, confirm that you understand how privacy and local data work.</string>
-  <string name="nome_desktop_commitment_privacy_title">Respect privacy</string>
-  <string name="nome_desktop_commitment_privacy_body">Do not use Nome to harass, track or impersonate anyone.</string>
+  <string name="nome_desktop_commitment_title">Network and privacy check</string>
+  <string name="nome_desktop_commitment_body">Review how this Nome build routes traffic and stores messages before continuing.</string>
+  <string name="nome_desktop_commitment_privacy_title">Private by design</string>
+  <string name="nome_desktop_commitment_privacy_body">Nome does not require a phone number, and message contents are stored on this Mac.</string>
   <string name="nome_desktop_commitment_connect_title">Connect carefully</string>
   <string name="nome_desktop_commitment_connect_body">Accept invitations only when you recognize or trust the source.</string>
   <string name="nome_desktop_commitment_data_title">Protect your local data</string>
   <string name="nome_desktop_commitment_data_body">Servers cannot recover messages after local data is lost.</string>
-  <string name="nome_desktop_commitment_consent">I have read and accept the network commitment</string>
-  <string name="nome_desktop_commitment_terms">Read the full terms and privacy policy</string>
-  <string name="nome_desktop_commitment_accept">Accept and enter Nome</string>
+  <string name="nome_desktop_commitment_consent">I understand the operational information above</string>
+  <string name="nome_desktop_commitment_terms">View network and privacy information</string>
+  <string name="nome_desktop_commitment_accept">Continue to Nome</string>
+  <string name="nome_usage_information_action">Network and privacy information</string>
+  <string name="nome_usage_information_title">Network and privacy information</string>
+  <string name="nome_usage_information_intro">This page is operational guidance for this Nome build. It is not a legal agreement and does not record legal consent.</string>
+  <string name="nome_usage_information_routing_title">Nome routing</string>
+  <string name="nome_usage_information_routing_body">New profiles use Nome’s official message and file routing services. Routing servers relay encrypted traffic; they are not a backup of your message history.</string>
+  <string name="nome_usage_information_endpoints_title">Official endpoints</string>
+  <string name="nome_usage_information_endpoints_body">Messages: smp.nome.im\nFiles: xftp.nome.im\nCalls: turn.nome.im</string>
+  <string name="nome_usage_information_local_data_title">Local data</string>
+  <string name="nome_usage_information_local_data_body">Your profile, database and message history remain on this device. Keep your database passphrase and backups safe.</string>
+  <string name="nome_usage_information_connections_title">Trusted invitations</string>
+  <string name="nome_usage_information_connections_body">Nome does not verify another person’s identity. Connect only when you recognize or trust the invitation source.</string>
+  <string name="nome_client_notice_title">Address creation temporarily unavailable</string>
+  <string name="nome_client_notice_managed_server">managed</string>
+  <string name="nome_client_notice_configured_server">configured</string>
+  <string name="nome_client_notice_message">The %2$s server %1$s temporarily refused this request to create an address. Nome did not send a user identifier with this notice.</string>
+  <string name="nome_client_notice_retry_after">You can try creating a new address after %1$s.</string>
   <string name="nome_desktop_back">Back</string>
   <string name="settings_section_title_icon">APP ICON</string>
   <string name="settings_section_title_themes">THEMES</string>
@@ -1681,6 +1719,12 @@
   <string name="open_database_folder">Open database folder</string>
   <string name="delete_database">Delete database</string>
   <string name="error_starting_chat">Error starting chat</string>
+  <string name="nome_server_configuration_retry_title">Nome needs to finish server setup</string>
+  <string name="nome_server_configuration_retry_text">Nome could not apply its official server configuration. Check your connection and retry. Your profile and messages are safe.</string>
+  <string name="nome_startup_retry_title">Nome could not start safely</string>
+  <string name="nome_startup_retry_text">Chat remains stopped because startup could not be completed safely. Retry now; if this continues, restart Nome. Your profile and messages are safe.</string>
+  <string name="nome_continuation_retry_title">Chat started, but setup did not finish</string>
+  <string name="nome_continuation_retry_text">Nome is connected, but the screen could not finish its next step. Retry the step without restarting chat.</string>
   <string name="stop_chat_question">Stop chat?</string>
   <string name="stop_chat_to_export_import_or_delete_chat_database">Stop chat to export, import or delete chat database. You will not be able to receive and send messages while the chat is stopped.</string>
   <string name="stop_chat_confirmation">Stop</string>
@@ -2885,6 +2929,14 @@
   <string name="migrate_to_device_title">Migrate here</string>
   <string name="or_paste_archive_link">Or paste archive link</string>
   <string name="paste_archive_link">Paste archive link</string>
+  <string name="nome_desktop_migration_label">Migration</string>
+  <string name="nome_desktop_migration_title">Bring your existing Nome here</string>
+  <string name="nome_desktop_migration_body">Paste a migration archive link from your other device, or import a backup zip you already copied to this computer. Your data stays local to this device.</string>
+  <string name="nome_desktop_migration_link_title">Paste a migration archive link</string>
+  <string name="nome_desktop_migration_link_body">Use a one-time link from your other device to download and restore the latest archive into Nome.</string>
+  <string name="nome_desktop_migration_import_title">Import a local backup archive</string>
+  <string name="nome_desktop_migration_import_body">If you already saved the exported zip on this computer, import it directly and continue here.</string>
+  <string name="nome_desktop_migration_notice">Chats, profile, and database remain stored only on your device.</string>
   <string name="invalid_file_link">Invalid link</string>
   <string name="chat_archive">Or import archive file</string>
   <string name="migrate_to_device_migrating">Migrating</string>
@@ -2905,6 +2957,8 @@
   <string name="migrate_to_device_finalize_migration">Finalize migration on another device.</string>
   <string name="migrate_to_device_confirm_network_settings">Confirm network settings</string>
   <string name="migrate_to_device_confirm_network_settings_footer">Please confirm that network settings are correct for this device.</string>
+  <string name="migrate_to_device_proxy_credentials_required_title">Enter proxy credentials</string>
+  <string name="migrate_to_device_proxy_credentials_required_text">For your security, proxy usernames and passwords are never included in migration links. Enter this device’s proxy credentials in the network settings before continuing.</string>
   <string name="migrate_to_device_apply_onion">Apply</string>
 
   <!--  MigrateFromDevice.kt -->
@@ -2921,6 +2975,7 @@
   <string name="migrate_from_device_archive_and_upload">Archive and upload</string>
   <string name="migrate_from_device_confirm_upload">Confirm upload</string>
   <string name="migrate_from_device_all_data_will_be_uploaded">All your contacts, conversations and files will be securely encrypted and uploaded in chunks to configured XFTP relays.</string>
+  <string name="migrate_from_device_sensitive_settings_encrypted_transfer">Your exported settings may include sensitive proxy credentials. Transfer them only inside this encrypted migration archive.</string>
   <string name="migrate_from_device_archiving_database">Archiving database</string>
   <string name="migrate_from_device_bytes_uploaded">%s uploaded</string>
   <string name="migrate_from_device_uploading_archive">Uploading archive</string>

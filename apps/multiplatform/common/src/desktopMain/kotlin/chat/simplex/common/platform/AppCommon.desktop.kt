@@ -8,12 +8,15 @@ import chat.simplex.common.views.helpers.*
 import java.util.*
 import chat.simplex.res.MR
 import java.io.File
+import kotlin.system.exitProcess
 
 actual val appPlatform = AppPlatform.DESKTOP
 
 actual val deviceName = generalGetString(MR.strings.desktop_device)
 
 actual fun isAppVisibleAndFocused() = simplexWindowState.windowFocused.value
+
+actual fun terminateForUnsafeNetworkState(): Nothing = exitProcess(70)
 
 @Suppress("ConstantLocale")
 val defaultLocale: Locale = Locale.getDefault()

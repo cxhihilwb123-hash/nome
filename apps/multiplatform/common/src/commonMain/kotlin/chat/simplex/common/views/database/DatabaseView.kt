@@ -370,8 +370,14 @@ fun startChat(
   withLongRunningApi {
     try {
       progressIndicator?.value = true
+      val onStarted: suspend () -> Unit = {
+        val ts = Clock.System.now()
+        m.controller.appPrefs.chatLastStart.set(ts)
+        chatLastStart.value = ts
+        platform.androidChatStartedAfterBeingOff()
+      }
       if (chatDbChanged.value) {
-        initChatController()
+        initChatController(onChatStarted = onStarted)
         chatDbChanged.value = false
       }
       if (m.chatDbStatus.value !is DBMigrationResult.OK) {
@@ -383,13 +389,15 @@ fun startChat(
       if (user == null) {
         ModalManager.closeAllModalsEverywhere()
         return@withLongRunningApi
-      } else {
-        m.controller.startChat(user)
       }
-      val ts = Clock.System.now()
-      m.controller.appPrefs.chatLastStart.set(ts)
-      chatLastStart.value = ts
-      platform.androidChatStartedAfterBeingOff()
+      if (m.chatRunning.value == true) {
+        // Reinitialization already started the chat and invoked [onStarted].
+        return@withLongRunningApi
+      }
+      if (m.retryableChatStart.value != null) {
+        return@withLongRunningApi
+      }
+      m.controller.startChat(user, onStarted)
     } catch (e: Throwable) {
       m.chatRunning.value = false
       AlertManager.shared.showAlertMsg(generalGetString(MR.strings.error_starting_chat), e.toString())
@@ -466,7 +474,15 @@ private fun stopChat(m: ChatModel, progressIndicator: MutableState<Boolean>? = n
 }
 
 suspend fun stopChatAsync(m: ChatModel) {
-  m.controller.apiStopChat()
+  m.controller.stopReceiver()
+  try {
+    m.controller.apiStopChat()
+  } catch (e: Throwable) {
+    // Manual stop failed, so the native controller may still be running. Restore the receiver
+    // before propagating the failure rather than leaving a live chat silently unobserved.
+    m.controller.startReceiver()
+    throw e
+  }
   m.chatRunning.value = false
   controller.appPrefs.chatStopped.set(true)
 }
@@ -507,29 +523,15 @@ fun stopChatRunBlockStartChat(
 
 suspend fun deleteChatAsync(m: ChatModel) {
   m.controller.apiDeleteStorage()
-  DatabaseUtils.ksDatabasePassword.remove()
   m.controller.appPrefs.storeDBPassphrase.set(true)
   deleteChatDatabaseFilesAndState()
 }
 
 fun deleteChatDatabaseFilesAndState() {
-  val chat = File(dataDir, chatDatabaseFileName)
-  val chatBak = File(dataDir, "$chatDatabaseFileName.bak")
-  val agent = File(dataDir, agentDatabaseFileName)
-  val agentBak = File(dataDir, "$agentDatabaseFileName.bak")
-  chat.delete()
-  chatBak.delete()
-  agent.delete()
-  agentBak.delete()
-  filesDir.deleteRecursively()
-  filesDir.mkdir()
-  remoteHostsDir.deleteRecursively()
-  tmpDir.deleteRecursively()
-  getMigrationTempFilesDirectory().deleteRecursively()
-  tmpDir.mkdir()
-  wallpapersDir.deleteRecursively()
-  wallpapersDir.mkdirs()
-  DatabaseUtils.ksDatabasePassword.remove()
+  // Erase the database key before touching files. If a later physical deletion fails, any
+  // encrypted remnants are already cryptographically inaccessible and the caller is still told
+  // that the wipe is incomplete.
+  DatabaseUtils.wipeDatabaseStorageVerified()
   appPrefs.newDatabaseInitialized.set(false)
   chatModel.desktopOnboardingRandomPassword.value = false
   controller.appPrefs.storeDBPassphrase.set(true)

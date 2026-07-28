@@ -1,9 +1,9 @@
 package chat.simplex.common.views.chatlist
 
-import SectionDivider
 import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -42,7 +42,15 @@ actual fun ChatListNavLinkLayout(
   CompositionLocalProvider(
     LocalIndication provides if (selectedChat.value && !disabled) NoIndication else LocalIndication.current
   ) {
-    Box(modifier) {
+    Box(
+      modifier.background(
+        if (selectedChat.value && !disabled) {
+          MaterialTheme.colors.primary.copy(alpha = 0.075f)
+        } else {
+          androidx.compose.ui.graphics.Color.Transparent
+        }
+      )
+    ) {
       Row(
         modifier = Modifier
           .fillMaxWidth()
@@ -51,17 +59,22 @@ actual fun ChatListNavLinkLayout(
       ) {
         chatLinkPreview()
       }
-      if (selectedChat.value) {
-        Box(Modifier.matchParentSize().background(MaterialTheme.colors.onBackground.copy(0.05f)))
+      if (selectedChat.value && !disabled) {
+        Box(
+          Modifier
+            .align(Alignment.CenterStart)
+            .width(3.dp)
+            .height(32.dp)
+            .background(MaterialTheme.colors.primary, RoundedCornerShape(topEnd = 3.dp, bottomEnd = 3.dp))
+        )
       }
       if (dropdownMenuItems != null) {
         DefaultDropdownMenu(showMenu, dropdownMenuItems = dropdownMenuItems)
       }
     }
   }
-  if (selectedChat.value || nextChatSelected.value) {
-    Divider()
-  } else {
-    SectionDivider()
-  }
+  Divider(
+    modifier = Modifier.padding(start = 80.dp, end = 12.dp),
+    color = MaterialTheme.colors.onBackground.copy(alpha = if (selectedChat.value || nextChatSelected.value) 0.1f else 0.07f),
+  )
 }

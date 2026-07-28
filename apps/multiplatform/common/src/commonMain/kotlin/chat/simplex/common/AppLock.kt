@@ -184,7 +184,12 @@ object AppLock {
                 AppUnlockEffect.KEEP_LOCKED_ERROR -> {
                   userAuthorized.value = false
                   laFailed.value = true
-                  if (m.controller.appPrefs.laMode.get() == LAMode.PASSCODE) {
+                  if (laResult is LAResult.Error && laResult.fatalRecovery) {
+                    AlertManager.privacySensitive.showAlertMsg(
+                      title = generalGetString(MR.strings.self_destruct_recovery_required),
+                      text = laResult.errString.toString(),
+                    )
+                  } else if (m.controller.appPrefs.laMode.get() == LAMode.PASSCODE) {
                     laFailedAlert()
                   }
                 }

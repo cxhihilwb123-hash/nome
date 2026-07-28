@@ -21,6 +21,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -38,7 +42,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 internal enum class NomeDesktopDestination {
   Messages,
   Contacts,
-  Profile,
+  Settings,
 }
 
 internal fun nomeDesktopDestination(activeFilter: ActiveFilter?): NomeDesktopDestination =
@@ -62,7 +66,7 @@ actual fun PlatformHomeRoute(
   val activeFilter = chatModel.activeChatTagFilter.value
 
   LaunchedEffect(activeFilter) {
-    if (selected.value != NomeDesktopDestination.Profile) {
+    if (selected.value != NomeDesktopDestination.Settings) {
       selected.value = nomeDesktopDestination(activeFilter)
     }
   }
@@ -79,10 +83,10 @@ actual fun PlatformHomeRoute(
     selected.value = NomeDesktopDestination.Contacts
   }
 
-  fun showProfile() {
+  fun showSettings() {
     val returnDestination = nomeDesktopDestination(chatModel.activeChatTagFilter.value)
     ModalManager.start.closeModals()
-    selected.value = NomeDesktopDestination.Profile
+    selected.value = NomeDesktopDestination.Settings
     ModalManager.start.showModalCloseable { close ->
       DisposableEffect(returnDestination) {
         onDispose {
@@ -101,13 +105,20 @@ actual fun PlatformHomeRoute(
     }
   }
 
+  fun showUserPicker() {
+    ModalManager.start.closeModals()
+    selected.value = nomeDesktopDestination(chatModel.activeChatTagFilter.value)
+    userPickerState.value = AnimatedViewState.VISIBLE
+  }
+
   Row(Modifier.fillMaxSize().background(NomeDesktopColors.Workspace)) {
     NomeDesktopNavigationRail(
       chatModel = chatModel,
       selected = selected,
       onMessages = ::showMessages,
       onContacts = ::showContacts,
-      onProfile = ::showProfile,
+      onSettings = ::showSettings,
+      onUserPicker = ::showUserPicker,
     )
     Box(
       Modifier
@@ -132,8 +143,10 @@ private fun NomeDesktopNavigationRail(
   selected: MutableState<NomeDesktopDestination>,
   onMessages: () -> Unit,
   onContacts: () -> Unit,
-  onProfile: () -> Unit,
+  onSettings: () -> Unit,
+  onUserPicker: () -> Unit,
 ) {
+  val userPickerLabel = stringResource(MR.strings.your_chat_profiles)
   Column(
     modifier =
       Modifier
@@ -144,17 +157,12 @@ private fun NomeDesktopNavigationRail(
     horizontalAlignment = Alignment.CenterHorizontally,
   ) {
     Image(
-      painter = painterResource(MR.images.nome_mark),
+      painter = painterResource(MR.images.nome_app_icon),
       contentDescription = "Nome",
-      modifier = Modifier.size(42.dp),
-    )
-    Text(
-      text = "Nome",
-      color = NomeDesktopColors.RailSelectedContent,
-      fontSize = 15.sp,
-      lineHeight = 18.sp,
-      fontWeight = FontWeight.SemiBold,
-      modifier = Modifier.padding(top = 5.dp),
+      modifier =
+        Modifier
+          .size(60.dp)
+          .clip(RoundedCornerShape(14.dp)),
     )
     Spacer(Modifier.height(30.dp))
     Column(
@@ -174,10 +182,10 @@ private fun NomeDesktopNavigationRail(
         onClick = onContacts,
       )
       NomeDesktopDestinationButton(
-        label = stringResource(MR.strings.nome_desktop_nav_profile),
+        label = stringResource(MR.strings.nome_desktop_nav_settings),
         icon = painterResource(MR.images.ic_settings),
-        selected = selected.value == NomeDesktopDestination.Profile,
-        onClick = onProfile,
+        selected = selected.value == NomeDesktopDestination.Settings,
+        onClick = onSettings,
       )
     }
     Spacer(Modifier.weight(1f))
@@ -192,7 +200,8 @@ private fun NomeDesktopNavigationRail(
       Modifier
         .size(42.dp)
         .clip(CircleShape)
-        .clickable(onClick = onProfile),
+        .semantics { contentDescription = userPickerLabel }
+        .clickable(role = Role.Button, onClick = onUserPicker),
       contentAlignment = Alignment.Center,
     ) {
       ProfileImage(
@@ -244,7 +253,8 @@ private fun NomeDesktopDestinationButton(
             Color.Transparent
           },
         )
-        .clickable(onClick = onClick)
+        .semantics(mergeDescendants = true) { this.selected = selected }
+        .clickable(role = Role.Button, onClick = onClick)
   ) {
     if (selected) {
       Box(
@@ -265,7 +275,7 @@ private fun NomeDesktopDestinationButton(
     ) {
       Icon(
         painter = icon,
-        contentDescription = label,
+        contentDescription = null,
         modifier = Modifier.size(22.dp),
         tint = contentColor,
       )

@@ -5,12 +5,28 @@ import SectionItemView
 import SectionSpacer
 import SectionTextFooter
 import SectionView
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import chat.simplex.common.model.*
 import chat.simplex.common.model.AppPreferences.Companion.SHARED_PREFS_MIGRATION_TO_STAGE
 import chat.simplex.common.model.ChatController.appPrefs
@@ -42,18 +58,18 @@ import kotlin.math.max
 
 @Serializable
 sealed class MigrationToDeviceState {
-  @Serializable @SerialName("onion") data class Onion(val link: String, val socksProxy: String?, val networkProxy: NetworkProxy?, val hostMode: HostMode, val requiredHostMode: Boolean): MigrationToDeviceState()
-  @Serializable @SerialName("downloadProgress") data class DownloadProgress(val link: String, val archiveName: String, val netCfg: NetCfg, val networkProxy: NetworkProxy?): MigrationToDeviceState()
-  @Serializable @SerialName("archiveImport") data class ArchiveImport(val archiveName: String, val netCfg: NetCfg, val networkProxy: NetworkProxy?): MigrationToDeviceState()
-  @Serializable @SerialName("passphrase") data class Passphrase(val netCfg: NetCfg, val networkProxy: NetworkProxy?): MigrationToDeviceState()
+  @Serializable @SerialName("onion") data class Onion(val link: String, val socksProxy: String?, val networkProxy: NetworkProxy?, val hostMode: HostMode, val requiredHostMode: Boolean, val credentialRef: String? = null): MigrationToDeviceState()
+  @Serializable @SerialName("downloadProgress") data class DownloadProgress(val link: String, val archiveName: String, val netCfg: NetCfg, val networkProxy: NetworkProxy?, val credentialRef: String? = null): MigrationToDeviceState()
+  @Serializable @SerialName("archiveImport") data class ArchiveImport(val archiveName: String, val netCfg: NetCfg, val networkProxy: NetworkProxy?, val credentialRef: String? = null): MigrationToDeviceState()
+  @Serializable @SerialName("passphrase") data class Passphrase(val netCfg: NetCfg, val networkProxy: NetworkProxy?, val credentialRef: String? = null): MigrationToDeviceState()
 
   companion object  {
     // Here we check whether it's needed to show migration process after app restart or not
     // It's important to NOT show the process when archive was corrupted/not fully downloaded
     fun makeMigrationState(): MigrationToState? {
       val stage = settings.getStringOrNull(SHARED_PREFS_MIGRATION_TO_STAGE)
-      val state: MigrationToDeviceState? = if (stage != null) json.decodeFromString(stage) else null
-      val initial: MigrationToState? = when(state) {
+      val persistedState: MigrationToDeviceState? = if (stage != null) json.decodeFromString(stage) else null
+      val initial: MigrationToState? = when(val state = persistedState) {
         null -> null
         is DownloadProgress -> {
           // No migration happens at the moment actually since archive were not downloaded fully
@@ -66,14 +82,18 @@ sealed class MigrationToDeviceState {
             Log.e(TAG, "MigrateToDevice: archive was removed unintentionally or state is broken, dropping migration")
             null
           } else {
+            val restored = if (appPlatform.isDesktop) state.restoreCredential() as ArchiveImport else state
             val archivePath = File(getMigrationTempFilesDirectory(), state.archiveName)
-            MigrationToState.ArchiveImportFailed(archivePath.absolutePath, state.netCfg, state.networkProxy)
+            MigrationToState.ArchiveImportFailed(archivePath.absolutePath, restored.netCfg, restored.networkProxy)
           }
         }
-        is Passphrase -> MigrationToState.Passphrase("", state.netCfg, state.networkProxy)
+        is Passphrase -> {
+          val restored = if (appPlatform.isDesktop) state.restoreCredential() as Passphrase else state
+          MigrationToState.Passphrase("", restored.netCfg, restored.networkProxy)
+        }
       }
       if (initial == null) {
-        settings.remove(SHARED_PREFS_MIGRATION_TO_STAGE)
+        clearPersistedState()
         getMigrationTempFilesDirectory().deleteRecursively()
       }
       return initial
@@ -81,13 +101,223 @@ sealed class MigrationToDeviceState {
 
     fun save(state: MigrationToDeviceState?) {
       if (state != null) {
-        appPreferences.migrationToStage.set(json.encodeToString(state))
+        if (appPlatform.isDesktop) {
+          val credential = state.proxyCredential()
+          val persisted = if (credential != null) {
+            migrationProxyCredentialVault.store(credential)
+            state.redactedForPersistence(MIGRATION_PROXY_CREDENTIAL_REF)
+          } else {
+            state.redactedForPersistence(null)
+          }
+          settings.putString(SHARED_PREFS_MIGRATION_TO_STAGE, json.encodeToString(persisted))
+          if (credential == null) migrationProxyCredentialVault.remove()
+        } else {
+          // Onion and in-progress download stages are discarded at restart,
+          // so their bearer file links must never be written to settings.
+          settings.putString(SHARED_PREFS_MIGRATION_TO_STAGE, json.encodeToString(state.withoutTransientFileLink()))
+        }
       } else {
-        appPreferences.migrationToStage.set(null)
+        clearPersistedState()
       }
+    }
+
+    private fun clearPersistedState() {
+      settings.remove(SHARED_PREFS_MIGRATION_TO_STAGE)
+      if (appPlatform.isDesktop) migrationProxyCredentialVault.remove()
     }
   }
 }
+
+private const val MIGRATION_PROXY_CREDENTIAL_REF = "migrationNetworkProxy"
+private const val KEYCHAIN_DATA_MARKER = "nome-keychain-v1"
+private const val KEYCHAIN_IV_MARKER = "credential-reference"
+
+private val migrationProxyCredentialVault by lazy { MigrationProxyCredentialVault(cryptor) }
+
+internal class MigrationProxyCredentialVault(
+  private val credentialCryptor: CryptorInterface,
+) {
+  fun store(proxy: NetworkProxy) {
+    val markers = try {
+      credentialCryptor.encryptText(json.encodeToString(proxy), MIGRATION_PROXY_CREDENTIAL_REF)
+    } catch (e: Throwable) {
+      throw CredentialUnavailable("migration proxy", e)
+    }
+    if (!markers.first.contentEquals(KEYCHAIN_DATA_MARKER.toByteArray(Charsets.UTF_8)) ||
+      !markers.second.contentEquals(KEYCHAIN_IV_MARKER.toByteArray(Charsets.UTF_8))) {
+      throw CredentialUnavailable("migration proxy")
+    }
+  }
+
+  fun load(reference: String): NetworkProxy {
+    if (reference != MIGRATION_PROXY_CREDENTIAL_REF) throw CredentialUnavailable("migration proxy")
+    val plaintext = try {
+      credentialCryptor.decryptData(
+        KEYCHAIN_DATA_MARKER.toByteArray(Charsets.UTF_8),
+        KEYCHAIN_IV_MARKER.toByteArray(Charsets.UTF_8),
+        reference,
+      )
+    } catch (e: Throwable) {
+      throw CredentialUnavailable("migration proxy", e)
+    } ?: throw CredentialUnavailable("migration proxy")
+    return runCatching { json.decodeFromString<NetworkProxy>(plaintext) }.getOrNull()
+      ?: throw CredentialUnavailable("migration proxy")
+  }
+
+  fun remove() {
+    try {
+      credentialCryptor.deleteKey(MIGRATION_PROXY_CREDENTIAL_REF)
+    } catch (e: Throwable) {
+      throw CredentialUnavailable("migration proxy", e)
+    }
+  }
+}
+
+private fun MigrationToDeviceState.restoreCredential(): MigrationToDeviceState {
+  val reference = credentialReference()
+  if (reference != null) {
+    val proxy = migrationProxyCredentialVault.load(reference)
+    if (!matchesCredentialEndpoint(proxy)) throw CredentialUnavailable("migration proxy")
+    return withRestoredCredential(proxy)
+  }
+
+  // Upgrade a pre-Keychain resume state in place before it is used again.
+  val legacyCredential = proxyCredential() ?: return this
+  migrationProxyCredentialVault.store(legacyCredential)
+  val persisted = redactedForPersistence(MIGRATION_PROXY_CREDENTIAL_REF)
+  settings.putString(SHARED_PREFS_MIGRATION_TO_STAGE, json.encodeToString(persisted))
+  return withRestoredCredential(legacyCredential)
+}
+
+internal fun MigrationToDeviceState.redactedForPersistence(reference: String?): MigrationToDeviceState = when (this) {
+  is MigrationToDeviceState.Onion -> {
+    val safeSocksProxy = socksProxy.withoutProxyCredentials()
+    val safeNetworkProxy = networkProxy?.withoutCredentials()
+    copy(
+      link = "",
+      socksProxy = safeSocksProxy,
+      networkProxy = safeNetworkProxy,
+      credentialRef = reference,
+    )
+  }
+  is MigrationToDeviceState.DownloadProgress -> copy(
+    link = "",
+    netCfg = netCfg.copy(socksProxy = netCfg.socksProxy.withoutProxyCredentials()),
+    networkProxy = networkProxy?.withoutCredentials(),
+    credentialRef = reference,
+  )
+  is MigrationToDeviceState.ArchiveImport -> copy(
+    netCfg = netCfg.copy(socksProxy = netCfg.socksProxy.withoutProxyCredentials()),
+    networkProxy = networkProxy?.withoutCredentials(),
+    credentialRef = reference,
+  )
+  is MigrationToDeviceState.Passphrase -> copy(
+    netCfg = netCfg.copy(socksProxy = netCfg.socksProxy.withoutProxyCredentials()),
+    networkProxy = networkProxy?.withoutCredentials(),
+    credentialRef = reference,
+  )
+}
+
+internal fun MigrationToDeviceState.withoutTransientFileLink(): MigrationToDeviceState = when (this) {
+  is MigrationToDeviceState.Onion -> copy(link = "")
+  is MigrationToDeviceState.DownloadProgress -> copy(link = "")
+  is MigrationToDeviceState.ArchiveImport,
+  is MigrationToDeviceState.Passphrase -> this
+}
+
+private fun MigrationToDeviceState.withRestoredCredential(proxy: NetworkProxy): MigrationToDeviceState = when (this) {
+  is MigrationToDeviceState.Onion -> copy(
+    socksProxy = socksProxy?.let { proxy.toProxyString() },
+    networkProxy = proxy,
+  )
+  is MigrationToDeviceState.DownloadProgress -> copy(
+    netCfg = netCfg.copy(socksProxy = netCfg.socksProxy?.let { proxy.toProxyString() }),
+    networkProxy = proxy,
+  )
+  is MigrationToDeviceState.ArchiveImport -> copy(
+    netCfg = netCfg.copy(socksProxy = netCfg.socksProxy?.let { proxy.toProxyString() }),
+    networkProxy = proxy,
+  )
+  is MigrationToDeviceState.Passphrase -> copy(
+    netCfg = netCfg.copy(socksProxy = netCfg.socksProxy?.let { proxy.toProxyString() }),
+    networkProxy = proxy,
+  )
+}
+
+private fun MigrationToDeviceState.proxyCredential(): NetworkProxy? {
+  val configuredProxy = when (this) {
+    is MigrationToDeviceState.Onion -> networkProxy
+    is MigrationToDeviceState.DownloadProgress -> networkProxy
+    is MigrationToDeviceState.ArchiveImport -> networkProxy
+    is MigrationToDeviceState.Passphrase -> networkProxy
+  }
+  if (configuredProxy?.hasCredentials() == true) return configuredProxy
+  return proxyString()?.toNetworkProxyWithCredentials()
+}
+
+private fun MigrationToDeviceState.credentialReference(): String? = when (this) {
+  is MigrationToDeviceState.Onion -> credentialRef
+  is MigrationToDeviceState.DownloadProgress -> credentialRef
+  is MigrationToDeviceState.ArchiveImport -> credentialRef
+  is MigrationToDeviceState.Passphrase -> credentialRef
+}
+
+private fun MigrationToDeviceState.proxyString(): String? = when (this) {
+  is MigrationToDeviceState.Onion -> socksProxy
+  is MigrationToDeviceState.DownloadProgress -> netCfg.socksProxy
+  is MigrationToDeviceState.ArchiveImport -> netCfg.socksProxy
+  is MigrationToDeviceState.Passphrase -> netCfg.socksProxy
+}
+
+private fun MigrationToDeviceState.matchesCredentialEndpoint(proxy: NetworkProxy): Boolean {
+  val safeProxy = when (this) {
+    is MigrationToDeviceState.Onion -> networkProxy
+    is MigrationToDeviceState.DownloadProgress -> networkProxy
+    is MigrationToDeviceState.ArchiveImport -> networkProxy
+    is MigrationToDeviceState.Passphrase -> networkProxy
+  }
+  if (safeProxy != null) return safeProxy.host == proxy.host && safeProxy.port == proxy.port
+  val endpoint = proxyString()?.substringAfterLast('@')?.let(::parseNetworkProxyPreference)
+  return endpoint != null && endpoint.host == proxy.host && endpoint.port == proxy.port
+}
+
+private fun NetworkProxy.hasCredentials(): Boolean = username.isNotBlank() || password.isNotBlank()
+
+private fun NetworkProxy.withoutCredentials(): NetworkProxy = copy(username = "", password = "")
+
+private fun String?.withoutProxyCredentials(): String? {
+  if (this == null) return null
+  val separator = lastIndexOf('@')
+  if (separator <= 0 || !substring(0, separator).contains(':')) return this
+  return "@${substring(separator + 1)}"
+}
+
+private fun String.toNetworkProxyWithCredentials(): NetworkProxy? {
+  val separator = lastIndexOf('@')
+  if (separator <= 0) return null
+  val userInfo = substring(0, separator)
+  val passwordSeparator = userInfo.indexOf(':')
+  if (passwordSeparator < 0) return null
+  val endpoint = parseNetworkProxyPreference(substring(separator + 1)) ?: return null
+  return endpoint.copy(
+    username = userInfo.substring(0, passwordSeparator),
+    password = userInfo.substring(passwordSeparator + 1),
+    auth = NetworkProxyAuth.USERNAME,
+  ).takeIf { it.hasCredentials() }
+}
+
+/**
+ * Restores the editable proxy model used by the migration confirmation screen.
+ * A leading `@` is the deliberate marker left after link credentials are
+ * stripped; it must select username authentication without becoming part of
+ * the proxy host.
+ */
+internal fun networkProxyFromLegacyMigrationValue(value: String): NetworkProxy =
+  value.toNetworkProxyWithCredentials()
+    ?: parseNetworkProxyPreference(value.substringAfterLast('@'))?.let { endpoint ->
+      if (value.startsWith("@")) endpoint.copy(auth = NetworkProxyAuth.USERNAME) else endpoint
+    }
+    ?: NetworkProxy()
 
 @Serializable
 sealed class MigrationToState {
@@ -119,6 +349,7 @@ private var MutableState<MigrationToState?>.state: MigrationToState?
 @Composable
 fun ModalData.MigrateToDeviceView(close: () -> Unit) {
   val migrationState = remember { chatModel.migrationState }
+  val desktopStartPage = appPlatform.isDesktop && migrationState.value is MigrationToState.PasteOrScanLink
   // Prevent from hiding the view until migration is finished or app deleted
   val backDisabled = remember {
     derivedStateOf {
@@ -141,6 +372,8 @@ fun ModalData.MigrateToDeviceView(close: () -> Unit) {
   }
   val chatReceiver = remember { mutableStateOf(null as MigrationToChatReceiver?) }
   ModalView(
+    showClose = !desktopStartPage,
+    showAppBar = !desktopStartPage,
     enableClose = !backDisabled.value,
     close = {
       withBGApi {
@@ -164,12 +397,186 @@ private fun ModalData.MigrateToDeviceLayout(
   close: () -> Unit,
 ) {
   val tempDatabaseFile = rememberSaveable { mutableStateOf(fileForTemporaryDatabase()) }
-  ColumnWithScrollBar(maxIntrinsicSize = true) {
-    AppBarTitle(stringResource(MR.strings.migrate_to_device_title))
-    SectionByState(migrationState, tempDatabaseFile.value, chatReceiver, close)
-    SectionBottomSpacer()
+  if (appPlatform.isDesktop && migrationState.value is MigrationToState.PasteOrScanLink) {
+    DesktopMigrateToDeviceStart(
+      migrationState = migrationState,
+      chatReceiver = chatReceiver,
+      close = close,
+    )
+  } else {
+    ColumnWithScrollBar(maxIntrinsicSize = true) {
+      AppBarTitle(stringResource(MR.strings.migrate_to_device_title))
+      SectionByState(migrationState, tempDatabaseFile.value, chatReceiver, close)
+      SectionBottomSpacer()
+    }
   }
   platform.androidLockPortraitOrientation()
+}
+
+@Composable
+private fun ModalData.DesktopMigrateToDeviceStart(
+  migrationState: MutableState<MigrationToState?>,
+  chatReceiver: MutableState<MigrationToChatReceiver?>,
+  close: () -> Unit,
+) {
+  val clipboard = LocalClipboardManager.current
+  val progressIndicator = remember { mutableStateOf(false) }
+  val backDescription = stringResource(MR.strings.nome_desktop_back)
+  val importArchiveLauncher = rememberFileChooserLauncher(true) { to: URI? ->
+    if (to != null) {
+      withLongRunningApi {
+        val success = importArchive(to, mutableStateOf(0 to 0), progressIndicator, true)
+        if (success) {
+          startChat(
+            chatModel,
+            mutableStateOf(Clock.System.now()),
+            chatModel.chatDbChanged,
+            progressIndicator
+          )
+          hideView(close)
+        }
+      }
+    }
+  }
+  Box(
+    modifier = Modifier
+      .fillMaxSize()
+      .background(MigrationDesktopColors.Background)
+  ) {
+    Column(Modifier.fillMaxSize()) {
+      Row(
+        modifier = Modifier
+          .fillMaxWidth()
+          .height(62.dp)
+          .padding(horizontal = 30.dp),
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        IconButton(
+          onClick = {
+            withBGApi {
+              migrationState.cleanUpOnBack(chatReceiver.value)
+              close()
+            }
+          },
+          modifier = Modifier.semantics {
+            contentDescription = backDescription
+          },
+        ) {
+          Icon(
+            painter = painterResource(MR.images.ic_arrow_back_ios_new),
+            contentDescription = backDescription,
+            tint = MigrationDesktopColors.Text,
+            modifier = Modifier.size(19.dp),
+          )
+        }
+        Image(
+          painter = painterResource(MR.images.nome_mark),
+          contentDescription = "Nome",
+          modifier = Modifier.size(26.dp),
+        )
+        Text(
+          text = "Nome",
+          color = MigrationDesktopColors.Text,
+          fontSize = 15.sp,
+          fontWeight = FontWeight.Bold,
+          modifier = Modifier.padding(start = 8.dp),
+        )
+        Spacer(Modifier.weight(1f))
+        Text(
+          text = stringResource(MR.strings.nome_desktop_migration_label),
+          color = MigrationDesktopColors.TextMuted,
+          fontSize = 11.sp,
+          fontWeight = FontWeight.SemiBold,
+          letterSpacing = 0.8.sp,
+        )
+      }
+      Divider(color = MigrationDesktopColors.Divider)
+      Column(
+        modifier = Modifier
+          .weight(1f)
+          .fillMaxWidth()
+          .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
+      ) {
+        Column(
+          modifier = Modifier
+            .widthIn(max = 760.dp)
+            .fillMaxWidth()
+            .padding(horizontal = 48.dp, vertical = 44.dp),
+        ) {
+          Text(
+            text = stringResource(MR.strings.nome_desktop_migration_title),
+            modifier = Modifier.semantics { heading() },
+            color = MigrationDesktopColors.Text,
+            fontSize = 36.sp,
+            lineHeight = 42.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = (-0.7).sp,
+          )
+          Text(
+            text = stringResource(MR.strings.nome_desktop_migration_body),
+            color = MigrationDesktopColors.TextMuted,
+            fontSize = 15.sp,
+            lineHeight = 23.sp,
+            modifier = Modifier.padding(top = 12.dp).widthIn(max = 650.dp),
+          )
+          Spacer(Modifier.height(34.dp))
+          Surface(
+            color = MigrationDesktopColors.Surface,
+            shape = RoundedCornerShape(16.dp),
+            border = BorderStroke(1.dp, MigrationDesktopColors.Border),
+            modifier = Modifier.fillMaxWidth(),
+          ) {
+            Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
+              DesktopMigrationInfoRow(
+                icon = painterResource(MR.images.ic_link),
+                title = stringResource(MR.strings.nome_desktop_migration_link_title),
+                body = stringResource(MR.strings.nome_desktop_migration_link_body),
+              )
+              Divider(color = MigrationDesktopColors.Divider)
+              DesktopMigrationInfoRow(
+                icon = painterResource(MR.images.ic_database),
+                title = stringResource(MR.strings.nome_desktop_migration_import_title),
+                body = stringResource(MR.strings.nome_desktop_migration_import_body),
+              )
+            }
+          }
+          Spacer(Modifier.height(20.dp))
+          DesktopMigrationNotice(
+            icon = painterResource(MR.images.ic_lock),
+            body = stringResource(MR.strings.nome_desktop_migration_notice),
+          )
+        }
+      }
+      Divider(color = MigrationDesktopColors.Divider)
+      Row(
+        modifier = Modifier
+          .fillMaxWidth()
+          .background(MigrationDesktopColors.Surface)
+          .padding(horizontal = 34.dp, vertical = 16.dp),
+        horizontalArrangement = Arrangement.End,
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        DesktopSecondaryButton(
+          text = stringResource(MR.strings.import_database),
+          enabled = !progressIndicator.value,
+          onClick = { withLongRunningApi { importArchiveLauncher.launch("application/zip") } },
+        )
+        Spacer(Modifier.width(12.dp))
+        DesktopPrimaryButton(
+          text = stringResource(MR.strings.paste_archive_link),
+          enabled = !progressIndicator.value,
+          onClick = {
+            val str = clipboard.getText()?.text ?: return@DesktopPrimaryButton
+            withBGApi { migrationState.checkUserLink(str) }
+          },
+        )
+      }
+    }
+    if (progressIndicator.value) {
+      ProgressView()
+    }
+  }
 }
 
 @Composable
@@ -260,6 +667,146 @@ private fun ArchiveImportView(progressIndicator: MutableState<Boolean>, close: (
 }
 
 @Composable
+private fun DesktopMigrationInfoRow(
+  icon: Painter,
+  title: String,
+  body: String,
+) {
+  Row(
+    modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    Surface(
+      modifier = Modifier.size(40.dp),
+      shape = RoundedCornerShape(11.dp),
+      color = MigrationDesktopColors.MintPale,
+    ) {
+      Box(contentAlignment = Alignment.Center) {
+        Icon(
+          painter = icon,
+          contentDescription = null,
+          tint = MigrationDesktopColors.Action,
+          modifier = Modifier.size(20.dp),
+        )
+      }
+    }
+    Spacer(Modifier.width(14.dp))
+    Column(Modifier.weight(1f)) {
+      Text(
+        text = title,
+        color = MigrationDesktopColors.Text,
+        fontSize = 14.sp,
+        lineHeight = 19.sp,
+        fontWeight = FontWeight.SemiBold,
+        maxLines = 2,
+        overflow = TextOverflow.Ellipsis,
+      )
+      Text(
+        text = body,
+        color = MigrationDesktopColors.TextMuted,
+        fontSize = 12.sp,
+        lineHeight = 18.sp,
+        modifier = Modifier.padding(top = 3.dp),
+      )
+    }
+  }
+}
+
+@Composable
+private fun DesktopMigrationNotice(
+  icon: Painter,
+  body: String,
+) {
+  Row(
+    modifier = Modifier
+      .fillMaxWidth()
+      .background(MigrationDesktopColors.MintPale, RoundedCornerShape(12.dp))
+      .padding(14.dp),
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    Icon(
+      painter = icon,
+      contentDescription = null,
+      tint = MigrationDesktopColors.Action,
+      modifier = Modifier.size(20.dp),
+    )
+    Spacer(Modifier.width(11.dp))
+    Text(
+      text = body,
+      color = MigrationDesktopColors.TextMuted,
+      fontSize = 12.sp,
+      lineHeight = 17.sp,
+    )
+  }
+}
+
+@Composable
+private fun DesktopPrimaryButton(
+  text: String,
+  enabled: Boolean = true,
+  onClick: () -> Unit,
+) {
+  Button(
+    onClick = onClick,
+    enabled = enabled,
+    modifier = Modifier
+      .height(46.dp)
+      .widthIn(min = 190.dp)
+      .semantics { contentDescription = text },
+    shape = RoundedCornerShape(12.dp),
+    colors = ButtonDefaults.buttonColors(
+      backgroundColor = MigrationDesktopColors.Action,
+      contentColor = Color.White,
+      disabledBackgroundColor = MigrationDesktopColors.Disabled,
+      disabledContentColor = Color.White.copy(alpha = 0.8f),
+    ),
+    elevation = ButtonDefaults.elevation(0.dp, 0.dp, 0.dp),
+    contentPadding = PaddingValues(horizontal = 22.dp),
+  ) {
+    Text(text = text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+  }
+}
+
+@Composable
+private fun DesktopSecondaryButton(
+  text: String,
+  enabled: Boolean = true,
+  onClick: () -> Unit,
+) {
+  Button(
+    onClick = onClick,
+    enabled = enabled,
+    modifier = Modifier
+      .height(46.dp)
+      .semantics { contentDescription = text },
+    shape = RoundedCornerShape(12.dp),
+    border = BorderStroke(1.dp, MigrationDesktopColors.Border),
+    colors = ButtonDefaults.buttonColors(
+      backgroundColor = MigrationDesktopColors.Surface,
+      contentColor = MigrationDesktopColors.Text,
+      disabledBackgroundColor = MigrationDesktopColors.Surface,
+      disabledContentColor = MigrationDesktopColors.TextMuted,
+    ),
+    elevation = ButtonDefaults.elevation(0.dp, 0.dp, 0.dp),
+    contentPadding = PaddingValues(horizontal = 20.dp),
+  ) {
+    Text(text = text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+  }
+}
+
+private object MigrationDesktopColors {
+  val MintPale = Color(0xFFE8F6F0)
+  val Action = Color(0xFF0A874D)
+  val Background = Color(0xFFF5F7FA)
+  val Surface = Color(0xFFFFFFFF)
+  val Text = Color(0xFF0E1B2D)
+  val TextMuted = Color(0xFF667085)
+  val Border = Color(0xFFDCE3E9)
+  val Divider = Color(0xFFE7ECF1)
+  val Disabled = Color(0xFF9FB4AA)
+}
+
+@Composable
 private fun ModalData.OnionView(link: String, legacyLinkSocksProxy: String?, linkNetworkProxy: NetworkProxy?, hostMode: HostMode, requiredHostMode: Boolean, state: MutableState<MigrationToState?>) {
   val onionHosts = remember { stateGetOrPut("onionHosts") {
     getNetCfg().copy(socksProxy = linkNetworkProxy?.toProxyString() ?: legacyLinkSocksProxy, hostMode = hostMode, requiredHostMode = requiredHostMode).onionHosts
@@ -269,7 +816,7 @@ private fun ModalData.OnionView(link: String, legacyLinkSocksProxy: String?, lin
   val networkProxy = remember { stateGetOrPut("networkProxy") {
     linkNetworkProxy
       ?: if (legacyLinkSocksProxy != null) {
-        NetworkProxy(host = legacyLinkSocksProxy.substringBefore(":").ifBlank { "localhost" }, port = legacyLinkSocksProxy.substringAfter(":").toIntOrNull() ?: 9050)
+        networkProxyFromLegacyMigrationValue(legacyLinkSocksProxy)
       } else {
         appPrefs.networkProxy.get()
       }
@@ -529,6 +1076,12 @@ private suspend fun MutableState<MigrationToState?>.checkUserLink(link: String):
     if (hasProxyConfigured && networkConfig?.hostMode != null && networkConfig.requiredHostMode != null) {
       state = MigrationToState.Onion(link.trim(), networkConfig.legacySocksProxy, networkConfig.networkProxy, networkConfig.hostMode, networkConfig.requiredHostMode)
       MigrationToDeviceState.save(MigrationToDeviceState.Onion(link.trim(), networkConfig.legacySocksProxy, networkConfig.networkProxy, networkConfig.hostMode, networkConfig.requiredHostMode))
+      if (networkConfig.requiresProxyCredentialEntry()) {
+        AlertManager.shared.showAlertMsg(
+          generalGetString(MR.strings.migrate_to_device_proxy_credentials_required_title),
+          generalGetString(MR.strings.migrate_to_device_proxy_credentials_required_text),
+        )
+      }
     } else {
       val current = getNetCfg()
       state = MigrationToState.DatabaseInit(link.trim(), current.copy(
@@ -690,17 +1243,22 @@ private suspend fun finishMigration(appSettings: AppSettings, close: () -> Unit)
   try {
     getMigrationTempFilesDirectory().deleteRecursively()
     appSettings.importIntoApp()
+    val onStarted: suspend () -> Unit = {
+      platform.androidChatStartedAfterBeingOff()
+      hideView(close)
+      AlertManager.shared.showAlertMsg(generalGetString(MR.strings.migrate_to_device_chat_migrated), generalGetString(MR.strings.migrate_to_device_finalize_migration))
+      MigrationToDeviceState.save(null)
+    }
     val user = chatModel.currentUser.value
     if (user != null) {
-      startChat(user)
+      startChat(user, onStarted)
+    } else {
+      onStarted()
     }
-    platform.androidChatStartedAfterBeingOff()
-    hideView(close)
-    AlertManager.shared.showAlertMsg(generalGetString(MR.strings.migrate_to_device_chat_migrated), generalGetString(MR.strings.migrate_to_device_finalize_migration))
   } catch (e: Exception) {
     AlertManager.shared.showAlertMsg(generalGetString(MR.strings.error_starting_chat), e.stackTraceToString())
+    MigrationToDeviceState.save(null)
   }
-  MigrationToDeviceState.save(null)
 }
 
 private fun hideView(close: () -> Unit) {
@@ -725,7 +1283,7 @@ private suspend fun MutableState<MigrationToState?>.cleanUpOnBack(chatReceiver: 
 }
 
 private fun strHasSimplexFileLink(text: String): Boolean =
-  text.startsWith("simplex:/file") || text.startsWith("https://simplex.chat/file")
+  isRecognizedPublicFileLink(text)
 
 private fun fileForTemporaryDatabase(): File =
   File(getMigrationTempFilesDirectory(), generateNewFileName("migration", "db", getMigrationTempFilesDirectory()))

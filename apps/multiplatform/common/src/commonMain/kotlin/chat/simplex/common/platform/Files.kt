@@ -36,6 +36,18 @@ expect val databaseExportDir: File
 
 expect val remoteHostsDir: File
 
+/** Tighten permissions after the native database layer creates or migrates its files. */
+expect fun protectAppDataFiles()
+
+/**
+ * Irrecoverably removes the local chat databases, SQLite sidecars and app-owned attachment/temp
+ * directories. Implementations deliberately expose no path argument: every deletion target is a
+ * fixed Nome application path and every directory is recreated with private permissions.
+ *
+ * The function throws unless every target was removed and every required directory was restored.
+ */
+expect fun wipeChatStorageFilesVerified()
+
 expect fun desktopOpenDatabaseDir()
 
 expect fun desktopOpenDir(dir: File)
@@ -159,6 +171,7 @@ fun writeThemeOverrides(overrides: List<ThemeOverrides>): Boolean =
         tmpFile.bufferedWriter().use { it.write(string) }
         themesFile.parentFile.mkdirs()
         Files.move(tmpFile.toPath(), themesFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+        protectAppDataFiles()
       }
       true
     } catch (e: Exception) {

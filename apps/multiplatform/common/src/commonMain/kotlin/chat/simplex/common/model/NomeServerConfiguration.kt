@@ -1,7 +1,6 @@
 package chat.simplex.common.model
 
 import chat.simplex.common.platform.Log
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -16,8 +15,9 @@ internal object NomeServerConfiguration {
   internal const val smpHostname = "smp.nome.im"
   internal const val xftpHostname = "xftp.nome.im"
 
-  internal const val smpServer =
+  private const val smpServerHostOnly =
     "smp://RVzf_goDl1uPbeXQu7Mpi-gck_By0QhEGobrwPwULY8=:e0eabd5e5b046bd7e7082ad9d68e133c213281e9a9109c84@smp.nome.im"
+  internal const val smpServer = smpServerHostOnly + ":5223"
   internal const val xftpServer =
     "xftp://y00AWTizJH88sHCMioQ1m-d_xXWlwolHAek_Mc4MhYM=:accbd90c5c813d90facea657d3da87e022eae9ce07005b53@xftp.nome.im"
 
@@ -151,14 +151,10 @@ internal object NomeServerConfiguration {
   ): Boolean {
     require(attempts > 0)
     for (attempt in 1..attempts) {
-      val applied = try {
-        operation()
-      } catch (e: CancellationException) {
-        throw e
-      } catch (e: Throwable) {
-        Log.e(LOG_TAG, "Nome server configuration attempt $attempt failed")
-        false
-      }
+      // Expected transient API outcomes are represented by `false` at the call sites. Native,
+      // database and programming exceptions are not retry signals and must retain their original
+      // failure semantics instead of being disguised as an endless configuration prompt.
+      val applied = operation()
       if (applied) return true
       if (attempt < attempts) waitBeforeRetry(attempt)
     }
@@ -176,7 +172,9 @@ internal object NomeServerConfiguration {
         remoteHostId = null,
         serverId = null,
         server = currentAddress,
-        preset = false,
+        // Managed routes are always read-only presets. Otherwise ProtocolServerView exposes the
+        // full credential-bearing address in an editor and QR code.
+        preset = true,
         tested = null,
         enabled = true,
         deleted = false,
@@ -192,7 +190,7 @@ internal object NomeServerConfiguration {
           val addressChanged = server.server.trim() != currentAddress
           server.copy(
             server = currentAddress,
-            preset = if (addressChanged) false else server.preset,
+            preset = true,
             tested = if (addressChanged) null else server.tested,
             enabled = true,
             deleted = false,

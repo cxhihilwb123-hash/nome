@@ -1,8 +1,14 @@
 package chat.simplex.common.views.call
 
-import chat.simplex.common.views.helpers.generalGetString
 import chat.simplex.common.model.*
 import chat.simplex.common.platform.appPlatform
+import chat.simplex.common.platform.CredentialUnavailable
+import chat.simplex.common.platform.cryptor
+import chat.simplex.common.views.helpers.AlertManager
+import chat.simplex.common.views.helpers.DatabaseUtils
+import chat.simplex.common.views.helpers.generalGetString
+import chat.simplex.common.views.helpers.toBase64StringForPassphrase
+import chat.simplex.common.views.helpers.toByteArrayFromBase64ForPassphrase
 import chat.simplex.res.MR
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
@@ -160,6 +166,18 @@ sealed class WCallResponse {
 // https://developer.mozilla.org/en-US/docs/Web/API/RTCIceServer
 @Serializable data class RTCIceServer(val urls: List<String>, val username: String? = null, val credential: String? = null)
 
+/** Produces useful ICE diagnostics without retaining usernames, passwords, or URI userinfo. */
+internal fun redactIceServersForLog(iceServers: List<RTCIceServer>?): String =
+  iceServers
+    ?.joinToString(prefix = "[", postfix = "]") { server ->
+      server.copy(
+        urls = server.urls.map(::redactServerCredentials),
+        username = server.username?.let { "***" },
+        credential = server.credential?.let { "***" },
+      ).toString()
+    }
+    ?: "null"
+
 // https://developer.mozilla.org/en-US/docs/Web/API/RTCIceCandidate/type
 @Serializable
 enum class RTCIceCandidateType(val value: String) {
@@ -263,7 +281,55 @@ fun parseRTCIceServers(servers: List<String>): List<RTCIceServer>? {
 }
 
 fun getIceServers(): List<RTCIceServer>? {
-  val value = ChatController.appPrefs.webrtcIceServers.get() ?: return null
+  val value = getStoredIceServers() ?: return null
   val servers: List<String> = value.split("\n")
   return parseRTCIceServers(servers)
+}
+
+/** Store custom TURN credentials in the macOS Keychain; Android keeps its existing preference. */
+internal fun getStoredIceServers(): String? {
+  val prefs = ChatController.appPrefs
+  if (!appPlatform.isDesktop) return prefs.webrtcIceServers.get()
+  val stored = prefs.webrtcIceServers.get() ?: return null
+  try {
+    val storedIv = prefs.webrtcIceServersIV.get()
+    if (storedIv != null) {
+      return DatabaseUtils.ksWebrtcIceServers.get()
+        ?: throw CredentialUnavailable("custom ICE servers")
+    }
+
+    // Migrate the historical plaintext preference. Also recover the narrow data-marker-first
+    // crash window from KeyStoreItem.set without ever treating the marker as a credential.
+    val decoded = runCatching { stored.toByteArrayFromBase64ForPassphrase() }.getOrNull()
+    if (decoded?.toString(Charsets.UTF_8) == "nome-keychain-v1") {
+      val ivMarker = "credential-reference".toByteArray(Charsets.UTF_8)
+      val value = cryptor.decryptData(decoded, ivMarker, "webrtcIceServers")
+        ?: throw CredentialUnavailable("custom ICE servers")
+      prefs.webrtcIceServersIV.set(ivMarker.toBase64StringForPassphrase())
+      return value
+    }
+    DatabaseUtils.ksWebrtcIceServers.set(stored)
+    return stored
+  } catch (e: CredentialUnavailable) {
+    throw e
+  } catch (e: Exception) {
+    throw CredentialUnavailable("custom ICE servers", e)
+  }
+}
+
+internal fun setStoredIceServers(value: String?) {
+  if (!appPlatform.isDesktop) {
+    ChatController.appPrefs.webrtcIceServers.set(value)
+  } else if (value == null) {
+    DatabaseUtils.ksWebrtcIceServers.remove()
+  } else {
+    DatabaseUtils.ksWebrtcIceServers.set(value)
+  }
+}
+
+internal fun showIceCredentialUnavailableAlert() {
+  AlertManager.shared.showAlertMsg(
+    generalGetString(MR.strings.ice_server_credentials_unavailable_title),
+    generalGetString(MR.strings.ice_server_credentials_unavailable_body),
+  )
 }

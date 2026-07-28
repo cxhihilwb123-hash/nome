@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Clock
 import kotlinx.serialization.encodeToString
 import org.nanohttpd.protocols.http.IHTTPSession
+import org.nanohttpd.protocols.http.request.Method
 import org.nanohttpd.protocols.http.response.Response
 import org.nanohttpd.protocols.http.response.Response.newFixedLengthResponse
 import org.nanohttpd.protocols.http.response.Status
@@ -19,20 +20,186 @@ import org.nanohttpd.protocols.websockets.*
 import java.io.IOException
 import java.net.BindException
 import java.net.URI
+import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
+import java.security.SecureRandom
+import java.util.Base64
+import java.util.concurrent.CopyOnWriteArrayList
 
-private const val SERVER_HOST = "localhost"
+private const val SERVER_HOST = "127.0.0.1"
 private const val SERVER_PORT = 50395
-val connections = ArrayList<WebSocket>()
+private const val CALL_BRIDGE_PAGE_PATH = "/simplex/call/"
+private const val CALL_BRIDGE_BOOTSTRAP_PARAM = "bootstrap"
+private const val CALL_BRIDGE_WS_PATH_PREFIX = "/simplex/call/ws/"
+private const val CALL_BRIDGE_SCRIPT_MARKER = "/*__NOME_CALL_BRIDGE_BOOTSTRAP__*/"
+private const val CALL_BRIDGE_TOKEN_BYTES = 32
+private val connections = CopyOnWriteArrayList<WebSocket>()
+private val callBridgeSecureRandom = SecureRandom()
+
+internal class CallBridgeHandshakeRequest(
+  val headers: Map<String, String>,
+  val remoteIpAddress: String,
+  val path: String,
+)
+
+internal enum class CallBridgeHandshakeValidation {
+  ACCEPTED,
+  INVALID_REMOTE_IP,
+  INVALID_ORIGIN,
+  INVALID_TOKEN,
+}
+
+internal fun validateCallBridgeHandshake(
+  request: CallBridgeHandshakeRequest,
+  expectedWebSocketPath: String,
+  expectedOrigin: String,
+): CallBridgeHandshakeValidation {
+  if (!isLoopbackAddress(request.remoteIpAddress)) {
+    return CallBridgeHandshakeValidation.INVALID_REMOTE_IP
+  }
+  if (!hasExpectedOrigin(request.headers["origin"], expectedOrigin)) {
+    return CallBridgeHandshakeValidation.INVALID_ORIGIN
+  }
+  if (!constantTimeEquals(request.path, expectedWebSocketPath)) {
+    return CallBridgeHandshakeValidation.INVALID_TOKEN
+  }
+  return CallBridgeHandshakeValidation.ACCEPTED
+}
+
+internal fun generateCallBridgeToken(random: SecureRandom = callBridgeSecureRandom): String {
+  val bytes = ByteArray(CALL_BRIDGE_TOKEN_BYTES)
+  random.nextBytes(bytes)
+  return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
+}
+
+internal class CallBridgePageRequest(
+  val method: Method,
+  val path: String,
+  val queryParameters: Map<String, List<String>>,
+  val remoteIpAddress: String,
+)
+
+internal enum class CallBridgePageAuthorization {
+  SERVE_PAGE_WITHOUT_AUTH,
+  SERVE_AUTHORIZED_PAGE,
+  INVALID_REMOTE_IP,
+  INVALID_METHOD,
+  INVALID_PATH,
+  INVALID_QUERY,
+  INVALID_NONCE,
+  NONCE_ALREADY_CONSUMED,
+}
+
+internal class CallBridgeBootstrapGate(private val expectedNonce: String) {
+  private var consumed = false
+
+  @Synchronized
+  fun authorize(request: CallBridgePageRequest): CallBridgePageAuthorization {
+    if (!isLoopbackAddress(request.remoteIpAddress)) {
+      return CallBridgePageAuthorization.INVALID_REMOTE_IP
+    }
+    if (request.path != CALL_BRIDGE_PAGE_PATH) {
+      return CallBridgePageAuthorization.INVALID_PATH
+    }
+    if (request.method != Method.GET) {
+      return CallBridgePageAuthorization.INVALID_METHOD
+    }
+    if (request.queryParameters.isEmpty()) {
+      return CallBridgePageAuthorization.SERVE_PAGE_WITHOUT_AUTH
+    }
+    if (request.queryParameters.keys != setOf(CALL_BRIDGE_BOOTSTRAP_PARAM)) {
+      return CallBridgePageAuthorization.INVALID_QUERY
+    }
+    val nonceValues = request.queryParameters[CALL_BRIDGE_BOOTSTRAP_PARAM]
+    if (nonceValues?.size != 1) {
+      return CallBridgePageAuthorization.INVALID_QUERY
+    }
+    if (!constantTimeEquals(nonceValues.single(), expectedNonce)) {
+      return CallBridgePageAuthorization.INVALID_NONCE
+    }
+    if (consumed) {
+      return CallBridgePageAuthorization.NONCE_ALREADY_CONSUMED
+    }
+    consumed = true
+    return CallBridgePageAuthorization.SERVE_AUTHORIZED_PAGE
+  }
+}
+
+internal fun buildCallBridgeBootstrapUri(port: Int, bootstrapNonce: String): String =
+  URI(
+    "http",
+    null,
+    SERVER_HOST,
+    port,
+    CALL_BRIDGE_PAGE_PATH,
+    "$CALL_BRIDGE_BOOTSTRAP_PARAM=$bootstrapNonce",
+    null,
+  ).toASCIIString()
+
+private fun constantTimeEquals(actual: String, expected: String): Boolean =
+  MessageDigest.isEqual(
+    actual.toByteArray(StandardCharsets.UTF_8),
+    expected.toByteArray(StandardCharsets.UTF_8),
+  )
+
+private fun hasExpectedOrigin(originHeader: String?, expectedOrigin: String): Boolean {
+  val actualOrigin = originHeader?.let(::uriCreateOrNull) ?: return false
+  val trustedOrigin = uriCreateOrNull(expectedOrigin) ?: return false
+  return actualOrigin.scheme.equals(trustedOrigin.scheme, ignoreCase = true) &&
+    actualOrigin.host.equals(trustedOrigin.host, ignoreCase = true) &&
+    normalizedPort(actualOrigin) == normalizedPort(trustedOrigin)
+}
+
+private fun normalizedPort(uri: URI): Int =
+  if (uri.port != -1) {
+    uri.port
+  } else {
+    when (uri.scheme?.lowercase()) {
+      "http" -> 80
+      "https" -> 443
+      else -> -1
+    }
+  }
+
+private fun isLoopbackAddress(remoteIpAddress: String): Boolean =
+  remoteIpAddress == "127.0.0.1" ||
+    remoteIpAddress == "::1" ||
+    remoteIpAddress == "0:0:0:0:0:0:0:1"
+
+private fun websocketRejected(status: Status, message: String): Response =
+  newFixedLengthResponse(status, "text/plain", message).apply {
+    closeConnection(true)
+    setKeepAlive(false)
+  }
+
+internal fun injectCallBridgeWebSocketPath(page: String, webSocketPath: String): String {
+  require(webSocketPath.startsWith(CALL_BRIDGE_WS_PATH_PREFIX))
+  require(webSocketPath.removePrefix(CALL_BRIDGE_WS_PATH_PREFIX).matches(Regex("[A-Za-z0-9_-]{43}")))
+  check(page.contains(CALL_BRIDGE_SCRIPT_MARKER))
+  val bootstrapScript =
+    "window.nomeCallBridgePath='$webSocketPath';" +
+      "window.history.replaceState(null,'','$CALL_BRIDGE_PAGE_PATH');"
+  return page.replace(CALL_BRIDGE_SCRIPT_MARKER, bootstrapScript)
+}
+
+private fun Response.addCallBridgeSecurityHeaders(): Response = apply {
+  addHeader("Cache-Control", "no-store")
+  addHeader("Pragma", "no-cache")
+  addHeader("Content-Security-Policy", "frame-ancestors 'none'")
+  addHeader("X-Frame-Options", "DENY")
+  addHeader("X-Content-Type-Options", "nosniff")
+  addHeader("Referrer-Policy", "no-referrer")
+}
 
 // Spec: spec/services/calls.md#ActiveCallView
 @Composable
 actual fun ActiveCallView() {
   val scope = rememberCoroutineScope()
   WebRTCController(chatModel.callCommand) { apiMsg ->
-    Log.d(TAG, "received from WebRTCController: $apiMsg")
+    Log.d(TAG, "received from WebRTCController: ${callApiMessageLogSummary(apiMsg)}")
     val call = chatModel.activeCall.value
     if (call != null) {
-      Log.d(TAG, "has active call $call")
+      Log.d(TAG, "has active call: ${activeCallLogSummary(call)}")
       val callRh = call.remoteHostId
       when (val r = apiMsg.resp) {
         is WCallResponse.Capabilities -> withBGApi {
@@ -61,8 +228,8 @@ actual fun ActiveCallView() {
               chatModel.activeCall.value = call.copy(callState = CallState.Connected, connectedAt = Clock.System.now())
             }
             withBGApi { chatModel.controller.apiCallStatus(callRh, call.contact, callStatus) }
-          } catch (e: Throwable) {
-            Log.d(TAG, "call status ${r.state.connectionState} not used")
+          } catch (_: Throwable) {
+            Log.d(TAG, "call status not used: ${callConnectionStateLogSummary(r.state)}")
           }
         is WCallResponse.Connected -> {
           chatModel.activeCall.value = call.copy(callState = CallState.Connected, connectionInfo = r.connectionInfo)
@@ -115,7 +282,7 @@ actual fun ActiveCallView() {
             ))
             else -> {}
           }
-          Log.e(TAG, "ActiveCallView: command error ${r.message}")
+          Log.e(TAG, "ActiveCallView: command error ${callApiMessageLogSummary(apiMsg)}")
         }
       }
     }
@@ -157,12 +324,13 @@ fun WebRTCController(callCommand: SnapshotStateList<WCallCommand>, onResponse: (
     val call = chatModel.activeCall.value
     if (call != null) withBGApi { chatModel.callManager.endCall(call) }
   }
+  val bootstrapNonce = remember { generateCallBridgeToken() }
   val server = remember {
-    startServer(onResponse).apply {
+    startServer(onResponse, bootstrapNonce = bootstrapNonce).apply {
       try {
-        uriHandler.openUri("http://${SERVER_HOST}:${listeningPort}/simplex/call/")
+        uriHandler.openUri(buildCallBridgeBootstrapUri(listeningPort, bootstrapNonce))
       } catch (e: Exception) {
-        Log.e(TAG, "Unable to open browser: ${e.stackTraceToString()}")
+        Log.e(TAG, callBridgeFailureLogSummary(CallBridgeLogEvent.OPEN_BROWSER_FAILED, e))
         AlertManager.shared.showAlertMsg(
           title = generalGetString(MR.strings.unable_to_open_browser_title),
           text = generalGetString(MR.strings.unable_to_open_browser_desc)
@@ -178,7 +346,14 @@ fun WebRTCController(callCommand: SnapshotStateList<WCallCommand>, onResponse: (
         connection.send(json.encodeToString(apiCall))
         break
       } catch (e: Exception) {
-        Log.e(TAG, "Failed to send message to browser: ${e.stackTraceToString()}")
+        Log.e(
+          TAG,
+          callBridgeFailureLogSummary(
+            CallBridgeLogEvent.SEND_COMMAND_FAILED,
+            e,
+            command = cmd,
+          ),
+        )
       }
     }
   }
@@ -199,7 +374,7 @@ fun WebRTCController(callCommand: SnapshotStateList<WCallCommand>, onResponse: (
         }
         while (callCommand.isNotEmpty()) {
           val cmd = callCommand.removeFirstOrNull()
-          Log.d(TAG, "WebRTCController LaunchedEffect executing $cmd")
+          Log.d(TAG, "WebRTCController LaunchedEffect executing ${cmd?.let(::callCommandLogSummary) ?: "none"}")
           if (cmd != null) {
             processCommand(cmd)
           }
@@ -208,28 +383,126 @@ fun WebRTCController(callCommand: SnapshotStateList<WCallCommand>, onResponse: (
   }
 }
 
-fun startServer(onResponse: (WVAPIMessage) -> Unit, port: Int = SERVER_PORT): NanoWSD {
+fun startServer(
+  onResponse: (WVAPIMessage) -> Unit,
+  port: Int = SERVER_PORT,
+  bootstrapNonce: String = generateCallBridgeToken(),
+): NanoWSD {
   val server = object: NanoWSD(SERVER_HOST, port) {
-    override fun openWebSocket(session: IHTTPSession): WebSocket = MyWebSocket(onResponse, session)
+    private val authToken = generateCallBridgeToken()
+    private val authorizedWebSocketPath = "$CALL_BRIDGE_WS_PATH_PREFIX$authToken"
+    private val bootstrapGate = CallBridgeBootstrapGate(bootstrapNonce)
+    private var clientReserved = false
+
+    override fun openWebSocket(session: IHTTPSession): WebSocket =
+      MyWebSocket(onResponse, session, ::releaseClient)
+
+    override fun handleWebSocket(session: IHTTPSession): Response {
+      val validation = validateCallBridgeHandshake(
+        request = CallBridgeHandshakeRequest(session.headers, session.remoteIpAddress, session.uri),
+        expectedWebSocketPath = authorizedWebSocketPath,
+        expectedOrigin = "http://$SERVER_HOST:$listeningPort"
+      )
+      if (validation != CallBridgeHandshakeValidation.ACCEPTED) {
+        return when (validation) {
+          CallBridgeHandshakeValidation.INVALID_REMOTE_IP ->
+            websocketRejected(Status.FORBIDDEN, "Loopback client required")
+          CallBridgeHandshakeValidation.INVALID_ORIGIN ->
+            websocketRejected(Status.FORBIDDEN, "Same-origin websocket required")
+          CallBridgeHandshakeValidation.INVALID_TOKEN ->
+            websocketRejected(Status.UNAUTHORIZED, "Missing call bridge authorization")
+          CallBridgeHandshakeValidation.ACCEPTED ->
+            websocketRejected(Status.INTERNAL_ERROR, "Unexpected validation state")
+        }
+      }
+      if (!reserveClient()) {
+        return websocketRejected(Status.CONFLICT, "Call bridge already connected")
+      }
+
+      return try {
+        val response = super.handleWebSocket(session)
+        if (response == null || response.status != Status.SWITCH_PROTOCOL) {
+          releaseClient()
+        }
+        response ?: websocketRejected(Status.BAD_REQUEST, "WebSocket upgrade required")
+      } catch (e: Throwable) {
+        releaseClient()
+        throw e
+      }
+    }
+
+    fun resourceBytes(path: String): ByteArray? {
+      val uri = Class.forName("chat.simplex.common.AppKt").getResource("/assets/www$path") ?: return null
+      return uri.openStream().use { it.readBytes() }
+    }
 
     fun resourcesToResponse(path: String): Response {
-      val uri = Class.forName("chat.simplex.common.AppKt").getResource("/assets/www$path") ?: return resourceNotFound
+      val bytes = resourceBytes(path) ?: return resourceNotFound
       val response = newFixedLengthResponse(
-        Status.OK, getMimeTypeForFile(uri.file),
-        uri.openStream().readBytes()
+        Status.OK, getMimeTypeForFile(path), bytes
       )
       response.setKeepAlive(true)
       response.setUseGzip(true)
-      return response
+      return response.addCallBridgeSecurityHeaders()
     }
 
     val resourceNotFound = newFixedLengthResponse(Status.NOT_FOUND, "text/plain", "This page couldn't be found")
 
+    @Synchronized
+    private fun reserveClient(): Boolean =
+      if (clientReserved) {
+        false
+      } else {
+        clientReserved = true
+        true
+      }
+
+    @Synchronized
+    fun releaseClient() {
+      clientReserved = false
+    }
+
     override fun handle(session: IHTTPSession): Response {
       return when {
-        session.headers["upgrade"] == "websocket" -> super.handle(session)
-        session.uri.contains("/simplex/call/") -> resourcesToResponse("/desktop/call.html")
+        session.headers["upgrade"]?.equals("websocket", ignoreCase = true) == true -> super.handle(session)
+        session.uri == CALL_BRIDGE_PAGE_PATH -> handleCallPage(session)
         else -> resourcesToResponse(uriCreateOrNull(session.uri)?.path ?: return newFixedLengthResponse("Error parsing URL"))
+      }
+    }
+
+    private fun handleCallPage(session: IHTTPSession): Response {
+      val authorization = bootstrapGate.authorize(
+        CallBridgePageRequest(
+          method = session.method,
+          path = session.uri,
+          queryParameters = session.parameters,
+          remoteIpAddress = session.remoteIpAddress,
+        ),
+      )
+      return when (authorization) {
+        CallBridgePageAuthorization.SERVE_PAGE_WITHOUT_AUTH ->
+          resourcesToResponse("/desktop/call.html")
+        CallBridgePageAuthorization.SERVE_AUTHORIZED_PAGE -> {
+          val page = resourceBytes("/desktop/call.html")
+            ?.toString(StandardCharsets.UTF_8)
+            ?: return resourceNotFound.addCallBridgeSecurityHeaders()
+          newFixedLengthResponse(
+            Status.OK,
+            "text/html",
+            injectCallBridgeWebSocketPath(page, authorizedWebSocketPath),
+          ).addCallBridgeSecurityHeaders()
+        }
+        CallBridgePageAuthorization.INVALID_METHOD ->
+          websocketRejected(Status.METHOD_NOT_ALLOWED, "GET required").apply {
+            addHeader("Allow", "GET")
+          }.addCallBridgeSecurityHeaders()
+        CallBridgePageAuthorization.NONCE_ALREADY_CONSUMED ->
+          websocketRejected(Status.GONE, "Call bridge bootstrap expired").addCallBridgeSecurityHeaders()
+        CallBridgePageAuthorization.INVALID_REMOTE_IP,
+        CallBridgePageAuthorization.INVALID_PATH,
+        CallBridgePageAuthorization.INVALID_QUERY,
+        CallBridgePageAuthorization.INVALID_NONCE ->
+          websocketRejected(Status.FORBIDDEN, "Invalid call bridge bootstrap").addCallBridgeSecurityHeaders()
       }
     }
   }
@@ -237,36 +510,52 @@ fun startServer(onResponse: (WVAPIMessage) -> Unit, port: Int = SERVER_PORT): Na
     server.start(60_000_000)
   } catch (e: BindException) {
     if (port == 0) throw e
-    Log.w(TAG, "Call server port $port is busy, using a random port: ${e.message}")
+    Log.w(
+      TAG,
+      "Call server port $port is busy, using a random port; " +
+        callBridgeFailureLogSummary(CallBridgeLogEvent.SERVER_PORT_BUSY, e),
+    )
     server.stop()
-    return startServer(onResponse, port = 0)
+    return startServer(onResponse, port = 0, bootstrapNonce = bootstrapNonce)
   }
   return server
 }
 
-class MyWebSocket(val onResponse: (WVAPIMessage) -> Unit, handshakeRequest: IHTTPSession) : WebSocket(handshakeRequest) {
+class MyWebSocket(
+  val onResponse: (WVAPIMessage) -> Unit,
+  handshakeRequest: IHTTPSession,
+  private val releaseClient: () -> Unit,
+) : WebSocket(handshakeRequest) {
   override fun onOpen() {
     connections.add(this)
   }
 
   override fun onClose(closeCode: CloseCode?, reason: String?, initiatedByRemote: Boolean) {
+    connections.remove(this)
+    releaseClient()
     onResponse(WVAPIMessage(null, WCallResponse.End))
   }
 
   override fun onMessage(message: WebSocketFrame) {
-    Log.d(TAG, "MyWebSocket.onMessage")
+    val payloadLength = message.textPayload.length
+    Log.d(TAG, "MyWebSocket.onMessage payloadLength=$payloadLength")
     try {
-      // for debugging
-      // onResponse(message.textPayload)
       onResponse(json.decodeFromString(message.textPayload))
     } catch (e: Exception) {
-      Log.e(TAG, "failed parsing browser message: $message")
+      Log.e(
+        TAG,
+        callBridgeFailureLogSummary(
+          CallBridgeLogEvent.PARSE_BROWSER_MESSAGE_FAILED,
+          e,
+          payloadLength = payloadLength,
+        ),
+      )
     }
   }
 
   override fun onPong(pong: WebSocketFrame?) = Unit
 
   override fun onException(exception: IOException) {
-    Log.e(TAG, "WebSocket exception: ${exception.stackTraceToString()}")
+    Log.e(TAG, callBridgeFailureLogSummary(CallBridgeLogEvent.WEBSOCKET_EXCEPTION, exception))
   }
 }

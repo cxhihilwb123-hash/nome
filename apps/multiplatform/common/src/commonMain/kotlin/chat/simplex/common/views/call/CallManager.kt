@@ -43,6 +43,12 @@ class CallManager(val chatModel: ChatModel) {
 
   private fun justAcceptIncomingCall(invitation: RcvCallInvitation, userProfile: Profile) {
     with (chatModel) {
+      val iceServers = try {
+        getIceServers()
+      } catch (_: CredentialUnavailable) {
+        showIceCredentialUnavailableAlert()
+        return
+      }
       activeCall.value?.androidCallState?.close()
       activeCall.value = Call(
         remoteHostId = invitation.remoteHostId,
@@ -56,8 +62,7 @@ class CallManager(val chatModel: ChatModel) {
       )
       showCallView.value = true
       val useRelay = controller.appPrefs.webrtcPolicyRelay.get()
-      val iceServers = getIceServers()
-      Log.d(TAG, "answerIncomingCall iceServers: $iceServers")
+      Log.d(TAG, "answerIncomingCall iceServers: ${redactIceServersForLog(iceServers)}")
       callCommand.add(WCallCommand.Start(
         media = invitation.callType.media,
         aesKey = invitation.sharedKey,

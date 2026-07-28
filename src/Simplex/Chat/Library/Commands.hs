@@ -1516,10 +1516,10 @@ processChatCommand cxt nm = \case
     msgs <- lift $ withAgent' (`getConnectionMessages` connMsgs)
     let ntfMsgs = L.map receivedMsgInfo msgs
     pure $ CRConnNtfMessages ntfMsgs
-  GetUserProtoServers (AProtocolType p) -> withUser $ \user -> withServerProtocol p $ do
+  GetUserProtoServers (AProtocolType p) -> withUser' $ \user -> withServerProtocol p $ do
     srvs <- withFastStore (`getUserServers` user)
     liftIO $ CRUserServers user <$> groupByOperator (onlyProtocolServers p srvs)
-  SetUserProtoServers (AProtocolType (p :: SProtocolType p)) srvs -> withUser $ \user@User {userId} -> withServerProtocol p $ do
+  SetUserProtoServers (AProtocolType (p :: SProtocolType p)) srvs -> withUser' $ \user@User {userId} -> withServerProtocol p $ do
     userServers_ <- liftIO . groupByOperator =<< withFastStore (`getUserServers` user)
     case L.nonEmpty userServers_ of
       Nothing -> throwCmdError "no servers"
@@ -1627,9 +1627,12 @@ processChatCommand cxt nm = \case
         case find (\ServerOperator {operatorId = DBEntityId opId} -> operatorId' r == opId) ops of
           Just op -> pure op {enabled = enabled' r, smpRoles = smpRoles' r, xftpRoles = xftpRoles' r}
           Nothing -> throwError $ ChatErrorStore $ SEOperatorNotFound $ operatorId' r
-  APIGetUserServers userId -> withUserId userId $ \user -> withFastStore $ \db -> do
+  -- Server reconciliation is a pre-network safety gate. These three commands intentionally work
+  -- while chat is stopped, so clients can validate and persist managed routes before StartChat
+  -- resumes the agent and its SMP/XFTP workers.
+  APIGetUserServers userId -> withUserId' userId $ \user -> withFastStore $ \db -> do
     CRUserServers user <$> (liftIO . groupByOperator =<< getUserServers db user)
-  APISetUserServers userId userServers -> withUserId userId $ \user -> do
+  APISetUserServers userId userServers -> withUserId' userId $ \user -> do
     (errors, warnings) <- validateAllUsersServers userId $ L.toList userServers
     unless (null errors) $ throwCmdError $ "user servers validation error(s): " <> show errors
     unless (null warnings) $ logWarn $ "user servers validation warning(s): " <> tshow warnings
@@ -1644,7 +1647,7 @@ processChatCommand cxt nm = \case
       setProtocolServers a auId smp'
       setProtocolServers a auId xftp'
     ok_
-  APIValidateServers userId userServers -> withUserId userId $ \user ->
+  APIValidateServers userId userServers -> withUserId' userId $ \user ->
     uncurry (CRUserServersValidation user) <$> validateAllUsersServers userId userServers
   APIGetUsageConditions -> do
     (usageConditions, acceptedConditions) <- withFastStore $ \db -> do

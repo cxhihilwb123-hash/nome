@@ -97,6 +97,72 @@ fun MainScreen() {
   LaunchedEffect(chatModel.chatDbStatus.value) {
     showChatDatabaseError = chatModel.chatDbStatus.value != DBMigrationResult.OK && chatModel.chatDbStatus.value != null
   }
+  val retryableChatStart = chatModel.retryableChatStart.value
+  LaunchedEffect(retryableChatStart) {
+    val failure = retryableChatStart ?: return@LaunchedEffect
+    val (title, text) = when (failure.reason) {
+      RetryableChatStartReason.NomeServerConfiguration ->
+        MR.strings.nome_server_configuration_retry_title to MR.strings.nome_server_configuration_retry_text
+      RetryableChatStartReason.NomeStartupFailure ->
+        MR.strings.nome_startup_retry_title to MR.strings.nome_startup_retry_text
+      RetryableChatStartReason.NomeContinuationFailure ->
+        MR.strings.nome_continuation_retry_title to MR.strings.nome_continuation_retry_text
+    }
+    AlertManager.shared.showAlertDialogButtonsColumn(
+      title = generalGetString(title),
+      text = generalGetString(text),
+      dismissible = false,
+    ) {
+      Row(
+        Modifier.fillMaxWidth().padding(horizontal = DEFAULT_PADDING),
+        horizontalArrangement = Arrangement.End,
+      ) {
+        TextButton(
+          onClick = {
+            if (!chatModel.consumeRetryableChatStart(failure)) return@TextButton
+            AlertManager.shared.hideAlert()
+            withBGApi {
+              if (failure.reason == RetryableChatStartReason.NomeContinuationFailure) {
+                runNomeChatStartContinuation(
+                  continuation = failure.onStarted,
+                  onFailure = { error ->
+                    Log.e(TAG, "Nome continuation retry failed (${error::class.simpleName ?: "unknown failure"})")
+                    withContext(Dispatchers.Main) {
+                      chatModel.retryableChatStart.value = newRetryableChatStart(
+                        failure.user,
+                        RetryableChatStartReason.NomeContinuationFailure,
+                        failure.onStarted,
+                      )
+                    }
+                  },
+                )
+              } else {
+                try {
+                  chatModel.controller.startChat(failure.user, failure.onStarted)
+                } catch (e: CancellationException) {
+                  throw e
+                } catch (e: Throwable) {
+                  // Do not display exception text: native failures can include server addresses
+                  // or credential-bearing payloads. Publish a new attempt so recovery UI cannot
+                  // disappear after an unexpected startup error.
+                  Log.e(TAG, "Nome startup retry failed (${e::class.simpleName})")
+                  withContext(Dispatchers.Main) {
+                    chatModel.retryableChatStart.value = newRetryableChatStart(
+                      failure.user,
+                      RetryableChatStartReason.NomeStartupFailure,
+                      failure.onStarted,
+                    )
+                  }
+                }
+              }
+            }
+          },
+        ) {
+          Text(generalGetString(MR.strings.retry_verb))
+        }
+      }
+    }
+  }
   var showAdvertiseLAAlert by remember { mutableStateOf(false) }
   LaunchedEffect(showAdvertiseLAAlert) {
     if (
@@ -178,19 +244,30 @@ fun MainScreen() {
       )
     }
 
-    val authOverlayVisible =
-      unauthorized.value && !(chatModel.activeCallViewIsVisible.value && chatModel.showCallView.value)
-    val modalOverlayVisible =
-      appPlatform.isAndroid && ModalManager.fullscreen.hasModalsOpen
-    Box(
-      modifier =
-        if (authOverlayVisible || modalOverlayVisible) {
+    // Android owns an isolated in-call activity that may remain usable while the main app is
+    // locked. Desktop calls run in a browser, so the desktop chat window must never suppress its
+    // local-auth boundary merely because a call is active.
+    val androidCallMayRemainVisible =
+      appPlatform.isAndroid && chatModel.activeCallViewIsVisible.value && chatModel.showCallView.value
+    val authOverlayVisible = unauthorized.value && !androidCallMayRemainVisible
+    // Full-screen passcode views are held outside the ordinary modal stack. Include both
+    // persistent and one-time passcode overlays so covered controls cannot still be reached by
+    // VoiceOver or other accessibility actions.
+    val passcodeOverlayVisible = ModalManager.fullscreen.hasPasscodeOverlay
+    val modalOverlayVisible = ModalManager.fullscreen.hasModalsOpen
+    // Authentication and passcode views are security boundaries, not decorative overlays. Do
+    // not leave chat content, modals, shortcuts or clipboard listeners composed behind them.
+    val sensitiveLayerBlocked = authOverlayVisible || passcodeOverlayVisible
+    if (!sensitiveLayerBlocked) {
+      Box(
+        modifier =
+        if (modalOverlayVisible) {
           Modifier.clearAndSetSemantics {}
         } else {
           Modifier
         },
-    ) {
-      when {
+      ) {
+        when {
         onboarding == OnboardingStage.Step1_SimpleXInfo && chatModel.migrationState.value != null -> {
           // In migration process. Nothing should interrupt it, that's why it's the first branch in when()
           if (appPlatform.isDesktop) DesktopOnboarding(onboarding, chatModel)
@@ -267,21 +344,22 @@ fun MainScreen() {
             }
           }
         }
+        }
       }
-    }
-    if (appPlatform.isAndroid) {
-      Box(
-        modifier =
-          if (authOverlayVisible) {
-            Modifier.clearAndSetSemantics {}
-          } else {
-            Modifier
-          },
-      ) {
-        AndroidWrapInCallLayout {
+      if (appPlatform.isAndroid) {
+        Box {
+          AndroidWrapInCallLayout {
+            ModalManager.fullscreen.showInView()
+          }
+          SwitchingUsersView()
+        }
+      } else {
+        // Desktop fullscreen modals must be a sibling of the semantics-cleared application
+        // content. Keeping this layer inside DesktopScreen/DesktopOnboarding would clear the
+        // modal's own controls from VoiceOver together with the obscured background.
+        Box {
           ModalManager.fullscreen.showInView()
         }
-        SwitchingUsersView()
       }
     }
 
@@ -300,7 +378,7 @@ fun MainScreen() {
         ModalManager.fullscreen.showPasscodeInView()
       }
     } else {
-      if (chatModel.showCallView.value) {
+      if (!passcodeOverlayVisible && chatModel.showCallView.value) {
         if (appPlatform.isAndroid) {
           LaunchedEffect(Unit) {
             // This if prevents running the activity in the following condition:
@@ -314,8 +392,8 @@ fun MainScreen() {
         }
       }
       ModalManager.fullscreen.showOneTimePasscodeInView()
-      AlertManager.privacySensitive.showInView()
-      if (onboarding == OnboardingStage.OnboardingComplete) {
+      if (!passcodeOverlayVisible) AlertManager.privacySensitive.showInView()
+      if (!passcodeOverlayVisible && onboarding == OnboardingStage.OnboardingComplete) {
         LaunchedEffect(chatModel.chatRunning.value, chatModel.currentUser.value, chatModel.appOpenUrl.value) {
           val pendingUrl = chatModel.appOpenUrl.value
           if (pendingUrl != null && chatModel.chatRunning.value == true) {
@@ -330,9 +408,11 @@ fun MainScreen() {
         }
       }
     }
-    val invitation = chatModel.activeCallInvitation.value
-    if (invitation != null) IncomingCallAlertView(invitation, chatModel)
-    AlertManager.shared.showInView()
+    if (!sensitiveLayerBlocked) {
+      val invitation = chatModel.activeCallInvitation.value
+      if (invitation != null) IncomingCallAlertView(invitation, chatModel)
+      AlertManager.shared.showInView()
+    }
 
     LaunchedEffect(Unit) {
       delay(1000)
@@ -355,7 +435,6 @@ fun MainScreen() {
 private fun DesktopOnboarding(onboarding: OnboardingStage, chatModel: ChatModel) {
   if (onboarding == OnboardingStage.LinkAMobile) {
     LinkAMobile()
-    ModalManager.fullscreen.showInView()
   } else {
     Box(Modifier.fillMaxSize()) {
       when (onboarding) {
@@ -368,7 +447,6 @@ private fun DesktopOnboarding(onboarding: OnboardingStage, chatModel: ChatModel)
         OnboardingStage.Step4_NetworkCommitments -> OnboardingConditionsView(chatModel)
         else -> {}
       }
-      ModalManager.fullscreen.showInView()
     }
   }
 }
@@ -555,7 +633,6 @@ fun DesktopScreen(userPickerState: MutableStateFlow<AnimatedViewState>) {
     )
   }
   VerticalDivider(Modifier.padding(start = startPanelWidth))
-  ModalManager.fullscreen.showInView()
 }
 
 @Composable

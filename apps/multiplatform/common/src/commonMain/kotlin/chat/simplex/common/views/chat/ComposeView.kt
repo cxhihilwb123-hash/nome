@@ -378,7 +378,7 @@ fun ComposeView(
 ) {
   val cancelledLinks = rememberSaveable { mutableSetOf<String>() }
   fun isSimplexLink(link: String): Boolean =
-    link.startsWith("https://simplex.chat", true) || link.startsWith("http://simplex.chat", true)
+    isRecognizedPublicChatLink(link)
 
   fun getMessageLinks(parsedMsg: List<FormattedText>?): Pair<String?, Boolean> {
     if (parsedMsg == null) return null to false

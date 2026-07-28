@@ -13,6 +13,7 @@ import java.lang.ref.WeakReference
 import java.util.*
 import java.util.concurrent.Semaphore
 import kotlin.concurrent.thread
+import kotlin.system.exitProcess
 
 actual val appPlatform = AppPlatform.ANDROID
 
@@ -24,6 +25,13 @@ var isAppOnForeground: Boolean = false
 val defaultLocale: Locale = Locale.getDefault()
 
 actual fun isAppVisibleAndFocused(): Boolean = isAppOnForeground
+
+actual fun terminateForUnsafeNetworkState(): Nothing {
+  // Throwing is not fail-closed: common startup callers catch failures and could leave the native
+  // controller alive on stale routes. End this process when a safe stop cannot be confirmed.
+  android.os.Process.killProcess(android.os.Process.myPid())
+  exitProcess(70)
+}
 
 @SuppressLint("StaticFieldLeak")
 lateinit var androidAppContext: Context

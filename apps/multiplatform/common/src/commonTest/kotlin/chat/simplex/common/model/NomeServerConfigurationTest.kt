@@ -3,10 +3,21 @@ package chat.simplex.common.model
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class NomeServerConfigurationTest {
+  @Test
+  fun officialRoutingUsesNomeDomainsAndTreatsTencentIpAsLegacyOnly() {
+    assertEquals("smp.nome.im", NomeServerConfiguration.smpHostname)
+    assertEquals("xftp.nome.im", NomeServerConfiguration.xftpHostname)
+    assertTrue(NomeServerConfiguration.smpServer.endsWith("@smp.nome.im:5223"))
+    assertTrue(NomeServerConfiguration.xftpServer.endsWith("@xftp.nome.im"))
+    assertTrue(NomeServerConfiguration.legacySmpServer.endsWith("@124.223.71.168:5223"))
+    assertTrue(NomeServerConfiguration.legacyXftpServer.endsWith("@124.223.71.168:5224"))
+  }
+
   @Test
   fun rebuiltCoreKeepsNomeServersUnderEnabledNomeOperator() {
     val nome = operatorGroup(
@@ -25,6 +36,8 @@ class NomeServerConfigurationTest {
     assertEquals(NomeServerConfiguration.xftpServer, migratedNome.xftpServers.single().server)
     assertTrue(migratedNome.smpServers.single().enabled)
     assertTrue(migratedNome.xftpServers.single().enabled)
+    assertTrue(migratedNome.smpServers.single().preset)
+    assertTrue(migratedNome.xftpServers.single().preset)
   }
 
   @Test
@@ -53,6 +66,8 @@ class NomeServerConfigurationTest {
     assertEquals(NomeServerConfiguration.xftpServer, custom.xftpServers.single().server)
     assertTrue(custom.smpServers.single().enabled)
     assertTrue(custom.xftpServers.single().enabled)
+    assertTrue(custom.smpServers.single().preset)
+    assertTrue(custom.xftpServers.single().preset)
   }
 
   @Test
@@ -73,6 +88,8 @@ class NomeServerConfigurationTest {
     assertTrue(migrated.xftpServers.single { it.server == customXftp.server }.enabled)
     assertEquals(NomeServerConfiguration.smpServer, migrated.smpServers.first().server)
     assertEquals(NomeServerConfiguration.xftpServer, migrated.xftpServers.first().server)
+    assertTrue(migrated.smpServers.first().preset)
+    assertTrue(migrated.xftpServers.first().preset)
   }
 
   @Test
@@ -102,6 +119,7 @@ class NomeServerConfigurationTest {
     val managed = migrated.smpServers.filter { it.server == NomeServerConfiguration.smpServer || it.server.contains("124.223.71.168") }
 
     assertEquals(1, managed.count { it.enabled && !it.deleted })
+    assertTrue(managed.single { it.enabled && !it.deleted }.preset)
     assertEquals(custom, migrated.smpServers.single { it.server == custom.server })
   }
 
@@ -137,7 +155,8 @@ class NomeServerConfigurationTest {
 
   @Test
   fun customOperatorAndSameHostCustomCredentialsArePreserved() {
-    val sameHostCustom = userServer("smp://user-owned-key@124.223.71.168:5223")
+    val sameLegacyHostCustom = userServer("smp://user-owned-key@124.223.71.168:5223")
+    val sameOfficialHostCustom = userServer("smp://user-owned-key@smp.nome.im")
     val customOperator = ServerOperator.sampleData1.copy(
       operatorId = 99,
       operatorTag = null,
@@ -151,14 +170,17 @@ class NomeServerConfigurationTest {
     )
     val customGroup = UserOperatorServers(
       operator = null,
-      smpServers = listOf(sameHostCustom),
+      smpServers = listOf(sameLegacyHostCustom, sameOfficialHostCustom),
       xftpServers = emptyList(),
     )
 
     val migrated = NomeServerConfiguration.migrate(listOf(customOperatorGroup, customGroup)).userServers
 
     assertEquals(customOperatorGroup, migrated.first())
-    assertEquals(sameHostCustom, migrated.last().smpServers.first())
+    assertEquals(sameLegacyHostCustom, migrated.last().smpServers[0])
+    assertEquals(sameOfficialHostCustom, migrated.last().smpServers[1])
+    assertFalse(migrated.last().smpServers[0].preset)
+    assertFalse(migrated.last().smpServers[1].preset)
     assertTrue(migrated.last().smpServers.any { it.server == NomeServerConfiguration.smpServer })
   }
 
@@ -193,6 +215,21 @@ class NomeServerConfigurationTest {
 
     assertFalse(applied)
     assertEquals(2, calls)
+  }
+
+  @Test
+  fun unexpectedConfigurationExceptionPropagatesWithoutRetry() {
+    var calls = 0
+
+    assertFailsWith<IllegalStateException> {
+      runBlocking {
+        NomeServerConfiguration.runWithRetry(attempts = 3, waitBeforeRetry = {}) {
+          calls += 1
+          throw IllegalStateException("native failure")
+        }
+      }
+    }
+    assertEquals(1, calls)
   }
 
   private fun operatorGroup(

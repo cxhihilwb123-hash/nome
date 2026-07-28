@@ -57,7 +57,7 @@
   <string name="nome_brand_lock_unavailable_disable">Device authentication is disabled. Turning off Nome Lock.</string>
   <string name="nome_brand_lock_not_enabled">Nome Lock is not enabled.</string>
   <string name="nome_brand_lock_enable_hint">You can turn on Nome Lock in Settings.</string>
-  <string name="nome_brand_support">SUPPORT NOME</string>
+  <string name="nome_brand_support">Support Nome</string>
   <string name="nome_brand_terminal_client">Install the desktop or terminal client</string>
   <string name="nome_brand_default_call_servers_question">Use the default call servers?</string>
   <string name="nome_brand_default_call_servers">Using the default call servers.</string>

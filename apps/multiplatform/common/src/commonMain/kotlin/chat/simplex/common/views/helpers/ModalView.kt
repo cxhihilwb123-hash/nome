@@ -158,6 +158,10 @@ class ModalManager(private val placement: ModalPlacement? = null) {
   val hasModalsOpen: Boolean
   @Composable get () = remember { modalCount }.value > 0
 
+  val hasPasscodeOverlay: Boolean
+  @Composable get() =
+    passcodeView.collectAsState().value != null || onTimePasscodeView.collectAsState().value != null
+
   fun openModalCount() = modalCount.value
 
   fun closeModal() {

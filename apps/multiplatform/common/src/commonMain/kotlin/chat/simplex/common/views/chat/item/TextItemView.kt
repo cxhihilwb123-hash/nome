@@ -525,7 +525,8 @@ fun openBrowserAlert(uri: String, uriHandler: UriHandler) {
 
 fun safeOpenUri(uri: String, uriHandler: UriHandler) {
   try {
-    uriHandler.openUri(uri)
+    if (isRecognizedPublicChatLink(uri)) uriHandler.openVerifiedSimplexUri(uri)
+    else uriHandler.openUri(uri)
   } catch (e: Exception) {
     // It can happen, for example, when you click on a text 0.00001 but don't have any app that can catch
     // `tel:` scheme in url installed on a device (no phone app or contacts, maybe)

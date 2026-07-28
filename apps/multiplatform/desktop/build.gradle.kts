@@ -1,6 +1,18 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.gradle.api.file.DuplicatesStrategy
+import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.jvm.tasks.Jar
+import java.io.File
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.nio.file.Files
 import java.nio.file.LinkOption
+import java.nio.file.Path
+import java.nio.file.StandardCopyOption
+import java.security.MessageDigest
+import java.util.jar.JarEntry
+import java.util.jar.JarFile
+import java.util.jar.JarOutputStream
 
 plugins {
   kotlin("multiplatform")
@@ -12,17 +24,140 @@ plugins {
 group = "chat.simplex"
 version = extra["desktop.version_name"] as String
 
+val macSigningIdentity = rootProject.extra["desktop.mac.signing.identity"] as String?
+val macSigningKeychain = rootProject.extra["desktop.mac.signing.keychain"] as String?
+val macNotarizationAppleId = rootProject.extra["desktop.mac.notarization.apple_id"] as String?
+val macNotarizationPassword = rootProject.extra["desktop.mac.notarization.password"] as String?
+val macNotarizationTeamId = rootProject.extra["desktop.mac.notarization.team_id"] as String?
+val macReleaseCredentials = listOf(
+  macSigningIdentity,
+  macSigningKeychain,
+  macNotarizationAppleId,
+  macNotarizationPassword,
+  macNotarizationTeamId,
+)
+val hasCompleteMacReleaseCredentials = macReleaseCredentials.all { !it.isNullOrBlank() }
+val hasAnyMacReleaseCredential = macReleaseCredentials.any { !it.isNullOrBlank() }
+val allowAdHocMacPackage = providers.gradleProperty("nome.allowAdHocMacPackage")
+  .map { it.toBooleanStrict() }
+  .orElse(false)
+val isMacArm64PackagingHost =
+  System.getProperty("os.name").lowercase().contains("mac") &&
+    System.getProperty("os.arch").lowercase() in setOf("aarch64", "arm64")
+
+private fun shouldStripNativeEntry(entryName: String): Boolean {
+  val normalized = entryName.lowercase()
+  val isX86Payload = normalized.contains("x86_64") ||
+    normalized.contains("x86-64") ||
+    normalized.contains("x64")
+  if (isX86Payload) return true
+  return normalized.endsWith(".dll") || normalized.endsWith(".so")
+}
+
+private fun shouldStripSignatureEntry(entryName: String): Boolean {
+  if (!entryName.startsWith("META-INF/")) return false
+  return entryName.endsWith(".SF") ||
+    entryName.endsWith(".RSA") ||
+    entryName.endsWith(".DSA") ||
+    entryName.endsWith(".EC")
+}
+
+fun rewriteJarWithoutX64NativeEntries(sourceJar: File, targetJar: File): File? {
+  var needsRewrite = false
+  JarFile(sourceJar).use { jar ->
+    val entries = jar.entries()
+    while (entries.hasMoreElements()) {
+      if (shouldStripNativeEntry(entries.nextElement().name)) {
+        needsRewrite = true
+        break
+      }
+    }
+    if (!needsRewrite) return null
+
+    Files.createDirectories(targetJar.parentFile.toPath())
+    val tempJar = Files.createTempFile(targetJar.parentFile.toPath(), targetJar.name, ".tmp")
+    try {
+      JarOutputStream(Files.newOutputStream(tempJar)).use { output ->
+        val allEntries = jar.entries()
+        while (allEntries.hasMoreElements()) {
+          val entry = allEntries.nextElement()
+          if (shouldStripNativeEntry(entry.name) || shouldStripSignatureEntry(entry.name)) continue
+          val jarEntry = JarEntry(entry.name)
+          jarEntry.time = entry.time
+          jarEntry.comment = entry.comment
+          jarEntry.extra = entry.extra
+          output.putNextEntry(jarEntry)
+          if (!entry.isDirectory) {
+            jar.getInputStream(entry).use { input ->
+              input.copyTo(output)
+            }
+          }
+          output.closeEntry()
+        }
+      }
+      Files.move(tempJar, targetJar.toPath(), StandardCopyOption.REPLACE_EXISTING)
+    } finally {
+      Files.deleteIfExists(tempJar)
+    }
+  }
+  return targetJar
+}
 
 kotlin {
   jvm()
   sourceSets {
     val jvmMain by getting {
       dependencies {
-        implementation(project(":common"))
-        implementation(compose.desktop.currentOs)
+        implementation(project(":common")) {
+          exclude(group = "org.jetbrains.compose.desktop", module = "desktop-jvm-macos-x64")
+        }
+        // Nome Desktop is intentionally Apple-Silicon-only. Pinning this dependency prevents an
+        // Intel host from silently resolving an x64 Compose runtime image.
+        implementation(compose.desktop.macos_arm64)
       }
     }
     val jvmTest by getting
+  }
+}
+
+val jvmMainSourceSet = the<SourceSetContainer>().getByName("jvmMain")
+val jvmJarTask = tasks.named<Jar>("jvmJar")
+val filteredRuntimeJarsDir = layout.buildDirectory.dir("compose/arm-only-runtime-jars")
+val armOnlyMainJar = filteredRuntimeJarsDir.zip(jvmJarTask.flatMap { it.archiveFile }) { directory, mainJar ->
+  directory.file(mainJar.asFile.name)
+}
+
+val prepareArmOnlyRuntimeJars by tasks.registering(Sync::class) {
+  // Do not test file existence during configuration: project dependency jars may only be
+  // produced later in this build. FileCollection.filter keeps their producer dependencies.
+  val runtimeJars = jvmMainSourceSet.runtimeClasspath.filter { it.extension == "jar" }
+  val mainJarSource = jvmJarTask.flatMap { it.archiveFile }
+
+  inputs.files(runtimeJars)
+  inputs.file(mainJarSource)
+  from(runtimeJars)
+  into(filteredRuntimeJarsDir)
+  include("**/*.jar")
+  eachFile {
+    path = name
+  }
+  duplicatesStrategy = DuplicatesStrategy.FAIL
+  includeEmptyDirs = false
+
+  doLast {
+    val destinationDir = filteredRuntimeJarsDir.get().asFile
+    destinationDir.listFiles()
+      ?.filter { it.isFile && it.extension == "jar" }
+      ?.forEach { jarFile ->
+        rewriteJarWithoutX64NativeEntries(jarFile, jarFile)
+      }
+    val mainJarFile = mainJarSource.get().asFile
+    val filteredMainJar = destinationDir.resolve(mainJarFile.name)
+    rewriteJarWithoutX64NativeEntries(mainJarFile, filteredMainJar) ?: Files.copy(
+      mainJarFile.toPath(),
+      filteredMainJar.toPath(),
+      StandardCopyOption.REPLACE_EXISTING,
+    )
   }
 }
 
@@ -30,6 +165,11 @@ kotlin {
 compose {
   desktop {
     application {
+      disableDefaultConfiguration()
+      dependsOn("jvmJar", "prepareArmOnlyRuntimeJars")
+      mainJar.set(armOnlyMainJar)
+      fromFiles(project.fileTree(filteredRuntimeJarsDir))
+
       // For debugging via VisualVM
       val debugJava = false
       if (debugJava) {
@@ -80,21 +220,16 @@ compose {
               <string>Nome needs camera access for video calls</string>
             """
           }
-          val identity = rootProject.extra["desktop.mac.signing.identity"] as String?
-          val keychain = rootProject.extra["desktop.mac.signing.keychain"] as String?
-          val appleId = rootProject.extra["desktop.mac.notarization.apple_id"] as String?
-          val password = rootProject.extra["desktop.mac.notarization.password"] as String?
-          val teamId = rootProject.extra["desktop.mac.notarization.team_id"] as String?
-          if (identity != null && keychain != null && appleId != null && password != null) {
+          if (hasCompleteMacReleaseCredentials) {
             signing {
               sign.set(true)
-              this.identity.set(identity)
-              this.keychain.set(keychain)
+              this.identity.set(macSigningIdentity!!)
+              this.keychain.set(macSigningKeychain!!)
             }
             notarization {
-              this.appleID.set(appleId)
-              this.password.set(password)
-              this.teamID.set(teamId)
+              this.appleID.set(macNotarizationAppleId!!)
+              this.password.set(macNotarizationPassword!!)
+              this.teamID.set(macNotarizationTeamId!!)
             }
           }
         }
@@ -113,24 +248,171 @@ compose {
 val cppPath = "../common/src/commonMain/cpp"
 
 val prepareMacArm64AppResources by tasks.registering {
+  // cmakeBuildAndCopy creates libapp-lib.dylib in the reviewed native tree. Serializing this
+  // gate after that task prevents Gradle from racing JNI output against manifest verification.
+  dependsOn("cmakeBuildAndCopy")
   val nativeResources = project.file("$cppPath/desktop/libs/mac-aarch64").toPath()
   val appResourcesLink = project.file("../build/links/macos-arm64").toPath()
+  val nativeManifest = project.file("native/macos-arm64-native.sha256").toPath()
+  val expectedManifestSha256 = providers.gradleProperty("nome.nativeManifestSha256")
   inputs.dir(nativeResources)
+  inputs.file(nativeManifest)
+  inputs.property("expectedManifestSha256", expectedManifestSha256.orElse("missing"))
   doLast {
-    check(Files.exists(nativeResources.resolve("libsimplex.dylib"))) {
+    check(isMacArm64PackagingHost) {
+      "Nome macOS packages can only be produced on an Apple-Silicon macOS host"
+    }
+    check(Files.isDirectory(nativeResources)) {
       "Missing macOS ARM64 native resources in $nativeResources"
     }
-    Files.createDirectories(appResourcesLink.parent)
-    if (Files.exists(appResourcesLink, LinkOption.NOFOLLOW_LINKS)) {
-      check(Files.isSymbolicLink(appResourcesLink)) {
-        "Expected $appResourcesLink to be a symbolic link"
-      }
-      Files.delete(appResourcesLink)
+    check(Files.isRegularFile(nativeManifest, LinkOption.NOFOLLOW_LINKS)) {
+      "Missing reviewed native manifest: $nativeManifest"
     }
-    Files.createSymbolicLink(
-      appResourcesLink,
-      appResourcesLink.parent.relativize(nativeResources),
+
+    fun sha256(path: java.nio.file.Path): String {
+      val digest = MessageDigest.getInstance("SHA-256")
+      Files.newInputStream(path).use { input ->
+        val buffer = ByteArray(1024 * 1024)
+        while (true) {
+          val count = input.read(buffer)
+          if (count < 0) break
+          digest.update(buffer, 0, count)
+        }
+      }
+      return digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) }
+    }
+
+    fun verifyArm64Dylib(path: Path, relativeName: String) {
+      val header = ByteArray(8)
+      Files.newInputStream(path).use { input ->
+        check(input.read(header) == header.size) { "Truncated Mach-O dylib: $relativeName" }
+      }
+      val machO = ByteBuffer.wrap(header).order(ByteOrder.LITTLE_ENDIAN)
+      check(machO.int == 0xfeedfacf.toInt() && machO.int == 0x0100000c) {
+        "Non-arm64 or unsupported Mach-O dylib in macOS ARM64 resources: $relativeName"
+      }
+    }
+
+    val expectedManifestHash = expectedManifestSha256.orNull?.lowercase()
+    check(expectedManifestHash?.matches(Regex("[0-9a-f]{64}")) == true) {
+      "Packaging requires -Pnome.nativeManifestSha256=<reviewed manifest SHA-256>"
+    }
+    check(sha256(nativeManifest) == expectedManifestHash) {
+      "macOS ARM64 native manifest does not match its reviewed SHA-256"
+    }
+
+    val expectedFiles = linkedMapOf<String, String>()
+    Files.readAllLines(nativeManifest).forEachIndexed { index, rawLine ->
+      val line = rawLine.trim()
+      if (line.isEmpty() || line.startsWith("#")) return@forEachIndexed
+      val match = Regex("^([0-9a-fA-F]{64})\\s{2}(.+)$").matchEntire(line)
+      check(match != null) { "Invalid native manifest line ${index + 1}" }
+      val (hash, relativeName) = match.destructured
+      val relativePath = Path.of(relativeName)
+      check(
+        !relativePath.isAbsolute &&
+          relativeName.isNotBlank() &&
+          '\\' !in relativeName &&
+          relativePath.normalize() == relativePath &&
+          !relativePath.startsWith("..")
+      ) {
+        "Unsafe native manifest path at line ${index + 1}"
+      }
+      check(expectedFiles.put(relativeName, hash.lowercase()) == null) {
+        "Duplicate native manifest entry: $relativeName"
+      }
+    }
+    check("libsimplex.dylib" in expectedFiles && "libapp-lib.dylib" in expectedFiles) {
+      "Native manifest must cover libsimplex.dylib and libapp-lib.dylib"
+    }
+    val resourcePaths = Files.walk(nativeResources).use { paths -> paths.toList() }
+    check(resourcePaths.none { Files.isSymbolicLink(it) }) {
+      "Native resource tree must not contain symbolic links"
+    }
+    val actualFiles = resourcePaths
+      .filter { Files.isRegularFile(it, LinkOption.NOFOLLOW_LINKS) }
+      .map { nativeResources.relativize(it).toString() }
+      .toSet()
+    check(actualFiles == expectedFiles.keys) {
+      "Native manifest/resource set mismatch; missing=${expectedFiles.keys - actualFiles}, unexpected=${actualFiles - expectedFiles.keys}"
+    }
+    expectedFiles.forEach { (relativeName, expectedHash) ->
+      val resource = nativeResources.resolve(relativeName)
+      check(Files.isRegularFile(resource, LinkOption.NOFOLLOW_LINKS)) {
+        "Manifest entry is not a regular file: $relativeName"
+      }
+      check(sha256(resource) == expectedHash) {
+        "$relativeName does not match the reviewed native manifest"
+      }
+      if (relativeName.endsWith(".dylib")) {
+        verifyArm64Dylib(resource, relativeName)
+      }
+    }
+    Files.createDirectories(appResourcesLink.parent)
+    Files.copy(
+      nativeManifest,
+      appResourcesLink.parent.resolve("macos-arm64-native.sha256"),
+      StandardCopyOption.REPLACE_EXISTING,
     )
+    if (Files.exists(appResourcesLink, LinkOption.NOFOLLOW_LINKS)) {
+      project.delete(appResourcesLink.toFile())
+    }
+    Files.createDirectories(appResourcesLink)
+    resourcePaths.forEach { source ->
+      if (source == nativeResources) return@forEach
+      val target = appResourcesLink.resolve(nativeResources.relativize(source).toString())
+      if (Files.isDirectory(source, LinkOption.NOFOLLOW_LINKS)) {
+        Files.createDirectories(target)
+      } else {
+        Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING)
+      }
+    }
+
+    // Package only the verified build-owned snapshot. Re-run every integrity and architecture
+    // check after copying so source changes after the gate cannot race the packager.
+    val stagedPaths = Files.walk(appResourcesLink).use { paths -> paths.toList() }
+    check(stagedPaths.none { Files.isSymbolicLink(it) }) {
+      "Staged native resource tree must not contain symbolic links"
+    }
+    val stagedFiles = stagedPaths
+      .filter { Files.isRegularFile(it, LinkOption.NOFOLLOW_LINKS) }
+      .map { appResourcesLink.relativize(it).toString() }
+      .toSet()
+    check(stagedFiles == expectedFiles.keys) {
+      "Staged native resource set mismatch; missing=${expectedFiles.keys - stagedFiles}, unexpected=${stagedFiles - expectedFiles.keys}"
+    }
+    expectedFiles.forEach { (relativeName, expectedHash) ->
+      val staged = appResourcesLink.resolve(relativeName)
+      check(sha256(staged) == expectedHash) {
+        "Staged $relativeName does not match the reviewed native manifest"
+      }
+      if (relativeName.endsWith(".dylib")) verifyArm64Dylib(staged, relativeName)
+    }
+  }
+}
+
+val guardedMacDistributionTasks = setOf(
+  "createDistributable",
+  "createReleaseDistributable",
+  "packageDmg",
+  "packageReleaseDmg",
+  "packageDistributionForCurrentOS",
+  "packageReleaseDistributionForCurrentOS",
+)
+
+tasks.matching { it.name in guardedMacDistributionTasks }.configureEach {
+  dependsOn(prepareMacArm64AppResources)
+  doFirst {
+    check(isMacArm64PackagingHost) {
+      "Nome macOS packages can only be produced on an Apple-Silicon macOS host"
+    }
+    check(!hasAnyMacReleaseCredential || hasCompleteMacReleaseCredentials) {
+      "Partial macOS signing/notarization configuration is not allowed"
+    }
+    check(hasCompleteMacReleaseCredentials || allowAdHocMacPackage.get()) {
+      "Public macOS packages require complete Developer ID and notarization credentials. " +
+        "For an explicit local test artifact only, pass -Pnome.allowAdHocMacPackage=true."
+    }
   }
 }
 

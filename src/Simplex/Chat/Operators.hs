@@ -407,18 +407,43 @@ updatedUserServers (presetOp_, UserOperatorServers {operator, smpServers, xftpSe
       Just presetOp -> (updated SPSMP smpServers, updated SPXFTP xftpServers, updatedRelays chatRelays)
         where
           updated :: forall p. UserProtocol p => SProtocolType p -> [UserServer p] -> [AUserServer p]
-          updated p srvs = map userServer presetSrvs <> stored (filter customServer srvs)
+          updated p srvs = map userServer presetSrvs <> stored (mapMaybe retainedCustomServer srvs)
             where
-              storedSrvs :: Map (ProtoServerWithAuth p) (UserServer p)
-              storedSrvs = foldl' (\ss srv@UserServer {server} -> M.insert server srv ss) M.empty srvs
-              customServer :: UserServer p -> Bool
-              customServer srv@UserServer {preset} = not preset && all (`S.notMember` presetHosts) (srvHost srv)
+              storedAddressSrvs :: Map (NonEmpty TransportHost, String) (UserServer p)
+              storedAddressSrvs =
+                foldl' (\ss srv -> M.insert (serverIdentityKey srv) srv ss) M.empty srvs
+              retainedCustomServer :: UserServer p -> Maybe (UserServer p)
+              retainedCustomServer srv@UserServer {preset}
+                | preset = Nothing
+                | serverIdentityKey srv `S.member` presetIdentities = Nothing
+                | any (`S.member` presetHosts) (srvHost srv) =
+                    -- A second port on a managed hostname would still fail the global duplicate
+                    -- host validator. Preserve the database row, but quarantine it from routing.
+                    Just (srv {enabled = False, deleted = False} :: UserServer p)
+                | otherwise = Just srv
               presetSrvs :: [NewUserServer p]
               presetSrvs = pServers p presetOp
+              presetIdentities :: Set (NonEmpty TransportHost, String)
+              presetIdentities = S.fromList $ map serverIdentityKey presetSrvs
               presetHosts :: Set TransportHost
               presetHosts = foldMap' (S.fromList . L.toList . srvHost) presetSrvs
               userServer :: NewUserServer p -> AUserServer p
-              userServer srv@UserServer {server} = maybe (AUS SDBNew srv) (AUS SDBStored) (M.lookup server storedSrvs)
+              userServer srv =
+                maybe (AUS SDBNew srv) (AUS SDBStored . reconcileStoredServer srv) $
+                  M.lookup (serverIdentityKey srv) storedAddressSrvs
+              reconcileStoredServer :: NewUserServer p -> UserServer p -> UserServer p
+              -- An exact host+port belongs to the managed preset. Adopt that row in place even
+              -- when an older/custom build stored different auth there; otherwise no official
+              -- row is inserted and validation can deadlock on a duplicate host. Custom rows on
+              -- the same hostname but a different port are retained as quarantined rows.
+              reconcileStoredServer srv storedSrv = updatePresetServer srv storedSrv
+              updatePresetServer :: NewUserServer p -> UserServer p -> UserServer p
+              updatePresetServer UserServer {server, preset} storedSrv@UserServer {server = oldServer, tested} =
+                storedSrv
+                  { server,
+                    preset,
+                    tested = if server == oldServer then tested else Nothing
+                  }
           updatedRelays :: [UserChatRelay] -> [AUserChatRelay]
           updatedRelays relays = map userRelay presetRelays <> storedRelays (filter customRelay relays)
             where
@@ -437,6 +462,9 @@ updatedUserServers (presetOp_, UserOperatorServers {operator, smpServers, xftpSe
 srvHost :: UserServer' s p -> NonEmpty TransportHost
 srvHost UserServer {server = ProtoServerWithAuth srv _} = host srv
 
+serverIdentityKey :: UserServer' s p -> (NonEmpty TransportHost, String)
+serverIdentityKey UserServer {server = ProtoServerWithAuth ProtocolServer {host, port} _} = (host, port)
+
 chatRelayAddress :: UserChatRelay' s -> ShortLinkContact
 chatRelayAddress UserChatRelay {address} = address
 
@@ -454,7 +482,9 @@ agentServerCfgs p opDomains = mapMaybe agentServer
 
 matchingHost :: Text -> TransportHost -> Bool
 matchingHost d h = case h of
-  THDomainName domain -> d `T.isSuffixOf` T.pack domain
+  THDomainName domain ->
+    let host = T.pack domain
+     in host == d || ("." <> d) `T.isSuffixOf` host
   _ -> d == safeDecodeUtf8 (strEncode h)
 
 operatorDomains :: [ServerOperator' s] -> [(Text, ServerOperator' s)]
@@ -543,7 +573,10 @@ validateUserServers curr others = (currUserErrs <> concatMap otherUserErrs other
     serverErrs p uss = mapMaybe duplicateErr_ srvs
       where
         p' = AProtocolType p
-        srvs = filter (\(AUS _ UserServer {deleted}) -> not deleted) $ userServers p uss
+        -- Disabled rows cannot be selected for routing. Ignoring them here permits a managed
+        -- preset to retain a reversible, disabled same-host custom row without physical deletion;
+        -- attempting to re-enable both rows still produces the duplicate-host error.
+        srvs = filter (\(AUS _ UserServer {deleted, enabled}) -> not deleted && enabled) $ userServers p uss
         duplicateErr_ (AUS _ srv@UserServer {server}) =
           USEDuplicateServer p' (safeDecodeUtf8 $ strEncode server)
             <$> find (`S.member` duplicateHosts) (srvHost srv)

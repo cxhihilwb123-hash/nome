@@ -29,6 +29,51 @@ actual val databaseExportDir: File = androidAppContext.cacheDir
 
 actual val remoteHostsDir: File = File(tmpDir.absolutePath + File.separator + "remote_hosts")
 
+actual fun protectAppDataFiles() = Unit
+
+actual fun wipeChatStorageFilesVerified() {
+  val databaseFiles = listOf(chatDatabaseFileName, agentDatabaseFileName).flatMap { databaseFileName ->
+    listOf(
+      databaseFileName,
+      "$databaseFileName.bak",
+      "$databaseFileName-journal",
+      "$databaseFileName-wal",
+      "$databaseFileName-shm",
+    )
+  }.map { File(dataDir, it) }
+
+  databaseFiles.forEach { file ->
+    if (file.exists() && !file.delete()) {
+      throw IOException("Unable to delete a Nome database file")
+    }
+    if (file.exists()) {
+      throw IOException("Nome database file still exists after deletion")
+    }
+  }
+
+  listOf(
+    filesDir,
+    appFilesDir,
+    wallpapersDir,
+    coreTmpDir,
+    tmpDir,
+    remoteHostsDir,
+    getMigrationTempFilesDirectory(),
+  ).distinctBy { it.absoluteFile.path }.forEach(::resetAppDirectoryVerified)
+}
+
+private fun resetAppDirectoryVerified(directory: File) {
+  if (directory.exists() && !directory.deleteRecursively()) {
+    throw IOException("Unable to delete a Nome application directory")
+  }
+  if (directory.exists()) {
+    throw IOException("Nome application directory still exists after deletion")
+  }
+  if (!directory.mkdirs() && !directory.isDirectory) {
+    throw IOException("Unable to recreate a Nome application directory")
+  }
+}
+
 actual fun desktopOpenDatabaseDir() {}
 
 actual fun desktopOpenDir(dir: File) {}

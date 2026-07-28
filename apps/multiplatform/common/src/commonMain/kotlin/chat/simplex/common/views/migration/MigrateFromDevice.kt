@@ -54,6 +54,15 @@ data class MigrationFileLinkData(
   ) {
     fun hasProxyConfigured(): Boolean = networkProxy != null || legacySocksProxy != null || hostMode == HostMode.Onion
 
+    internal fun requiresProxyCredentialEntry(): Boolean =
+      (networkProxy?.auth == NetworkProxyAuth.USERNAME && networkProxy.username.isBlank() && networkProxy.password.isBlank()) ||
+        legacySocksProxy?.startsWith("@") == true
+
+    internal fun withoutCredentialSecrets(): NetworkConfig = copy(
+      legacySocksProxy = legacySocksProxy.withoutProxyUserInfo(),
+      networkProxy = networkProxy?.copy(username = "", password = ""),
+    )
+
     fun transformToPlatformSupported(): NetworkConfig {
       return if (hostMode != null && requiredHostMode != null) {
         NetworkConfig(
@@ -66,7 +75,10 @@ data class MigrationFileLinkData(
     }
   }
 
-  fun addToLink(link: String) = link + "&data=" + URLEncoder.encode(jsonShort.encodeToString(this), "UTF-8")
+  fun addToLink(link: String): String {
+    val transportData = copy(networkConfig = networkConfig?.withoutCredentialSecrets())
+    return link + "&data=" + URLEncoder.encode(jsonShort.encodeToString(transportData), "UTF-8")
+  }
 
   companion object {
     suspend fun readFromLink(link: String): MigrationFileLinkData? =
@@ -78,6 +90,13 @@ data class MigrationFileLinkData(
         null
       }
   }
+}
+
+private fun String?.withoutProxyUserInfo(): String? {
+  if (this == null) return null
+  val separator = lastIndexOf('@')
+  if (separator <= 0 || !substring(0, separator).contains(':')) return this
+  return "@${substring(separator + 1)}"
 }
 
 
@@ -262,6 +281,7 @@ private fun MutableState<MigrationFromState>.UploadConfirmationView() {
       click = { state = MigrationFromState.Archiving }
     ){}
     SectionTextFooter(stringResource(MR.strings.migrate_from_device_all_data_will_be_uploaded))
+    SectionTextFooter(stringResource(MR.strings.migrate_from_device_sensitive_settings_encrypted_transfer))
   }
 }
 
@@ -370,7 +390,7 @@ private fun MutableState<MigrationFromState>.LinkShownView(fileId: Long, link: S
   }
   SectionSpacer()
   SectionView(stringResource(MR.strings.migrate_from_device_or_share_this_file_link).uppercase()) {
-    LinkTextView(link, true)
+    LinkTextView(simplexChatLink(link), true)
   }
 }
 
@@ -651,23 +671,31 @@ private fun MutableState<MigrationFromState>.deleteChatAndDismiss() {
 }
 
 private suspend fun startChatAndDismiss(dismiss: Boolean = true) {
+  val onStarted: suspend () -> Unit = {
+    platform.androidChatStartedAfterBeingOff()
+    if (dismiss || chatModel.chatDbStatus.value != DBMigrationResult.OK) {
+      ModalManager.fullscreen.closeModals()
+    }
+  }
   try {
     val user = chatModel.currentUser.value
     if (chatModel.chatDbChanged.value) {
-      initChatController()
+      initChatController(onChatStarted = onStarted)
       chatModel.chatDbChanged.value = false
     } else if (user != null) {
-      startChat(user)
+      startChat(user, onStarted)
+    } else {
+      onStarted()
     }
-    platform.androidChatStartedAfterBeingOff()
   } catch (e: Exception) {
     AlertManager.shared.showAlertMsg(
       title = generalGetString(MR.strings.error_starting_chat),
       text = e.stackTraceToString()
     )
   }
-  // Hide settings anyway if chatDbStatus is not ok, probably passphrase needs to be entered
-  if (dismiss || chatModel.chatDbStatus.value != DBMigrationResult.OK) {
+  // Hide settings if the database itself could not be opened. A retryable Nome server gate keeps
+  // this view open until [onStarted] runs after a successful retry.
+  if (chatModel.chatDbStatus.value != DBMigrationResult.OK) {
     ModalManager.fullscreen.closeModals()
   }
 }

@@ -12,7 +12,11 @@ import chat.simplex.res.MR
 
 sealed class LAResult {
   object Success: LAResult()
-  class Error(val errString: CharSequence): LAResult()
+  class Error(
+    val errString: CharSequence,
+    /** The credential was valid, but a destructive security transaction needs recovery. */
+    val fatalRecovery: Boolean = false,
+  ): LAResult()
   class Failed(val errString: CharSequence? = null): LAResult()
   class Unavailable(val errString: CharSequence? = null): LAResult()
 }

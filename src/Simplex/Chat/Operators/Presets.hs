@@ -37,6 +37,7 @@ nomeSMPServers =
 
 nomeSMPServers_ :: NonEmpty SMPServer
 nomeSMPServers_ =
+  fmap (either error id . strDecode . (<> ":5223"))
   ["smp://RVzf_goDl1uPbeXQu7Mpi-gck_By0QhEGobrwPwULY8=@smp.nome.im"]
 
 nomeXFTPServers :: [NewUserServer 'PXFTP]

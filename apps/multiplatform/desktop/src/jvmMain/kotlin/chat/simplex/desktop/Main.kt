@@ -21,14 +21,15 @@ import java.io.File
 
 fun main() {
   if (!acquireSingleInstance()) return
+  // Reset only Nome's profile-scoped runtime directory before the native controller can create
+  // migration/export files there.
+  resetNomeRuntimeTmpDirectory()
   // Disable hardware acceleration
   //System.setProperty("skiko.renderApi", "SOFTWARE")
   initHaskell()
   runMigrations()
   setupUpdateChecker()
   initApp()
-  tmpDir.deleteRecursively()
-  tmpDir.mkdir()
   return showApp()
 }
 

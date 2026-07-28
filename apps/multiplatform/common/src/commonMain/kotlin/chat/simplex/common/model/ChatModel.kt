@@ -141,6 +141,21 @@ object ChatModel {
   val users = mutableStateListOf<UserInfo>()
   val localUserCreated = mutableStateOf<Boolean?>(null)
   val chatRunning = mutableStateOf<Boolean?>(null)
+  /**
+   * A recoverable start gate, separate from database and controller failures.
+   *
+   * The root UI owns the retry action so every startup path (including onboarding and profile
+   * creation) gets the same controlled behavior without leaking server credentials or stack traces.
+   */
+  val retryableChatStart = mutableStateOf<RetryableChatStart?>(null)
+
+  /** Consume a rendered retry exactly once, even if a desktop double-click arrives pre-recompose. */
+  @Synchronized
+  fun consumeRetryableChatStart(expected: RetryableChatStart): Boolean {
+    if (retryableChatStart.value !== expected) return false
+    retryableChatStart.value = null
+    return true
+  }
   val chatDbChanged = mutableStateOf<Boolean>(false)
   val chatDbEncrypted = mutableStateOf<Boolean?>(false)
   val chatDbStatus = mutableStateOf<DBMigrationResult?>(null)
@@ -1382,6 +1397,19 @@ data class User(
       userChatRelay = false,
     )
   }
+}
+
+data class RetryableChatStart(
+  val user: User,
+  val reason: RetryableChatStartReason,
+  val attemptId: Long,
+  val onStarted: suspend () -> Unit,
+)
+
+enum class RetryableChatStartReason {
+  NomeServerConfiguration,
+  NomeStartupFailure,
+  NomeContinuationFailure,
 }
 
 @Serializable

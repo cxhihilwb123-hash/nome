@@ -1125,6 +1125,24 @@ testGetSetSMPServers =
       alice <## "    smp://LcJUMfVhwD8yxjAiSaDzzGF3-kLG4Uh0Fl_ZIjrRwjI=:server_password@localhost:7001"
       alice <## "  XFTP servers"
       alice <## "    xftp://LcJUMfVhwD8yxjAiSaDzzGF3-kLG4Uh0Fl_ZIjrRwjI=:server_password@localhost:7002"
+      -- Nome's desktop startup gate must read and replace the routing table before StartChat.
+      -- Exercise the same public commands with the native controller explicitly stopped so this
+      -- ordering cannot regress unnoticed.
+      alice ##> "/_stop"
+      alice <## "chat stopped"
+      alice #$> ("/smp smp://1234-w==@smp1.example.im", id, "ok")
+      alice ##> "/smp"
+      alice <## "Your servers"
+      alice <## "  SMP servers"
+      alice <## "    smp://1234-w==@smp1.example.im"
+      alice ##> "/_servers 1"
+      alice <## "Your servers"
+      alice <## "  SMP servers"
+      alice <## "    smp://1234-w==@smp1.example.im"
+      alice <## "  XFTP servers"
+      alice <## "    xftp://LcJUMfVhwD8yxjAiSaDzzGF3-kLG4Uh0Fl_ZIjrRwjI=:server_password@localhost:7002"
+      alice ##> "/_start"
+      alice <## "chat started"
       alice #$> ("/smp smp://1234-w==@smp1.example.im", id, "ok")
       alice ##> "/smp"
       alice <## "Your servers"

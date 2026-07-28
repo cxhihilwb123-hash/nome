@@ -595,26 +595,30 @@ private fun ChatListToolbar(userPickerState: MutableStateFlow<AnimatedViewState>
   val scope = rememberCoroutineScope()
   val canScrollToZero = remember { derivedStateOf { listState.firstVisibleItemIndex != 0 || listState.firstVisibleItemScrollOffset != 0 } }
   DefaultAppBar(
-    navigationButton = {
-      if (chatModel.users.isEmpty() && !chatModel.desktopNoUserNoRemote) {
-        NavigationButtonMenu {
-          if (appPlatform.isAndroid) {
-            ModalManager.start.showCustomModal { close ->
-              SettingsView(chatModel, setPerformLA, close)
-            }
-          } else {
-            ModalManager.start.showModalCloseable { close ->
-              SettingsView(chatModel, setPerformLA, close)
+    navigationButton = if (appPlatform.isDesktop) {
+      null
+    } else {
+      {
+        if (chatModel.users.isEmpty() && !chatModel.desktopNoUserNoRemote) {
+          NavigationButtonMenu {
+            if (appPlatform.isAndroid) {
+              ModalManager.start.showCustomModal { close ->
+                SettingsView(chatModel, setPerformLA, close)
+              }
+            } else {
+              ModalManager.start.showModalCloseable { close ->
+                SettingsView(chatModel, setPerformLA, close)
+              }
             }
           }
-        }
-      } else {
-        val users by remember { derivedStateOf { chatModel.users.filter { u -> u.user.activeUser || !u.user.hidden } } }
-        val allRead = users
-          .filter { u -> !u.user.activeUser && !u.user.hidden }
-          .all { u -> u.unreadCount == 0 }
-        UserProfileButton(chatModel.currentUser.value?.profile?.image, allRead) {
+        } else {
+          val users by remember { derivedStateOf { chatModel.users.filter { u -> u.user.activeUser || !u.user.hidden } } }
+          val allRead = users
+            .filter { u -> !u.user.activeUser && !u.user.hidden }
+            .all { u -> u.unreadCount == 0 }
+          UserProfileButton(chatModel.currentUser.value?.profile?.image, allRead) {
             userPickerState.value = AnimatedViewState.VISIBLE
+          }
         }
       }
     },

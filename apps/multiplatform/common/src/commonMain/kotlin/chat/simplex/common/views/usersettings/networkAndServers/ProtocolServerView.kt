@@ -251,4 +251,5 @@ suspend fun testServerConnection(server: UserServer, m: ChatModel): Pair<UserSer
   }
 
 fun serverHostname(srv: String): String =
-  parseServerAddress(srv)?.hostnames?.firstOrNull() ?: srv
+  runCatching { parseServerAddress(srv)?.hostnames?.firstOrNull() }.getOrNull()
+    ?: generalGetString(MR.strings.smp_servers_invalid_address)

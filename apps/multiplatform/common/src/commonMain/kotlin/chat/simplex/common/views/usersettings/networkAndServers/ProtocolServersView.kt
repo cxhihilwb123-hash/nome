@@ -321,7 +321,7 @@ fun ProtocolServerViewLink(serverProtocol: ServerProtocol, srv: UserServer, dupl
     else -> ShowTestStatus(srv)
   }
   Spacer(Modifier.padding(horizontal = 4.dp))
-  val text = address?.hostnames?.firstOrNull() ?: srv.server
+  val text = serverHostname(srv.server)
   if (srv.enabled) {
     Text(text, color = MaterialTheme.colors.onBackground, maxLines = 1)
   } else {
@@ -331,14 +331,16 @@ fun ProtocolServerViewLink(serverProtocol: ServerProtocol, srv: UserServer, dupl
 
 @Composable
 private fun HowToButton() {
-  val uriHandler = LocalUriHandler.current
-  SettingsActionItem(
-    painterResource(MR.images.ic_open_in_new),
-    generalGetString(MR.strings.how_to_use_your_servers),
-    { uriHandler.openExternalLink("https://simplex.chat/docs/server.html") },
-    textColor = MaterialTheme.colors.primary,
-    iconColor = MaterialTheme.colors.primary
-  )
+  if (shouldShowUpstreamSimpleXHelpLink(appPlatform)) {
+    val uriHandler = LocalUriHandler.current
+    SettingsActionItem(
+      painterResource(MR.images.ic_open_in_new),
+      generalGetString(MR.strings.how_to_use_your_servers),
+      { uriHandler.openExternalLink("https://simplex.chat/docs/server.html") },
+      textColor = MaterialTheme.colors.primary,
+      iconColor = MaterialTheme.colors.primary
+    )
+  }
 }
 
 @Composable

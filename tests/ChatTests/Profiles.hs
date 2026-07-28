@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -19,22 +20,24 @@ import Control.Monad
 import Control.Monad.Except
 import qualified Data.Attoparsec.ByteString.Char8 as A
 import qualified Data.ByteString.Char8 as B
+import qualified Data.List.NonEmpty as L
 import qualified Data.Text as T
 import Data.Time.Clock (UTCTime, addUTCTime, getCurrentTime, nominalDay)
 import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
 import Data.Time.Format (defaultTimeLocale, formatTime)
+import Data.Int (Int64)
 import qualified Data.Map.Strict as M
 import Simplex.Chat (defaultChatConfig)
 import Simplex.Chat.Badges (BadgeCredential, BadgeInfo (..), BadgePurchase (..), BadgeRequest (..), BadgeType (..), generateMasterKey, issueBadge, verifyPayment)
 import Simplex.Chat.Controller (ChatConfig (..), ChatController (..), ChatHooks (..), PresetServers (..), defaultChatHooks, mkStoreCxt)
 import qualified Simplex.Chat.Controller as CC
 import Simplex.Chat.Library.Internal (simplexStatusContactProfile, simplexTeamContactProfile)
-import Simplex.Chat.Operators (newUserServer, presetServer)
+import Simplex.Chat.Operators (PresetOperator (..), ServerOperator' (..), UserServer' (..), groupByOperator', newUserServer, presetServer, presetServerAddress, updatedUserServers)
 import Simplex.Chat.Options (ChatOpts (..), CoreChatOpts (..))
 import Simplex.Chat.Protocol (currentChatVersion)
-import Simplex.Chat.Store.Profiles (getUpdateServerOperators, insertProtocolServer)
+import Simplex.Chat.Store.Profiles (acceptConditions, getChatRelays, getProtocolServers, getUpdateServerOperators, insertProtocolServer, setUserServers)
 import Simplex.Chat.Store.Shared (createContact)
-import Simplex.Chat.Types (ConnStatus (..), Profile (..), GroupRejectionReason (..))
+import Simplex.Chat.Types (ConnStatus (..), GroupRejectionReason (..), Profile (..), User (..))
 import qualified Simplex.Messaging.Crypto as C
 import Simplex.Messaging.Crypto.BBS (BBSPublicKey, BBSSecretKey, bbsKeyGen)
 import Simplex.Chat.Types.Shared (GroupMemberRole (..))
@@ -42,19 +45,30 @@ import Simplex.Chat.Types.UITheme
 import Simplex.Messaging.Agent.Env.SQLite
 import qualified Simplex.Messaging.Agent.Store.DB as DB
 import Simplex.Messaging.Agent.Store.DB (BoolInt (..))
+import Simplex.Messaging.Agent.Store.Entity (DBEntityId' (..))
 import Simplex.Messaging.Agent.RetryInterval
 import Simplex.Messaging.Encoding.String (StrEncoding (..))
-import Simplex.Messaging.Protocol (SProtocolType (..))
+import Simplex.Messaging.Protocol (BasicAuth (..), ProtoServerWithAuth (..), SProtocolType (..))
 import Simplex.Messaging.Server.Env.STM hiding (subscriptions)
 import Simplex.Messaging.Transport
 import Simplex.Messaging.Util (encodeJSON)
 import System.Directory (copyFile, createDirectoryIfMissing)
 import Test.Hspec hiding (it)
+#if defined(dbPostgres)
+import Database.PostgreSQL.Simple (Only (..))
+#else
+import Database.SQLite.Simple (Only (..))
+#endif
 
 chatProfileTests :: SpecWith TestParams
 chatProfileTests = do
   describe "Nome upgrade cleanup" $
     it "removes only disconnected upstream seed contacts" testRemoveLegacySeedContacts
+  describe "Nome preset routing" $
+    do
+      it "rotates managed preset auth without creating duplicate protocol rows" testRotateManagedPresetAuth
+      it "retains a same-host custom port as a disabled database row" testRetainManagedHostnameCustomPort
+      it "accepts conditions for one Nome operator without constructing invalid SQL" testAcceptNomeConditionsQuery
   describe "user profiles" $ do
     it "update user profile and notify contacts" testUpdateProfile
     it "update user profile with image" testUpdateProfileImage
@@ -181,11 +195,22 @@ testRemoveLegacySeedContacts =
                   contactLink = Nothing,
                   image = Nothing
                 }
+            sameHostDifferentLinkContact = simplexTeamContactProfile {image = Nothing}
+            sameHostDifferentLinkSuffix = "&nome-near-match=1"
             create profile =
               runExceptT (createContact db cxt user profile) >>= \case
                 Left e -> expectationFailure $ "failed to create legacy contact fixture: " <> show e
                 Right () -> pure ()
-        mapM_ create [simplexTeamContactProfile, simplexStatusContactProfile, customContact]
+        mapM_ create [simplexTeamContactProfile, simplexStatusContactProfile, customContact, sameHostDifferentLinkContact]
+        [Only contactLink] <-
+          DB.query_
+            db
+            "SELECT contact_link FROM contact_profiles WHERE display_name = 'Ask SimpleX Team' AND image IS NULL AND short_descr = 'Send questions about SimpleX Chat app and your suggestions'"
+            :: IO [Only B.ByteString]
+        DB.execute
+          db
+          "UPDATE contact_profiles SET contact_link = ? WHERE display_name = 'Ask SimpleX Team' AND image IS NULL AND short_descr = 'Send questions about SimpleX Chat app and your suggestions'"
+          (Only $ contactLink <> B.pack sameHostDifferentLinkSuffix)
         now <- getCurrentTime
         mapM_
           (void . insertProtocolServer db SPSMP user now)
@@ -200,7 +225,10 @@ testRemoveLegacySeedContacts =
             db
             "SELECT cp.display_name, cp.short_descr FROM contacts ct JOIN contact_profiles cp ON cp.contact_profile_id = ct.contact_profile_id WHERE cp.display_name IN ('Ask SimpleX Team', 'SimpleX Status') ORDER BY cp.display_name, cp.short_descr"
             :: IO [(T.Text, Maybe T.Text)]
-        remaining `shouldBe` [("Ask SimpleX Team", Just "Nome personal contact")]
+        remaining
+          `shouldBe` [ ("Ask SimpleX Team", Just "Nome personal contact"),
+                       ("Ask SimpleX Team", Just "Send questions about SimpleX Chat app and your suggestions")
+                     ]
         remainingServers <-
           DB.query_
             db
@@ -210,6 +238,106 @@ testRemoveLegacySeedContacts =
           `shouldBe` [ ("smp8.simplex.im.example", True),
                        ("smp9.simplex.im", False)
                      ]
+
+testRotateManagedPresetAuth :: HasCallStack => TestParams -> IO ()
+testRotateManagedPresetAuth =
+  testChat aliceProfile $ \alice ->
+    withCCUser alice $ \user ->
+      withCCTransaction alice $ \db -> do
+        let PresetServers {operators} = CC.presetServers defaultChatConfig
+            presetOp = L.head operators
+            oldPresetOp = withPresetAuths "old-auth" "old-file-auth" presetOp
+            newPresetOp = withPresetAuths "new-auth" "new-file-auth" presetOp
+        applyPresetOperator db user oldPresetOp
+        initialSmp <- getProtocolServers db SPSMP user
+        storedInitial <- expectSinglePreset "initial" $ matchingPresetServers oldPresetOp initialSmp
+        let initialId = serverId storedInitial
+        serverBasicAuth storedInitial `shouldBe` Just "old-auth"
+        applyPresetOperator db user newPresetOp
+        rotatedSmp <- getProtocolServers db SPSMP user
+        storedRotated <- expectSinglePreset "rotated" $ matchingPresetServers newPresetOp rotatedSmp
+        length rotatedSmp `shouldBe` length initialSmp
+        serverId storedRotated `shouldBe` initialId
+        serverBasicAuth storedRotated `shouldBe` Just "new-auth"
+  where
+    applyPresetOperator db user presetOp = do
+      ops <- getUpdateServerOperators db (L.singleton presetOp) False
+      smpSrvs <- getProtocolServers db SPSMP user
+      xftpSrvs <- getProtocolServers db SPXFTP user
+      chatRelays <- getChatRelays db user
+      uss <- groupByOperator' (ops, smpSrvs, xftpSrvs, chatRelays)
+      now <- getCurrentTime
+      forM_ (map updatedUserServers uss) $
+        runExceptT . setUserServers db user now >=> either (expectationFailure . show) (const $ pure ())
+    matchingPresetServers presetOp =
+      filter ((== targetServer) . presetServerAddress)
+      where
+        PresetOperator {smp = presetSmp} = presetOp
+        targetServer = presetServerAddress $ head presetSmp
+    expectSinglePreset _ [srv] = pure srv
+    expectSinglePreset stage srvs =
+      expectationFailure ("expected one " <> stage <> " managed preset, got " <> show (length srvs))
+        >> fail "managed preset cardinality mismatch"
+    withPresetAuths :: B.ByteString -> B.ByteString -> PresetOperator -> PresetOperator
+    withPresetAuths smpAuth xftpAuth presetOp@PresetOperator {smp = presetSmp, xftp = presetXftp} =
+      presetOp
+        { smp = map (presetServer True . withAuth smpAuth) presetSmp,
+          xftp = map (presetServer True . withAuth xftpAuth) presetXftp
+        }
+    withAuth :: B.ByteString -> UserServer' s p -> ProtoServerWithAuth p
+    withAuth auth UserServer {server = ProtoServerWithAuth srv _} = ProtoServerWithAuth srv (Just $ BasicAuth auth)
+    serverBasicAuth :: UserServer' s p -> Maybe String
+    serverBasicAuth UserServer {server = ProtoServerWithAuth _ auth_} = B.unpack . unBasicAuth <$> auth_
+
+testRetainManagedHostnameCustomPort :: HasCallStack => TestParams -> IO ()
+testRetainManagedHostnameCustomPort =
+  testChat aliceProfile $ \alice ->
+    withCCUser alice $ \user ->
+      withCCTransaction alice $ \db -> do
+        now <- getCurrentTime
+        let User {userId = uid} = user
+        custom <- insertProtocolServer db SPSMP user now (newUserServer "smp://abcd@smp.nome.im:7443")
+        let DBEntityId customId = serverId custom
+            PresetServers {operators} = CC.presetServers defaultChatConfig
+        ops <- getUpdateServerOperators db operators False
+        smpSrvs <- getProtocolServers db SPSMP user
+        xftpSrvs <- getProtocolServers db SPXFTP user
+        chatRelays <- getChatRelays db user
+        uss <- groupByOperator' (ops, smpSrvs, xftpSrvs, chatRelays)
+        forM_ (map updatedUserServers uss) $
+          runExceptT . setUserServers db user now >=> either (expectationFailure . show) (const $ pure ())
+        customRows <-
+          DB.query
+            db
+            "SELECT preset, enabled FROM protocol_servers WHERE user_id = ? AND smp_server_id = ?"
+            (uid, customId)
+            :: IO [(BoolInt, BoolInt)]
+        map (\(BI preset, BI enabled) -> (preset, enabled)) customRows
+          `shouldBe` [(False, False)]
+
+testAcceptNomeConditionsQuery :: HasCallStack => TestParams -> IO ()
+testAcceptNomeConditionsQuery =
+  testChat aliceProfile $ \alice ->
+    withCCTransaction alice $ \db -> do
+      let PresetServers {operators} = CC.presetServers defaultChatConfig
+      updatedOperators <- getUpdateServerOperators db operators False
+      conditionRows <-
+        DB.query_ db "SELECT usage_conditions_id FROM usage_conditions ORDER BY usage_conditions_id DESC LIMIT 1"
+          :: IO [Only Int64]
+      case ([opId | (_, Just ServerOperator {operatorId = DBEntityId opId}) <- updatedOperators], conditionRows) of
+        ([opId], [Only conditionsId]) -> do
+          acceptedAt <- getCurrentTime
+          runExceptT (acceptConditions db conditionsId (L.fromList [opId]) acceptedAt) >>= \case
+            Left e -> expectationFailure $ "failed to accept Nome conditions: " <> show e
+            Right () -> pure ()
+          acceptedRows <-
+            DB.query
+              db
+              "SELECT COUNT(*) FROM operator_usage_conditions WHERE server_operator_id = ? AND conditions_commit = (SELECT conditions_commit FROM usage_conditions WHERE usage_conditions_id = ?) AND auto_accepted = 0"
+              (opId, conditionsId)
+              :: IO [Only Int]
+          acceptedRows `shouldBe` [Only 1]
+        other -> expectationFailure $ "expected one Nome operator and one usage condition, got " <> show other
 
 testUpdateProfile :: HasCallStack => TestParams -> IO ()
 testUpdateProfile =

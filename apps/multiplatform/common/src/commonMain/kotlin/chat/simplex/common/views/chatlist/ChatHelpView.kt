@@ -13,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import chat.simplex.common.platform.appPlatform
 import chat.simplex.common.ui.theme.SimpleXTheme
 import chat.simplex.common.views.helpers.annotatedStringResource
 import chat.simplex.common.views.usersettings.MarkdownHelpView
@@ -40,7 +41,7 @@ fun ChatHelpView(addContact: (() -> Unit)? = null) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
       ) {
-        Text(stringResource(MR.strings.chat_help_tap_button))
+        Text(stringResource(if (appPlatform.isDesktop) MR.strings.chat_help_click_button else MR.strings.chat_help_tap_button))
         Icon(
           painterResource(MR.images.ic_person_add),
           stringResource(MR.strings.add_contact),
@@ -58,8 +59,16 @@ fun ChatHelpView(addContact: (() -> Unit)? = null) {
     ) {
       Text(stringResource(MR.strings.to_connect_via_link_title), style = MaterialTheme.typography.h2)
       Text(stringResource(MR.strings.if_you_received_simplex_invitation_link_you_can_open_in_browser), lineHeight = 22.sp)
-      Text(annotatedStringResource(MR.strings.desktop_scan_QR_code_from_app_via_scan_QR_code), lineHeight = 22.sp)
-      Text(annotatedStringResource(MR.strings.mobile_tap_open_in_mobile_app_then_tap_connect_in_app), lineHeight = 22.sp)
+      Text(
+        annotatedStringResource(
+          if (appPlatform.isDesktop) MR.strings.desktop_paste_invitation_link_from_clipboard
+          else MR.strings.desktop_scan_QR_code_from_app_via_scan_QR_code
+        ),
+        lineHeight = 22.sp,
+      )
+      if (!appPlatform.isDesktop) {
+        Text(annotatedStringResource(MR.strings.mobile_tap_open_in_mobile_app_then_tap_connect_in_app), lineHeight = 22.sp)
+      }
     }
 
     Column(

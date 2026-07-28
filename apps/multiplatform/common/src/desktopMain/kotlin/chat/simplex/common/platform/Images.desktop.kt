@@ -155,22 +155,39 @@ actual fun ImageBitmap.hasAlpha(): Boolean {
 }
 
 actual fun ImageBitmap.addLogo(size: Float): ImageBitmap {
-  val radius = (width * size).toInt()
-  val logoSize = (width * size * 1.5).toInt()
-  val logo: BufferedImage = MR.images.icon_foreground_common.image
-  val original = toAwtImage()
-  val withLogo = BufferedImage(width, height, original.type)
+  return addDesktopQrLogo(toAwtImage(), size).toComposeImageBitmap()
+}
+
+internal fun addDesktopQrLogo(original: BufferedImage, size: Float): BufferedImage {
+  val radius = (original.width * size).toInt()
+  val logoSize = (original.width * size * 1.5).toInt()
+  val logo: BufferedImage = MR.images.nome_mark.image
+  val withLogo = BufferedImage(original.width, original.height, original.type)
   val g = withLogo.createGraphics()
   g.setRenderingHint(
     RenderingHints.KEY_INTERPOLATION,
     RenderingHints.VALUE_INTERPOLATION_BILINEAR
   )
-  g.drawImage(original, 0, 0, width, height, 0, 0, original.width, original.height, null)
-  g.fillRoundRect(width / 2 - radius / 2, height / 2 - radius / 2, radius, radius, radius, radius)
-  g.drawImage(logo, (width - logoSize) / 2, (height - logoSize) / 2, logoSize, logoSize, null)
+  g.drawImage(original, 0, 0, original.width, original.height, null)
+  g.fillRoundRect(
+    original.width / 2 - radius / 2,
+    original.height / 2 - radius / 2,
+    radius,
+    radius,
+    radius,
+    radius,
+  )
+  g.drawImage(
+    logo,
+    (original.width - logoSize) / 2,
+    (original.height - logoSize) / 2,
+    logoSize,
+    logoSize,
+    null,
+  )
   g.dispose()
 
-  return withLogo.toComposeImageBitmap()
+  return withLogo
 }
 
 actual fun ImageBitmap.scale(width: Int, height: Int): ImageBitmap {

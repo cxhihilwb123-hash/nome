@@ -221,14 +221,20 @@ fun showBadgeInfoAlert(name: String, badge: LocalBadge, uriHandler: UriHandler) 
         title = generalGetString(MR.strings.badge_unknown_key_title),
         text = generalGetString(MR.strings.badge_unknown_key_desc)
       )
-    badge.badge.badgeType is BadgeType.Investor ->
-      AlertManager.shared.showAlertDialog(
-        title = title,
-        text = String.format(generalGetString(MR.strings.badge_invested), name),
-        confirmText = generalGetString(MR.strings.ok),
-        dismissText = generalGetString(MR.strings.learn_more),
-        onDismiss = { uriHandler.openUriCatching("https://simplex.chat/crowdfunding") }
-      )
+    badge.badge.badgeType is BadgeType.Investor -> {
+      val text = String.format(generalGetString(MR.strings.badge_invested), name)
+      if (shouldShowUpstreamSimpleXHelpLink(appPlatform)) {
+        AlertManager.shared.showAlertDialog(
+          title = title,
+          text = text,
+          confirmText = generalGetString(MR.strings.ok),
+          dismissText = generalGetString(MR.strings.learn_more),
+          onDismiss = { uriHandler.openUriCatching("https://simplex.chat/crowdfunding") }
+        )
+      } else {
+        AlertManager.shared.showAlertMsg(title = title, text = text)
+      }
+    }
     else -> {
       // Supporter, Legend and unknown types use the supporter wording
       val expiry = badge.badge.badgeExpiry
@@ -244,6 +250,8 @@ fun showBadgeInfoAlert(name: String, badge: LocalBadge, uriHandler: UriHandler) 
     }
   }
 }
+
+internal fun shouldShowUpstreamSimpleXHelpLink(platform: AppPlatform): Boolean = !platform.isDesktop
 
 private fun badgeImage(t: BadgeType): ImageResource = when (t) {
   is BadgeType.Legend -> MR.images.badge_legend

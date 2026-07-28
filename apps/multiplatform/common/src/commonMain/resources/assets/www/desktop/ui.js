@@ -2,8 +2,14 @@
 // Override defaults to enable worker on Chrome and Safari
 useWorker = typeof window.Worker !== "undefined";
 isDesktop = true;
-// Create WebSocket connection.
-const socket = new WebSocket(`ws://${location.host}`);
+// The one-time bootstrap page injects an unpredictable path into this page's JS memory. Never use
+// a host cookie for this bearer: browser cookies are shared across ports on 127.0.0.1.
+const callBridgePath = window.nomeCallBridgePath;
+window.nomeCallBridgePath = undefined;
+if (typeof callBridgePath !== "string" || !callBridgePath.startsWith("/simplex/call/ws/")) {
+    throw new Error("Call bridge authorization is unavailable");
+}
+const socket = new WebSocket(`ws://${location.host}${callBridgePath}`);
 socket.addEventListener("open", (_event) => {
     console.log("Opened socket");
     sendMessageToNative = (msg) => {

@@ -246,11 +246,13 @@ fun showContentBlockedAlert(title: String, message: String) {
   AlertManager.shared.showAlertDialogButtonsColumn(title, text = message, buttons = {
     val uriHandler = LocalUriHandler.current
     Column {
-      SectionItemView({
-        AlertManager.shared.hideAlert()
-        uriHandler.openUriCatching(contentModerationPostLink)
-      }) {
-        Text(generalGetString(MR.strings.how_it_works), Modifier.fillMaxWidth(), textAlign = TextAlign.Center, color = MaterialTheme.colors.primary)
+      if (shouldShowUpstreamSimpleXHelpLink(appPlatform)) {
+        SectionItemView({
+          AlertManager.shared.hideAlert()
+          uriHandler.openUriCatching(contentModerationPostLink)
+        }) {
+          Text(generalGetString(MR.strings.how_it_works), Modifier.fillMaxWidth(), textAlign = TextAlign.Center, color = MaterialTheme.colors.primary)
+        }
       }
       SectionItemView({
         AlertManager.shared.hideAlert()

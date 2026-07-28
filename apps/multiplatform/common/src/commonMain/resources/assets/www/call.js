@@ -25,9 +25,9 @@ var LayoutType;
     LayoutType["LocalVideo"] = "localVideo";
     LayoutType["RemoteVideo"] = "remoteVideo";
 })(LayoutType || (LayoutType = {}));
-// for debugging
-// var sendMessageToNative = ({resp}: WVApiMessage) => console.log(JSON.stringify({command: resp}))
-var sendMessageToNative = (msg) => console.log(JSON.stringify(msg));
+// Platform bridges replace this after loading. Keep the fallback silent: call
+// messages can contain SDP, ICE candidates and encryption material.
+var sendMessageToNative = (_msg) => { };
 var toggleScreenShare = async () => { };
 var localOrPeerMediaSourcesChanged = (_call) => { };
 var inactiveCallMediaSourcesChanged = (_inactiveCallMediaSources) => { };

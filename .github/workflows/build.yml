@@ -488,12 +488,13 @@ jobs:
           - os: macos-latest
             ghc: ${{ needs.variables.outputs.GHC_VER }}
             cli_asset_name: simplex-chat-macos-aarch64
-            desktop_asset_name: simplex-desktop-macos-aarch64.dmg
+            desktop_asset_name: nome-desktop-macos-arm64.dmg
+            build_desktop: true
             openssl_dir: "/opt/homebrew/opt"
           - os: macos-15-intel
             ghc: ${{ needs.variables.outputs.GHC_VER }}
             cli_asset_name: simplex-chat-macos-x86-64
-            desktop_asset_name: simplex-desktop-macos-x86_64.dmg
+            build_desktop: false
             openssl_dir: "/usr/local/opt"
     steps:
       - name: Checkout Code
@@ -544,21 +545,33 @@ jobs:
 
       - name: Build Desktop
         id: mac_desktop_build
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') && matrix.build_desktop
         shell: bash
         env:
-          APPLE_SIMPLEX_SIGNING_KEYCHAIN: ${{ secrets.APPLE_SIMPLEX_SIGNING_KEYCHAIN }}
-          APPLE_SIMPLEX_NOTARIZATION_APPLE_ID: ${{ secrets.APPLE_SIMPLEX_NOTARIZATION_APPLE_ID }}
-          APPLE_SIMPLEX_NOTARIZATION_PASSWORD: ${{ secrets.APPLE_SIMPLEX_NOTARIZATION_PASSWORD }}
+          NOME_MACOS_SIGNING_IDENTITY: ${{ vars.NOME_MACOS_SIGNING_IDENTITY }}
+          NOME_MACOS_TEAM_ID: ${{ vars.NOME_MACOS_TEAM_ID }}
+          NOME_MACOS_SIGNING_KEYCHAIN_BASE64: ${{ secrets.NOME_MACOS_SIGNING_KEYCHAIN_BASE64 }}
+          NOME_MACOS_SIGNING_KEYCHAIN_PASSWORD: ${{ secrets.NOME_MACOS_SIGNING_KEYCHAIN_PASSWORD }}
+          NOME_MACOS_NOTARIZATION_APPLE_ID: ${{ secrets.NOME_MACOS_NOTARIZATION_APPLE_ID }}
+          NOME_MACOS_NOTARIZATION_PASSWORD: ${{ secrets.NOME_MACOS_NOTARIZATION_PASSWORD }}
+          NOME_MACOS_NATIVE_MANIFEST_SHA256: ${{ vars.NOME_MACOS_NATIVE_MANIFEST_SHA256 }}
         run: |
           export ASSETS_DIR='../../assets'
           scripts/ci/build-desktop-mac.sh
-          path=$(echo $PWD/apps/multiplatform/release/main/dmg/SimpleX-*.dmg)
-          echo "package_path=$path" >> $GITHUB_OUTPUT
-          echo "package_hash=$(echo SHA2-256\(${{ matrix.desktop_asset_name }}\)= $(openssl sha256 $path | cut -d' ' -f 2))" >> $GITHUB_OUTPUT
+          shopt -s nullglob
+          packages=("$PWD"/apps/multiplatform/release/main/dmg/Nome-*.dmg)
+          if [ "${#packages[@]}" -ne 1 ]; then
+            echo "Expected exactly one Nome DMG, found ${#packages[@]}" >&2
+            exit 1
+          fi
+          path="${packages[0]}"
+          printf 'package_path=%s\n' "$path" >> "$GITHUB_OUTPUT"
+          printf 'package_hash=SHA2-256(%s)= %s\n' \
+            '${{ matrix.desktop_asset_name }}' \
+            "$(openssl sha256 "$path" | cut -d' ' -f 2)" >> "$GITHUB_OUTPUT"
 
       - name: Upload Desktop
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') && matrix.build_desktop
         uses: ./.github/actions/prepare-release
         with:
           bin_path: ${{ steps.mac_desktop_build.outputs.package_path }}
@@ -742,8 +755,7 @@ jobs:
 
           # Downlaod desktop release
           curl --proto '=https' --tlsv1.2 -sSf -L "${URL}/${TAG}/simplex-desktop-ubuntu-22_04-x86_64.deb" -o linux.deb
-          curl --proto '=https' --tlsv1.2 -sSf -L "${URL}/${TAG}/simplex-desktop-macos-aarch64.dmg" -o macos-aarch64.dmg
-          curl --proto '=https' --tlsv1.2 -sSf -L "${URL}/${TAG}/simplex-desktop-macos-x86_64.dmg" -o macos-x86_64.dmg
+          curl --proto '=https' --tlsv1.2 -sSf -L "${URL}/${TAG}/nome-desktop-macos-arm64.dmg" -o macos-arm64.dmg
           curl --proto '=https' --tlsv1.2 -sSf -L "${URL}/${TAG}/simplex-desktop-windows-x86_64.msi" -o windows-x86_64.msi
 
           # Linux
@@ -757,19 +769,12 @@ jobs:
           # Back to original dir
           mv "${PREFIX}-linux-x86_64.zip" "$RELEASE_DIR" && cd "$INIT_DIR"
 
-          # MacOS: aarch64
-          # --------------
-          7z x macos-aarch64.dmg -omacos1-out/ && cd macos1-out/SimpleX/SimpleX.app/Contents/app/resources/
+          # macOS: ARM64
+          # ------------
+          7z x macos-arm64.dmg -omacos-arm64-out/ && cd macos-arm64-out/Nome/Nome.app/Contents/app/resources/
           mkdir libs && cp *.dylib libs/
-          zip -r "${PREFIX}-macos-aarch64.zip" libs
-          mv "${PREFIX}-macos-aarch64.zip" "$RELEASE_DIR" && cd "$INIT_DIR"
-
-          # Macos: x86_64
-          # -------------
-          7z x macos-x86_64.dmg -omacos2-out/ && cd macos2-out/SimpleX/SimpleX.app/Contents/app/resources/
-          mkdir libs && cp *.dylib libs/
-          zip -r "${PREFIX}-macos-x86_64.zip" libs
-          mv "${PREFIX}-macos-x86_64.zip" "$RELEASE_DIR" && cd "$INIT_DIR"
+          zip -r "${PREFIX}-macos-arm64.zip" libs
+          mv "${PREFIX}-macos-arm64.zip" "$RELEASE_DIR" && cd "$INIT_DIR"
 
           # Windows: x86_64
           # ---------------

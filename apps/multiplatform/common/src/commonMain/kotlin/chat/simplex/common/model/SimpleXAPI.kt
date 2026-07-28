@@ -13,7 +13,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -28,14 +27,12 @@ import dev.icerock.moko.resources.compose.painterResource
 import chat.simplex.common.platform.*
 import chat.simplex.common.ui.theme.*
 import chat.simplex.common.views.call.*
-import chat.simplex.common.views.chat.item.contentModerationPostLink
 import chat.simplex.common.views.chat.item.showContentBlockedAlert
 import chat.simplex.common.views.chat.item.showQuotedItemDoesNotExistAlert
 import chat.simplex.common.views.chatlist.openGroupChat
 import chat.simplex.common.views.migration.MigrationFileLinkData
 import chat.simplex.common.views.onboarding.OnboardingStage
 import chat.simplex.common.views.usersettings.*
-import chat.simplex.common.views.usersettings.networkAndServers.defaultConditionsLink
 import chat.simplex.common.views.usersettings.networkAndServers.serverHostname
 import com.charleskorn.kaml.Yaml
 import com.charleskorn.kaml.YamlConfiguration
@@ -46,6 +43,7 @@ import dev.icerock.moko.resources.StringResource
 import dev.icerock.moko.resources.compose.stringResource
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -59,6 +57,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Date
@@ -72,6 +71,99 @@ internal suspend fun <T> runChatListOperationPreservingCancellation(
   throw e
 } catch (e: Exception) {
   onFailure(e)
+}
+
+/**
+ * A failed Nome pre-network gate must never leave a controller running on routes whose state is
+ * unknown. Cleanup runs in [NonCancellable] so cancellation of the startup coroutine cannot skip
+ * the stop command. If the stop cannot be confirmed, the platform terminates the process.
+ */
+internal suspend fun enforceNomeGateFailureStop(
+  stopChat: suspend () -> Unit,
+  onStopped: () -> Unit,
+  onUnknown: () -> Unit,
+  terminate: () -> Nothing,
+) {
+  try {
+    withContext(NonCancellable) { stopChat() }
+    onStopped()
+  } catch (_: Throwable) {
+    onUnknown()
+    terminate()
+  }
+}
+
+internal data class NomePreNetworkGateResult(
+  val wasRunning: Boolean,
+  val started: Boolean,
+)
+
+/** Enforces the observable ordering of Nome's server gate around native StartChat. */
+internal suspend fun runNomePreNetworkGate(
+  quiesceReceiver: () -> Unit,
+  isChatRunning: suspend () -> Boolean,
+  stopRunningChat: suspend () -> Unit,
+  configureWhileStopped: suspend () -> Boolean,
+  startConfiguredChat: suspend () -> Boolean,
+  onUnsafeFailure: suspend () -> Unit = {},
+): NomePreNetworkGateResult {
+  quiesceReceiver()
+  return try {
+    val wasRunning = isChatRunning()
+    if (wasRunning) stopRunningChat()
+    if (!configureWhileStopped()) return NomePreNetworkGateResult(wasRunning, started = false)
+    check(startConfiguredChat()) { "Native chat started concurrently during the Nome server gate" }
+    NomePreNetworkGateResult(wasRunning, started = true)
+  } catch (e: Throwable) {
+    // Once the receiver is quiesced, even an unknown result from CheckChatRunning must be
+    // treated as potentially live native networking. Fail closed by confirming StopChat (or
+    // terminating the process) before propagating the original startup failure.
+    onUnsafeFailure()
+    throw e
+  }
+}
+
+/** Serializes the full native stop/configure/start transition and its completion callback. */
+internal class NomeChatStartSingleFlight {
+  private val mutex = Mutex()
+
+  suspend fun <T> run(block: suspend () -> T): T = mutex.withLock { block() }
+}
+
+internal fun nomeChatStartFailureSummary(error: Throwable): String =
+  "failed starting chat (${error::class.simpleName ?: "unknown failure"})"
+
+internal class NomeChatStartupException : Exception("Nome chat startup could not be completed safely")
+
+internal fun safeNomeChatStartFailure(error: Throwable): Throwable =
+  if (error is CancellationException) error else NomeChatStartupException()
+
+/**
+ * Once native startup is committed, a UI continuation failure must never be reclassified as a
+ * stopped/failed native chat. Run it non-cancellably and publish a continuation-only recovery.
+ */
+internal suspend fun runNomeChatStartContinuation(
+  continuation: suspend () -> Unit,
+  onFailure: suspend (Throwable) -> Unit,
+): Boolean = try {
+  withContext(NonCancellable) { continuation() }
+  true
+} catch (e: Throwable) {
+  onFailure(e)
+  false
+}
+
+/** Keeps a committed native start successful even when only its UI continuation fails. */
+internal suspend fun runNomeChatStartAttempt(
+  transition: suspend () -> Boolean,
+  continuation: suspend () -> Unit,
+  onContinuationFailure: suspend (Throwable) -> Unit,
+): Boolean {
+  val started = transition()
+  if (started) {
+    runNomeChatStartContinuation(continuation, onContinuationFailure)
+  }
+  return started
 }
 
 typealias ChatCtrl = Long
@@ -107,6 +199,13 @@ enum class CloseBehavior {
   companion object { val default = Ask }
 }
 
+/** Durable fail-closed marker for an interrupted or unsuccessful local self-destruct transaction. */
+enum class SelfDestructWipeState {
+  IDLE,
+  IN_PROGRESS,
+  INCOMPLETE,
+}
+
 class HintPref(val reset: () -> Unit, val isUnchanged: () -> Boolean)
 
 // Spec: spec/state.md#AppPreferences
@@ -129,7 +228,10 @@ class AppPreferences {
   val laMode = mkEnumPreference(SHARED_PREFS_LA_MODE, LAMode.default) { LAMode.values().firstOrNull { it.name == this } }
   val laLockDelay = mkIntPreference(SHARED_PREFS_LA_LOCK_DELAY, 30)
   val laNoticeShown = mkBoolPreference(SHARED_PREFS_LA_NOTICE_SHOWN, false)
+  val localAuthFailedAttempts = mkIntPreference(SHARED_PREFS_LOCAL_AUTH_FAILED_ATTEMPTS, 0)
+  val localAuthRetryAfterEpochMs = mkLongPreference(SHARED_PREFS_LOCAL_AUTH_RETRY_AFTER_EPOCH_MS, 0L)
   val webrtcIceServers = mkStrPreference(SHARED_PREFS_WEBRTC_ICE_SERVERS, null)
+  val webrtcIceServersIV = mkStrPreference(SHARED_PREFS_WEBRTC_ICE_SERVERS_IV, null)
   val privacyProtectScreen = mkBoolPreference(SHARED_PREFS_PRIVACY_PROTECT_SCREEN, true)
   val privacyAcceptImages = mkBoolPreference(SHARED_PREFS_PRIVACY_ACCEPT_IMAGES, true)
   val privacyLinkPreviews = mkBoolPreference(SHARED_PREFS_PRIVACY_LINK_PREVIEWS, true)
@@ -160,21 +262,41 @@ class AppPreferences {
   val terminalAlwaysVisible = mkBoolPreference(SHARED_PREFS_TERMINAL_ALWAYS_VISIBLE, false)
   val networkUseSocksProxy = mkBoolPreference(SHARED_PREFS_NETWORK_USE_SOCKS_PROXY, false)
   val networkShowSubscriptionPercentage = mkBoolPreference(SHARED_PREFS_NETWORK_SHOW_SUBSCRIPTION_PERCENTAGE, false)
-  private val _networkProxy = mkStrPreference(SHARED_PREFS_NETWORK_PROXY_HOST_PORT, json.encodeToString(NetworkProxy()))
+  private val _networkProxy = mkStrPreference(SHARED_PREFS_NETWORK_PROXY_HOST_PORT, null)
+  private val _networkProxyIV = mkStrPreference(SHARED_PREFS_NETWORK_PROXY_IV, null)
+  private val networkProxyStore = NetworkProxyPreferenceStore(
+    getData = { _networkProxy.get() },
+    setData = { _networkProxy.set(it) },
+    getIv = { _networkProxyIV.get() },
+    setIv = { _networkProxyIV.set(it) },
+    useKeychain = appPlatform.isDesktop,
+    credentialCryptor = cryptor,
+  )
+  private val initialNetworkProxyState = try {
+    networkProxyStore.get() to false
+  } catch (_: CredentialUnavailable) {
+    NetworkProxy() to true
+  }
+  val networkProxyCredentialUnavailable: MutableState<Boolean> = mutableStateOf(initialNetworkProxyState.second)
   val networkProxy: SharedPreference<NetworkProxy> = SharedPreference(
-    get = fun(): NetworkProxy {
-      val value = _networkProxy.get() ?: return NetworkProxy()
-      return try {
-        if (value.startsWith("{")) {
-          json.decodeFromString(value)
-        } else {
-          NetworkProxy(host = value.substringBefore(":").ifBlank { "localhost" }, port = value.substringAfter(":").toIntOrNull() ?: 9050)
-        }
-      } catch (e: Throwable) {
-        NetworkProxy()
+    get = {
+      try {
+        networkProxyStore.get().also { networkProxyCredentialUnavailable.value = false }
+      } catch (e: CredentialUnavailable) {
+        networkProxyCredentialUnavailable.value = true
+        throw e
       }
     },
-    set = fun(proxy: NetworkProxy) { _networkProxy.set(json.encodeToString(proxy)) }
+    set = {
+      try {
+        networkProxyStore.set(it)
+        networkProxyCredentialUnavailable.value = false
+      } catch (e: CredentialUnavailable) {
+        networkProxyCredentialUnavailable.value = true
+        throw e
+      }
+    },
+    initialValue = initialNetworkProxyState.first,
   )
   val networkSessionMode: SharedPreference<TransportSessionMode> = mkSafeEnumPreference(SHARED_PREFS_NETWORK_SESSION_MODE, TransportSessionMode.default)
   val networkSMPProxyMode: SharedPreference<SMPProxyMode> = mkSafeEnumPreference(SHARED_PREFS_NETWORK_SMP_PROXY_MODE, SMPProxyMode.default)
@@ -221,6 +343,8 @@ class AppPreferences {
   val confirmDBUpgrades = mkBoolPreference(SHARED_PREFS_CONFIRM_DB_UPGRADES, false)
   val selfDestruct = mkBoolPreference(SHARED_PREFS_SELF_DESTRUCT, false)
   val selfDestructDisplayName = mkStrPreference(SHARED_PREFS_SELF_DESTRUCT_DISPLAY_NAME, null)
+  val selfDestructWipeState: SharedPreference<SelfDestructWipeState> =
+    mkSafeEnumPreference(SHARED_PREFS_SELF_DESTRUCT_WIPE_STATE, SelfDestructWipeState.IDLE)
 
   // This flag is set when database is first initialized and resets only when the database is removed.
   // This is needed for recover from incomplete initialization when only one database file is created.
@@ -403,7 +527,11 @@ class AppPreferences {
     private const val SHARED_PREFS_LA_MODE = "LocalAuthenticationMode"
     private const val SHARED_PREFS_LA_LOCK_DELAY = "LocalAuthenticationLockDelay"
     private const val SHARED_PREFS_LA_NOTICE_SHOWN = "LANoticeShown"
+    private const val SHARED_PREFS_LOCAL_AUTH_FAILED_ATTEMPTS = "LocalAuthenticationFailedAttempts"
+    private const val SHARED_PREFS_LOCAL_AUTH_RETRY_AFTER_EPOCH_MS = "LocalAuthenticationRetryAfterEpochMs"
+    private const val SHARED_PREFS_SELF_DESTRUCT_WIPE_STATE = "SelfDestructWipeState"
     private const val SHARED_PREFS_WEBRTC_ICE_SERVERS = "WebrtcICEServers"
+    private const val SHARED_PREFS_WEBRTC_ICE_SERVERS_IV = "WebrtcICEServersIV"
     private const val SHARED_PREFS_PRIVACY_PROTECT_SCREEN = "PrivacyProtectScreen"
     private const val SHARED_PREFS_PRIVACY_ACCEPT_IMAGES = "PrivacyAcceptImages"
     private const val SHARED_PREFS_PRIVACY_TRANSFER_IMAGES_INLINE = "PrivacyTransferImagesInline"
@@ -441,6 +569,7 @@ class AppPreferences {
     private const val SHARED_PREFS_NETWORK_USE_SOCKS_PROXY = "NetworkUseSocksProxy"
     private const val SHARED_PREFS_NETWORK_SHOW_SUBSCRIPTION_PERCENTAGE = "ShowSubscriptionPercentage"
     private const val SHARED_PREFS_NETWORK_PROXY_HOST_PORT = "NetworkProxyHostPort"
+    private const val SHARED_PREFS_NETWORK_PROXY_IV = "NetworkProxyIV"
     private const val SHARED_PREFS_NETWORK_SESSION_MODE = "NetworkSessionMode"
     private const val SHARED_PREFS_NETWORK_SMP_PROXY_MODE = "NetworkSMPProxyMode"
     private const val SHARED_PREFS_NETWORK_SMP_PROXY_FALLBACK = "NetworkSMPProxyFallback"
@@ -516,6 +645,36 @@ class AppPreferences {
   }
 }
 
+/**
+ * Converts expected Nome configuration exhaustion into a retryable chat-start state.
+ *
+ * Unexpected exceptions (including cancellation) still propagate to the existing error handling;
+ * only the bounded policy returning `false` is treated as a controlled, user-retryable outcome.
+ */
+internal suspend fun retryableNomeServerChatStart(
+  user: User,
+  onStarted: suspend () -> Unit = {},
+  applyConfiguration: suspend () -> Boolean,
+): RetryableChatStart? =
+  if (applyConfiguration()) {
+    null
+  } else {
+    newRetryableChatStart(user, RetryableChatStartReason.NomeServerConfiguration, onStarted)
+  }
+
+internal fun newRetryableChatStart(
+  user: User,
+  reason: RetryableChatStartReason,
+  onStarted: suspend () -> Unit = {},
+): RetryableChatStart = RetryableChatStart(
+  user = user,
+  reason = reason,
+  attemptId = nomeServerChatStartAttemptIds.incrementAndGet(),
+  onStarted = onStarted,
+)
+
+private val nomeServerChatStartAttemptIds = AtomicLong(0)
+
 private const val MESSAGE_TIMEOUT: Int = 300_000_000
 
 object ChatController {
@@ -527,6 +686,7 @@ object ChatController {
 
   val chatModel = ChatModel
   private var receiverJob: Job? = null
+  private val startChatSingleFlight = NomeChatStartSingleFlight()
   var lastMsgReceivedTimestamp: Long = System.currentTimeMillis()
     private set
 
@@ -571,43 +731,103 @@ object ChatController {
     userId
   }
 
-  suspend fun startChat(user: User) {
+  suspend fun startChat(
+    user: User,
+    onStarted: suspend () -> Unit = {},
+  ): Boolean = startChatSingleFlight.run {
+    runNomeChatStartAttempt(
+      transition = { startChatTransition(user, onStarted) },
+      continuation = onStarted,
+      onContinuationFailure = { error ->
+        Log.e(TAG, "Nome post-start continuation failed (${error::class.simpleName ?: "unknown failure"})")
+        withContext(Dispatchers.Main) {
+          chatModel.retryableChatStart.value = newRetryableChatStart(
+            user,
+            RetryableChatStartReason.NomeContinuationFailure,
+            onStarted,
+          )
+        }
+      },
+    )
+  }
+
+  private suspend fun startChatTransition(
+    user: User,
+    onStarted: suspend () -> Unit,
+  ): Boolean {
     Log.d(TAG, "user: $user")
     val previousUser = chatModel.currentUser.value
+    var nomeGateRequiresCleanup = false
+    var retryableFailure: RetryableChatStart? = null
     try {
+      // A new attempt consumes the previous pending state. If it fails again the state is
+      // published anew, which lets the root UI present another explicit retry.
+      chatModel.retryableChatStart.value = null
       chatModel.currentUser.value = user
-      apiSetNetworkConfig(getNetCfg())
-      val chatRunning = apiCheckChatRunning()
-      val users = listUsers(null)
-      chatModel.users.clear()
-      chatModel.users.addAll(users)
-      val startedForNomeConfiguration = appPlatform.isAndroid && !chatRunning
-      if (startedForNomeConfiguration) {
-        // Server APIs require a running controller. No receiver or user-facing network action is
-        // started until the Nome configuration has been applied successfully.
-        apiStartChat()
-      }
-      if (appPlatform.isAndroid && !NomeServerConfiguration.applyBeforeNetwork(this, user)) {
-        Log.e(TAG, "Nome server configuration remains pending and will be retried")
-        if (startedForNomeConfiguration) {
-          try {
-            apiStopChat()
-          } catch (_: Throwable) {
-            Log.e(TAG, "Unable to stop the Nome server configuration bootstrap")
+      // From this point until a completely configured startup succeeds, every exception must be
+      // treated as an ambiguous native networking state. In particular CheckChatRunning itself
+      // can fail while an older controller is still connected to pre-Nome routes.
+      nomeGateRequiresCleanup = true
+      val gate = runNomePreNetworkGate(
+        // Cancel the async receiver before inspecting/stopping the native controller. recvMsg can
+        // be blocked in native code, so it also checks cancellation immediately after returning.
+        quiesceReceiver = ::stopReceiver,
+        isChatRunning = ::apiCheckChatRunning,
+        stopRunningChat = {
+          enforceNomeGateFailureStop(
+            stopChat = { apiStopChat(); Unit },
+            onStopped = { chatModel.chatRunning.value = false },
+            onUnknown = { chatModel.chatRunning.value = null },
+            terminate = ::terminateForUnsafeNetworkState,
+          )
+        },
+        configureWhileStopped = {
+          check(apiSetNetworkConfig(getNetCfg())) {
+            "Native network configuration was rejected before the Nome server gate"
           }
-        }
+          val users = listUsers(null)
+          chatModel.users.clear()
+          chatModel.users.addAll(users)
+          // The core exposes get/validate/set server commands while stopped. Do not call StartChat
+          // before this completes: it immediately resumes SMP/XFTP and delivery workers.
+          retryableFailure = retryableNomeServerChatStart(user, onStarted) {
+            NomeServerConfiguration.applyBeforeNetwork(this, user)
+          }
+          retryableFailure == null
+        },
+        startConfiguredChat = {
+          apiStartChat()
+        },
+        onUnsafeFailure = {
+          enforceNomeGateFailureStop(
+            stopChat = { apiStopChat(); Unit },
+            onStopped = {
+              chatModel.chatRunning.value = false
+              chatModel.currentUser.value = previousUser
+            },
+            onUnknown = {
+              chatModel.chatRunning.value = null
+              chatModel.currentUser.value = previousUser
+            },
+            terminate = ::terminateForUnsafeNetworkState,
+          )
+          // The helper confirmed the stop before rethrowing; avoid issuing a redundant second
+          // StopChat from the outer catch.
+          nomeGateRequiresCleanup = false
+        },
+      )
+      if (!gate.started) {
+        Log.e(TAG, "Nome server configuration remains pending and will be retried")
         chatModel.chatRunning.value = false
         chatModel.currentUser.value = previousUser
-        return
+        chatModel.retryableChatStart.value = requireNotNull(retryableFailure)
+        return false
       }
-      if (!chatRunning) {
+      if (!gate.wasRunning) {
         chatModel.currentUser.value = user
         chatModel.localUserCreated.value = true
         getUserChatData(null)
         appPrefs.chatLastStart.set(Clock.System.now())
-        chatModel.chatRunning.value = true
-        startReceiver()
-        setLocalDeviceName(appPrefs.deviceNameForRemoteAccess.get()!!)
         if (appPreferences.onboardingStage.get() == OnboardingStage.OnboardingComplete && !chatModel.controller.appPrefs.privacyDeliveryReceiptsSet.get()) {
           chatModel.setDeliveryReceipts.value = true
         }
@@ -619,13 +839,33 @@ object ChatController {
         }
         Log.d(TAG, "startChat: running")
       }
-      if (!startedForNomeConfiguration) apiStartChat()
+      chatModel.chatRunning.value = true
+      startReceiver()
+      setLocalDeviceName(appPrefs.deviceNameForRemoteAccess.get()!!)
       appPrefs.chatStopped.set(false)
+      nomeGateRequiresCleanup = false
     } catch (e: Throwable) {
-      chatModel.currentUser.value = previousUser
-      Log.e(TAG, "failed starting chat $e")
-      throw e
+      if (nomeGateRequiresCleanup) {
+        enforceNomeGateFailureStop(
+          stopChat = { apiStopChat(); Unit },
+          onStopped = {
+            chatModel.chatRunning.value = false
+            chatModel.currentUser.value = previousUser
+          },
+          onUnknown = {
+            chatModel.chatRunning.value = null
+            chatModel.currentUser.value = previousUser
+          },
+          terminate = ::terminateForUnsafeNetworkState,
+        )
+      } else {
+        chatModel.currentUser.value = previousUser
+        chatModel.chatRunning.value = false
+      }
+      Log.e(TAG, nomeChatStartFailureSummary(e))
+      throw safeNomeChatStartFailure(e)
     }
+    return true
   }
 
   suspend fun startChatWithoutUser() {
@@ -637,9 +877,12 @@ object ChatController {
       chatModel.localUserCreated.value = false
       appPrefs.chatLastStart.set(Clock.System.now())
       chatModel.chatRunning.value = true
-      startReceiver()
+      // With no active profile there is no reason to consume async chat events. Keeping the
+      // receiver quiescent also guarantees that first profile startup cannot inherit a blocked
+      // recvMsg call from onboarding.
+      stopReceiver()
       setLocalDeviceName(appPrefs.deviceNameForRemoteAccess.get()!!)
-      Log.d(TAG, "startChat: started without user")
+      Log.d(TAG, "startChat: prepared without user")
     } catch (e: Throwable) {
       Log.e(TAG, "failed starting chat without user $e")
       throw e
@@ -714,7 +957,7 @@ object ChatController {
   }
 
   // Spec: spec/api.md#startReceiver
-  private fun startReceiver() {
+  internal fun startReceiver() {
     Log.d(TAG, "ChatController startReceiver")
     if (receiverJob != null || chatCtrl == null) return
     receiverJob = CoroutineScope(Dispatchers.IO).launch {
@@ -738,6 +981,7 @@ object ChatController {
             release()
           }
           val msg = recvMsg(ctrl)
+          if (!isActive) break
           releaseLock = getWakeLock(timeout = 60000)
           if (msg != null) {
             val finishedWithoutTimeout = withTimeoutOrNull(60_000L) {
@@ -765,7 +1009,7 @@ object ChatController {
     }
   }
 
-  private fun stopReceiver() {
+  internal fun stopReceiver() {
     Log.d(TAG, "ChatController stopReceiver")
     val job = receiverJob
     if (job != null) {
@@ -880,7 +1124,7 @@ object ChatController {
       if (log) {
         Log.d(TAG, "sendCmd response type ${r.responseType}")
         if (r is API.Result && (r.res is CR.Response || r.res is CR.Invalid)) {
-          Log.d(TAG, "sendCmd response json $rStr")
+          Log.d(TAG, "sendCmd fallback response ${r.details}")
         }
         chatModel.addTerminalItem(TerminalItem.resp(rhId, r))
       }
@@ -896,7 +1140,9 @@ object ChatController {
     } else {
       val r = json.decodeFromString<API>(rStr)
       Log.d(TAG, "chatRecvMsg: ${r.responseType}")
-      if (r is API.Result && (r.res is CR.Response || r.res is CR.Invalid)) Log.d(TAG, "chatRecvMsg json: $rStr")
+      if (r is API.Result && (r.res is CR.Response || r.res is CR.Invalid)) {
+        Log.d(TAG, "chatRecvMsg fallback response ${r.details}")
+      }
       r
     }
   }
@@ -1002,7 +1248,7 @@ object ChatController {
     when (r.result) {
       is CR.ChatStarted -> return true
       is CR.ChatRunning -> return false
-      else -> throw Exception("failed starting chat: ${r.responseType} ${r.details}")
+      else -> throw Exception("failed starting chat: ${r.responseType}")
     }
   }
 
@@ -1011,14 +1257,14 @@ object ChatController {
     when (r.result) {
       is CR.ChatRunning -> return true
       is CR.ChatStopped -> return false
-      else -> throw Exception("failed check chat running: ${r.responseType} ${r.details}")
+      else -> throw Exception("failed check chat running: ${r.responseType}")
     }
   }
 
   suspend fun apiStopChat(): Boolean {
     val r = sendCmd(null, CC.ApiStopChat())
     if (r.result is CR.ChatStopped) return true
-    throw Exception("failed stopping chat: ${r.responseType} ${r.details}")
+    throw Exception("failed stopping chat: ${r.responseType}")
   }
 
   suspend fun apiSetAppFilePaths(filesFolder: String, tempFolder: String, assetsFolder: String, remoteHostsFolder: String, ctrl: ChatCtrl? = null) {
@@ -1309,8 +1555,9 @@ object ChatController {
     val userId = currentUserId("testProtoServer")
     val r = sendCmd(rh, CC.APITestProtoServer(userId, server))
     if (r is API.Result && r.res is CR.ServerTestResult) return r.res.testFailure
-    Log.e(TAG, "testProtoServer bad response: ${r.responseType} ${r.details}")
-    throw Exception("testProtoServer bad response: ${r.responseType} ${r.details}")
+    val safeDetails = redactServerCredentials(r.details)
+    Log.e(TAG, "testProtoServer bad response: ${r.responseType} $safeDetails")
+    throw Exception("testProtoServer bad response: ${r.responseType} $safeDetails")
   }
 
   suspend fun testChatRelay(rh: Long?, address: String): Pair<RelayProfile?, RelayTestFailure?> {
@@ -1339,7 +1586,7 @@ object ChatController {
     val userId = currentUserId("getUserServers")
     val r = sendCmd(rh, CC.ApiGetUserServers(userId))
     if (r is API.Result && r.res is CR.UserServers) return r.res.userServers
-    Log.e(TAG, "getUserServers bad response: ${r.responseType} ${r.details}")
+    Log.e(TAG, "getUserServers bad response: ${r.responseType} ${redactServerCredentials(r.details)}")
     return null
   }
 
@@ -1347,13 +1594,14 @@ object ChatController {
     val userId = currentUserId("setUserServers")
     val r = sendCmd(rh, CC.ApiSetUserServers(userId, userServers))
     if (r.result is CR.CmdOk) return true
+    val safeDetails = redactServerCredentials(r.details)
     if (showError) {
       AlertManager.shared.showAlertMsg(
         generalGetString(MR.strings.failed_to_save_servers),
-        "${r.responseType}: ${r.details}"
+        "${r.responseType}: $safeDetails"
       )
     }
-    Log.e(TAG, "setUserServers bad response: ${r.responseType} ${r.details}")
+    Log.e(TAG, "setUserServers bad response: ${r.responseType} $safeDetails")
     return false
   }
 
@@ -1361,7 +1609,7 @@ object ChatController {
     val userId = currentUserId("validateServers")
     val r = sendCmd(rh, CC.ApiValidateServers(userId, userServers))
     if (r is API.Result && r.res is CR.UserServersValidation) return Pair(r.res.serverErrors, r.res.serverWarnings)
-    Log.e(TAG, "validateServers bad response: ${r.responseType} ${r.details}")
+    Log.e(TAG, "validateServers bad response: ${r.responseType} ${redactServerCredentials(r.details)}")
     return null
   }
 
@@ -1420,11 +1668,12 @@ object ChatController {
   suspend fun apiSetNetworkConfig(cfg: NetCfg, showAlertOnError: Boolean = true, ctrl: ChatCtrl? = null): Boolean {
     val r = sendCmd(null, CC.APISetNetworkConfig(cfg), ctrl)
     if (r.result is CR.CmdOk) return true
-    Log.e(TAG, "apiSetNetworkConfig bad response: ${r.responseType} ${r.details}")
+    val safeDetails = redactServerCredentials(r.details)
+    Log.e(TAG, "apiSetNetworkConfig bad response: ${r.responseType} $safeDetails")
     if (showAlertOnError) {
       AlertManager.shared.showAlertMsg(
         generalGetString(MR.strings.error_setting_network_config),
-        "${r.responseType}: ${r.details}"
+        "${r.responseType}: $safeDetails"
       )
     }
     return false
@@ -1586,7 +1835,7 @@ object ChatController {
 
   suspend fun apiConnectPlan(rh: Long?, connLink: String, linkOwnerSig: LinkOwnerSig? = null, inProgress: MutableState<Boolean>): Pair<CreatedConnLink, ConnectionPlan>? {
     val userId = kotlin.runCatching { currentUserId("apiConnectPlan") }.getOrElse { return null }
-    val r = sendCmdWithRetry(rh, CC.APIConnectPlan(userId, connLink, linkOwnerSig), inProgress = inProgress)
+    val r = sendCmdWithRetry(rh, CC.APIConnectPlan(userId, normalizeNomeChatLink(connLink), linkOwnerSig), inProgress = inProgress)
     if (r is API.Result && r.res is CR.CRConnectionPlan) return r.res.connLink to r.res.connectionPlan
     if (inProgress.value && r != null) apiConnectResponseAlert(r)
     return null
@@ -1607,7 +1856,7 @@ object ChatController {
   ): APIConnectPlanResult {
     val r = sendCmd(
       rh,
-      CC.APIConnectPlan(userId, connLink, linkOwnerSig),
+      CC.APIConnectPlan(userId, normalizeNomeChatLink(connLink), linkOwnerSig),
       log = false,
     )
     return if (r is API.Result && r.res is CR.CRConnectionPlan) {
@@ -2157,7 +2406,7 @@ object ChatController {
   }
 
   suspend fun downloadStandaloneFile(user: UserLike, url: String, file: CryptoFile, ctrl: ChatCtrl? = null): Pair<RcvFileTransfer?, String?> {
-    val r = sendCmd(null, CC.ApiDownloadStandaloneFile(user.userId, url, file), ctrl)
+    val r = sendCmd(null, CC.ApiDownloadStandaloneFile(user.userId, normalizeNomeChatLink(url), file), ctrl)
     return if (r is API.Result && r.res is CR.RcvStandaloneFileCreated) {
       r.res.rcvFileTransfer to null
     } else {
@@ -2167,7 +2416,7 @@ object ChatController {
   }
 
   suspend fun standaloneFileInfo(url: String, ctrl: ChatCtrl? = null): MigrationFileLinkData? {
-    val r = sendCmd(null, CC.ApiStandaloneFileInfo(url), ctrl)
+    val r = sendCmd(null, CC.ApiStandaloneFileInfo(normalizeNomeChatLink(url)), ctrl)
     return if (r is API.Result && r.res is CR.StandaloneFileInfo) {
       r.res.fileMeta
     } else {
@@ -3335,8 +3584,14 @@ object ChatController {
         withCall(r, r.contact) { call ->
           chatModel.activeCall.value = call.copy(callState = CallState.OfferReceived, sharedKey = r.sharedKey)
           val useRelay = appPrefs.webrtcPolicyRelay.get()
-          val iceServers = getIceServers()
-          Log.d(TAG, ".callOffer iceServers $iceServers")
+          val iceServers = try {
+            getIceServers()
+          } catch (_: CredentialUnavailable) {
+            showIceCredentialUnavailableAlert()
+            chatModel.callManager.endCall(call)
+            return@withCall
+          }
+          Log.d(TAG, ".callOffer iceServers ${redactIceServersForLog(iceServers)}")
           chatModel.callCommand.add(WCallCommand.Offer(
             offer = r.offer.rtcSession,
             iceCandidates = r.offer.rtcIceCandidates,
@@ -3575,7 +3830,7 @@ object ChatController {
   private fun activeUser(rhId: Long?, user: UserLike): Boolean =
     rhId == chatModel.remoteHostId() && user.userId == chatModel.currentUser.value?.userId
 
-  private fun withCall(r: CR, contact: Contact, perform: (Call) -> Unit) {
+  private suspend fun withCall(r: CR, contact: Contact, perform: suspend (Call) -> Unit) {
     val call = chatModel.activeCall.value
     if (call != null && call.contact.apiId == contact.apiId) {
       perform(call)
@@ -3812,9 +4067,13 @@ object ChatController {
   }
 }
 
-class SharedPreference<T>(val get: () -> T, set: (T) -> Unit) {
+class SharedPreference<T>(
+  val get: () -> T,
+  set: (T) -> Unit,
+  initialValue: T = get(),
+) {
   val set: (T) -> Unit
-  private val _state: MutableState<T> = mutableStateOf(get())
+  private val _state: MutableState<T> = mutableStateOf(initialValue)
   val state: State<T> = _state
 
   init {
@@ -3822,6 +4081,8 @@ class SharedPreference<T>(val get: () -> T, set: (T) -> Unit) {
       try {
         set(value)
         _state.value = value
+      } catch (e: CredentialUnavailable) {
+        throw e
       } catch (e: Exception) {
         Log.e(TAG, "Error saving settings: ${e.stackTraceToString()}")
       }
@@ -4410,6 +4671,17 @@ sealed class CC {
       is ApiUnhideUser -> ApiUnhideUser(userId, obfuscate(viewPwd))
       is ApiDeleteUser -> ApiDeleteUser(userId, delSMPQueues, obfuscateOrNull(viewPwd))
       is TestStorageEncryption -> TestStorageEncryption(obfuscate(key))
+      is APISetNetworkConfig -> APISetNetworkConfig(networkConfig.redactedForDiagnostics())
+      is ApiSaveSettings -> ApiSaveSettings(settings.redactedForDiagnostics())
+      is ApiGetSettings -> ApiGetSettings(settings.redactedForDiagnostics())
+      is ApiSendCallOffer -> ApiSendCallOffer(
+        contact,
+        callOffer.copy(rtcSession = WebRTCSession("<redacted>", "<redacted>")),
+      )
+      is ApiSendCallAnswer -> ApiSendCallAnswer(contact, WebRTCSession("<redacted>", "<redacted>"))
+      is ApiSendCallExtraInfo -> ApiSendCallExtraInfo(contact, WebRTCExtraInfo("<redacted>"))
+      is ApiDownloadStandaloneFile -> ApiDownloadStandaloneFile(userId, "<redacted-file-link>", file)
+      is ApiStandaloneFileInfo -> ApiStandaloneFileInfo("<redacted-file-link>")
       else -> this
     }
 
@@ -4520,7 +4792,7 @@ val operatorsInfo: Map<OperatorTag, ServerOperatorInfo> = mapOf(
   OperatorTag.Nome to ServerOperatorInfo(
     description = listOf(
       "Nome official message and file routing service.",
-      "Available through Nome's official smp.nome.im and xftp.nome.im endpoints."
+      "Available through Nome's official smp.nome.im (messages) and xftp.nome.im (files) endpoints."
     ),
     website = "",
     logo = MR.images.nome_mark,
@@ -4858,7 +5130,7 @@ data class UserServer(
       preset = UserServer(
         remoteHostId = null,
         serverId = 1,
-        server = "smp://RVzf_goDl1uPbeXQu7Mpi-gck_By0QhEGobrwPwULY8=:e0eabd5e5b046bd7e7082ad9d68e133c213281e9a9109c84@smp.nome.im",
+        server = NomeServerConfiguration.smpServer,
         preset = true,
         tested = true,
         enabled = true,
@@ -4885,7 +5157,7 @@ data class UserServer(
       xftpPreset = UserServer(
         remoteHostId = null,
         serverId = 4,
-        server = "xftp://y00AWTizJH88sHCMioQ1m-d_xXWlwolHAek_Mc4MhYM=:accbd90c5c813d90facea657d3da87e022eae9ce07005b53@xftp.nome.im",
+        server = NomeServerConfiguration.xftpServer,
         preset = true,
         tested = true,
         enabled = true,
@@ -5014,9 +5286,9 @@ data class ServerAddress(
     )
     val sampleData = ServerAddress(
       serverProtocol = ServerProtocol.SMP,
-      hostnames = listOf("smp.nome.im"),
+      hostnames = listOf(NomeServerConfiguration.smpHostname),
       port = "",
-      keyHash = "RVzf_goDl1uPbeXQu7Mpi-gck_By0QhEGobrwPwULY8=",
+      keyHash = "RVzf_goDl1uPbeXQu7Mpi-gck_By0QhEGobrwPwULY8",
       basicAuth = "e0eabd5e5b046bd7e7082ad9d68e133c213281e9a9109c84"
     )
 
@@ -5036,10 +5308,15 @@ data class ParsedServerAddress (
 )
 
 fun parseSanitizeUri(s: String, safe: Boolean): ParsedUri? {
-  val parsed = chatParseUri(s, if (safe) 1 else 0)
+  val parsed = chatParseUri(normalizeNomeChatLink(s), if (safe) 1 else 0)
   return runCatching { json.decodeFromString(ParsedUri.serializer(), parsed) }
     .onFailure { Log.d(TAG, "parseSanitizeUri decode error: $it") }
     .getOrNull()
+    ?.let { result ->
+      val uriInfo = result.uriInfo ?: return@let result
+      val sanitized = uriInfo.sanitized ?: return@let result
+      result.copy(uriInfo = uriInfo.copy(sanitized = simplexChatLink(sanitized)))
+    }
 }
 
 @Serializable
@@ -5143,6 +5420,111 @@ data class NetworkProxy(
     return res
   }
 }
+
+private const val NETWORK_PROXY_KEYCHAIN_ALIAS = "networkProxy"
+private const val NETWORK_PROXY_KEYCHAIN_DATA_MARKER = "nome-keychain-v1"
+private const val NETWORK_PROXY_KEYCHAIN_IV_MARKER = "credential-reference"
+
+/**
+ * Stores custom proxy credentials in the macOS Keychain. Settings retain only
+ * opaque marker bytes. Android deliberately keeps the historical JSON setting.
+ */
+internal class NetworkProxyPreferenceStore(
+  private val getData: () -> String?,
+  private val setData: (String?) -> Unit,
+  private val getIv: () -> String?,
+  private val setIv: (String?) -> Unit,
+  private val useKeychain: Boolean,
+  private val credentialCryptor: CryptorInterface,
+) {
+  fun get(): NetworkProxy {
+    val stored = getData() ?: return NetworkProxy()
+    if (!useKeychain) return parseNetworkProxyPreference(stored) ?: NetworkProxy()
+
+    try {
+      val data = stored.toByteArrayFromBase64ForPassphraseOrNull()
+      if (data?.contentEquals(NETWORK_PROXY_KEYCHAIN_DATA_MARKER.toByteArray(Charsets.UTF_8)) == true) {
+        return readKeychainMarker(data)
+      }
+
+      val legacy = parseNetworkProxyPreference(stored)
+      if (legacy != null) {
+        persistInKeychain(legacy)
+        return legacy
+      }
+
+      // Accept the former desktop cryptor representation only when both
+      // fields are present and the cryptor validates their exact format.
+      val encodedIv = getIv() ?: throw CredentialUnavailable("network proxy")
+      val encryptedData = data ?: throw CredentialUnavailable("network proxy")
+      val iv = encodedIv.toByteArrayFromBase64ForPassphraseOrNull()
+        ?: throw CredentialUnavailable("network proxy")
+      val plaintext = credentialCryptor.decryptData(encryptedData, iv, NETWORK_PROXY_KEYCHAIN_ALIAS)
+        ?: throw CredentialUnavailable("network proxy")
+      return parseNetworkProxyJson(plaintext) ?: throw CredentialUnavailable("network proxy")
+    } catch (e: CredentialUnavailable) {
+      throw e
+    } catch (e: Throwable) {
+      throw CredentialUnavailable("network proxy", e)
+    }
+  }
+
+  fun set(proxy: NetworkProxy) {
+    if (useKeychain) {
+      try {
+        persistInKeychain(proxy)
+      } catch (e: CredentialUnavailable) {
+        throw e
+      } catch (e: Throwable) {
+        throw CredentialUnavailable("network proxy", e)
+      }
+    } else {
+      setData(json.encodeToString(proxy))
+      setIv(null)
+    }
+  }
+
+  private fun readKeychainMarker(data: ByteArray): NetworkProxy {
+    val iv = NETWORK_PROXY_KEYCHAIN_IV_MARKER.toByteArray(Charsets.UTF_8)
+    val plaintext = credentialCryptor.decryptData(data, iv, NETWORK_PROXY_KEYCHAIN_ALIAS)
+      ?: throw CredentialUnavailable("network proxy")
+    val proxy = parseNetworkProxyJson(plaintext) ?: throw CredentialUnavailable("network proxy")
+    val expectedIv = iv.toBase64StringForPassphrase()
+    if (getIv() != expectedIv) setIv(expectedIv)
+    return proxy
+  }
+
+  private fun persistInKeychain(proxy: NetworkProxy) {
+    val markers = credentialCryptor.encryptText(json.encodeToString(proxy), NETWORK_PROXY_KEYCHAIN_ALIAS)
+    // Replace the legacy plaintext field before writing the IV marker. A
+    // process stop between these writes is recovered by readKeychainMarker.
+    setData(markers.first.toBase64StringForPassphrase())
+    setIv(markers.second.toBase64StringForPassphrase())
+  }
+}
+
+private fun String.toByteArrayFromBase64ForPassphraseOrNull(): ByteArray? =
+  runCatching { toByteArrayFromBase64ForPassphrase() }.getOrNull()
+
+internal fun parseNetworkProxyPreference(value: String): NetworkProxy? {
+  if (value.trimStart().startsWith("{")) return parseNetworkProxyJson(value)
+
+  val legacy = value.trim()
+  val separator = if (legacy.startsWith("[")) {
+    val closingBracket = legacy.indexOf(']')
+    if (closingBracket <= 1 || legacy.getOrNull(closingBracket + 1) != ':') return null
+    closingBracket + 1
+  } else {
+    legacy.lastIndexOf(':')
+  }
+  if (separator <= 0 || separator == legacy.lastIndex) return null
+  val port = legacy.substring(separator + 1).toIntOrNull()?.takeIf { it in 1..65535 } ?: return null
+  val host = legacy.substring(0, separator).trim().trim('[', ']').ifBlank { "localhost" }
+  return NetworkProxy(host = host, port = port)
+}
+
+private fun parseNetworkProxyJson(value: String?): NetworkProxy? =
+  value?.let { runCatching { json.decodeFromString<NetworkProxy>(it) }.getOrNull() }
 
 @Serializable
 enum class NetworkProxyAuth {
@@ -6916,7 +7298,7 @@ sealed class CR {
     is UserServersValidation -> withUser(user, "serverErrors: ${json.encodeToString(serverErrors)}")
     is UsageConditions -> "usageConditions: ${json.encodeToString(usageConditions)}\nnacceptedConditions: ${json.encodeToString(acceptedConditions)}"
     is ChatItemTTL -> withUser(user, json.encodeToString(chatItemTTL))
-    is NetworkConfig -> json.encodeToString(networkConfig)
+    is NetworkConfig -> json.encodeToString(networkConfig.redactedForDiagnostics())
     is ContactInfo -> withUser(user, "contact: ${json.encodeToString(contact)}\nconnectionStats: ${json.encodeToString(connectionStats_)}")
     is CRGroupInfo -> withUser(user, "groupInfo: ${json.encodeToString(groupInfo)}")
     is GroupMemberInfo -> withUser(user, "group: ${json.encodeToString(groupInfo)}\nmember: ${json.encodeToString(member)}\nconnectionStats: ${json.encodeToString(connectionStats_)}")
@@ -7025,7 +7407,7 @@ sealed class CR {
     is MemberContactAccepted -> withUser(user, "contact: $contact")
     is NewMemberContactReceivedInv -> withUser(user, "contact: $contact\ngroupInfo: $groupInfo\nmember: $member")
     is RcvFileAcceptedSndCancelled -> withUser(user, noDetails())
-    is StandaloneFileInfo -> json.encodeToString(fileMeta)
+    is StandaloneFileInfo -> "fileMeta: ${if (fileMeta == null) "absent" else "present"}"
     is RcvStandaloneFileCreated -> noDetails()
     is RcvFileAccepted -> withUser(user, json.encodeToString(chatItem))
     is RcvFileStart -> withUser(user, json.encodeToString(chatItem))
@@ -7047,11 +7429,13 @@ sealed class CR {
     is SndStandaloneFileComplete -> withUser(user, rcvURIs.size.toString())
     is SndFileError -> withUser(user, "errorMessage: ${json.encodeToString(errorMessage)}\nchatItem: ${json.encodeToString(chatItem_)}")
     is SndFileWarning -> withUser(user, "errorMessage: ${json.encodeToString(errorMessage)}\nchatItem: ${json.encodeToString(chatItem_)}")
-    is CallInvitations -> "callInvitations: ${json.encodeToString(callInvitations)}"
-    is CallInvitation -> "contact: ${callInvitation.contact.id}\ncallType: $callInvitation.callType\nsharedKey: ${callInvitation.sharedKey ?: ""}"
-    is CallOffer -> withUser(user, "contact: ${contact.id}\ncallType: $callType\nsharedKey: ${sharedKey ?: ""}\naskConfirmation: $askConfirmation\noffer: ${json.encodeToString(offer)}")
-    is CallAnswer -> withUser(user, "contact: ${contact.id}\nanswer: ${json.encodeToString(answer)}")
-    is CallExtraInfo -> withUser(user, "contact: ${contact.id}\nextraInfo: ${json.encodeToString(extraInfo)}")
+    is CallInvitations -> "callInvitations: ${callInvitations.size}\n" + callInvitations.joinToString("\n") {
+      "contact: ${it.contact.id}, callType: ${it.callType}, sharedKey: ${redactedPresence(it.sharedKey)}"
+    }
+    is CallInvitation -> "contact: ${callInvitation.contact.id}\ncallType: ${callInvitation.callType}\nsharedKey: ${redactedPresence(callInvitation.sharedKey)}"
+    is CallOffer -> withUser(user, "contact: ${contact.id}\ncallType: $callType\nsharedKey: ${redactedPresence(sharedKey)}\naskConfirmation: $askConfirmation\noffer: ${offer.redactedSummary()}")
+    is CallAnswer -> withUser(user, "contact: ${contact.id}\nanswer: ${answer.redactedSummary()}")
+    is CallExtraInfo -> withUser(user, "contact: ${contact.id}\nextraInfo: iceCandidatesLength=${extraInfo.rtcIceCandidates.length}")
     is CallEnded -> withUser(user, "contact: ${contact.id}")
     is ContactConnectionDeleted -> withUser(user, json.encodeToString(connection))
     is ContactDisabled -> withUser(user, json.encodeToString(contact))
@@ -7088,15 +7472,19 @@ sealed class CR {
     is ContactPQEnabled -> withUser(user, "contact: ${contact.id}\npqEnabled: $pqEnabled")
     is AgentSubsTotal -> withUser(user, "subsTotal: ${subsTotal}\nhasSession: $hasSession")
     is AgentServersSummary -> withUser(user, json.encodeToString(serversSummary))
-    is VersionInfo -> "version ${json.encodeToString(versionInfo)}\n\n" +
+    is VersionInfo -> "version ${json.encodeToString(mapOf(
+      "coreVersion" to versionInfo.version,
+      "nomeCoreVersion" to versionInfo.simplexmqVersion,
+      "nomeCoreCommit" to versionInfo.simplexmqCommit,
+    ))}\n\n" +
         "chat migrations: ${json.encodeToString(chatMigrations.map { it.upName })}\n\n" +
         "agent migrations: ${json.encodeToString(agentMigrations.map { it.upName })}"
     is CmdOk -> withUser(user, noDetails())
     is ArchiveExported -> "${archiveErrors.map { it.string } }"
     is ArchiveImported -> "${archiveErrors.map { it.string } }"
-    is AppSettingsR -> json.encodeToString(appSettings)
-    is Response -> json
-    is Invalid -> str
+    is AppSettingsR -> json.encodeToString(appSettings.redactedForDiagnostics())
+    is Response -> "type: $type\npayloadLength: ${json.length}"
+    is Invalid -> "payloadLength: ${str.length}"
   }
 
   fun noDetails(): String ="${responseType}: " + generalGetString(MR.strings.no_details)
@@ -7175,13 +7563,77 @@ sealed class ChatDeleteMode {
 @Serializable
 data class CreatedConnLink(val connFullLink: String, val connShortLink: String?) {
   fun simplexChatUri(short: Boolean): String =
-    if (short) connShortLink ?: simplexChatLink(connFullLink)
+    if (short) connShortLink?.let(::simplexChatLink) ?: simplexChatLink(connFullLink)
     else simplexChatLink(connFullLink)
 }
 
-fun simplexChatLink(uri: String): String =
-  if (uri.startsWith("simplex:/")) uri.replace("simplex:/", "https://simplex.chat/")
-  else uri
+private const val NOME_PUBLIC_LINK_PREFIX = "https://nome.im/"
+private const val LEGACY_SIMPLEX_PUBLIC_LINK_PREFIX = "https://simplex.chat/"
+private const val LEGACY_SIMPLEX_PUBLIC_HTTP_LINK_PREFIX = "http://simplex.chat/"
+private const val SIMPLEX_INTERNAL_LINK_PREFIX = "simplex:/"
+
+private val nomeChatLinkPathSegments = setOf(
+  "a",
+  "call",
+  "channel",
+  "chat",
+  "contact",
+  "file",
+  "g",
+  "i",
+  "invitation",
+  "r",
+)
+
+private val legacyHostedShortLink =
+  Regex("""(?i)^https://(?:smp(?:\d+)?\.simplex\.im|smp\.nome\.im)/((?:a|g|i|r)#.*)$""")
+
+private fun publicChatLinkSuffix(uri: String, prefix: String): String? {
+  if (!uri.startsWith(prefix, ignoreCase = true)) return null
+  val suffix = uri.substring(prefix.length)
+  val segmentEnd = suffix.indexOfFirst { it == '/' || it == '?' || it == '#' }
+    .let { if (it == -1) suffix.length else it }
+  val segment = suffix.substring(0, segmentEnd)
+  val delimiter = suffix.getOrNull(segmentEnd)
+  return suffix.takeIf {
+    segment in nomeChatLinkPathSegments &&
+      (delimiter == null || delimiter == '?' || delimiter == '#')
+  }
+}
+
+private fun recognizedPublicChatLinkSuffix(uri: String): String? =
+  publicChatLinkSuffix(uri, NOME_PUBLIC_LINK_PREFIX)
+    ?: publicChatLinkSuffix(uri, LEGACY_SIMPLEX_PUBLIC_LINK_PREFIX)
+    ?: publicChatLinkSuffix(uri, LEGACY_SIMPLEX_PUBLIC_HTTP_LINK_PREFIX)
+    ?: legacyHostedShortLink.matchEntire(uri)?.groupValues?.get(1)
+
+/** Presents all user-shareable connection links under the Nome brand. */
+fun simplexChatLink(uri: String): String = when {
+  uri.startsWith(SIMPLEX_INTERNAL_LINK_PREFIX) ->
+    NOME_PUBLIC_LINK_PREFIX + uri.substring(SIMPLEX_INTERNAL_LINK_PREFIX.length)
+  recognizedPublicChatLinkSuffix(uri) != null ->
+    NOME_PUBLIC_LINK_PREFIX + requireNotNull(recognizedPublicChatLinkSuffix(uri))
+  else -> uri
+}
+
+/** Converts a recognized Nome or legacy public link to the protocol form understood by the native core. */
+internal fun normalizeNomeChatLink(uri: String): String {
+  val suffix = recognizedPublicChatLinkSuffix(uri) ?: return uri
+  return SIMPLEX_INTERNAL_LINK_PREFIX + suffix
+}
+
+internal fun isNomePublicChatLink(uri: String): Boolean =
+  publicChatLinkSuffix(uri, NOME_PUBLIC_LINK_PREFIX) != null
+
+internal fun isRecognizedPublicChatLink(uri: String): Boolean =
+  recognizedPublicChatLinkSuffix(uri) != null
+
+internal fun isRecognizedPublicFileLink(uri: String): Boolean {
+  val normalized = normalizeNomeChatLink(uri)
+  return normalized == "${SIMPLEX_INTERNAL_LINK_PREFIX}file" ||
+    normalized.startsWith("${SIMPLEX_INTERNAL_LINK_PREFIX}file#") ||
+    normalized.startsWith("${SIMPLEX_INTERNAL_LINK_PREFIX}file?")
+}
 
 @Serializable
 sealed class OwnerVerification {
@@ -7234,14 +7686,17 @@ abstract class TerminalItem {
   abstract val details: String
   val createdAtNanos: Long = System.nanoTime()
 
-  class Cmd(override val id: Long, override val remoteHostId: Long?, val cmd: CC): TerminalItem() {
-    override val label get() = "> ${cmd.cmdString}"
-    override val details get() = cmd.cmdString
+  class Cmd(override val id: Long, override val remoteHostId: Long?, cmd: CC): TerminalItem() {
+    private val safeCommand = redactServerCredentials(cmd.obfuscated.cmdString)
+    override val label get() = "> $safeCommand"
+    override val details get() = safeCommand
   }
 
-  class Resp(override val id: Long, override val remoteHostId: Long?, val resp: API): TerminalItem() {
-    override val label get() = "< ${resp.responseType}"
-    override val details get() = resp.details
+  class Resp(override val id: Long, override val remoteHostId: Long?, resp: API): TerminalItem() {
+    private val safeResponseType = resp.responseType
+    private val safeDetails = redactServerCredentials(resp.details)
+    override val label get() = "< $safeResponseType"
+    override val details get() = safeDetails
   }
 
   companion object {
@@ -7254,6 +7709,46 @@ abstract class TerminalItem {
     fun resp(rhId: Long?, r: API) = Resp(System.currentTimeMillis(), rhId, r)
   }
 }
+
+private val serverCredentialsPattern =
+  Regex("""(?i)\b((?:smp|xftp)://|turns?:/{0,2})[^@\s\"'\\]+@""")
+
+private val proxyCredentialsPattern =
+  Regex("""(?i)(?<![A-Za-z0-9._%+-])(?!(?:smp|xftp|turns?)(?:://|:))[^:@\s\"'/\\{},]+:[^@\s\"'/\\{},]+@(?=(?:\[[^\]\s]+]|[A-Za-z0-9.-]+):\d+\b)""")
+
+/**
+ * Preserve a SOCKS endpoint for diagnostics while replacing userinfo. The
+ * final `@` is intentional: proxy passwords may themselves contain `@`.
+ */
+internal fun redactSocksProxyCredentials(proxy: String?): String? {
+  if (proxy == null) return null
+  val separator = proxy.lastIndexOf('@')
+  if (separator <= 0 || !proxy.substring(0, separator).contains(':')) return proxy
+  return "***@${proxy.substring(separator + 1)}"
+}
+
+internal fun NetCfg.redactedForDiagnostics(): NetCfg =
+  copy(socksProxy = redactSocksProxyCredentials(socksProxy))
+
+private fun redactedPresence(value: String?): String = if (value == null) "absent" else "<redacted>"
+
+private fun WebRTCSession.redactedSummary(): String =
+  "sessionLength=${rtcSession.length}, iceCandidatesLength=${rtcIceCandidates.length}"
+
+private fun AppSettings.redactedForDiagnostics(): AppSettings = copy(
+  networkConfig = networkConfig?.redactedForDiagnostics(),
+  networkProxy = networkProxy?.copy(
+    username = if (networkProxy?.username.isNullOrBlank()) "" else "<redacted>",
+    password = if (networkProxy?.password.isNullOrBlank()) "" else "<redacted>",
+  ),
+  webrtcICEServers = webrtcICEServers?.map(::redactServerCredentials),
+)
+
+/** Keeps protocol and host diagnostics while removing server and SOCKS proxy credentials. */
+internal fun redactServerCredentials(text: String): String =
+  serverCredentialsPattern.replace(
+    proxyCredentialsPattern.replace(text) { "***@" }
+  ) { match -> "${match.groupValues[1]}***@" }
 
 @Serializable
 class ConnectionStats(
@@ -8268,6 +8763,12 @@ enum class PrivacyChatListOpenLinksMode {
 @Serializable
 data class AppSettings(
   var networkConfig: NetCfg? = null,
+  /**
+   * Explicit settings export/device-migration payload. Unlike the local macOS
+   * preference marker, this value can contain proxy credentials in plaintext;
+   * callers must treat the document as sensitive user data and transfer it
+   * only inside the encrypted archive. Migration QR/link metadata strips it.
+   */
   var networkProxy: NetworkProxy? = null,
   var privacyEncryptLocalFiles: Boolean? = null,
   var privacyAskToApproveRelays: Boolean? = null,
@@ -8367,7 +8868,7 @@ data class AppSettings(
     notificationMode?.let { def.notificationsMode.set(it.toNotificationsMode()) }
     notificationPreviewMode?.let { def.notificationPreviewMode.set(it.toNotificationPreviewMode().name) }
     webrtcPolicyRelay?.let { def.webrtcPolicyRelay.set(it) }
-    webrtcICEServers?.let { def.webrtcIceServers.set(it.joinToString(separator = "\n")) }
+    webrtcICEServers?.let { setStoredIceServers(it.joinToString(separator = "\n")) }
     confirmRemoteSessions?.let { def.confirmRemoteSessions.set(it) }
     connectRemoteViaMulticast?.let { def.connectRemoteViaMulticast.set(it) }
     connectRemoteViaMulticastAuto?.let { def.connectRemoteViaMulticastAuto.set(it) }
@@ -8444,7 +8945,7 @@ data class AppSettings(
           notificationMode = AppSettingsNotificationMode.from(def.notificationsMode.get()),
           notificationPreviewMode = AppSettingsNotificationPreviewMode.from(NotificationPreviewMode.valueOf(def.notificationPreviewMode.get()!!)),
           webrtcPolicyRelay = def.webrtcPolicyRelay.get(),
-          webrtcICEServers = def.webrtcIceServers.get()?.lines(),
+          webrtcICEServers = getStoredIceServers()?.lines(),
           confirmRemoteSessions = def.confirmRemoteSessions.get(),
           connectRemoteViaMulticast = def.connectRemoteViaMulticast.get(),
           connectRemoteViaMulticastAuto = def.connectRemoteViaMulticastAuto.get(),
@@ -8623,32 +9124,24 @@ enum class MsgType {
 }
 
 fun showClientNoticeAlert(server: String, preset: Boolean, expiresAt: Instant?) {
-  var message = "Server: $server.\nConditions of use violation notice received from ${if (preset) "preset" else "this"} server.\nNo ID shared, see How it works."
+  val serverType = generalGetString(
+    if (preset) MR.strings.nome_client_notice_managed_server else MR.strings.nome_client_notice_configured_server
+  )
+  var message = String.format(
+    generalGetString(MR.strings.nome_client_notice_message),
+    serverHostname(server),
+    serverType,
+  )
   if (expiresAt != null) {
     val tz = TimeZone.currentSystemDefault()
     val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
-    message += "\n\nNew addresses can be created after ${expiresAt.toLocalDateTime(tz).toJavaLocalDateTime().format(formatter)}."
+    message += "\n\n" + String.format(
+      generalGetString(MR.strings.nome_client_notice_retry_after),
+      expiresAt.toLocalDateTime(tz).toJavaLocalDateTime().format(formatter),
+    )
   }
-  AlertManager.shared.showAlertDialogButtonsColumn(title = "Not allowed", text = AnnotatedString(message)) {
-    val uriHandler = LocalUriHandler.current
-    Column {
-      SectionItemView({ AlertManager.shared.hideAlert() }) {
-        Text(generalGetString(MR.strings.ok), Modifier.fillMaxWidth(), textAlign = TextAlign.Center, color = MaterialTheme.colors.primary)
-      }
-      if (preset) {
-        SectionItemView({
-          AlertManager.shared.hideAlert()
-          uriHandler.openUriCatching(defaultConditionsLink)
-        }) {
-          Text(generalGetString(MR.strings.operator_conditions_of_use), Modifier.fillMaxWidth(), textAlign = TextAlign.Center, color = MaterialTheme.colors.primary)
-        }
-      }
-      SectionItemView({
-        AlertManager.shared.hideAlert()
-        uriHandler.openUriCatching(contentModerationPostLink)
-      }) {
-        Text(generalGetString(MR.strings.how_it_works), Modifier.fillMaxWidth(), textAlign = TextAlign.Center, color = MaterialTheme.colors.primary)
-      }
-    }
-  }
+  AlertManager.shared.showAlertMsg(
+    title = generalGetString(MR.strings.nome_client_notice_title),
+    text = message,
+  )
 }

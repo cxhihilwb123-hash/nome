@@ -50,8 +50,8 @@
     <string name="nome_p05_advanced_body">更多服务商、中继与 Tor 控制可在设置中使用</string>
     <string name="nome_p05_continue">继续</string>
 
-    <string name="nome_p06_title">网络使用承诺</string>
-    <string name="nome_p06_intro">使用 Nome 前，请确认你理解以下简明规则。</string>
+    <string name="nome_p06_title">网络与隐私检查</string>
+    <string name="nome_p06_intro">继续前，请了解这个 Nome 版本如何路由流量与保存消息。</string>
     <string name="nome_p06_private_title">尊重隐私</string>
     <string name="nome_p06_private_body">不通过 Nome 骚扰、跟踪或冒充他人。</string>
     <string name="nome_p06_connection_title">谨慎建立连接</string>
@@ -59,8 +59,8 @@
     <string name="nome_p06_data_title">自行保管数据</string>
     <string name="nome_p06_data_body">本地消息丢失后无法由服务器找回。</string>
     <string name="nome_p06_channel_note">公开频道不属于端到端加密会话，加入前会再次说明。</string>
-    <string name="nome_p06_consent">我已阅读并同意网络使用承诺</string>
-    <string name="nome_p06_terms">查看完整条款</string>
-    <string name="nome_p06_accept">同意并进入 Nome</string>
+    <string name="nome_p06_consent">我已理解上述操作说明</string>
+    <string name="nome_p06_terms">查看网络与隐私说明</string>
+    <string name="nome_p06_accept">继续进入 Nome</string>
     <string name="nome_back">返回</string>
 </resources>

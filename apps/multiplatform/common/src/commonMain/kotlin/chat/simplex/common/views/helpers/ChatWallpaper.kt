@@ -30,6 +30,41 @@ enum class PresetWallpaper(
   val tint: Map<DefaultTheme, Color>,
   val colors: Map<DefaultTheme, ThemeColors>,
 ) {
+  NOME(MR.images.wallpaper_nome_v2, "nome", 1.20f,
+    wallpaperBackgrounds(light = "#ffF6FAF8"),
+    tint = mapOf(
+      DefaultTheme.LIGHT to "#ff8FCDB4".colorFromReadableHex(),
+      DefaultTheme.DARK to "#ff224B3D".colorFromReadableHex(),
+      DefaultTheme.SIMPLEX to "#ff285749".colorFromReadableHex(),
+      DefaultTheme.BLACK to "#ff1D4035".colorFromReadableHex()
+    ),
+    mapOf(
+      DefaultTheme.LIGHT to ThemeColors(
+        sentMessage = "#ffEAF7F0",
+        sentQuote = "#ffD8EEE3",
+        receivedMessage = "#ffF8FAF9",
+        receivedQuote = "#ffE9EFEC",
+      ),
+      DefaultTheme.DARK to ThemeColors(
+        sentMessage = "#ff173129",
+        sentQuote = "#ff20483A",
+        receivedMessage = "#ff242826",
+        receivedQuote = "#ff343B37",
+      ),
+      DefaultTheme.SIMPLEX to ThemeColors(
+        sentMessage = "#ff173A31",
+        sentQuote = "#ff205846",
+        receivedMessage = "#ff242826",
+        receivedQuote = "#ff343B37",
+      ),
+      DefaultTheme.BLACK to ThemeColors(
+        sentMessage = "#ff153129",
+        sentQuote = "#ff1C493A",
+        receivedMessage = "#ff1D211F",
+        receivedQuote = "#ff292F2C",
+      ),
+    )
+  ),
   CATS(MR.images.wallpaper_cats, "cats", 0.63f,
     wallpaperBackgrounds(light = "#ffF8F6EA"),
     tint = mapOf(

@@ -395,9 +395,10 @@ fun createProfileInNoProfileSetup(displayName: String, image: String? = null, cl
       chatModel.localUserCreated.value = true
     }
     controller.appPrefs.onboardingStage.set(OnboardingStage.Step3_ChooseServerOperators)
-    controller.startChat(user)
-    controller.switchUIRemoteHost(null)
-    close()
+    controller.startChat(user) {
+      controller.switchUIRemoteHost(null)
+      close()
+    }
   }
 }
 
@@ -409,8 +410,9 @@ fun createProfileInProfiles(chatModel: ChatModel, displayName: String, shortDesc
     ) ?: return@withBGApi
     chatModel.currentUser.value = user
     if (chatModel.users.isEmpty()) {
-      chatModel.controller.startChat(user)
-      chatModel.controller.appPrefs.onboardingStage.set(OnboardingStage.Step4_NetworkCommitments)
+      chatModel.controller.startChat(user) {
+        chatModel.controller.appPrefs.onboardingStage.set(OnboardingStage.Step4_NetworkCommitments)
+      }
     } else {
       val users = chatModel.controller.listUsers(rhId)
       chatModel.users.clear()

@@ -15,6 +15,8 @@
 module OperatorTests (operatorTests) where
 
 import Data.Bifunctor (second)
+import qualified Data.ByteString.Char8 as B
+import Data.Int (Int64)
 import qualified Data.List.NonEmpty as L
 import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
 import Simplex.Chat
@@ -25,6 +27,7 @@ import Simplex.Chat.Protocol (RelayProfile (..), mkRelayProfile)
 import Simplex.Chat.Terminal (terminalChatConfig)
 import Simplex.Chat.Types
 import Simplex.FileTransfer.Client.Presets (defaultXFTPServers)
+import qualified Simplex.Messaging.Crypto as C
 import Simplex.Messaging.Agent.Env.SQLite (ServerRoles (..), allRoles)
 import Simplex.Messaging.Agent.Store.Entity
 import Simplex.Messaging.Encoding.String
@@ -37,6 +40,17 @@ operatorTests = describe "managing server operators" $ do
   updatedServersTest
   usageConditionsTest
   nomePresetConfigTest
+  operatorDomainBoundaryTest
+
+operatorDomainBoundaryTest :: Spec
+operatorDomainBoundaryTest = describe "operator domain boundary" $ do
+  it "matches the exact Nome domain and its subdomains" $ do
+    matchingHost "nome.im" (hostOf "smp://abcd@nome.im") `shouldBe` True
+    matchingHost "nome.im" (hostOf "smp://abcd@smp.nome.im") `shouldBe` True
+  it "does not assign a suffix-confusable domain to Nome" $
+    matchingHost "nome.im" (hostOf "smp://abcd@evilnome.im") `shouldBe` False
+  where
+    hostOf address = L.head $ srvHost (newUserServer address :: NewUserServer 'PSMP)
 
 validateServersTest :: Spec
 validateServersTest = describe "validate user servers" $ do
@@ -104,6 +118,145 @@ updatedServersTest = describe "validate user servers" $ do
     map srvHost' (servers' SPSMP op2) `shouldBe` [["smp.example.im"]]
     null (servers' SPXFTP op2) `shouldBe` True
     map relayName' (chatRelays' op2) `shouldBe` ["custom_relay"]
+  it "rotates managed preset auth in place, stays idempotent, and preserves custom servers" $ do
+    let presetOp = L.head operators
+        baseSrv = head $ smp presetOp
+        rotatedPresetOp = presetOp {smp = [presetServer True $ withAuth "new-auth" baseSrv]}
+        storedPreset =
+          (presetServer True $ withAuth "old-auth" baseSrv)
+            { serverId = DBEntityId 7,
+              tested = Just True,
+              enabled = False
+            }
+        customSrvBase = newUserServer "smp://abcd@custom.example.im" :: NewUserServer 'PSMP
+        customSrv =
+          customSrvBase
+            { serverId = DBEntityId 9,
+              server = withAuth "custom-auth" customSrvBase,
+              tested = Just False,
+              enabled = False
+            }
+        operator = Just $ operatorNome {operatorId = DBEntityId 1}
+        first =
+          updatedUserServers
+            ( Just rotatedPresetOp,
+              UserOperatorServers operator [storedPreset, customSrv] [] []
+            )
+        secondPass =
+          updatedUserServers
+            ( Just rotatedPresetOp,
+              UserOperatorServers operator (map aServer $ updatedSmpServers first) [] []
+            )
+    map serverSummary (updatedSmpServers first) `shouldBe` map serverSummary (updatedSmpServers secondPass)
+    map serverSummary (updatedSmpServers first)
+      `shouldBe`
+        [ (Just 7, True, False, Nothing, Just "new-auth", presetServerAddress baseSrv),
+          (Just 9, False, False, Just False, Just "custom-auth", presetServerAddress customSrv)
+        ]
+  it "adopts a matching non-preset startup server when auth matches the preset" $ do
+    let presetOp = L.head operators
+        baseSrv = head $ smp presetOp
+        rotatedPresetOp =
+          presetOp
+            { smp =
+                [ presetServer True $ withAuth "new-auth" $ withKeyHash (C.KeyHash "rotated-key-hash") baseSrv
+                ]
+            }
+        storedStartupSrv =
+          (newUserServer $ withAuth "new-auth" $ withKeyHash (C.KeyHash "old-startup-key-hash") baseSrv)
+            { serverId = DBEntityId 11,
+              tested = Just True,
+              enabled = False
+            }
+        result =
+          updatedUserServers
+            ( Just rotatedPresetOp,
+              UserOperatorServers (Just $ operatorNome {operatorId = DBEntityId 1}) [storedStartupSrv] [] []
+            )
+    map serverSummary (updatedSmpServers result)
+      `shouldBe`
+        [(Just 11, True, False, Nothing, Just "new-auth", presetServerAddress $ head $ smp rotatedPresetOp)]
+  it "updates managed presets in place when the key hash changed at the same endpoint" $ do
+    let presetOp = L.head operators
+        baseSrv = head $ smp presetOp
+        storedPreset =
+          (presetServer True $ withAuth "old-auth" baseSrv)
+            { serverId = DBEntityId 7,
+              tested = Just True,
+              enabled = False
+            }
+        rotatedPresetOp =
+          presetOp
+            { smp =
+                [ presetServer True $ withAuth "new-auth" $ withKeyHash (C.KeyHash "different-key-hash") baseSrv
+                ]
+            }
+        result =
+          updatedUserServers
+            ( Just rotatedPresetOp,
+              UserOperatorServers (Just $ operatorNome {operatorId = DBEntityId 1}) [storedPreset] [] []
+            )
+    map serverSummary (updatedSmpServers result)
+      `shouldBe`
+        [(Just 7, True, False, Nothing, Just "new-auth", presetServerAddress $ head $ smp rotatedPresetOp)]
+  it "keeps different preset endpoints as new rows" $ do
+    let presetOp = L.head operators
+        baseSrv = head $ smp presetOp
+        storedPreset =
+          (presetServer True "smp://abcd@other.example.im" :: NewUserServer 'PSMP)
+            { serverId = DBEntityId 13
+            }
+        result =
+          updatedUserServers
+            ( Just presetOp,
+              UserOperatorServers (Just $ operatorNome {operatorId = DBEntityId 1}) [storedPreset] [] []
+            )
+    case updatedSmpServers result of
+      [AUS SDBNew srv] -> presetServerAddress srv `shouldBe` presetServerAddress baseSrv
+      other -> expectationFailure $ "expected a new preset row for a different endpoint, got " <> show other
+  it "adopts a same-endpoint custom row as the official preset without a duplicate" $ do
+    let presetOp = L.head operators
+        baseSrv = head $ smp presetOp
+        rotatedPresetOp =
+          presetOp
+            { smp =
+                [ presetServer True $ withAuth "new-auth" $ withKeyHash (C.KeyHash "preset-rotated-key-hash") baseSrv
+                ]
+            }
+        storedCustomSrv =
+          (newUserServer $ withAuth "custom-auth" $ withKeyHash (C.KeyHash "custom-key-hash") baseSrv)
+            { serverId = DBEntityId 17,
+              tested = Just False,
+              enabled = False
+            }
+        result =
+          updatedUserServers
+            ( Just rotatedPresetOp,
+              UserOperatorServers (Just $ operatorNome {operatorId = DBEntityId 1}) [storedCustomSrv] [] []
+            )
+    map serverSummary (updatedSmpServers result)
+      `shouldBe`
+        [(Just 17, True, False, Nothing, Just "new-auth", presetServerAddress $ head $ smp rotatedPresetOp)]
+  it "quarantines but preserves a custom server on the official hostname when its port differs" $ do
+    let presetOp = L.head operators
+        customSrv =
+          (newUserServer "smp://abcd@smp.nome.im:7443" :: NewUserServer 'PSMP)
+            { serverId = DBEntityId 18,
+              tested = Just True,
+              enabled = True
+            }
+        result =
+          updatedUserServers
+            ( Just presetOp,
+              UserOperatorServers (Just $ operatorNome {operatorId = DBEntityId 1}) [customSrv] [] []
+            )
+    case updatedSmpServers result of
+      [AUS SDBNew _, AUS SDBStored preserved@UserServer {serverId = preservedId, enabled = preservedEnabled, deleted = preservedDeleted}] -> do
+        preservedId `shouldBe` DBEntityId 18
+        presetServerAddress preserved `shouldBe` presetServerAddress customSrv
+        preservedEnabled `shouldBe` False
+        preservedDeleted `shouldBe` False
+      other -> expectationFailure $ "expected official preset plus preserved custom port, got " <> show other
   where
     addedPreset = \case
       (Just PresetOperator {operator = Just op}, Just (ASO SDBNew op')) -> operatorTag op == operatorTag op'
@@ -121,6 +274,25 @@ updatedServersTest = describe "validate user servers" $ do
     relayName' (AUCR _ UserChatRelay {relayProfile = RelayProfile {displayName}}) = displayName
     PresetServers {operators} = presetServers defaultChatConfig
     customRelayAddr = either error id $ strDecode "https://relay.example.im/r#Pz9qz7ZVljMofoRxiDDpL_w2DZSazK8IgafxqnWKv6Y"
+    withAuth auth userServer = case server userServer of
+      ProtoServerWithAuth srv _ -> ProtoServerWithAuth srv (Just $ BasicAuth auth)
+    withKeyHash keyHash srv =
+      case server srv of
+        ProtoServerWithAuth server' auth_ ->
+          srv {server = ProtoServerWithAuth server' {keyHash} auth_}
+    updatedSmpServers :: UpdatedUserOperatorServers -> [AUserServer 'PSMP]
+    updatedSmpServers UpdatedUserOperatorServers {smpServers} = smpServers
+    aServer :: AUserServer 'PSMP -> UserServer 'PSMP
+    aServer (AUS SDBStored srv) = srv
+    aServer (AUS SDBNew _) = error "expected stored SMP server after first preset reconciliation"
+    serverBasicAuth :: UserServer' s p -> Maybe String
+    serverBasicAuth userServer = case server userServer of
+      ProtoServerWithAuth _ auth_ -> B.unpack . unBasicAuth <$> auth_
+    serverSummary :: AUserServer 'PSMP -> (Maybe Int64, Bool, Bool, Maybe Bool, Maybe String, ProtocolServer 'PSMP)
+    serverSummary (AUS SDBStored srv@UserServer {serverId = DBEntityId serverId, preset, enabled, tested}) =
+      (Just serverId, preset, enabled, tested, serverBasicAuth srv, presetServerAddress srv)
+    serverSummary (AUS SDBNew srv@UserServer {preset, enabled, tested}) =
+      (Nothing, preset, enabled, tested, serverBasicAuth srv, presetServerAddress srv)
 
 usageConditionsTest :: Spec
 usageConditionsTest = describe "usage conditions" $ do
@@ -159,8 +331,10 @@ nomePresetConfigTest = describe "Nome preset configuration" $ do
         [PresetOperator {operator = Just op, smp, useSMP, xftp, useXFTP, chatRelays, useChatRelays}] -> do
           operatorTag op `shouldBe` Just OTNome
           map srvHost smp `shouldBe` map srvHost nomeSMPServers
+          map srvHost smp `shouldBe` [["smp.nome.im"]]
           useSMP `shouldBe` 1
           map srvHost xftp `shouldBe` map srvHost nomeXFTPServers
+          map srvHost xftp `shouldBe` [["xftp.nome.im"]]
           useXFTP `shouldBe` 1
           null chatRelays `shouldBe` True
           useChatRelays `shouldBe` 0

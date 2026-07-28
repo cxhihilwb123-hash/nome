@@ -264,18 +264,44 @@ internal actual fun PlatformNomeNetworkPage(
       action = stringResource(MR.strings.nome_desktop_network_configure),
       onClick = onConfigureOperators,
     ) {
-      Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        selectedOperators.take(4).forEach { operator ->
-          Surface(
-            shape = CircleShape,
-            color = NomeDesktopOnboardingColors.SurfaceSubtle,
-            modifier = Modifier.size(30.dp),
-          ) {
-            Image(
-              painter = painterResource(operator.logo),
-              contentDescription = operator.tradeName,
-              modifier = Modifier.padding(5.dp),
-            )
+      Column(horizontalAlignment = Alignment.End) {
+        Text(
+          text = stringResource(MR.strings.nome_desktop_network_selected, selectedOperators.size),
+          color = NomeDesktopOnboardingColors.TextMuted,
+          fontSize = 11.sp,
+          fontWeight = FontWeight.SemiBold,
+        )
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+          selectedOperators.take(3).forEach { operator ->
+            Surface(
+              shape = CircleShape,
+              color = NomeDesktopOnboardingColors.SurfaceSubtle,
+              modifier = Modifier.size(34.dp),
+            ) {
+              Image(
+                painter = painterResource(operator.logo),
+                contentDescription = operator.tradeName,
+                modifier = Modifier.padding(6.dp),
+              )
+            }
+          }
+          if (selectedOperators.size > 3) {
+            Surface(
+              shape = CircleShape,
+              color = NomeDesktopOnboardingColors.MintPale,
+              border = BorderStroke(1.dp, NomeDesktopOnboardingColors.Border),
+              modifier = Modifier.size(34.dp),
+            ) {
+              Box(contentAlignment = Alignment.Center) {
+                Text(
+                  text = "+${selectedOperators.size - 3}",
+                  color = NomeDesktopOnboardingColors.Action,
+                  fontSize = 10.sp,
+                  fontWeight = FontWeight.Bold,
+                )
+              }
+            }
           }
         }
       }
@@ -295,7 +321,18 @@ internal actual fun PlatformNomeNetworkPage(
       body = notificationText,
       action = stringResource(MR.strings.nome_desktop_network_configure_notifications),
       onClick = onConfigureNotifications,
-    )
+    ) {
+      NomeModeBadge(
+        icon = painterResource(
+          when (notificationMode.value) {
+            NotificationsMode.SERVICE -> MR.images.ic_bolt
+            NotificationsMode.PERIODIC -> MR.images.ic_timer
+            NotificationsMode.OFF -> MR.images.ic_bolt_off
+          }
+        ),
+        text = notificationText,
+      )
+    }
     Spacer(Modifier.height(20.dp))
     NomeInlineNotice(
       icon = painterResource(MR.images.ic_info),
@@ -379,6 +416,16 @@ internal actual fun PlatformNomeCommitmentPage(
         text = stringResource(MR.strings.nome_desktop_commitment_consent),
         color = NomeDesktopOnboardingColors.Text,
         fontSize = 14.sp,
+      )
+    }
+    TextButton(
+      onClick = onViewTerms,
+      contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp),
+    ) {
+      Text(
+        text = stringResource(MR.strings.nome_desktop_commitment_terms),
+        color = NomeDesktopOnboardingColors.Action,
+        fontSize = 13.sp,
       )
     }
   }
@@ -573,18 +620,20 @@ private fun NomeSettingsCard(
     border = BorderStroke(1.dp, NomeDesktopOnboardingColors.Border),
     modifier = Modifier
       .fillMaxWidth()
-      .clickable(onClick = onClick)
+      .clickable(role = Role.Button, onClick = onClick)
       .semantics {
         contentDescription = "$title. $action"
       },
   ) {
     Row(
-      modifier = Modifier.padding(18.dp),
-      verticalAlignment = Alignment.CenterVertically,
+      modifier = Modifier.padding(16.dp),
+      verticalAlignment = Alignment.Top,
     ) {
       NomeIconTile(icon)
-      Spacer(Modifier.width(14.dp))
-      Column(Modifier.weight(1f)) {
+      Spacer(Modifier.width(12.dp))
+      Column(
+        modifier = Modifier.weight(1f).padding(top = 1.dp),
+      ) {
         Text(
           text = title,
           color = NomeDesktopOnboardingColors.Text,
@@ -610,7 +659,7 @@ private fun NomeSettingsCard(
         )
       }
       trailing?.let {
-        Spacer(Modifier.width(14.dp))
+        Spacer(Modifier.width(12.dp))
         it()
       }
     }
@@ -719,6 +768,40 @@ private fun NomeSectionLabel(text: String) {
 }
 
 @Composable
+private fun NomeModeBadge(
+  icon: Painter,
+  text: String,
+) {
+  Surface(
+    color = NomeDesktopOnboardingColors.MintPale,
+    shape = RoundedCornerShape(999.dp),
+    border = BorderStroke(1.dp, NomeDesktopOnboardingColors.Border),
+    modifier = Modifier.widthIn(max = 148.dp),
+  ) {
+    Row(
+      modifier = Modifier.padding(horizontal = 11.dp, vertical = 8.dp),
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      Icon(
+        painter = icon,
+        contentDescription = null,
+        tint = NomeDesktopOnboardingColors.Action,
+        modifier = Modifier.size(14.dp),
+      )
+      Spacer(Modifier.width(6.dp))
+      Text(
+        text = text,
+        color = NomeDesktopOnboardingColors.Text,
+        fontSize = 11.sp,
+        fontWeight = FontWeight.SemiBold,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+      )
+    }
+  }
+}
+
+@Composable
 private fun NomePrimaryButton(
   text: String,
   onClick: () -> Unit,
@@ -739,7 +822,7 @@ private fun NomePrimaryButton(
       backgroundColor = NomeDesktopOnboardingColors.Action,
       contentColor = Color.White,
       disabledBackgroundColor = NomeDesktopOnboardingColors.Disabled,
-      disabledContentColor = Color.White.copy(alpha = 0.8f),
+      disabledContentColor = NomeDesktopOnboardingColors.DisabledText,
     ),
     elevation = ButtonDefaults.elevation(0.dp, 0.dp, 0.dp),
     contentPadding = PaddingValues(horizontal = 22.dp),
@@ -789,5 +872,6 @@ private object NomeDesktopOnboardingColors {
   val TextMuted = Color(0xFF667085)
   val Border = Color(0xFFDCE3E9)
   val Divider = Color(0xFFE7ECF1)
-  val Disabled = Color(0xFF9FB4AA)
+  val Disabled = Color(0xFFE0E7E3)
+  val DisabledText = Color(0xFF6E8179)
 }

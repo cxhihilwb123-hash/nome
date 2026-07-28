@@ -9,7 +9,7 @@ buildscript {
             // No file was created
         }
     }
-    fun ExtraPropertiesExtension.getOrNull(name: String): Any? = if (has(name)) get("name") else null
+    fun ExtraPropertiesExtension.getOrNull(name: String): Any? = if (has(name)) get(name) else null
 
     extra.set("compose.version", prop["compose.version"] ?: extra["compose.version"])
     extra.set("kotlin.version", prop["kotlin.version"] ?: extra["kotlin.version"])

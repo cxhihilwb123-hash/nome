@@ -1315,7 +1315,7 @@ fun BoxScope.ChatInfoToolbar(
           }) {
             Icon(
               painterResource(MR.images.ic_call_end_filled),
-              null,
+              stringResource(MR.strings.icon_descr_hang_up),
               tint = MaterialTheme.colors.error
             )
           }
@@ -1325,7 +1325,11 @@ fun BoxScope.ChatInfoToolbar(
       if (canStartCall) {
         barButtons.add(0) {
           IconButton({ showCallMenu.value = true }) {
-            Icon(painterResource(MR.images.ic_call_500), null, tint = MaterialTheme.colors.primary)
+            Icon(
+              painterResource(MR.images.ic_call_500),
+              stringResource(MR.strings.info_view_call_button),
+              tint = MaterialTheme.colors.primary
+            )
           }
         }
       }

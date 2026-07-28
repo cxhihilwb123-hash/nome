@@ -89,15 +89,22 @@ private val settingsThemesProps =
   Properties()
     .also { props -> try { settingsThemesFile.reader().use { props.load(it) } } catch (e: Exception) { /**/ } }
 
+internal fun savePropertiesPrivately(properties: Properties, targetFile: File, tempDirectory: File) {
+  ensurePrivateDirectory(tempDirectory)
+  createTmpFileAndDelete(tempDirectory) { tmpFile ->
+    tmpFile.writer().use { properties.store(it, "") }
+    protectPrivateFile(tmpFile)
+    ensurePrivateDirectory(targetFile.parentFile)
+    Files.move(tmpFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+    protectPrivateFile(targetFile)
+  }
+}
+
 private const val lock = "settingsSaver"
 actual val settings: Settings = PropertiesSettings(settingsProps) {
   synchronized(lock) {
     try {
-      createTmpFileAndDelete(preferencesTmpDir) { tmpFile ->
-        tmpFile.writer().use { settingsProps.store(it, "") }
-        settingsFile.parentFile.mkdirs()
-        Files.move(tmpFile.toPath(), settingsFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
-      }
+      savePropertiesPrivately(settingsProps, settingsFile, preferencesTmpDir)
     } catch (e: Exception) {
       AlertManager.shared.showAlertMsg(generalGetString(MR.strings.prefs_error_saving_settings), e.stackTraceToString())
       throw e
@@ -107,11 +114,7 @@ actual val settings: Settings = PropertiesSettings(settingsProps) {
 actual val settingsThemes: Settings = PropertiesSettings(settingsThemesProps) {
   synchronized(lock) {
     try {
-      createTmpFileAndDelete(preferencesTmpDir) { tmpFile ->
-        tmpFile.writer().use { settingsThemesProps.store(it, "") }
-        settingsThemesFile.parentFile.mkdirs()
-        Files.move(tmpFile.toPath(), settingsThemesFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
-      }
+      savePropertiesPrivately(settingsThemesProps, settingsThemesFile, preferencesTmpDir)
     } catch (e: Exception) {
       AlertManager.shared.showAlertMsg(generalGetString(MR.strings.prefs_error_saving_settings), e.stackTraceToString())
       throw e

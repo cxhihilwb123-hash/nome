@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -178,7 +179,7 @@ internal actual fun PlatformNewChatHub(
           fontWeight = FontWeight.SemiBold,
           modifier =
             Modifier
-              .clickable(onClick = onClose)
+              .clickable(role = Role.Button, onClick = onClose)
               .padding(horizontal = 10.dp, vertical = 8.dp),
         )
       }
@@ -198,7 +199,7 @@ private fun NomeNewChatAction(
       Modifier
         .fillMaxWidth()
         .heightIn(min = 92.dp)
-        .clickable(onClick = onClick)
+        .clickable(role = Role.Button, onClick = onClick)
         .padding(horizontal = 22.dp, vertical = 16.dp),
     verticalAlignment = Alignment.CenterVertically,
   ) {

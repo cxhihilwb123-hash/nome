@@ -78,8 +78,8 @@ class NomeStartupServerConfigurationTest {
     address.trim().substringAfterLast('@').substringBefore(',').substringBefore(':').lowercase()
 
   private companion object {
-    const val SMP_HOSTNAME = "smp.nome.im"
-    const val XFTP_HOSTNAME = "xftp.nome.im"
+    const val SMP_HOSTNAME = "124.223.71.168"
+    const val XFTP_HOSTNAME = "124.223.71.168"
     const val TIMEOUT_MILLIS = 30_000L
     const val POLL_MILLIS = 250L
   }

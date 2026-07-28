@@ -48,6 +48,24 @@ import kotlinx.coroutines.*
 @Composable
 fun ModalData.NetworkAndServersView(closeNetworkAndServers: () -> Unit) {
   val currentRemoteHost by remember { chatModel.currentRemoteHost }
+  val proxyCredentialUnavailable by appPrefs.networkProxyCredentialUnavailable
+  if (proxyCredentialUnavailable) {
+    LaunchedEffect(Unit) {
+      AlertManager.shared.showAlertMsg(
+        generalGetString(MR.strings.network_proxy_credentials_unavailable_title),
+        generalGetString(MR.strings.network_proxy_credentials_unavailable_text),
+      )
+    }
+    SocksProxySettings(
+      networkUseSocksProxy = appPrefs.networkUseSocksProxy.get(),
+      networkProxy = appPrefs.networkProxy,
+      onionHosts = remember { mutableStateOf(NetCfg.defaults.onionHosts) },
+      sessionMode = appPrefs.networkSessionMode.get(),
+      migration = false,
+      close = closeNetworkAndServers,
+    )
+    return
+  }
   // It's not a state, just a one-time value. Shouldn't be used in any state-related situations
   val netCfg = remember { chatModel.controller.getNetCfg() }
   val networkUseSocksProxy: MutableState<Boolean> = remember { mutableStateOf(netCfg.useSocksProxy) }
@@ -198,7 +216,23 @@ fun ModalData.NetworkAndServersView(closeNetworkAndServers: () -> Unit) {
   }
 
   @Composable
-  fun ConditionsButton(conditionsAction: UsageConditionsAction, rhId: Long?) {
+  fun NomeUsageInformationButton() {
+    SectionItemView(
+      click = {
+        ModalManager.start.showModalCloseable { _ ->
+          NomeUsageInformationView()
+        }
+      },
+    ) {
+      Text(
+        stringResource(MR.strings.nome_usage_information_action),
+        color = MaterialTheme.colors.primary,
+      )
+    }
+  }
+
+  @Composable
+  fun LegacyConditionsButton(conditionsAction: UsageConditionsAction, rhId: Long?) {
     SectionItemView(
       click = { ModalManager.start.showModalCloseable(endButtons = { ConditionsLinkButton() }) { close ->
         UsageConditionsView(
@@ -226,15 +260,33 @@ fun ModalData.NetworkAndServersView(closeNetworkAndServers: () -> Unit) {
       !chatModel.desktopNoUserNoRemote &&
       !(appPlatform.isAndroid && hasNomeOfficialServers.value)
     ) {
-      SectionView(generalGetString(MR.strings.network_preset_servers_title).uppercase()) {
-        userServers.value.forEachIndexed { index, srv ->
-          srv.operator?.let { ServerOperatorRow(index, it, currUserServers, userServers, serverErrors, serverWarnings, currentRemoteHost?.remoteHostId) }
+      if (userServers.value.any { shouldShowManagedOperator(appPlatform, it.operator) }) {
+        SectionView(generalGetString(MR.strings.network_preset_servers_title).uppercase()) {
+          userServers.value.forEachIndexed { index, srv ->
+            val operator = srv.operator ?: return@forEachIndexed
+            if (shouldShowManagedOperator(appPlatform, operator)) {
+              ServerOperatorRow(index, operator, currUserServers, userServers, serverErrors, serverWarnings, currentRemoteHost?.remoteHostId)
+            }
+          }
         }
       }
-      if (conditionsAction != null && anyOperatorEnabled.value) {
-        ConditionsButton(conditionsAction, rhId = currentRemoteHost?.remoteHostId)
+      val informationDestination = operatorInformationDestination(
+        platform = appPlatform,
+        userServers = userServers.value,
+        hasLegacyConditionsAction = conditionsAction != null,
+        anyOperatorEnabled = anyOperatorEnabled.value,
+      )
+      when (informationDestination) {
+        OperatorInformationDestination.NomeLocalInformation -> NomeUsageInformationButton()
+        OperatorInformationDestination.LegacyConditions -> LegacyConditionsButton(conditionsAction!!, rhId = currentRemoteHost?.remoteHostId)
+        OperatorInformationDestination.None -> Unit
       }
-      val footerText = if (conditionsAction is UsageConditionsAction.Review && conditionsAction.deadline != null && anyOperatorEnabled.value) {
+      val footerText = if (
+        informationDestination == OperatorInformationDestination.LegacyConditions &&
+        conditionsAction is UsageConditionsAction.Review &&
+        conditionsAction.deadline != null &&
+        anyOperatorEnabled.value
+      ) {
         String.format(generalGetString(MR.strings.operator_conditions_will_be_accepted_on), localDate(conditionsAction.deadline))
       } else null
 
@@ -461,22 +513,36 @@ fun SocksProxySettings(
     }
   }
 
-  val save: (Boolean) -> Unit = { closeOnSuccess ->
-    val oldValue = networkProxy.get()
+  val save: (Boolean) -> Unit = save@{ closeOnSuccess ->
+    // A missing/corrupt Keychain entry must block networking, but this screen
+    // remains the recovery path where the user can enter a replacement proxy.
+    val oldValue = try {
+      networkProxy.get()
+    } catch (_: CredentialUnavailable) {
+      NetworkProxy()
+    }
     usernameUnsaved.value = usernameUnsaved.value.copy(if (proxyAuthModeUnsaved.value == NetworkProxyAuth.USERNAME) usernameUnsaved.value.text.trim() else "")
     passwordUnsaved.value = passwordUnsaved.value.copy(if (proxyAuthModeUnsaved.value == NetworkProxyAuth.USERNAME) passwordUnsaved.value.text.trim() else "")
     hostUnsaved.value = hostUnsaved.value.copy(hostUnsaved.value.text.trim())
     portUnsaved.value = portUnsaved.value.copy(portUnsaved.value.text.trim())
 
-    networkProxy.set(
-      NetworkProxy(
-        username = usernameUnsaved.value.text,
-        password = passwordUnsaved.value.text,
-        host = hostUnsaved.value.text,
-        port = portUnsaved.value.text.toIntOrNull() ?: 9050,
-        auth = proxyAuthModeUnsaved.value
+    try {
+      networkProxy.set(
+        NetworkProxy(
+          username = usernameUnsaved.value.text,
+          password = passwordUnsaved.value.text,
+          host = hostUnsaved.value.text,
+          port = portUnsaved.value.text.toIntOrNull() ?: 9050,
+          auth = proxyAuthModeUnsaved.value
+        )
       )
-    )
+    } catch (_: CredentialUnavailable) {
+      AlertManager.shared.showAlertMsg(
+        generalGetString(MR.strings.network_proxy_credentials_unavailable_title),
+        generalGetString(MR.strings.network_proxy_credentials_unavailable_text),
+      )
+      return@save
+    }
     val oldCfg = controller.getNetCfg()
     val cfg = oldCfg.withOnionHosts(onionHosts.value)
     val oldOnionHosts = onionHostsSaved.value
@@ -797,6 +863,11 @@ fun UsageConditionsView(
   close: () -> Unit,
   rhId: Long?
 ) {
+  if (appPlatform.isDesktop) {
+    NomeUsageInformationView()
+    return
+  }
+
   suspend fun acceptForOperators(rhId: Long?, operatorIds: List<Long>, close: () -> Unit) {
     try {
       val conditionsId = chatModel.conditions.value.currentConditions.conditionsId

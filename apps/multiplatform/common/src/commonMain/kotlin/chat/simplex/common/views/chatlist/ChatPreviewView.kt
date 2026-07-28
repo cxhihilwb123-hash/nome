@@ -394,6 +394,31 @@ fun ChatPreviewView(
     }
   }
 
+  if (appPlatform.isDesktop && cInfo is ChatInfo.Local) {
+    val hasPreview =
+      (chatModelDraftChatId == chat.id && chatModelDraft != null) ||
+        (showChatPreviews && chat.chatItems.isNotEmpty())
+    NomeDesktopChatListItem(
+      icon = MR.images.ic_folder_filled,
+      iconTint = MaterialTheme.colors.primary,
+      title = cInfo.chatViewName,
+      timestamp = getTimestampText(chat.chatItems.lastOrNull()?.meta?.itemTs ?: chat.chatInfo.chatTs),
+    ) {
+      if (hasPreview) {
+        chatPreviewText()
+      } else {
+        Text(
+          text = stringResource(MR.strings.nome_desktop_private_notes_subtitle),
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis,
+          color = MaterialTheme.colors.secondary,
+          style = TextStyle(fontFamily = Inter, fontSize = 14.sp, lineHeight = 18.sp),
+        )
+      }
+    }
+    return
+  }
+
   Box(contentAlignment = Alignment.Center) {
     Row {
       Box(contentAlignment = Alignment.BottomEnd) {

@@ -57,7 +57,7 @@
   <string name="nome_brand_lock_unavailable_disable">设备验证已停用，正在关闭 Nome 锁定。</string>
   <string name="nome_brand_lock_not_enabled">尚未启用 Nome 锁定。</string>
   <string name="nome_brand_lock_enable_hint">你可以在设置中开启 Nome 锁定。</string>
-  <string name="nome_brand_support">支持 NOME</string>
+  <string name="nome_brand_support">支持 Nome</string>
   <string name="nome_brand_terminal_client">安装桌面或终端客户端</string>
   <string name="nome_brand_default_call_servers_question">使用默认通话服务器？</string>
   <string name="nome_brand_default_call_servers">正在使用默认通话服务器。</string>

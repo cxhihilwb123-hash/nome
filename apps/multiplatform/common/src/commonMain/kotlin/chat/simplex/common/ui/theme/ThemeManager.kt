@@ -15,6 +15,9 @@ import java.io.File
 expect val Inter: FontFamily
 expect val EmojiFont: FontFamily
 
+internal fun defaultPresetWallpaper(): PresetWallpaper =
+  if (appPlatform.isDesktop) PresetWallpaper.NOME else PresetWallpaper.SCHOOL
+
 object ThemeManager {
   private val appPrefs: AppPreferences = ChatController.appPrefs
 
@@ -50,7 +53,7 @@ object ThemeManager {
     val defaultTheme = defaultActiveTheme(appSettingsTheme)
     return ThemeModeOverride(colors = defaultTheme?.colors ?: ThemeColors(), wallpaper = defaultTheme?.wallpaper
       // Situation when user didn't change global theme at all (it is not saved yet). Using defaults
-      ?: ThemeWallpaper.from(PresetWallpaper.SCHOOL.toType(CurrentColors.value.base), null, null))
+      ?: ThemeWallpaper.from(defaultPresetWallpaper().toType(CurrentColors.value.base), null, null))
   }
 
   // Spec: spec/services/theme.md#currentColors
@@ -60,11 +63,11 @@ object ThemeManager {
     val defaultTheme = defaultActiveTheme(appSettingsTheme)
 
     val baseTheme = when (nonSystemThemeName) {
-      DefaultTheme.LIGHT.themeName -> ActiveTheme(DefaultTheme.LIGHT.themeName, DefaultTheme.LIGHT, LightColorPalette, LightColorPaletteApp, AppWallpaper(type = PresetWallpaper.SCHOOL.toType(DefaultTheme.LIGHT)))
-      DefaultTheme.DARK.themeName -> ActiveTheme(DefaultTheme.DARK.themeName, DefaultTheme.DARK, DarkColorPalette, DarkColorPaletteApp, AppWallpaper(type = PresetWallpaper.SCHOOL.toType(DefaultTheme.DARK)))
-      DefaultTheme.SIMPLEX.themeName -> ActiveTheme(DefaultTheme.SIMPLEX.themeName, DefaultTheme.SIMPLEX, SimplexColorPalette, SimplexColorPaletteApp, AppWallpaper(type = PresetWallpaper.SCHOOL.toType(DefaultTheme.SIMPLEX)))
-      DefaultTheme.BLACK.themeName -> ActiveTheme(DefaultTheme.BLACK.themeName, DefaultTheme.BLACK, BlackColorPalette, BlackColorPaletteApp, AppWallpaper(type = PresetWallpaper.SCHOOL.toType(DefaultTheme.BLACK)))
-      else -> ActiveTheme(DefaultTheme.LIGHT.themeName, DefaultTheme.LIGHT, LightColorPalette, LightColorPaletteApp, AppWallpaper(type = PresetWallpaper.SCHOOL.toType(DefaultTheme.LIGHT)))
+      DefaultTheme.LIGHT.themeName -> ActiveTheme(DefaultTheme.LIGHT.themeName, DefaultTheme.LIGHT, LightColorPalette, LightColorPaletteApp, AppWallpaper(type = defaultPresetWallpaper().toType(DefaultTheme.LIGHT)))
+      DefaultTheme.DARK.themeName -> ActiveTheme(DefaultTheme.DARK.themeName, DefaultTheme.DARK, DarkColorPalette, DarkColorPaletteApp, AppWallpaper(type = defaultPresetWallpaper().toType(DefaultTheme.DARK)))
+      DefaultTheme.SIMPLEX.themeName -> ActiveTheme(DefaultTheme.SIMPLEX.themeName, DefaultTheme.SIMPLEX, SimplexColorPalette, SimplexColorPaletteApp, AppWallpaper(type = defaultPresetWallpaper().toType(DefaultTheme.SIMPLEX)))
+      DefaultTheme.BLACK.themeName -> ActiveTheme(DefaultTheme.BLACK.themeName, DefaultTheme.BLACK, BlackColorPalette, BlackColorPaletteApp, AppWallpaper(type = defaultPresetWallpaper().toType(DefaultTheme.BLACK)))
+      else -> ActiveTheme(DefaultTheme.LIGHT.themeName, DefaultTheme.LIGHT, LightColorPalette, LightColorPaletteApp, AppWallpaper(type = defaultPresetWallpaper().toType(DefaultTheme.LIGHT)))
     }
 
     val perUserTheme = if (baseTheme.colors.isLight) perUserTheme?.light else perUserTheme?.dark

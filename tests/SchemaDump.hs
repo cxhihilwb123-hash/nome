@@ -166,6 +166,7 @@ saveQueryPlans = it "verify and overwrite query plans" $ \TestParams {chatQueryS
       (\db -> do
         DB.execute_ db "CREATE TABLE IF NOT EXISTS temp_conn_ids (conn_id BLOB)"
         DB.execute_ db "CREATE TABLE IF NOT EXISTS temp_delete_members (contact_profile_id INTEGER, member_profile_id INTEGER, local_display_name TEXT)"
+        DB.execute_ db "CREATE TABLE IF NOT EXISTS temp_nome_legacy_seed_contacts (contact_id INTEGER PRIMARY KEY, contact_profile_id INTEGER NOT NULL, user_id INTEGER NOT NULL, local_display_name TEXT NOT NULL)"
       )
   (agentSavedPlans, agentSavedPlans') <-
     updatePlans

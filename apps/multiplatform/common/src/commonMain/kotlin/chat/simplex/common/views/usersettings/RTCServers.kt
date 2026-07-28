@@ -20,9 +20,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import chat.simplex.common.model.ChatModel
 import chat.simplex.common.platform.ColumnWithScrollBar
+import chat.simplex.common.platform.appPlatform
 import chat.simplex.common.ui.theme.*
 import chat.simplex.common.views.call.parseRTCIceServers
 import chat.simplex.common.views.call.rtcIceServerHostname
+import chat.simplex.common.views.call.getStoredIceServers
+import chat.simplex.common.views.call.setStoredIceServers
+import chat.simplex.common.views.call.showIceCredentialUnavailableAlert
+import chat.simplex.common.platform.CredentialUnavailable
 import chat.simplex.common.views.helpers.*
 import chat.simplex.res.MR
 
@@ -30,17 +35,22 @@ import chat.simplex.res.MR
 fun RTCServersView(
   chatModel: ChatModel
 ) {
-  var userRTCServers by remember {
-    mutableStateOf(chatModel.controller.appPrefs.webrtcIceServers.get()?.split("\n") ?: listOf())
+  val initialStoredServers = remember { runCatching { getStoredIceServers() } }
+  var credentialsUnavailable by remember {
+    mutableStateOf(initialStoredServers.exceptionOrNull() is CredentialUnavailable)
   }
-  var isUserRTCServers by remember { mutableStateOf(userRTCServers.isNotEmpty()) }
+  var userRTCServers by remember {
+    mutableStateOf(initialStoredServers.getOrNull()?.split("\n") ?: listOf())
+  }
+  var isUserRTCServers by remember { mutableStateOf(userRTCServers.isNotEmpty() || credentialsUnavailable) }
   var editRTCServers by remember { mutableStateOf(!isUserRTCServers) }
   val userRTCServersStr = remember { mutableStateOf(if (isUserRTCServers) userRTCServers.joinToString(separator = "\n") else "") }
   fun saveUserRTCServers() {
     val srvs = userRTCServersStr.value.split("\n")
     if (srvs.isNotEmpty() && srvs.toSet().size == srvs.size && parseRTCIceServers(srvs) != null) {
       userRTCServers = srvs
-      chatModel.controller.appPrefs.webrtcIceServers.set(srvs.joinToString(separator = "\n"))
+      setStoredIceServers(srvs.joinToString(separator = "\n"))
+      credentialsUnavailable = false
       editRTCServers = false
     } else {
       AlertManager.shared.showAlertMsg(
@@ -53,7 +63,8 @@ fun RTCServersView(
   fun resetRTCServers() {
     isUserRTCServers = false
     userRTCServers = listOf()
-    chatModel.controller.appPrefs.webrtcIceServers.set(null)
+    setStoredIceServers(null)
+    credentialsUnavailable = false
   }
 
   RTCServersLayout(
@@ -63,6 +74,10 @@ fun RTCServersView(
     isUserRTCServersOnOff = { switch ->
       if (switch) {
         isUserRTCServers = true
+      } else if (credentialsUnavailable) {
+        resetRTCServers()
+        isUserRTCServers = false
+        userRTCServersStr.value = ""
       } else if (userRTCServers.isNotEmpty()) {
           AlertManager.shared.showAlertDialog(
             title = generalGetString(MR.strings.use_simplex_chat_servers__question),
@@ -88,6 +103,10 @@ fun RTCServersView(
     saveRTCServers = ::saveUserRTCServers,
     editOn = { editRTCServers = true },
   )
+
+  LaunchedEffect(credentialsUnavailable) {
+    if (credentialsUnavailable) showIceCredentialUnavailableAlert()
+  }
 }
 
 @Composable
@@ -167,7 +186,7 @@ fun RTCServersLayout(
             ) {
               Text(
                 userRTCServersStr.value.lineSequence()
-                  .map { rtcIceServerHostname(it) ?: it }
+                  .map(::safeRtcServerDisplayName)
                   .joinToString(separator = "\n"),
                 Modifier
                   .padding(vertical = 5.dp, horizontal = 7.dp),
@@ -199,17 +218,23 @@ fun RTCServersLayout(
   }
 }
 
+internal fun safeRtcServerDisplayName(server: String): String =
+  rtcIceServerHostname(server)
+    ?: generalGetString(MR.strings.smp_servers_invalid_address)
+
 @Composable
 private fun howToButton() {
-  val uriHandler = LocalUriHandler.current
-  Row(
-    verticalAlignment = Alignment.CenterVertically,
-    modifier = Modifier.clickable { uriHandler.openExternalLink("https://simplex.chat/docs/webrtc.html#configure-mobile-apps") }
-  ) {
-    Text(stringResource(MR.strings.how_to), color = MaterialTheme.colors.primary)
-    Icon(
-      painterResource(MR.images.ic_open_in_new), stringResource(MR.strings.how_to), tint = MaterialTheme.colors.primary,
-      modifier = Modifier.padding(horizontal = 5.dp)
-    )
+  if (shouldShowUpstreamSimpleXHelpLink(appPlatform)) {
+    val uriHandler = LocalUriHandler.current
+    Row(
+      verticalAlignment = Alignment.CenterVertically,
+      modifier = Modifier.clickable { uriHandler.openExternalLink("https://simplex.chat/docs/webrtc.html#configure-mobile-apps") }
+    ) {
+      Text(stringResource(MR.strings.how_to), color = MaterialTheme.colors.primary)
+      Icon(
+        painterResource(MR.images.ic_open_in_new), stringResource(MR.strings.how_to), tint = MaterialTheme.colors.primary,
+        modifier = Modifier.padding(horizontal = 5.dp)
+      )
+    }
   }
 }

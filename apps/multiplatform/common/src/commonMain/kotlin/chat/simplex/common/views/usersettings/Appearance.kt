@@ -323,7 +323,9 @@ object AppearanceScope {
       Icon(painterResource(MR.images.ic_add), null, Modifier.size(25.dp), tint = tint)
     }
 
-    val backgrounds = PresetWallpaper.entries.toList()
+    val backgrounds = PresetWallpaper.entries.filter {
+      appPlatform.isDesktop || it != PresetWallpaper.NOME
+    }
 
     fun LazyGridScope.gridContent(width: Dp, height: Dp) {
       @Composable
@@ -414,7 +416,7 @@ object AppearanceScope {
     if (appPlatform.isDesktop) {
       val itemWidth = (DEFAULT_START_MODAL_WIDTH * fontSizeSqrtMultiplier - DEFAULT_PADDING * 2 - DEFAULT_PADDING_HALF * 3) / 4
       val itemHeight = (DEFAULT_START_MODAL_WIDTH * fontSizeSqrtMultiplier - DEFAULT_PADDING * 2) / 4
-      val rows = ceil((PresetWallpaper.entries.size + 2) / 4f).roundToInt()
+      val rows = ceil((backgrounds.size + 2) / 4f).roundToInt()
       LazyVerticalGrid(
         columns = GridCells.Fixed(4),
         Modifier.height(itemHeight * rows + DEFAULT_PADDING_HALF * (rows - 1) + DEFAULT_PADDING * 2),

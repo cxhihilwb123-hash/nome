@@ -810,7 +810,7 @@ serverOperatorQuery =
     SELECT server_operator_id, server_operator_tag, trade_name, legal_name,
       server_domains, enabled, smp_role_storage, smp_role_proxy, xftp_role_storage, xftp_role_proxy
     FROM server_operators
-    WHERE server_operator_tag IS NULL OR server_operator_tag = 'nome'
+    WHERE (server_operator_tag IS NULL OR server_operator_tag = 'nome')
   |]
 
 getServerOperators_ :: DB.Connection -> IO [ServerOperator]
@@ -912,7 +912,7 @@ removeLegacySeedContacts db = do
       )
     |]
   DB.execute_ db "DELETE FROM temp_nome_legacy_seed_contacts"
-  DB.execute_
+  DB.execute
     db
     [sql|
       INSERT INTO temp_nome_legacy_seed_contacts
@@ -925,12 +925,12 @@ removeLegacySeedContacts db = do
           (
             cp.display_name = 'Ask SimpleX Team'
             AND cp.short_descr = 'Send questions about SimpleX Chat app and your suggestions'
-            AND cp.contact_link LIKE '%smp6.simplex.im%'
+            AND cp.contact_link = ?
           )
           OR (
             cp.display_name = 'SimpleX Status'
             AND cp.short_descr = 'Automatic server status and app release updates'
-            AND cp.contact_link LIKE '%smp4.simplex.im%'
+            AND cp.contact_link = ?
           )
         )
         AND NOT EXISTS (
@@ -946,6 +946,7 @@ removeLegacySeedContacts db = do
           SELECT 1 FROM contact_requests cr WHERE cr.contact_id = ct.contact_id
         )
     |]
+    (legacyTeamContactLink, legacyStatusContactLink)
   DB.execute_
     db
     [sql|
@@ -1001,6 +1002,17 @@ removeLegacySeedContacts db = do
     |]
   DB.execute_ db "DROP TABLE temp_nome_legacy_seed_contacts"
 
+-- These are the exact links shipped with the two historical preset cards. Matching the full
+-- encoded value is intentionally conservative: a user-created contact on the same upstream host
+-- must never be treated as a seed card.
+legacyTeamContactLink :: ConnLinkContact
+legacyTeamContactLink =
+  CLFull . either error id $ strDecode "simplex:/contact#/?v=1&smp=smp%3A%2F%2FPQUV2eL0t7OStZOoAsPEV2QYWt4-xilbakvGUGOItUo%3D%40smp6.simplex.im%2FK1rslx-m5bpXVIdMZg9NLUZ_8JBm8xTt%23MCowBQYDK2VuAyEALDeVe-sG8mRY22LsXlPgiwTNs9dbiLrNuA7f3ZMAJ2w%3D"
+
+legacyStatusContactLink :: ConnLinkContact
+legacyStatusContactLink =
+  CLFull . either error id $ strDecode "simplex:/contact/#/?v=1-2&smp=smp%3A%2F%2Fu2dS9sG8nMNURyZwqASV4yROM28Er0luVTx5X1CsMrU%3D%40smp4.simplex.im%2FShQuD-rPokbDvkyotKx5NwM8P3oUXHxA%23%2F%3Fv%3D1-2%26dh%3DMCowBQYDK2VuAyEA6fSx1k9zrOmF0BJpCaTarZvnZpMTAVQhd3RkDQ35KT0%253D%26srv%3Do5vmywmrnaxalvz6wi3zicyftgio6psuvyniis6gco6bp6ekl4cqj4id.onion"
+
 toServerOperator :: (DBEntityId, Maybe OperatorTag, Text, Maybe Text, Text, BoolInt) :. (BoolInt, BoolInt) :. (BoolInt, BoolInt) -> ServerOperator
 toServerOperator ((operatorId, operatorTag, tradeName, legalName, domains, BI enabled) :. smpRoles' :. xftpRoles') =
   ServerOperator
@@ -1019,7 +1031,7 @@ toServerOperator ((operatorId, operatorTag, tradeName, legalName, domains, BI en
 
 getOperatorConditions_ :: DB.Connection -> ServerOperator -> UsageConditions -> Maybe UsageConditions -> UTCTime -> IO ConditionsAcceptance
 getOperatorConditions_ _ ServerOperator {operatorTag = Just OTNome} _ _ _ =
-  pure $ CAAccepted Nothing False
+  pure $ CAAccepted Nothing True
 getOperatorConditions_ db ServerOperator {operatorId} UsageConditions {conditionsCommit = currentCommit, createdAt, notifiedAt} latestAcceptedConds_ now = do
   case latestAcceptedConds_ of
     Nothing -> pure $ CARequired Nothing -- no conditions accepted by any operator
@@ -1089,7 +1101,7 @@ acceptConditions db condId opIds acceptedAt = do
     getServerOperator_ opId =
       ExceptT $
         firstRow toServerOperator (SEOperatorNotFound opId) $
-          DB.query db (serverOperatorQuery <> " WHERE server_operator_id = ?") (Only opId)
+          DB.query db (serverOperatorQuery <> " AND server_operator_id = ?") (Only opId)
 
 acceptConditions_ :: DB.Connection -> ServerOperator -> Text -> UTCTime -> Bool -> IO ()
 acceptConditions_ db ServerOperator {operatorId, operatorTag} conditionsCommit acceptedAt autoAccepted = do

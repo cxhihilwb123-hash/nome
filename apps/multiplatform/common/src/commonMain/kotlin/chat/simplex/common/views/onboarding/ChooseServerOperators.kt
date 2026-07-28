@@ -53,27 +53,28 @@ fun OnboardingConditionsView(chatModel: ChatModel) {
       serverOperators.value.filter { it.enabled }.map { it.operatorId }.toSet()
     })
   }
+  val confirmInformation = {
+    val selectedOperators = serverOperators.value.filter { it.operatorId in selectedOperatorIds.value }
+    if (appPlatform.isDesktop || selectedOperators.all { it.operatorTag == OperatorTag.Nome }) {
+      completeNomeOnboarding(selectedOperatorIds.value)
+    } else {
+      // Compatibility path for a non-Nome operator: its real versioned conditions, if any, must
+      // be handled by the legacy conditions flow rather than this Nome operational-information page.
+      acceptConditions(selectedOperatorIds.value)
+    }
+  }
 
   run {
     val viewTerms = {
-      ModalManager.fullscreen.showModal(endButtons = { ConditionsLinkButton() }) {
-        SimpleConditionsView(rhId = null) {
-          ModalManager.fullscreen.closeModal()
-          acceptConditions(selectedOperatorIds.value)
-        }
+      ModalManager.fullscreen.showModal {
+        NomeUsageInformationView()
       }
     }
     PlatformNomeCommitmentPage(
       acceptEnabled = selectedOperatorIds.value.isNotEmpty(),
       onBack = { appPrefs.onboardingStage.set(OnboardingStage.Step3_ChooseServerOperators) },
       onViewTerms = viewTerms,
-      onAccept = {
-        if (appPlatform.isDesktop) {
-          completeNomeDesktopOnboarding(selectedOperatorIds.value)
-        } else {
-          acceptConditions(selectedOperatorIds.value)
-        }
-      },
+      onAccept = confirmInformation,
     ) {
       CompositionLocalProvider(LocalAppBarHandler provides rememberAppBarHandler()) {
         ModalView({}, showClose = false, showAppBar = false) {
@@ -136,54 +137,13 @@ fun OnboardingConditionsView(chatModel: ChatModel) {
             },
             button = {
               Column(Modifier.widthIn(max = 450.dp).padding(bottom = DEFAULT_PADDING * 2), horizontalAlignment = Alignment.CenterHorizontally) {
-                AcceptConditionsButton(enabled = selectedOperatorIds.value.isNotEmpty(), selectedOperatorIds)
+                ConfirmInformationButton(
+                  enabled = selectedOperatorIds.value.isNotEmpty(),
+                  onConfirm = confirmInformation,
+                )
               }
             }
           )
-        }
-      }
-    }
-  }
-}
-
-@Composable
-private fun OnboardingConditionsDesktop(selectedOperatorIds: MutableState<Set<Long>>) {
-  CompositionLocalProvider(LocalAppBarHandler provides rememberAppBarHandler()) {
-    ModalView({}, showClose = false) {
-      ColumnWithScrollBar(horizontalAlignment = Alignment.CenterHorizontally) {
-        Column(Modifier.widthIn(max = 600.dp).fillMaxHeight().padding(horizontal = DEFAULT_PADDING).align(Alignment.CenterHorizontally), horizontalAlignment = Alignment.CenterHorizontally) {
-          Box(Modifier.align(Alignment.CenterHorizontally)) {
-            AppBarTitle(stringResource(MR.strings.onboarding_network_commitments), bottomPadding = DEFAULT_PADDING, withPadding = false, overrideTitleColor = MaterialTheme.colors.onBackground, textAlign = TextAlign.Center, lineHeight = 42.sp)
-          }
-          Column(Modifier.width(450.dp), horizontalAlignment = Alignment.Start) {
-            ReadableText(MR.strings.onboarding_conditions_private_chats_not_accessible, TextAlign.Start, padding = PaddingValues(), style = MaterialTheme.typography.body1)
-            Spacer(Modifier.height(DEFAULT_PADDING))
-            ReadableText(MR.strings.onboarding_conditions_by_using_you_agree, TextAlign.Start, padding = PaddingValues(), style = MaterialTheme.typography.body1)
-            Spacer(Modifier.height(DEFAULT_PADDING))
-            Text(
-              stringResource(MR.strings.onboarding_conditions_privacy_policy_and_conditions_of_use),
-              style = MaterialTheme.typography.body1,
-              fontWeight = FontWeight.Medium,
-              color = MaterialTheme.colors.primary,
-              modifier = Modifier
-                .clickable(
-                  interactionSource = remember { MutableInteractionSource() },
-                  indication = null
-                ) {
-                  ModalManager.fullscreen.showModal(forceAnimated = true, endButtons = { ConditionsLinkButton() }) {
-                    SimpleConditionsView(rhId = null) {
-                      ModalManager.fullscreen.closeModal()
-                      acceptConditions(selectedOperatorIds.value)
-                    }
-                  }
-                }
-            )
-          }
-        }
-        Spacer(Modifier.fillMaxHeight().weight(1f))
-        Column(Modifier.widthIn(max = 1000.dp).align(Alignment.CenterHorizontally), horizontalAlignment = Alignment.CenterHorizontally) {
-          AcceptConditionsButton(enabled = selectedOperatorIds.value.isNotEmpty(), selectedOperatorIds)
-          TextButtonBelowOnboardingButton("", null)
         }
       }
     }
@@ -330,7 +290,7 @@ private fun acceptConditions(selectedOperatorIds: Set<Long>) {
   }
 }
 
-private fun completeNomeDesktopOnboarding(selectedOperatorIds: Set<Long>) {
+private fun completeNomeOnboarding(selectedOperatorIds: Set<Long>) {
   withBGApi {
     val enabledOps = enabledOperators(chatModel.conditions.value.serverOperators, selectedOperatorIds)
     if (enabledOps == null) {
@@ -349,16 +309,16 @@ private fun completeNomeDesktopOnboarding(selectedOperatorIds: Set<Long>) {
 }
 
 @Composable
-private fun AcceptConditionsButton(
+private fun ConfirmInformationButton(
   enabled: Boolean,
-  selectedOperatorIds: State<Set<Long>>
+  onConfirm: () -> Unit,
 ) {
   OnboardingActionButton(
     modifier = if (appPlatform.isAndroid) Modifier.padding(horizontal = DEFAULT_ONBOARDING_HORIZONTAL_PADDING).fillMaxWidth() else Modifier.widthIn(min = 300.dp),
     labelId = MR.strings.onboarding_conditions_accept,
     onboarding = null,
     enabled = enabled,
-    onclick = { acceptConditions(selectedOperatorIds.value) }
+    onclick = onConfirm,
   )
 }
 

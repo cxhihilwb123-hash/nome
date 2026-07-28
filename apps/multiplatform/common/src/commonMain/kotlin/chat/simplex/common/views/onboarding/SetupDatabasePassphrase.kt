@@ -71,8 +71,7 @@ fun SetupDatabasePassphrase(m: ChatModel) {
           migration = false
         )
         if (success) {
-          startChat(newKeyValue)
-          nextStep()
+          startChat(newKeyValue, ::nextStep)
         } else {
           // Rollback in case of it is finished with error in order to allow to repeat the process again
           prefs.storeDBPassphrase.set(true)
@@ -438,11 +437,13 @@ private fun ProgressIndicator() {
   }
 }
 
-private suspend fun startChat(key: String?) {
+private suspend fun startChat(
+  key: String?,
+  onStarted: suspend () -> Unit,
+) {
   val m = ChatModel
-  initChatController(key)
+  initChatController(key, onChatStarted = onStarted)
   m.chatDbChanged.value = false
-  m.chatRunning.value = true
 }
 
 private fun randomPassphraseAlert(onConfirm: () -> Unit) {

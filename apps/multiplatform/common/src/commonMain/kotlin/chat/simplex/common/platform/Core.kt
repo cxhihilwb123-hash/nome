@@ -39,6 +39,15 @@ external fun chatReadFile(path: String, key: String, nonce: String): Array<Any>
 external fun chatEncryptFile(ctrl: ChatCtrl, fromPath: String, toPath: String): String
 external fun chatDecryptFile(fromPath: String, key: String, nonce: String, toPath: String): String
 
+private fun chatMigrateInitAppDatabase(dbPath: String, dbKey: String, confirm: String): Array<Any> =
+  try {
+    chatMigrateInit(dbPath, dbKey, confirm)
+  } finally {
+    // The native layer creates and migrates the SQLite files. Tighten their
+    // permissions even when JNI reports a migration error after creating them.
+    protectAppDataFiles()
+  }
+
 val chatModel: ChatModel
   get() = chatController.chatModel
 
@@ -59,20 +68,31 @@ fun initChatControllerOnStart() {
 }
 
 // Spec: spec/architecture.md#initChatController
-suspend fun initChatController(useKey: String? = null, confirmMigrations: MigrationConfirmation? = null, startChat: () -> CompletableDeferred<Boolean> = { CompletableDeferred(true) }) {
+suspend fun initChatController(
+  useKey: String? = null,
+  confirmMigrations: MigrationConfirmation? = null,
+  onChatStarted: suspend () -> Unit = {},
+  recoverInterruptedSelfDestruct: Boolean = true,
+  startChat: () -> CompletableDeferred<Boolean> = { CompletableDeferred(true) },
+) {
   Log.d(TAG, "initChatController")
   try {
     if (chatModel.ctrlInitInProgress.value) return
     chatModel.ctrlInitInProgress.value = true
+    // Never open a database after an interrupted self-destruct. Recovery retries the bounded,
+    // verified wipe first and fails closed with a durable INCOMPLETE marker if it cannot finish.
+    if (recoverInterruptedSelfDestruct) {
+      DatabaseUtils.resumeIncompleteSelfDestructWipeIfNeeded()
+    }
     if (!appPrefs.storeDBPassphrase.get() && !appPrefs.initialRandomDBPassphrase.get()) {
       ksDatabasePassword.remove()
     }
     val dbKey = useKey ?: DatabaseUtils.useDatabaseKey()
     val confirm = confirmMigrations ?: if (appPreferences.developerTools.get() && appPreferences.confirmDBUpgrades.get()) MigrationConfirmation.Error else MigrationConfirmation.YesUp
     var migrated: Array<Any> = if (databaseBackend == "postgres") {
-      chatMigrateInit("simplex_v1", "postgresql://simplex@/simplex_v1", MigrationConfirmation.Error.value)
+      chatMigrateInitAppDatabase("simplex_v1", "postgresql://simplex@/simplex_v1", MigrationConfirmation.Error.value)
     } else {
-      chatMigrateInit(dbAbsolutePrefixPath, dbKey, MigrationConfirmation.Error.value)
+      chatMigrateInitAppDatabase(dbAbsolutePrefixPath, dbKey, MigrationConfirmation.Error.value)
     }
     var res: DBMigrationResult = runCatching {
       json.decodeFromString<DBMigrationResult>(migrated[0] as String)
@@ -86,9 +106,9 @@ suspend fun initChatController(useKey: String? = null, confirmMigrations: Migrat
     if (rerunMigration) {
       chatModel.dbMigrationInProgress.value = true
       migrated = if (databaseBackend == "postgres") {
-        chatMigrateInit("simplex_v1", "postgresql://simplex@/simplex_v1", confirm.value)
+        chatMigrateInitAppDatabase("simplex_v1", "postgresql://simplex@/simplex_v1", confirm.value)
       } else {
-        chatMigrateInit(dbAbsolutePrefixPath, dbKey, confirm.value)
+        chatMigrateInitAppDatabase(dbAbsolutePrefixPath, dbKey, confirm.value)
       }
       res = runCatching {
         json.decodeFromString<DBMigrationResult>(migrated[0] as String)
@@ -112,7 +132,7 @@ suspend fun initChatController(useKey: String? = null, confirmMigrations: Migrat
           chatModel.incompleteInitializedDbRemoved.value = true
           Log.d(TAG, "Incomplete initialized databases were removed for the first time, repeating migration")
           chatModel.ctrlInitInProgress.value = false
-          initChatController(useKey, confirmMigrations, startChat)
+          initChatController(useKey, confirmMigrations, onChatStarted, recoverInterruptedSelfDestruct, startChat)
         }
       }
       return
@@ -169,9 +189,11 @@ suspend fun initChatController(useKey: String? = null, confirmMigrations: Migrat
       if (appPreferences.onboardingStage.get() != newStage) {
         appPreferences.onboardingStage.set(newStage)
       }
-      chatController.startChat(user)
-      if (chatModel.chatRunning.value == true) {
-        platform.androidChatInitializedAndStarted()
+      chatController.startChat(user) {
+        onChatStarted()
+        if (chatModel.chatRunning.value == true) {
+          platform.androidChatInitializedAndStarted()
+        }
       }
     } else {
       chatController.getUserChatData(null)
@@ -205,7 +227,7 @@ fun chatInitControllerRemovingDatabases() {
 
   val dbKey = randomDatabasePassword()
   Log.d(TAG, "chatInitControllerRemovingDatabases path: $dbPath")
-  val migrated = chatMigrateInit(dbPath, dbKey, MigrationConfirmation.Error.value)
+  val migrated = chatMigrateInitAppDatabase(dbPath, dbKey, MigrationConfirmation.Error.value)
   val res = runCatching {
     json.decodeFromString<DBMigrationResult>(migrated[0] as String)
   }.getOrElse { DBMigrationResult.Unknown(migrated[0] as String) }
