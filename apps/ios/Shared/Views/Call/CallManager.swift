@@ -118,9 +118,13 @@ class CallManager {
         ChatModel.shared.callInvitations.removeValue(forKey: invitation.contact.id)
         Task {
             do {
-                try await apiRejectCall(invitation.contact)
+                // Older bundled cores only update the receiver's local call item
+                // when rejecting, leaving the caller waiting indefinitely. Ending
+                // the pending call uses the same remote XCallEnd signal as a normal
+                // hang-up and works with both old and fixed cores.
+                try await apiEndCall(invitation.contact)
             } catch {
-                logger.error("CallController.provider apiRejectCall error: \(responseError(error))")
+                logger.error("CallController.provider apiEndCall invitation error: \(responseError(error))")
             }
             completed()
         }
