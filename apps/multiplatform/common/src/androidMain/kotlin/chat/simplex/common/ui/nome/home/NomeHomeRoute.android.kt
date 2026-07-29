@@ -1197,6 +1197,8 @@ private fun NomeChatRow(
   val timestamp = getTimestampText(latestItem?.meta?.itemTs ?: info.chatTs)
   val unreadCount = chat.chatStats.unreadCount
   val favorite = info.chatSettings?.favorite == true
+  val chatKind = nomeChatKind(info)
+  val chatKindState = chatKind?.let { nomeChatKindLabel(it) }
   val unreadState =
     if (unreadCount > 0) {
       stringResource(R.string.nome_home_unread_count, unreadCount)
@@ -1207,7 +1209,8 @@ private fun NomeChatRow(
     }
   val favoriteState =
     if (favorite) stringResource(R.string.nome_home_favorite) else null
-  val spokenState = listOfNotNull(unreadState, favoriteState).joinToString()
+  val spokenState =
+    listOfNotNull(chatKindState, unreadState, favoriteState).joinToString()
   val spokenLabel =
     if (canOpen) {
       stringResource(
@@ -1318,13 +1321,22 @@ private fun NomeChatRow(
           NomeChatAvatar(info)
           Spacer(Modifier.width(dimensions.space12))
           Column(modifier = Modifier.weight(1f)) {
-            Text(
-              text = info.chatViewName,
-              maxLines = 1,
-              overflow = TextOverflow.Ellipsis,
-              style = NomeTheme.typography.bodyStrong,
-              color = NomeTheme.colors.textPrimary,
-            )
+            Row(
+              verticalAlignment = Alignment.CenterVertically,
+            ) {
+              Text(
+                text = info.chatViewName,
+                modifier = Modifier.weight(1f, fill = false),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = NomeTheme.typography.bodyStrong,
+                color = NomeTheme.colors.textPrimary,
+              )
+              chatKind?.let {
+                Spacer(Modifier.width(6.dp))
+                NomeChatKindBadge(it)
+              }
+            }
             Text(
               text = preview,
               maxLines = 1,

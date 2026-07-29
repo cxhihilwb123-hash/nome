@@ -55,7 +55,11 @@ fun OnboardingConditionsView(chatModel: ChatModel) {
   }
   val confirmInformation = {
     val selectedOperators = serverOperators.value.filter { it.operatorId in selectedOperatorIds.value }
-    if (appPlatform.isDesktop || selectedOperators.all { it.operatorTag == OperatorTag.Nome }) {
+    if (appPlatform.isAndroid) {
+      // The compatible Android core predates the Nome operator. Nome routing was already applied
+      // during chat startup, so do not accept or re-enable its bundled upstream operators here.
+      completeOnboarding()
+    } else if (appPlatform.isDesktop || selectedOperators.all { it.operatorTag == OperatorTag.Nome }) {
       completeNomeOnboarding(selectedOperatorIds.value)
     } else {
       // Compatibility path for a non-Nome operator: its real versioned conditions, if any, must
@@ -71,7 +75,7 @@ fun OnboardingConditionsView(chatModel: ChatModel) {
       }
     }
     PlatformNomeCommitmentPage(
-      acceptEnabled = selectedOperatorIds.value.isNotEmpty(),
+      acceptEnabled = appPlatform.isAndroid || selectedOperatorIds.value.isNotEmpty(),
       onBack = { appPrefs.onboardingStage.set(OnboardingStage.Step3_ChooseServerOperators) },
       onViewTerms = viewTerms,
       onAccept = confirmInformation,

@@ -2014,9 +2014,7 @@ fun BoxScope.ChatItemsList(
       LocalDensity.current.fontScale,
     )
   val nomeChannelDisclosureBannerHeight =
-    nomeChannelDisclosureHeight(
-      LocalDensity.current.fontScale,
-    )
+    nomeChannelDisclosureHeight
   val topPaddingToContent = topPaddingToContent(
     chatView = chatsCtx.secondaryContextFilter == null,
     additionalTopBar = chatsCtx.secondaryContextFilter == null && (reportsCount > 0 || supportUnreadCount > 0)

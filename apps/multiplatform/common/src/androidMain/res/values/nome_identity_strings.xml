@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="nome_p21_non_e2ee">Public channels are not end-to-end encrypted. Chat relays can read channel messages.</string>
-    <string name="nome_p21_history">Channel history</string>
     <string name="nome_p21_broadcast">Channel broadcast</string>
     <string name="nome_p21_observer">View only</string>
     <string name="nome_p21_observer_body">Only channel owners can publish messages here.</string>

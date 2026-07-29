@@ -3,17 +3,10 @@ package chat.simplex.common.views.chat
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 
-internal fun nomeChannelDisclosureHeight(
-  fontScale: Float,
-) =
-  120.dp *
-    maxOf(
-      1f,
-      fontScale,
-    )
+internal val nomeChannelDisclosureHeight = 6.dp
 
 /**
- * Android-only presentation for public-channel disclosure and observer state.
+ * Android-only presentation for public-channel top spacing and observer state.
  *
  * The caller supplies only official group/channel facts. These functions create no relay,
  * encryption, membership, role, or send result and Desktop renders nothing.

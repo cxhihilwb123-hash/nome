@@ -35,10 +35,12 @@
     <string name="nome_p04_creating">正在创建本地身份…</string>
 
     <string name="nome_p05_title">我的网络</string>
-    <string name="nome_p05_intro">选择用于消息路由的服务器运营方；稍后仍可在设置中修改此配置。</string>
+    <string name="nome_p05_intro">Nome 使用官方服务器路由消息和文件；稍后可在设置中查看或更改此配置。</string>
     <string name="nome_p05_no_operator">尚未选择服务器运营方</string>
     <string name="nome_p05_operator_count">已选择 %1$d 个运营方</string>
-    <string name="nome_p05_scope_note">仅显示配置，不代表连通或服务器健康状态。</string>
+    <string name="nome_p05_official_servers">Nome 官方服务器</string>
+    <string name="nome_p05_official_servers_body">smp.nome.im · xftp.nome.im</string>
+    <string name="nome_p05_scope_note">显示默认路由配置，不代表实时连通或服务器健康状态。</string>
     <string name="nome_p05_preferences">偏好</string>
     <string name="nome_p05_notifications">新消息通知</string>
     <string name="nome_p05_notifications_service">使用后台服务即时接收通知</string>
@@ -58,7 +60,6 @@
     <string name="nome_p06_connection_body">只接受来源可识别或可信任的邀请。</string>
     <string name="nome_p06_data_title">自行保管数据</string>
     <string name="nome_p06_data_body">本地消息丢失后无法由服务器找回。</string>
-    <string name="nome_p06_channel_note">公开频道不属于端到端加密会话，加入前会再次说明。</string>
     <string name="nome_p06_consent">我已理解上述操作说明</string>
     <string name="nome_p06_terms">查看网络与隐私说明</string>
     <string name="nome_p06_accept">继续进入 Nome</string>

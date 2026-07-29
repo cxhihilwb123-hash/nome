@@ -289,9 +289,6 @@ internal actual fun PlatformNomeNetworkPage(
   onContinue: () -> Unit,
   legacyContent: @Composable () -> Unit,
 ) {
-  val selectedOperators = serverOperators.value.filter { selectedOperatorIds.value.contains(it.operatorId) }
-  val operatorTitle = selectedOperators.joinToString(", ") { it.tradeName }
-    .ifEmpty { stringResource(R.string.nome_p05_no_operator) }
   val notificationBody = stringResource(
     when (notificationMode.value) {
       NotificationsMode.SERVICE -> R.string.nome_p05_notifications_service
@@ -324,7 +321,7 @@ internal actual fun PlatformNomeNetworkPage(
       )
       Spacer(Modifier.height(14.dp))
       NomeSurface(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onConfigureOperators),
+        modifier = Modifier.fillMaxWidth(),
         border = BorderStroke(1.dp, NomeTheme.colors.border),
       ) {
         Row(
@@ -335,14 +332,14 @@ internal actual fun PlatformNomeNetworkPage(
           Spacer(Modifier.width(12.dp))
           Column(Modifier.weight(1f)) {
             Text(
-              text = operatorTitle,
+              text = stringResource(R.string.nome_p05_official_servers),
               style = NomeTheme.typography.bodyStrong,
               color = NomeTheme.colors.textPrimary,
               maxLines = 2,
               overflow = TextOverflow.Ellipsis,
             )
             Text(
-              text = stringResource(R.string.nome_p05_operator_count, selectedOperators.size),
+              text = stringResource(R.string.nome_p05_official_servers_body),
               style = NomeTheme.typography.supporting,
               color = NomeTheme.colors.textSecondary,
             )
@@ -351,7 +348,7 @@ internal actual fun PlatformNomeNetworkPage(
             modifier = Modifier
               .size(10.dp)
               .background(
-                if (selectedOperators.isEmpty()) NomeTheme.colors.textTertiary else NomeTheme.colors.success,
+                NomeTheme.colors.success,
                 CircleShape,
               ),
           )
@@ -371,13 +368,6 @@ internal actual fun PlatformNomeNetworkPage(
           title = stringResource(R.string.nome_p05_notifications),
           body = notificationBody,
           onClick = onConfigureNotifications,
-        )
-        Divider(color = NomeTheme.colors.divider)
-        NomeSettingsRow(
-          icon = Icons.Rounded.Security,
-          title = stringResource(R.string.nome_p05_operators),
-          body = stringResource(R.string.nome_p05_operators_body),
-          onClick = onConfigureOperators,
         )
         Divider(color = NomeTheme.colors.divider)
         NomeSettingsRow(
@@ -450,10 +440,6 @@ internal actual fun PlatformNomeCommitmentPage(
           )
         }
       }
-      NomeInfoStrip(
-        icon = Icons.Rounded.Info,
-        text = stringResource(R.string.nome_p06_channel_note),
-      )
       Spacer(Modifier.height(16.dp))
       Row(
         modifier = Modifier

@@ -35,10 +35,12 @@
     <string name="nome_p04_creating">Creating local identity…</string>
 
     <string name="nome_p05_title">My network</string>
-    <string name="nome_p05_intro">Choose the server operators used for message routing. You can change this configuration later in Settings.</string>
+    <string name="nome_p05_intro">Nome uses its official servers for message and file routing. You can review or change this configuration later in Settings.</string>
     <string name="nome_p05_no_operator">No server operator selected</string>
     <string name="nome_p05_operator_count">%1$d operator(s) selected</string>
-    <string name="nome_p05_scope_note">Shows configuration only, not connectivity or server health.</string>
+    <string name="nome_p05_official_servers">Nome official servers</string>
+    <string name="nome_p05_official_servers_body">smp.nome.im · xftp.nome.im</string>
+    <string name="nome_p05_scope_note">Shows the default routing configuration, not live connectivity or server health.</string>
     <string name="nome_p05_preferences">Preferences</string>
     <string name="nome_p05_notifications">New message notifications</string>
     <string name="nome_p05_notifications_service">Instant notifications using the background service</string>
@@ -58,7 +60,6 @@
     <string name="nome_p06_connection_body">Accept invitations only when you recognize or trust the source.</string>
     <string name="nome_p06_data_title">Protect your data</string>
     <string name="nome_p06_data_body">Servers cannot recover local messages after they are lost.</string>
-    <string name="nome_p06_channel_note">Public channels are not end-to-end encrypted. This is explained again before joining.</string>
     <string name="nome_p06_consent">I understand the operational information above</string>
     <string name="nome_p06_terms">View network and privacy information</string>
     <string name="nome_p06_accept">Continue to Nome</string>

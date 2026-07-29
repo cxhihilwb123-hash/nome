@@ -57,6 +57,12 @@ fun chatEventText(eventText: String, ts: String): AnnotatedString =
     withStyle(chatEventStyle) { append("$eventText  $ts") }
   }
 
+internal fun nomeHidePublicChannelE2EEHistory(
+  isAndroid: Boolean,
+  isChannel: Boolean,
+  e2EEInfo: E2EEInfo,
+): Boolean = isAndroid && isChannel && e2EEInfo.public == true
+
 data class ChatItemReactionMenuItem (
   val name: String,
   val image: String?,
@@ -911,8 +917,10 @@ fun ChatItemView(
                 is CIContent.RcvBlocked -> DeletedItem()
                 is CIContent.SndDirectE2EEInfo -> if (appPlatform.isAndroid) Spacer(Modifier.size(0.dp)) else DirectE2EEInfoText(c.e2eeInfo)
                 is CIContent.RcvDirectE2EEInfo -> if (appPlatform.isAndroid) Spacer(Modifier.size(0.dp)) else DirectE2EEInfoText(c.e2eeInfo)
-                is CIContent.SndGroupE2EEInfo -> GroupE2EEInfoText(c.e2eeInfo)
-                is CIContent.RcvGroupE2EEInfo -> GroupE2EEInfoText(c.e2eeInfo)
+                is CIContent.SndGroupE2EEInfo ->
+                  if (nomeHidePublicChannelE2EEHistory(appPlatform.isAndroid, cInfo.isChannel, c.e2eeInfo)) Spacer(Modifier.size(0.dp)) else GroupE2EEInfoText(c.e2eeInfo)
+                is CIContent.RcvGroupE2EEInfo ->
+                  if (nomeHidePublicChannelE2EEHistory(appPlatform.isAndroid, cInfo.isChannel, c.e2eeInfo)) Spacer(Modifier.size(0.dp)) else GroupE2EEInfoText(c.e2eeInfo)
                 is CIContent.ChatBanner -> Spacer(modifier = Modifier.size(0.dp))
                 is CIContent.InvalidJSON -> {
                   CIInvalidJSONView(c.json)

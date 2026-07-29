@@ -56,6 +56,8 @@ import chat.simplex.common.ui.nome.accessibility.nomeMinimumTouchTarget
 import chat.simplex.common.ui.nome.accessibility.nomeTalkBackSemantics
 import chat.simplex.common.ui.nome.components.NomeSurface
 import chat.simplex.common.ui.nome.theme.NomeTheme
+import chat.simplex.common.views.chatlist.NomeChatKindBadge
+import chat.simplex.common.views.chatlist.nomeChatKind
 import chat.simplex.common.views.helpers.ProfileImage
 import chat.simplex.res.MR
 
@@ -376,6 +378,7 @@ private fun NomeSearchResultRow(
   }
   val title = info.chatViewName
   val body = nomeSearchResultDescription(chat)
+  val chatKind = nomeChatKind(info)
   val timestamp =
     getTimestampText(chat.chatItems.lastOrNull()?.meta?.itemTs ?: info.chatTs)
   val icon =
@@ -419,13 +422,20 @@ private fun NomeSearchResultRow(
       )
       Spacer(Modifier.width(12.dp))
       Column(Modifier.weight(1f)) {
-        Text(
-          text = title,
-          style = NomeTheme.typography.bodyStrong,
-          color = NomeTheme.colors.textPrimary,
-          maxLines = 1,
-          overflow = TextOverflow.Ellipsis,
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+          Text(
+            text = title,
+            modifier = Modifier.weight(1f, fill = false),
+            style = NomeTheme.typography.bodyStrong,
+            color = NomeTheme.colors.textPrimary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+          )
+          chatKind?.let {
+            Spacer(Modifier.width(6.dp))
+            NomeChatKindBadge(it)
+          }
+        }
         Text(
           text = body,
           style = NomeTheme.typography.supporting,

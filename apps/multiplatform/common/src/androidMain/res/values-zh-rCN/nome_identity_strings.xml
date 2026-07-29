@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="nome_p21_non_e2ee">公开频道不是端到端加密；聊天中继可以读取频道消息。</string>
-    <string name="nome_p21_history">频道历史</string>
     <string name="nome_p21_broadcast">频道广播</string>
     <string name="nome_p21_observer">仅查看模式</string>
     <string name="nome_p21_observer_body">只有频道所有者可以在这里发布消息。</string>
