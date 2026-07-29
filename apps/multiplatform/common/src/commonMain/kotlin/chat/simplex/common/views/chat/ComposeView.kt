@@ -28,6 +28,8 @@ import dev.icerock.moko.resources.compose.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.*
+import chat.simplex.common.activation.ActivationCapability
+import chat.simplex.common.activation.ActivationGate
 import chat.simplex.common.model.*
 import chat.simplex.common.model.ChatModel.controller
 import chat.simplex.common.model.ChatModel.filesToDelete
@@ -577,6 +579,7 @@ fun ComposeView(
   }
 
   suspend fun sendMemberContactInvitation() {
+    if (!ActivationGate.guardFresh(ActivationCapability.CONTACT, "compose_member_contact")) return
     val mc = checkLinkPreview()
     sending()
     val contact = chatModel.controller.apiSendMemberContactInvitation(chat.remoteHostId, chat.chatInfo.apiId, mc)
@@ -591,6 +594,7 @@ fun ComposeView(
   }
 
   suspend fun sendConnectPreparedContact() {
+    if (!ActivationGate.guardFresh(ActivationCapability.CONTACT, "compose_prepared_contact")) return
     val mc = checkLinkPreview()
     sending()
     val incognito = if (chat.chatInfo.profileChangeProhibited) chat.chatInfo.incognito else chatModel.controller.appPrefs.incognito.get()
@@ -632,6 +636,7 @@ fun ComposeView(
   }
 
   suspend fun connectPreparedGroup() {
+    if (!ActivationGate.guardFresh(ActivationCapability.GROUP, "compose_prepared_group")) return
     val mc = checkLinkPreview()
     sending()
     val incognito = if (chat.chatInfo.profileChangeProhibited) chat.chatInfo.incognito else chatModel.controller.appPrefs.incognito.get()
@@ -656,6 +661,16 @@ fun ComposeView(
   }
 
   suspend fun sendMessageAsync(text: String?, live: Boolean, ttl: Int?): List<ChatItem>? {
+    if (
+      chat.chatInfo.chatType != ChatType.Local &&
+      !ActivationGate.guardFresh(ActivationCapability.MESSAGE, "compose_send")
+    ) return null
+    if (
+      ActivationGate.hasBlockedPending(ActivationCapability.MESSAGE) ||
+      ActivationGate.hasBlockedPending(ActivationCapability.SHARE)
+    ) {
+      ActivationGate.clearPendingIntent()
+    }
     val cs = composeState.value
     var sent: List<ChatItem>?
     var lastMessageFailedToSend: ComposeState? = null

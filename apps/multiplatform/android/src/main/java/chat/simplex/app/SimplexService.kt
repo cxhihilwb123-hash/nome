@@ -25,6 +25,8 @@ import androidx.core.content.ContextCompat
 import androidx.work.*
 import chat.simplex.app.model.NtfManager
 import chat.simplex.common.AppLock
+import chat.simplex.common.activation.ActivationCapability
+import chat.simplex.common.activation.ActivationGate
 import chat.simplex.common.helpers.requiresIgnoringBattery
 import chat.simplex.common.model.ChatController
 import chat.simplex.common.model.NotificationsMode
@@ -49,6 +51,12 @@ class SimplexService: Service() {
   override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
     Log.d(TAG, "onStartCommand startId: $startId")
     isServiceStarting = false
+    if (!ActivationGate.guard(ActivationCapability.SERVICE, "simplex_service_start", revealActivation = false)) {
+      ServiceCompat.startForeground(this, SIMPLEX_SERVICE_ID, createNotificationIfNeeded(), foregroundServiceType())
+      stopForeground(true)
+      stopSelf(startId)
+      return START_NOT_STICKY
+    }
     if (intent != null) {
       val action = intent.action
       Log.d(TAG, "intent action $action")
@@ -68,6 +76,11 @@ class SimplexService: Service() {
     Log.d(TAG, "Simplex service created")
     createNotificationIfNeeded()
     ServiceCompat.startForeground(this, SIMPLEX_SERVICE_ID, createNotificationIfNeeded(), foregroundServiceType())
+    if (!ActivationGate.guard(ActivationCapability.SERVICE, "simplex_service_create", revealActivation = false)) {
+      stopForeground(true)
+      stopSelf()
+      return
+    }
     /**
      * The reason [stopAfterStart] exists is because when the service is not called [startForeground] yet, and
      * we call [stopSelf] on the same service, [ForegroundServiceDidNotStartInTimeException] will be thrown.
@@ -137,13 +150,19 @@ class SimplexService: Service() {
     val self = this
     isCheckingNewMessages = true
     withLongRunningApi {
+      if (!ActivationGate.guardFresh(ActivationCapability.SERVICE, "simplex_service_run", revealActivation = false)) {
+        stopForeground(true)
+        stopSelf()
+        isCheckingNewMessages = false
+        return@withLongRunningApi
+      }
       val chatController = ChatController
       waitDbMigrationEnds(chatController)
       try {
         Log.w(TAG, "Starting foreground service")
         val chatDbStatus = chatController.chatModel.chatDbStatus.value
         if (chatDbStatus != DBMigrationResult.OK) {
-          Log.w(chat.simplex.app.TAG, "SimplexService: problem with the database: $chatDbStatus")
+          Log.w(TAG, "SimplexService: problem with the database: $chatDbStatus")
           showPassphraseNotification(chatDbStatus)
           androidAppContext.getWorkManagerInstance().cancelUniqueWork(SimplexService.SERVICE_START_WORKER_WORK_NAME_PERIODIC)
           safeStopService()
@@ -251,7 +270,7 @@ class SimplexService: Service() {
     companion object {
       fun toggleReceiver(enable: Boolean) {
         Log.d(TAG, "StartReceiver: toggleReceiver enabled: $enable")
-        val component = ComponentName(BuildConfig.APPLICATION_ID, StartReceiver::class.java.name)
+        val component = ComponentName(SimplexApp.context, StartReceiver::class.java)
         SimplexApp.context.packageManager.setComponentEnabledSetting(
           component,
           if (enable) PackageManager.COMPONENT_ENABLED_STATE_ENABLED else PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
@@ -282,7 +301,7 @@ class SimplexService: Service() {
     companion object {
       fun toggleReceiver(enable: Boolean) {
         Log.d(TAG, "AppUpdateReceiver: toggleReceiver enabled: $enable")
-        val component = ComponentName(BuildConfig.APPLICATION_ID, AppUpdateReceiver::class.java.name)
+        val component = ComponentName(SimplexApp.context, AppUpdateReceiver::class.java)
         SimplexApp.context.packageManager.setComponentEnabledSetting(
           component,
           if (enable) PackageManager.COMPONENT_ENABLED_STATE_ENABLED else PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
@@ -295,6 +314,9 @@ class SimplexService: Service() {
   class ServiceStartWorker(private val context: Context, params: WorkerParameters): CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
       val id = this.id
+      if (!ActivationGate.guardFresh(ActivationCapability.WORKER, "service_start_worker", revealActivation = false)) {
+        return Result.success()
+      }
       if (context.applicationContext !is Application) {
         Log.d(TAG, "ServiceStartWorker: Failed, no application found (work ID: $id)")
         return Result.failure()
@@ -336,6 +358,7 @@ class SimplexService: Service() {
     private var stopAfterStart = false
 
     fun scheduleStart(context: Context) {
+      if (!ActivationGate.guard(ActivationCapability.BACKGROUND_RESTART, "service_schedule_start", revealActivation = false)) return
       Log.d(TAG, "Enqueuing work to start subscriber service")
       val workManager = context.getWorkManagerInstance()
       val startServiceRequest = OneTimeWorkRequest.Builder(ServiceStartWorker::class.java).build()
@@ -358,6 +381,7 @@ class SimplexService: Service() {
     }
 
     private suspend fun serviceAction(action: Action) {
+      if (!ActivationGate.guardFresh(ActivationCapability.SERVICE, "service_action", revealActivation = false)) return
       if (!NtfManager.areNotificationsEnabledInSystem()) {
         Log.d(TAG, "SimplexService serviceAction: ${action.name}. Notifications are not enabled in OS yet, not starting service")
         return

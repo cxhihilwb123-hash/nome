@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+  <!-- No chat database, messages, files, preferences, or live bearer token is backed up. -->
+  <include
+      domain="sharedpref"
+      path="nome_activation_restore_v1.xml"
+      requireFlags="clientSideEncryption" />
+</full-backup-content>

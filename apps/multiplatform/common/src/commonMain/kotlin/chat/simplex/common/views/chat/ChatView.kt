@@ -28,6 +28,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
+import chat.simplex.common.activation.ActivationCapability
+import chat.simplex.common.activation.ActivationGate
 import chat.simplex.common.model.*
 import chat.simplex.common.model.CIDirection.GroupRcv
 import chat.simplex.common.model.ChatController.appPrefs
@@ -903,6 +905,7 @@ private fun connectingText(chatInfo: ChatInfo): String? {
 
 fun startChatCall(remoteHostId: Long?, chatInfo: ChatInfo, media: CallMediaType) {
   withBGApi {
+    if (!ActivationGate.guardFresh(ActivationCapability.CALL, "start_call")) return@withBGApi
     if (chatInfo is ChatInfo.Direct) {
       val contactInfo = chatModel.controller.apiContactInfo(remoteHostId, chatInfo.contact.contactId)
       val profile = contactInfo?.second ?: chatModel.currentUser.value?.profile?.toProfile() ?: return@withBGApi

@@ -1,5 +1,7 @@
 package chat.simplex.common.views.call
 
+import chat.simplex.common.activation.ActivationCapability
+import chat.simplex.common.activation.ActivationGate
 import chat.simplex.common.model.*
 import chat.simplex.common.platform.*
 import chat.simplex.common.views.helpers.withBGApi
@@ -24,6 +26,7 @@ class CallManager(val chatModel: ChatModel) {
   }
 
   fun acceptIncomingCall(invitation: RcvCallInvitation) = withBGApi {
+    if (!ActivationGate.guardFresh(ActivationCapability.CALL, "accept_incoming_call")) return@withBGApi
     val call = chatModel.activeCall.value
     val contactInfo = chatModel.controller.apiContactInfo(invitation.remoteHostId, invitation.contact.contactId)
     val profile = contactInfo?.second ?: invitation.user.profile.toProfile()
@@ -108,8 +111,11 @@ class CallManager(val chatModel: ChatModel) {
         ntfManager.cancelCallNotification()
       }
       withBGApi {
-        if (!controller.apiRejectCall(invitation.remoteHostId, invitation.contact)) {
-          Log.e(TAG, "apiRejectCall error")
+        // Bundled legacy cores only update the receiver when rejecting and do
+        // not notify the caller. Ending the pending call emits XCallEnd on both
+        // legacy and fixed cores, so the caller leaves the connecting screen.
+        if (!controller.apiEndCall(invitation.remoteHostId, invitation.contact)) {
+          Log.e(TAG, "apiEndCall invitation error")
         }
       }
     }

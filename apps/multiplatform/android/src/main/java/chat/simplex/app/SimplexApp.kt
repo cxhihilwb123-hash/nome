@@ -17,6 +17,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.ViewCompat
 import androidx.lifecycle.*
 import androidx.work.*
+import chat.simplex.common.activation.ActivationCapability
+import chat.simplex.common.activation.ActivationGate
+import chat.simplex.common.activation.AndroidActivationRuntime
 import chat.simplex.app.MainActivity.Companion.OLD_ANDROID_UI_FLAGS
 import chat.simplex.app.model.NtfManager
 import chat.simplex.app.model.NtfManager.AcceptCallAction
@@ -33,6 +36,8 @@ import chat.simplex.common.views.helpers.*
 import chat.simplex.common.views.onboarding.OnboardingStage
 import com.jakewharton.processphoenix.ProcessPhoenix
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.io.*
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -44,6 +49,10 @@ class SimplexApp: Application(), LifecycleEventObserver {
     get() = chatController.chatModel
 
   val chatController: ChatController = ChatController
+
+  private val activationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+  private val activationTransitionMutex = Mutex()
+  private lateinit var activationRuntime: AndroidActivationRuntime
 
   override fun onCreate() {
     super.onCreate()
@@ -72,6 +81,15 @@ class SimplexApp: Application(), LifecycleEventObserver {
     val localeEvidence = NomeLocaleInitializer.capturePreInitializationEvidence(this)
     initHaskell(packageName)
     initMultiplatform()
+    ActivationGate.installNetworkTransitionHandler(::handleActivationAccessTransition)
+    activationRuntime = AndroidActivationRuntime.create(this)
+    val chatDatabase = File(dbAbsolutePrefixPath + "_chat.db")
+    val agentDatabase = File(dbAbsolutePrefixPath + "_agent.db")
+    activationRuntime.initialize(
+      hasUsableLocalDatabase =
+        chatDatabase.isFile && chatDatabase.length() > 0L &&
+          agentDatabase.isFile && agentDatabase.length() > 0L,
+    )
     NomeLocaleInitializer.initialize(this, localeEvidence)
     reconfigureBroadcastReceivers()
     runMigrations()
@@ -95,7 +113,8 @@ class SimplexApp: Application(), LifecycleEventObserver {
       when (event) {
         Lifecycle.Event.ON_START -> {
           isAppOnForeground = true
-          if (chatModel.chatRunning.value == true) {
+          activationRuntime.refreshBeforeProtectedAction()
+          if (ActivationGate.permits(ActivationCapability.START_CHAT) && chatModel.chatRunning.value == true) {
             withContext(Dispatchers.Main) {
               try {
                 val currentUserId = chatModel.currentUser.value?.userId
@@ -128,6 +147,7 @@ class SimplexApp: Application(), LifecycleEventObserver {
         }
         Lifecycle.Event.ON_RESUME -> {
           isAppOnForeground = true
+          activationRuntime.refreshBeforeProtectedAction()
           if (chatModel.controller.appPrefs.onboardingStage.get() == OnboardingStage.OnboardingComplete && chatModel.currentUser.value != null) {
             SimplexService.showBackgroundServiceNoticeIfNeeded()
           }
@@ -136,7 +156,8 @@ class SimplexApp: Application(), LifecycleEventObserver {
            * after calling [ChatController.showBackgroundServiceNoticeIfNeeded] notification mode in prefs can be changed.
            * It can happen when app was started and a user enables battery optimization while app in background
            * */
-          if (chatModel.chatRunning.value != false &&
+          if (ActivationGate.permits(ActivationCapability.SERVICE) &&
+            chatModel.chatRunning.value != false &&
             chatModel.controller.appPrefs.onboardingStage.get() == OnboardingStage.OnboardingComplete &&
             appPrefs.notificationsMode.get() == NotificationsMode.SERVICE &&
             // New installation passes all checks above and tries to start the service which is not needed at all
@@ -152,13 +173,15 @@ class SimplexApp: Application(), LifecycleEventObserver {
   }
 
   fun allowToStartServiceAfterAppExit() = with(chatModel.controller) {
-    appPrefs.notificationsMode.get() == NotificationsMode.SERVICE &&
+    ActivationGate.permits(ActivationCapability.BACKGROUND_RESTART) &&
+        appPrefs.notificationsMode.get() == NotificationsMode.SERVICE &&
         !appPrefs.chatStopped.get() &&
         (!NotificationsMode.SERVICE.requiresIgnoringBattery || SimplexService.isBackgroundAllowed())
   }
 
   private fun allowToStartPeriodically() = with(chatModel.controller) {
-    appPrefs.notificationsMode.get() == NotificationsMode.PERIODIC &&
+    ActivationGate.permits(ActivationCapability.WORKER) &&
+        appPrefs.notificationsMode.get() == NotificationsMode.PERIODIC &&
         (!NotificationsMode.PERIODIC.requiresIgnoringBattery || SimplexService.isBackgroundAllowed())
   }
 
@@ -193,6 +216,39 @@ class SimplexApp: Application(), LifecycleEventObserver {
       return@launch
     }
     MessagesFetcherWorker.scheduleWork()
+  }
+
+  private fun handleActivationAccessTransition(@Suppress("UNUSED_PARAMETER") requestedAccess: Boolean) {
+    activationScope.launch {
+      activationTransitionMutex.withLock {
+        val permitted = ActivationGate.state.value.permitsChatNetworking
+        if (!permitted) {
+          // Shut down all background entry points before stopping the controller receiver/core.
+          SimplexService.StartReceiver.toggleReceiver(false)
+          SimplexService.AppUpdateReceiver.toggleReceiver(false)
+          MessagesFetcherWorker.cancelAll(withLog = false)
+          getWorkManagerInstance().cancelUniqueWork(SimplexService.SERVICE_START_WORKER_WORK_NAME_PERIODIC)
+          getWorkManagerInstance().cancelAllWorkByTag(SimplexService.TAG)
+          SimplexService.safeStopService()
+          CallService.stopService()
+          if (chatController.hasChatCtrl()) chatController.pauseForActivation()
+        } else {
+          val serviceMode = appPrefs.notificationsMode.get() == NotificationsMode.SERVICE
+          SimplexService.StartReceiver.toggleReceiver(serviceMode)
+          SimplexService.AppUpdateReceiver.toggleReceiver(serviceMode)
+          val user = chatModel.currentUser.value
+          if (
+            user != null &&
+            chatModel.chatDbStatus.value == DBMigrationResult.OK &&
+            !chatModel.ctrlInitInProgress.value &&
+            chatModel.chatRunning.value != true
+          ) {
+            chatController.startChat(user)
+            if (chatModel.chatRunning.value == true) platform.androidChatInitializedAndStarted()
+          }
+        }
+      }
+    }
   }
 
   companion object {
@@ -230,8 +286,9 @@ class SimplexApp: Application(), LifecycleEventObserver {
         if (mode.requiresIgnoringBattery && !SimplexService.isBackgroundAllowed()) {
           appPrefs.backgroundServiceNoticeShown.set(false)
         }
-        SimplexService.StartReceiver.toggleReceiver(mode == NotificationsMode.SERVICE)
-        SimplexService.AppUpdateReceiver.toggleReceiver(mode == NotificationsMode.SERVICE)
+        val activationPermitsService = ActivationGate.permits(ActivationCapability.SERVICE)
+        SimplexService.StartReceiver.toggleReceiver(activationPermitsService && mode == NotificationsMode.SERVICE)
+        SimplexService.AppUpdateReceiver.toggleReceiver(activationPermitsService && mode == NotificationsMode.SERVICE)
         CoroutineScope(Dispatchers.Default).launch {
           if (mode == NotificationsMode.SERVICE) {
             SimplexService.start()

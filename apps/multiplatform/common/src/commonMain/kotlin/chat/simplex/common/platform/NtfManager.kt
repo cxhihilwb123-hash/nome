@@ -1,5 +1,7 @@
 package chat.simplex.common.platform
 
+import chat.simplex.common.activation.ActivationCapability
+import chat.simplex.common.activation.ActivationGate
 import chat.simplex.common.model.*
 import chat.simplex.common.views.call.RcvCallInvitation
 import chat.simplex.common.views.chatlist.acceptContactRequest
@@ -8,6 +10,8 @@ import chat.simplex.common.views.helpers.*
 import chat.simplex.common.views.onboarding.OnboardingStage
 import chat.simplex.res.MR
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 enum class NotificationAction {
   ACCEPT_CONTACT_REQUEST
@@ -49,11 +53,16 @@ abstract class NtfManager {
   }
 
   fun acceptContactRequestAction(userId: Long?, incognito: Boolean, chatId: ChatId) {
-    val isCurrentUser = ChatModel.currentUser.value?.userId == userId
-    val apiId = chatId.replace("<@", "").toLongOrNull() ?: return
-    // TODO include remote host in notification
-    acceptContactRequest(null, incognito, apiId, isCurrentUser, ChatModel)
-    cancelNotificationsForChat(chatId)
+    withLongRunningApi {
+      if (!ActivationGate.guardFresh(ActivationCapability.NOTIFICATION_ACTION, "notification_contact_action")) return@withLongRunningApi
+      withContext(Dispatchers.Main) {
+        val isCurrentUser = ChatModel.currentUser.value?.userId == userId
+        val apiId = chatId.replace("<@", "").toLongOrNull() ?: return@withContext
+        // TODO include remote host in notification
+        acceptContactRequest(null, incognito, apiId, isCurrentUser, ChatModel)
+        cancelNotificationsForChat(chatId)
+      }
+    }
   }
 
   fun openChatAction(userId: Long?, chatId: ChatId) {
@@ -86,12 +95,17 @@ abstract class NtfManager {
   }
 
   fun acceptCallAction(chatId: ChatId) {
-    chatModel.clearOverlays.value = true
-    val invitation = chatModel.callInvitations[chatId]
-    if (invitation == null) {
-      AlertManager.shared.showAlertMsg(generalGetString(MR.strings.call_already_ended))
-    } else {
-      chatModel.callManager.acceptIncomingCall(invitation = invitation)
+    withLongRunningApi {
+      if (!ActivationGate.guardFresh(ActivationCapability.NOTIFICATION_ACTION, "notification_call_action")) return@withLongRunningApi
+      withContext(Dispatchers.Main) {
+        chatModel.clearOverlays.value = true
+        val invitation = chatModel.callInvitations[chatId]
+        if (invitation == null) {
+          AlertManager.shared.showAlertMsg(generalGetString(MR.strings.call_already_ended))
+        } else {
+          chatModel.callManager.acceptIncomingCall(invitation = invitation)
+        }
+      }
     }
   }
 

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="nome_activation_card_title">Activate Nome</string>
+  <string name="nome_activation_card_body">Your local profile and message history stay available. An invite is required for messaging, contacts, files, groups, and calls.</string>
+  <string name="nome_activation_card_checking">Nome needs to check the activation policy before chat networking can start.</string>
+  <string name="nome_activation_sheet_title">Activate this installation</string>
+  <string name="nome_activation_sheet_body">Enter your invite code. The blocked action stays pending and will not be submitted automatically.</string>
+  <string name="nome_activation_expired_body">Your invitation access period has ended. Enter another invite code to renew access; local history and settings remain available.</string>
+  <string name="nome_activation_renew_title">Renew invitation access</string>
+  <string name="nome_activation_renew_body">Enter another invite code to extend access from the current end date. A timed code never shortens permanent access.</string>
+  <string name="nome_activation_check_required">Connect to the internet to check access, or enter an invite code if you already have one.</string>
+  <string name="nome_activation_invite_code">Invite code</string>
+  <string name="nome_activation_close">Close</string>
+  <string name="nome_activation_activate">Activate</string>
+  <string name="nome_activation_renew">Confirm renewal</string>
+  <string name="nome_activation_settings_title">Invitation code</string>
+  <string name="nome_activation_settings_not_active">Not activated · local use only</string>
+  <string name="nome_activation_settings_not_required">Available · invitation not currently required</string>
+  <string name="nome_activation_settings_expired">Expired · enter a new invitation code</string>
+  <string name="nome_activation_settings_permanent">Active · permanent</string>
+  <string name="nome_activation_settings_until">Active until %1$s</string>
+  <string name="nome_activation_migrate">Restore activation</string>
+  <string name="nome_activation_migration_body">This activation is ready to move after an administrator reset. Restore it on this installation; no pending action will run automatically.</string>
+  <string name="nome_activation_card_migration">An administrator reset is ready. Restore activation on this installation to resume networking.</string>
+  <string name="nome_activation_retry">Check again</string>
+  <string name="nome_activation_not_now">Not now</string>
+  <string name="nome_activation_offline_grace">Activated with temporary offline access.</string>
+  <string name="nome_activation_pending_link_title">Review pending link</string>
+  <string name="nome_activation_pending_link_body">Activation is complete. Nome kept the link without opening or submitting it.</string>
+  <string name="nome_activation_review_link">Review link</string>
+  <string name="nome_activation_keep_pending">Keep for later</string>
+</resources>

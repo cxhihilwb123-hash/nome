@@ -1,5 +1,7 @@
 package chat.simplex.common.platform
 
+import chat.simplex.common.activation.ActivationCapability
+import chat.simplex.common.activation.ActivationGate
 import chat.simplex.common.model.*
 import chat.simplex.common.model.ChatController.appPrefs
 import chat.simplex.common.model.ChatModel.controller
@@ -179,7 +181,7 @@ suspend fun initChatController(
       } else {
         chatController.appPrefs.onboardingStage.set(OnboardingStage.Step1_SimpleXInfo)
       }
-    } else if (startChat().await()) {
+    } else if (ActivationGate.permits(ActivationCapability.START_CHAT) && startChat().await()) {
       val savedOnboardingStage = appPreferences.onboardingStage.get()
       val newStage = if (listOf(OnboardingStage.Step1_SimpleXInfo, OnboardingStage.Step2_CreateProfile).contains(savedOnboardingStage) && chatModel.users.size == 1) {
         OnboardingStage.Step4_NetworkCommitments
@@ -203,6 +205,7 @@ suspend fun initChatController(
   } finally {
     chatModel.ctrlInitInProgress.value = false
     chatModel.dbMigrationInProgress.value = false
+    if (chatModel.chatDbStatus.value == DBMigrationResult.OK) ActivationGate.notifyControllerReady()
   }
 }
 

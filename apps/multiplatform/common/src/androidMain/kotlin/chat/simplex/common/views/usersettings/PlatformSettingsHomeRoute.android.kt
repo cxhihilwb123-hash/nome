@@ -31,6 +31,7 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.ConfirmationNumber
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.runtime.Composable
@@ -46,6 +47,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
@@ -56,6 +58,10 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import chat.simplex.common.R
+import chat.simplex.common.activation.ActivationAccess
+import chat.simplex.common.activation.ActivationEntitlementStatus
+import chat.simplex.common.activation.ActivationGate
+import chat.simplex.common.activation.ActivationPolicyMode
 import chat.simplex.common.model.User
 import chat.simplex.common.platform.BackHandler
 import chat.simplex.common.ui.nome.accessibility.nomeMinimumTouchTarget
@@ -152,6 +158,7 @@ fun NomeSettingsHomeContent(
   var query by remember { mutableStateOf("") }
   val focusRequester = remember { FocusRequester() }
   val focusManager = LocalFocusManager.current
+  val activationState by ActivationGate.state.collectAsState()
   val notificationBody =
     androidx.compose.ui.res.stringResource(
       if (notificationsEnabled) {
@@ -175,8 +182,40 @@ fun NomeSettingsHomeContent(
           R.string.nome_p23_language_system
       },
     )
+  val invitationEntries =
+    if (activationState.policy?.mode != null && activationState.policy?.mode != ActivationPolicyMode.DISABLED) {
+      val invitationBody =
+        when {
+          activationState.access == ActivationAccess.FULL &&
+            activationState.entitlement.status != ActivationEntitlementStatus.ACTIVE ->
+            androidx.compose.ui.res.stringResource(R.string.nome_activation_settings_not_required)
+          activationState.entitlement.status == ActivationEntitlementStatus.EXPIRED ||
+            activationState.reason == "entitlement_expired" ->
+            androidx.compose.ui.res.stringResource(R.string.nome_activation_settings_expired)
+          activationState.entitlement.status != ActivationEntitlementStatus.ACTIVE ->
+            androidx.compose.ui.res.stringResource(R.string.nome_activation_settings_not_active)
+          activationState.entitlement.entitlementEnd == null ->
+            androidx.compose.ui.res.stringResource(R.string.nome_activation_settings_permanent)
+          else ->
+            androidx.compose.ui.res.stringResource(
+              R.string.nome_activation_settings_until,
+              activationState.entitlement.entitlementEnd.toString().take(10),
+            )
+        }
+      listOf(
+        NomeSettingsEntry(
+          title = androidx.compose.ui.res.stringResource(R.string.nome_activation_settings_title),
+          body = invitationBody,
+          icon = rememberVectorPainter(Icons.Outlined.ConfirmationNumber),
+          enabled = true,
+          onClick = { ActivationGate.showActivation("settings") },
+        ),
+      )
+    } else {
+      emptyList()
+    }
   val generalEntries =
-    listOf(
+    invitationEntries + listOf(
       NomeSettingsEntry(
         title =
           androidx.compose.ui.res.stringResource(

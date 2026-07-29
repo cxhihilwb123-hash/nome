@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Divider
+import androidx.compose.material.Button
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
@@ -49,6 +50,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import chat.simplex.common.R
+import chat.simplex.common.activation.ActivationCapability
+import chat.simplex.common.activation.ActivationGate
 import chat.simplex.common.helpers.NetworkObserver
 import chat.simplex.common.model.Chat
 import chat.simplex.common.model.ChatInfo
@@ -233,12 +236,16 @@ actual fun PlatformHomeRoute(
           searchOpen.value = true
         },
         onNewConnection = {
-          showNewChatSheet(
-            oneHandUI = oneHandUI,
-            onOpenProfile = {
-              userPickerState.value = AnimatedViewState.VISIBLE
-            },
-          )
+          scope.launch {
+            if (ActivationGate.guardFresh(ActivationCapability.CONTACT, "home_new_connection")) {
+              showNewChatSheet(
+                oneHandUI = oneHandUI,
+                onOpenProfile = {
+                  userPickerState.value = AnimatedViewState.VISIBLE
+                },
+              )
+            }
+          }
         },
         selectedDestination = primaryDestination,
         onOpenHome = {
@@ -329,6 +336,7 @@ fun NomeHomeRouteContent(
   onManageUserList: (ChatTag) -> Unit = {},
 ) {
   val dimensions = NomeTheme.dimensions
+  val pendingActivationIntent = ActivationGate.pendingIntent.collectAsState().value
   val scope = rememberCoroutineScope()
   val pendingDeletionChats = chatModel.deletedChats.value.toSet()
   val selectedUserList =
@@ -485,6 +493,14 @@ fun NomeHomeRouteContent(
           }
         }
 
+        if (pendingActivationIntent?.capability == ActivationCapability.DEEP_LINK) {
+          item {
+            NomePendingLinkCard(
+              modifier = Modifier.padding(top = dimensions.space12),
+            )
+          }
+        }
+
         when (state.connectivity) {
           NomeHomeConnectivityState.UNKNOWN -> item {
             NomeStatusPanel(
@@ -634,6 +650,35 @@ fun NomeHomeRouteContent(
         }
       },
     )
+  }
+}
+
+@Composable
+private fun NomePendingLinkCard(modifier: Modifier = Modifier) {
+  NomeSurface(
+    modifier = modifier.fillMaxWidth(),
+    shape = NomeTheme.shapes.control,
+    color = NomeTheme.colors.input,
+    border = BorderStroke(1.dp, NomeTheme.colors.divider),
+  ) {
+    Column(
+      modifier = Modifier.padding(16.dp),
+      verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+      Text(
+        text = stringResource(R.string.nome_activation_pending_link_title),
+        style = NomeTheme.typography.title,
+        color = NomeTheme.colors.textPrimary,
+      )
+      Text(
+        text = stringResource(R.string.nome_activation_pending_link_body),
+        style = NomeTheme.typography.body,
+        color = NomeTheme.colors.textSecondary,
+      )
+      Button(onClick = ActivationGate::showPendingReview) {
+        Text(stringResource(R.string.nome_activation_review_link))
+      }
+    }
   }
 }
 

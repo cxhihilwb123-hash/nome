@@ -98,6 +98,7 @@ chatDirectTests = do
     it "connect when accepting client goes offline" $ testAsyncAcceptingOffline True
     it "connect, fully asynchronous (when clients are never simultaneously online)" $ testFullAsyncFast
   describe "webrtc calls api" $ do
+    it "reject call notifies caller" testRejectCall
     it "negotiate call" testNegotiateCall
 #if !defined(dbPostgres)
   describe "maintenance mode" $ do
@@ -1306,6 +1307,21 @@ serialize = B.unpack . LB.toStrict . J.encode
 
 repeatM_ :: Int -> IO a -> IO ()
 repeatM_ n a = forM_ [1 .. n] $ const a
+
+testRejectCall :: HasCallStack => TestParams -> IO ()
+testRejectCall =
+  withTestOutput $ testChat2 aliceProfile bobProfile $ \alice bob -> do
+    connectUsers alice bob
+    alice ##> ("/_call invite @2 " <> serialize testCallType)
+    alice <## "ok"
+    bob <## "alice wants to connect with you via WebRTC video call (e2e encrypted)"
+    repeatM_ 3 $ getTermLine bob
+    bob ##> "/_call reject @2"
+    bob <## "ok"
+    threadDelay 100000
+    bob #$> ("/_get chat @2 count=100", chat, chatFeatures <> [(0, "incoming call: rejected")])
+    alice <## "call with bob ended"
+    alice #$> ("/_get chat @2 count=100", chat, chatFeatures <> [(1, "outgoing call: missed")])
 
 testNegotiateCall :: HasCallStack => TestParams -> IO ()
 testNegotiateCall =
