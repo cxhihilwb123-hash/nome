@@ -13,7 +13,7 @@ import Simplex.Chat.Controller
 import Simplex.Chat.Core
 import Simplex.Chat.Help (chatWelcome)
 import Simplex.Chat.Operators
-import Simplex.Chat.Operators.Presets (nomeSMPServers, nomeXFTPServers, operatorNome)
+import Simplex.Chat.Operators.Presets (nomeChatRelays, nomeSMPServers, nomeXFTPServers, operatorNome)
 import Simplex.Chat.Options
 import Simplex.Chat.Terminal.Input
 import Simplex.Chat.Terminal.Output
@@ -42,8 +42,8 @@ terminalChatConfig =
                     useSMP = 1,
                     xftp = nomeXFTPServers,
                     useXFTP = 1,
-                    chatRelays = [],
-                    useChatRelays = 0
+                    chatRelays = nomeChatRelays,
+                    useChatRelays = 1
                   }
               ],
             ntf = [],

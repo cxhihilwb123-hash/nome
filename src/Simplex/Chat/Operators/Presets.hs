@@ -48,6 +48,13 @@ nomeXFTPServers =
         (Just "accbd90c5c813d90facea657d3da87e022eae9ce07005b53")
   ]
 
+nomeChatRelays :: [NewUserChatRelay]
+nomeChatRelays =
+  [ presetChatRelay True (mkRelayProfile "Nome Relay" Nothing) ["nome.im"] $
+      either error id $
+        strDecode "https://relay.nome.im/r#N_ynoTxBs6bAWXuroZ-l5_r4lbibC3mm0MRunZqukOA?p=5223&c=RVzf_goDl1uPbeXQu7Mpi-gck_By0QhEGobrwPwULY8"
+  ]
+
 operatorSimpleXChat :: NewServerOperator
 operatorSimpleXChat =
   ServerOperator

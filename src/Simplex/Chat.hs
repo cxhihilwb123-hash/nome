@@ -88,8 +88,8 @@ defaultChatConfig =
                     useSMP = 1,
                     xftp = nomeXFTPServers,
                     useXFTP = 1,
-                    chatRelays = [],
-                    useChatRelays = 0
+                    chatRelays = nomeChatRelays,
+                    useChatRelays = 1
                   }
               ],
             ntf = [],
