@@ -20,6 +20,19 @@ class ActivationRequiredException(
   val capability: ActivationCapability,
 ): IllegalStateException("Activation is required for ${capability.name.lowercase()}")
 
+/**
+ * Runs a passive background command without surfacing the activation gate as an application crash.
+ * The gate already records and presents the blocked capability; every other failure must propagate.
+ */
+internal suspend fun runActivationAwareBackgroundCommand(
+  command: suspend () -> Boolean,
+): Boolean =
+  try {
+    command()
+  } catch (_: ActivationRequiredException) {
+    false
+  }
+
 object ActivationGate {
   private val mutableState = MutableStateFlow(
     if (appPlatform.isDesktop) {

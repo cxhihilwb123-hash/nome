@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.getSystemService
+import chat.simplex.common.activation.runActivationAwareBackgroundCommand
 import chat.simplex.common.model.ChatModel.controller
 import chat.simplex.common.model.UserNetworkInfo
 import chat.simplex.common.model.UserNetworkType
@@ -92,14 +93,14 @@ class NetworkObserver {
     noNetworkJob.cancel()
     if (info.online) {
       withBGApi {
-        if (controller.hasChatCtrl() && controller.apiSetNetworkInfo(info)) {
+        if (controller.hasChatCtrl() && runActivationAwareBackgroundCommand { controller.apiSetNetworkInfo(info) }) {
           chatModel.networkInfo.value = info
         }
       }
     } else {
       noNetworkJob = withBGApi {
         delay(3000)
-        if (controller.hasChatCtrl() && controller.apiSetNetworkInfo(info)) {
+        if (controller.hasChatCtrl() && runActivationAwareBackgroundCommand { controller.apiSetNetworkInfo(info) }) {
           chatModel.networkInfo.value = info
         }
       }

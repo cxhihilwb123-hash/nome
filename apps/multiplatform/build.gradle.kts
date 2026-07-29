@@ -17,6 +17,9 @@ buildscript {
     extra.set("abi_filter", prop["abi_filter"] ?: "arm64-v8a")
     // Name that will be shown for debug build. By default, it is from strings
     extra.set("app.name", prop["app.name"] ?: "@string/app_name")
+    // Nome-owned Android package ID. The Kotlin namespace intentionally remains stable while the
+    // installed application identity is branded independently.
+    extra.set("application_id", prop["application_id"] ?: "im.nome.app")
     // Whether the app is debuggable or not. Specify `false` if yo`u want good performance in debug builds
     extra.set("enable_debuggable", prop["debuggable"] != "false")
     // Ending part of package name.

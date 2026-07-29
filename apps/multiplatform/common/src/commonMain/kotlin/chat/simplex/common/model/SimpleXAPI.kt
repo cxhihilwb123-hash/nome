@@ -125,6 +125,42 @@ internal suspend fun runNomePreNetworkGate(
   }
 }
 
+/**
+ * Compatibility gate for the official Android v6.5.6 native core.
+ *
+ * That core exposes user-server commands only while chat is running. The bootstrap start exists
+ * solely to persist the Nome routes; it must always be followed by a confirmed stop so the final
+ * start creates subscriptions and delivery workers from the newly persisted configuration.
+ */
+internal suspend fun runNomeAndroidCompatibilityGate(
+  quiesceReceiver: () -> Unit,
+  isChatRunning: suspend () -> Boolean,
+  stopRunningChat: suspend () -> Unit,
+  startBootstrapChat: suspend () -> Boolean,
+  configureWhileRunning: suspend () -> Boolean,
+  startConfiguredChat: suspend () -> Boolean,
+  onUnsafeFailure: suspend () -> Unit = {},
+): NomePreNetworkGateResult {
+  quiesceReceiver()
+  return try {
+    val wasRunning = isChatRunning()
+    if (wasRunning) stopRunningChat()
+
+    check(startBootstrapChat()) { "Native chat bootstrap did not start from a confirmed stop" }
+    if (!configureWhileRunning()) {
+      stopRunningChat()
+      NomePreNetworkGateResult(wasRunning, started = false)
+    } else {
+      stopRunningChat()
+      check(startConfiguredChat()) { "Native chat did not start with the configured Nome routes" }
+      NomePreNetworkGateResult(wasRunning, started = true)
+    }
+  } catch (e: Throwable) {
+    onUnsafeFailure()
+    throw e
+  }
+}
+
 /** Serializes the full native stop/configure/start transition and its completion callback. */
 internal class NomeChatStartSingleFlight {
   private val mutex = Mutex()
@@ -887,44 +923,72 @@ object ChatController {
   ): Boolean {
     Log.d(TAG, "user: $user")
     val previousUser = chatModel.currentUser.value
+    var nomeGateRequiresCleanup = false
+    var retryableFailure: RetryableChatStart? = null
     try {
       chatModel.retryableChatStart.value = null
       chatModel.currentUser.value = user
-      apiSetNetworkConfig(getNetCfg())
-      val chatRunning = apiCheckChatRunning()
       val users = listUsers(null)
       chatModel.users.clear()
       chatModel.users.addAll(users)
-      val startedForNomeConfiguration = !chatRunning
-      if (startedForNomeConfiguration) {
-        apiStartChat()
-      }
-      val retryableFailure = retryableNomeServerChatStart(user, onStarted) {
-        NomeServerConfiguration.applyBeforeNetwork(this, user)
-      }
-      if (retryableFailure != null) {
-        Log.e(TAG, "Nome server configuration remains pending and will be retried")
-        if (startedForNomeConfiguration) {
-          try {
-            apiStopChat()
-          } catch (_: Throwable) {
-            Log.e(TAG, "Unable to stop the Nome server configuration bootstrap")
+
+      // The official Android v6.5.6 core cannot edit user servers while stopped. Bootstrap it only
+      // long enough to persist Nome routes, then confirm a stop and start clean delivery workers.
+      nomeGateRequiresCleanup = true
+      val gate = runNomeAndroidCompatibilityGate(
+        quiesceReceiver = ::stopReceiver,
+        isChatRunning = {
+          check(apiSetNetworkConfig(getNetCfg())) {
+            "Native network configuration was rejected before the Android Nome server gate"
           }
-        }
+          apiCheckChatRunning()
+        },
+        stopRunningChat = {
+          enforceNomeGateFailureStop(
+            stopChat = { check(apiStopChat()) },
+            onStopped = { chatModel.chatRunning.value = false },
+            onUnknown = { chatModel.chatRunning.value = null },
+            terminate = ::terminateForUnsafeNetworkState,
+          )
+        },
+        startBootstrapChat = ::apiStartChat,
+        configureWhileRunning = {
+          retryableFailure = retryableNomeServerChatStart(user, onStarted) {
+            NomeServerConfiguration.applyBeforeNetwork(this, user)
+          }
+          retryableFailure == null
+        },
+        startConfiguredChat = ::apiStartChat,
+        onUnsafeFailure = {
+          enforceNomeGateFailureStop(
+            stopChat = { check(apiStopChat()) },
+            onStopped = {
+              chatModel.chatRunning.value = false
+              chatModel.currentUser.value = previousUser
+            },
+            onUnknown = {
+              chatModel.chatRunning.value = null
+              chatModel.currentUser.value = previousUser
+            },
+            terminate = ::terminateForUnsafeNetworkState,
+          )
+          nomeGateRequiresCleanup = false
+        },
+      )
+      if (!gate.started) {
+        Log.e(TAG, "Nome server configuration remains pending and will be retried")
         chatModel.chatRunning.value = false
         chatModel.currentUser.value = previousUser
-        chatModel.retryableChatStart.value = retryableFailure
+        chatModel.retryableChatStart.value = requireNotNull(retryableFailure)
+        nomeGateRequiresCleanup = false
         return false
       }
       removeAndroidLegacySeedContacts()
-      if (!chatRunning) {
+      if (!gate.wasRunning) {
         chatModel.currentUser.value = user
         chatModel.localUserCreated.value = true
         getUserChatData(null)
         appPrefs.chatLastStart.set(Clock.System.now())
-        chatModel.chatRunning.value = true
-        startReceiver()
-        setLocalDeviceName(appPrefs.deviceNameForRemoteAccess.get()!!)
         if (appPreferences.onboardingStage.get() == OnboardingStage.OnboardingComplete && !chatModel.controller.appPrefs.privacyDeliveryReceiptsSet.get()) {
           chatModel.setDeliveryReceipts.value = true
         }
@@ -936,12 +1000,30 @@ object ChatController {
         }
         Log.d(TAG, "startChat: running")
       }
-      if (!startedForNomeConfiguration) apiStartChat()
+      chatModel.chatRunning.value = true
+      startReceiver()
+      setLocalDeviceName(appPrefs.deviceNameForRemoteAccess.get()!!)
       appPrefs.chatStopped.set(false)
+      nomeGateRequiresCleanup = false
       return true
     } catch (e: Throwable) {
-      chatModel.currentUser.value = previousUser
-      chatModel.chatRunning.value = false
+      if (nomeGateRequiresCleanup) {
+        enforceNomeGateFailureStop(
+          stopChat = { check(apiStopChat()) },
+          onStopped = {
+            chatModel.chatRunning.value = false
+            chatModel.currentUser.value = previousUser
+          },
+          onUnknown = {
+            chatModel.chatRunning.value = null
+            chatModel.currentUser.value = previousUser
+          },
+          terminate = ::terminateForUnsafeNetworkState,
+        )
+      } else {
+        chatModel.currentUser.value = previousUser
+        chatModel.chatRunning.value = false
+      }
       Log.e(TAG, nomeChatStartFailureSummary(e))
       throw safeNomeChatStartFailure(e)
     }
