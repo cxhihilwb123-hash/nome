@@ -42,6 +42,8 @@ Theme Resolution Order (most specific wins):
 
 The resolved theme is published as `AppTheme.shared` and consumed by all SwiftUI views via `@EnvironmentObject`.
 
+The Nome presentation overlay keeps its brand accents local to the corresponding SwiftUI modules. Its deep-navy foreground ink is trait-adaptive: light appearance keeps the approved brand navy, while dark appearance resolves to the system label color. Fixed brand navy is reserved for fills with a contrasting white foreground. This overlay rule complements the resolved app theme and does not alter saved global, per-user or per-chat theme data.
+
 ---
 
 ## 2. [ThemeManager](../../Shared/Theme/ThemeManager.swift) (L15)

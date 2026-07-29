@@ -303,6 +303,12 @@ class NotificationService: UNNotificationServiceExtension {
         setServiceBestAttemptNtf(receivedNtf)
         self.contentHandler = contentHandler
         registerGroupDefaults()
+        guard nomeActivationAllowsNetworking() else {
+            logger.debug("NotificationService: blocked by Nome activation")
+            NSEChatState.shared.set(.suspended)
+            contentHandler(receivedNtf)
+            return
+        }
         let appState = appStateGroupDefault.get()
         logger.debug("NotificationService: app is \(appState.rawValue)")
         switch appState {

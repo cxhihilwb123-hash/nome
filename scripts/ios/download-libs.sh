@@ -1,18 +1,18 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
 function readlink() {
   echo "$(cd "$(dirname "$1")"; pwd -P)"
 }
 
-if [ -z "${1}" ]; then
+if [ -z "${1:-}" ]; then
     echo "Job repo is unset. Provide it via first argument like: $(readlink "$0")/download_libs.sh https://something.com/job/something/{master,stable}"
     exit 1
 fi
 
 job_repo=$1
-default_arch=$2
+default_arch="${2:-}"
 
 arches=("aarch64" "x86_64")
 output_arches=("aarch64" "x86_64")
@@ -38,4 +38,12 @@ for ((i = 0 ; i < ${#arches[@]}; i++)); do
     curl --tlsv1.2 --location -o "$output_dir"/pkg-ios-"$arch"-swift-json.zip "$job_repo"/"$arch"-darwin."$arch"-darwin-ios:lib:simplex-chat/latest/download/1 && \
     unzip -o "$output_dir"/pkg-ios-"$output_arch"-swift-json.zip -d ~/Downloads/pkg-ios-"$output_arch"-swift-json
 done
+
+if [ -z "${default_arch}" ]; then
+    IOS_LIB_DIR="$HOME/Downloads/pkg-ios-aarch64-swift-json" \
+    SIM_LIB_DIR="$HOME/Downloads/pkg-ios-x86_64-swift-json" \
+    DOWNLOADS_DIR="$HOME/Downloads" \
+    "$root_dir"/scripts/ios/check-real-core.sh
+fi
+
 sh "$root_dir"/scripts/ios/prepare-x86_64.sh

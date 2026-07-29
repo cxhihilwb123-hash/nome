@@ -91,20 +91,13 @@ class CallManager {
         let m = ChatModel.shared
         if case .ended = call.callState {
             logger.debug("CallManager.endCall: call ended")
-            m.activeCall = nil
-            m.activeCallViewIsCollapsed = false
-            m.showCallView = false
+            dismissCall(call, in: m)
             completed()
         } else {
             logger.debug("CallManager.endCall: ending call...")
+            dismissCall(call, in: m)
+            completed()
             Task {
-                await m.callCommand.processCommand(.end)
-                await MainActor.run {
-                    m.activeCall = nil
-                    m.activeCallViewIsCollapsed = false
-                    m.showCallView = false
-                    completed()
-                }
                 do {
                     try await apiEndCall(call.contact)
                 } catch {
@@ -114,13 +107,26 @@ class CallManager {
         }
     }
 
+    private func dismissCall(_ call: Call, in model: ChatModel) {
+        call.callState = .ended
+        if model.activeCall == call {
+            model.activeCall = nil
+            model.activeCallViewIsCollapsed = false
+            model.showCallView = false
+        }
+    }
+
     func endCall(invitation: RcvCallInvitation, completed: @escaping () -> Void) {
         ChatModel.shared.callInvitations.removeValue(forKey: invitation.contact.id)
         Task {
             do {
-                try await apiRejectCall(invitation.contact)
+                // Older bundled cores only update the receiver's local call item
+                // when rejecting, leaving the caller waiting indefinitely. Ending
+                // the pending call uses the same remote XCallEnd signal as a normal
+                // hang-up and works with both old and fixed cores.
+                try await apiEndCall(invitation.contact)
             } catch {
-                logger.error("CallController.provider apiRejectCall error: \(responseError(error))")
+                logger.error("CallController.provider apiEndCall invitation error: \(responseError(error))")
             }
             completed()
         }

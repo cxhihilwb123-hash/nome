@@ -12,11 +12,21 @@ import SimpleXChat
 
 let logger = Logger()
 
+#if DEBUG
+private enum NomePrimaryFlowPreview {
+    case addFriend
+    case joinGroup
+    case publicContact
+    case settings
+}
+#endif
+
 @main
 // Spec: spec/architecture.md#SimpleXApp
 struct SimpleXApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var chatModel = ChatModel.shared
+    @StateObject private var activationStore = NomeActivationStore.shared
     @ObservedObject var alertManager = AlertManager.shared
 
     @Environment(\.scenePhase) var scenePhase
@@ -39,11 +49,14 @@ struct SimpleXApp: App {
         WindowGroup {
             // contentAccessAuthenticationExtended has to be passed to ContentView on view initialization,
             // so that it's computed by the time view renders, and not on event after rendering
-            ContentView(contentAccessAuthenticationExtended: !authenticationExpired())
-                .environmentObject(chatModel)
-                .environmentObject(AppTheme.shared)
+            rootView
                 .onOpenURL { url in
                     logger.debug("ContentView.onOpenURL: \(url)")
+                    guard NomeActivationGate.allowsNetworking else {
+                        // Keep blocked URLs out of ChatModel's foreground auto-consume path.
+                        activationStore.presentDeepLink(url)
+                        return
+                    }
                     if AppChatState.shared.value == .active {
                         chatModel.appOpenUrl = url
                     } else {
@@ -51,12 +64,14 @@ struct SimpleXApp: App {
                     }
                 }
                 .onAppear() {
+                    if isNomeDebugPreview { return }
+                    Task { await activationStore.refreshIfNeeded(force: true) }
                     // Present screen for continue migration if it wasn't finished yet
                     if chatModel.migrationState != nil {
                         // It's important, otherwise, user may be locked in undefined state
                         onboardingStageDefault.set(.step1_SimpleXInfo)
                         chatModel.onboardingStage = onboardingStageDefault.get()
-                    } else if kcAppPassword.get() == nil || kcSelfDestructPassword.get() == nil {
+                    } else if !UserDefaults.standard.bool(forKey: DEFAULT_PERFORM_LA) || kcAppPassword.get() == nil || kcSelfDestructPassword.get() == nil {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                             initChatAndMigrate()
                         }
@@ -64,6 +79,7 @@ struct SimpleXApp: App {
                 }
 // Spec: spec/architecture.md#scenePhaseHandling
                 .onChange(of: scenePhase) { phase in
+                    if isNomeDebugPreview { return }
                     logger.debug("scenePhase was \(String(describing: scenePhase)), now \(String(describing: phase))")
                     AppSheetState.shared.scenePhaseActive = phase == .active
                     switch (phase) {
@@ -80,14 +96,17 @@ struct SimpleXApp: App {
                             CallController.shared.shouldSuspendChat = true
                         } else {
                             suspendChat()
-                            BGManager.shared.schedule()
+                            if NomeActivationGate.allowsNetworking {
+                                BGManager.shared.schedule()
+                            }
                         }
                         NtfManager.shared.setNtfBadgeCount(chatModel.totalUnreadCountForAllUsers())
                     case .active:
                         CallController.shared.shouldSuspendChat = false
+                        Task { await activationStore.refreshIfNeeded() }
                         let appState = AppChatState.shared.value
 
-                        if appState != .stopped {
+                        if appState != .stopped && NomeActivationGate.allowsNetworking {
                             startChatAndActivate {
                                 if chatModel.chatRunning == true {
                                     if let ntfResponse = chatModel.notificationResponse {
@@ -119,6 +138,156 @@ struct SimpleXApp: App {
                     }
                 }
         }
+    }
+
+    @ViewBuilder private var rootView: some View {
+        #if DEBUG
+        if isNomeActivationPreview {
+            NomeActivationPreviewHost()
+                .environmentObject(activationStore)
+        } else if isNomeConversationPreview {
+            NomeConversationPreviewHost()
+                .environmentObject(chatModel)
+                .environmentObject(AppTheme.shared)
+                .environmentObject(activationStore)
+                .sheet(item: $activationStore.presentation) { presentation in
+                    NomeActivationSheetView(action: presentation.action)
+                        .environmentObject(activationStore)
+                }
+                .overlay(alignment: .topLeading) {
+                    Text(activationStore.effectiveAccess.rawValue)
+                        .font(.system(size: 1))
+                        .opacity(0.001)
+                        .accessibilityIdentifier("nome.activation.previewAccess")
+                }
+                .task {
+                    await activationStore.refreshIfNeeded(force: true)
+                }
+        } else if isNomeContactsPreview {
+            NomeChatListPreviewHost(showContacts: true)
+                .environmentObject(chatModel)
+                .environmentObject(AppTheme.shared)
+        } else if isNomeChatListPreview {
+            NomeChatListPreviewHost()
+                .environmentObject(chatModel)
+                .environmentObject(AppTheme.shared)
+        } else if isNomeIdentityCenterPreview {
+            NomeIdentityCenterPreviewHost()
+                .environmentObject(chatModel)
+                .environmentObject(AppTheme.shared)
+        } else if let nomePrimaryFlowPreview {
+            NomePrimaryFlowPreviewHost(flow: nomePrimaryFlowPreview)
+                .environmentObject(chatModel)
+                .environmentObject(AppTheme.shared)
+        } else if let nomeOnboardingPreviewStage {
+            OnboardingView(onboarding: nomeOnboardingPreviewStage)
+                .environmentObject(chatModel)
+                .environmentObject(AppTheme.shared)
+        } else {
+            contentRootView
+        }
+        #else
+        contentRootView
+        #endif
+    }
+
+    private var contentRootView: some View {
+        ContentView(contentAccessAuthenticationExtended: !authenticationExpired())
+            .environmentObject(chatModel)
+            .environmentObject(AppTheme.shared)
+            .environmentObject(activationStore)
+    }
+
+    private var isNomeDebugPreview: Bool {
+        #if DEBUG
+        isNomeActivationPreview ||
+        isNomeConversationPreview ||
+        isNomeChatListPreview ||
+        isNomeContactsPreview ||
+        isNomeIdentityCenterPreview ||
+        nomePrimaryFlowPreview != nil ||
+        nomeOnboardingPreviewStage != nil
+        #else
+        false
+        #endif
+    }
+
+    private var isNomeActivationPreview: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-NomeActivationPreview")
+        #else
+        false
+        #endif
+    }
+
+    private var isNomeConversationPreview: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-NomeConversationPreview")
+        #else
+        false
+        #endif
+    }
+
+    private var isNomeChatListPreview: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-NomeChatListPreview")
+        #else
+        false
+        #endif
+    }
+
+    private var isNomeContactsPreview: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-NomeContactsPreview")
+        #else
+        false
+        #endif
+    }
+
+    private var isNomeIdentityCenterPreview: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-NomeIdentityCenterPreview")
+        #else
+        false
+        #endif
+    }
+
+    private var nomePrimaryFlowPreview: NomePrimaryFlowPreview? {
+        #if DEBUG
+        let args = ProcessInfo.processInfo.arguments
+        if args.contains("-NomeAddFriendPreview") {
+            return .addFriend
+        } else if args.contains("-NomeJoinGroupPreview") {
+            return .joinGroup
+        } else if args.contains("-NomePublicContactPreview") {
+            return .publicContact
+        } else if args.contains("-NomeSettingsPreview") {
+            return .settings
+        } else {
+            return nil
+        }
+        #else
+        return nil
+        #endif
+    }
+
+    private var nomeOnboardingPreviewStage: OnboardingStage? {
+        #if DEBUG
+        let args = ProcessInfo.processInfo.arguments
+        if args.contains("-NomeOnboardingWelcomePreview") {
+            return .step1_SimpleXInfo
+        } else if args.contains("-NomeOnboardingProfilePreview") {
+            return .step2_CreateProfile
+        } else if args.contains("-NomeOnboardingNetworkPreview") {
+            return .step3_ChooseServerOperators
+        } else if args.contains("-NomeOnboardingConditionsPreview") {
+            return .step4_NetworkCommitments
+        } else {
+            return nil
+        }
+        #else
+        return nil
+        #endif
     }
 
     private func setDbContainer() {
@@ -182,3 +351,81 @@ struct SimpleXApp: App {
         }
     }
 }
+
+#if DEBUG
+private struct NomeActivationPreviewHost: View {
+    var body: some View {
+        NomeActivationSheetView(action: .message)
+    }
+}
+#endif
+
+#if DEBUG
+private struct NomePrimaryFlowPreviewHost: View {
+    let flow: NomePrimaryFlowPreview
+
+    init(flow: NomePrimaryFlowPreview) {
+        self.flow = flow
+        Self.configurePreviewModel(for: flow)
+    }
+
+    var body: some View {
+        NavigationView {
+            previewView
+        }
+        .navigationViewStyle(.stack)
+        .onAppear {
+            Self.configurePreviewModel(for: flow)
+        }
+    }
+
+    @ViewBuilder private var previewView: some View {
+        switch flow {
+        case .addFriend:
+            NewChatView(selection: .invite)
+                .navigationTitle("添加朋友")
+                .navigationBarTitleDisplayMode(.inline)
+                .modifier(ThemedBackground(grouped: true))
+        case .joinGroup:
+            NewChatView(selection: .connect, showQRCodeScanner: false, connectMode: .group)
+                .navigationTitle("加入群组")
+                .navigationBarTitleDisplayMode(.inline)
+                .modifier(ThemedBackground(grouped: true))
+        case .publicContact:
+            UserAddressView(shareViaProfile: true)
+                .navigationTitle("公开联系方式")
+                .navigationBarTitleDisplayMode(.large)
+                .modifier(ThemedBackground(grouped: true))
+        case .settings:
+            SettingsView(embeddedInNomeTab: true)
+                .navigationTitle("设置")
+                .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+
+    private static func configurePreviewModel(for flow: NomePrimaryFlowPreview) {
+        let chatModel = ChatModel.shared
+        var user = User.sampleData
+        user.agentUserId = "preview-agent"
+        user.profile.displayName = "alice"
+        user.profile.fullName = "Alice"
+
+        chatModel.currentUser = user
+        chatModel.chatRunning = true
+        chatModel.chatInitialized = true
+        chatModel.onboardingStage = nil
+        chatModel.users = [UserInfo.sampleData]
+        chatModel.updateChats([])
+        chatModel.userAddress = flow == .publicContact ? samplePublicContactAddress : nil
+    }
+
+    private static var samplePublicContactAddress: UserContactLink {
+        UserContactLink(
+            CreatedConnLink(
+                connFullLink: "simplex:/contact#preview",
+                connShortLink: "https://nome.local/preview"
+            )
+        )
+    }
+}
+#endif

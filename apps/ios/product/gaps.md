@@ -62,3 +62,48 @@ The Haskell Store modules (`Store/Direct.hs`, `Store/Groups.hs`, `Store/Messages
 
 ---
 
+## Nome Product Overlay
+
+### GAP: Preview UI is not real-core communication evidence
+**Source:** [spec/client/nome-brand-overlay.md](../spec/client/nome-brand-overlay.md)
+Nome preview hosts can render deterministic invitation, group, conversation and identity states without proving a production Haskell core, signed-device execution or message delivery.
+
+**REC:** Keep preview, simulator, generic-device, physical-device, real-communication and distribution evidence in separate gates and never promote an earlier gate to a later claim.
+
+### GAP (resolved 2026-07-21): Offline iOS device was reported as connected
+**Source:** [spec/architecture.md](../spec/architecture.md#9-device-readiness-evidence)
+The physical-device readiness parser originally kept reading through the
+`Devices Offline` section emitted by current Xcode, allowing an offline iPhone
+to appear as connected evidence.
+
+**Resolution:** Connected-device parsing now stops at every subsequent
+`xctrace` section header and fixture tests cover connected, offline-only, mixed,
+and future-section output.
+
+### GAP: Nome release identity is not established
+**Source:** [product/views/nome-experience.md](views/nome-experience.md)
+The migrated source retains compatibility Bundle IDs, App Group and keychain identifiers. Nome-owned signing, domains, support/legal pages and store identity remain unresolved.
+
+**REC:** Treat release identity as a separate migration with data-access, extension, associated-domain and rollback testing.
+
+### GAP (resolved 2026-07-21): Fixed brand navy reduced dark-appearance readability
+**Source:** [spec/client/nome-brand-overlay.md](../spec/client/nome-brand-overlay.md)
+The migrated Nome overlay originally reused fixed deep navy for both brand fills and text. A complete dark-appearance smoke exposed low-contrast titles, labels and icons on black or dark-gray surfaces.
+
+**Resolution:** Nome palettes now resolve foreground navy to the system label color in dark appearance while retaining fixed deep navy only for brand fills with a contrasting white foreground. Light and dark 14-state smoke remain separate evidence gates.
+
+### GAP (resolved 2026-07-21): Accessibility-size trust UI truncated and overpainted messages
+**Source:** [spec/client/nome-brand-overlay.md](../spec/client/nome-brand-overlay.md)
+The onboarding trust pills used a fixed one-line row, the conversation safety
+card could be vertically compressed while its children rendered outside the
+assigned slot, and the custom message viewport could draw over neighboring
+views. The disappearing-message prompt also used a fixed single-line height and
+an unlabeled 28-point close button.
+
+**Resolution:** Accessibility-size onboarding pills now stack with intrinsic
+height; the safety card stacks its chips, preserves its intrinsic height and
+clips the message viewport to its own layout slot; the prompt wraps and exposes
+a labeled 44-point dismiss target. Accepted evidence covers light/dark
+`accessibility-large` matrices and light/dark maximum-size conversation stress.
+
+---

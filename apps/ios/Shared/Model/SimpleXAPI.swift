@@ -97,6 +97,11 @@ func chatSendCmdSync<R: ChatAPIResult>(_ cmd: ChatCommand, bgTask: Bool = true, 
 
 // Spec: spec/api.md#chatApiSendCmdSync
 func chatApiSendCmdSync<R: ChatAPIResult>(_ cmd: ChatCommand, bgTask: Bool = true, bgDelay: Double? = nil, ctrl: chat_ctrl? = nil, retryNum: Int32 = 0, log: Bool = true) -> APIResult<R> {
+    if !NomeActivationGate.allowsNetworking && !cmd.nomeAllowedWithoutActivation {
+        _ = NomeActivationGate.require(.command)
+        logger.notice("Nome activation blocked protected command type: \(cmd.cmdType)")
+        return NomeActivationGate.prohibitedResult()
+    }
     if log {
         logger.debug("chatSendCmd \(cmd.cmdType)")
     }
@@ -802,6 +807,268 @@ func getUserServers() async throws -> [UserOperatorServers] {
     throw r.unexpected
 }
 
+enum NomeServerConfiguration {
+    static let smpServer = configuredAddress(key: "NomeSMPServer", requiredScheme: "smp://")
+    static let xftpServer = configuredAddress(key: "NomeXFTPServer", requiredScheme: "xftp://")
+    static let chatRelay = configuredAddress(key: "NomeChatRelay", requiredScheme: "https://")
+    static let webRTCIceServers = configuredList(key: "NomeWebRTCIceServers")
+
+    static var isConfigured: Bool {
+        smpServer != nil && xftpServer != nil
+    }
+
+    private static func configuredAddress(key: String, requiredScheme: String) -> String? {
+        guard let value = Bundle.main.object(forInfoDictionaryKey: key) as? String else {
+            return nil
+        }
+        let address = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard address.hasPrefix(requiredScheme), !address.contains("$(") else {
+            return nil
+        }
+        return address
+    }
+
+    private static func configuredList(key: String) -> [String]? {
+        guard let value = Bundle.main.object(forInfoDictionaryKey: key) as? String else {
+            return nil
+        }
+        let entries = value
+            .split(whereSeparator: { $0 == "," || $0.isNewline })
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty && !$0.contains("$(") }
+        return entries.isEmpty ? nil : entries
+    }
+}
+
+private let nomeDefaultChatRelaySeededUsersKey = "nomeDefaultChatRelaySeededAgentUserIds"
+
+private func nomeDefaultChatRelayWasSeeded(for user: User) -> Bool {
+    (UserDefaults.standard.stringArray(forKey: nomeDefaultChatRelaySeededUsersKey) ?? [])
+        .contains(user.agentUserId)
+}
+
+private func markNomeDefaultChatRelaySeeded(for user: User) {
+    var agentUserIds = UserDefaults.standard.stringArray(forKey: nomeDefaultChatRelaySeededUsersKey) ?? []
+    guard !agentUserIds.contains(user.agentUserId) else { return }
+    agentUserIds.append(user.agentUserId)
+    UserDefaults.standard.set(agentUserIds, forKey: nomeDefaultChatRelaySeededUsersKey)
+}
+
+private let nomeUpstreamPresetContactNames: Set<String> = [
+    "Ask SimpleX Team",
+    "SimpleX Status"
+]
+
+func isNomeUpstreamPresetContactCard(_ contact: Contact) -> Bool {
+    contact.isContactCard && nomeUpstreamPresetContactNames.contains(contact.profile.displayName)
+}
+
+func applyNomeStartupConfiguration() async {
+    await removeNomeUpstreamPresetContactCards()
+    await applyNomeOfficialServersIfConfigured()
+}
+
+private func removeNomeUpstreamPresetContactCards() async {
+    let presetContacts: [(chatId: String, contactId: Int64)] = await MainActor.run {
+        ChatModel.shared.chats.compactMap { chat in
+            guard
+                case let .direct(contact) = chat.chatInfo,
+                isNomeUpstreamPresetContactCard(contact)
+            else {
+                return nil
+            }
+            return (chat.id, contact.contactId)
+        }
+    }
+
+    for presetContact in presetContacts {
+        do {
+            _ = try await apiDeleteContact(
+                id: presetContact.contactId,
+                chatDeleteMode: .full(notify: false)
+            )
+            await MainActor.run {
+                ChatModel.shared.removeChat(presetContact.chatId)
+            }
+        } catch {
+            logger.error("Nome could not remove an upstream preset contact card")
+        }
+    }
+}
+
+@discardableResult
+func applyNomeOfficialServersIfConfigured() async -> Bool {
+    guard
+        let smpServer = NomeServerConfiguration.smpServer,
+        let xftpServer = NomeServerConfiguration.xftpServer,
+        let currentUser = ChatModel.shared.currentUser
+    else {
+        return false
+    }
+
+    do {
+        var userServers = try await getUserServers()
+        var changed = false
+        let shouldSeedChatRelay = NomeServerConfiguration.chatRelay != nil && !nomeDefaultChatRelayWasSeeded(for: currentUser)
+
+        for operatorIndex in userServers.indices where userServers[operatorIndex].operator != nil {
+            if userServers[operatorIndex].operator?.enabled == true {
+                userServers[operatorIndex].operator?.enabled = false
+                changed = true
+            }
+            if userServers[operatorIndex].operator?.smpRoles != ServerRoles(storage: false, proxy: false) {
+                userServers[operatorIndex].operator?.smpRoles = ServerRoles(storage: false, proxy: false)
+                changed = true
+            }
+            if userServers[operatorIndex].operator?.xftpRoles != ServerRoles(storage: false, proxy: false) {
+                userServers[operatorIndex].operator?.xftpRoles = ServerRoles(storage: false, proxy: false)
+                changed = true
+            }
+            for serverIndex in userServers[operatorIndex].smpServers.indices where userServers[operatorIndex].smpServers[serverIndex].enabled {
+                userServers[operatorIndex].smpServers[serverIndex].enabled = false
+                changed = true
+            }
+            for serverIndex in userServers[operatorIndex].xftpServers.indices where userServers[operatorIndex].xftpServers[serverIndex].enabled {
+                userServers[operatorIndex].xftpServers[serverIndex].enabled = false
+                changed = true
+            }
+        }
+
+        let customIndex: Int
+        if let existingIndex = userServers.firstIndex(where: { $0.operator == nil }) {
+            customIndex = existingIndex
+        } else {
+            userServers.append(UserOperatorServers(operator: nil, smpServers: [], xftpServers: [], chatRelays: []))
+            customIndex = userServers.index(before: userServers.endIndex)
+            changed = true
+        }
+
+        changed = enableNomeServer(smpServer, in: &userServers[customIndex].smpServers) || changed
+        changed = enableNomeServer(xftpServer, in: &userServers[customIndex].xftpServers) || changed
+        if let chatRelay = NomeServerConfiguration.chatRelay, shouldSeedChatRelay {
+            changed = seedNomeChatRelay(chatRelay, in: &userServers[customIndex].chatRelays) || changed
+        }
+
+        guard changed else {
+            if shouldSeedChatRelay {
+                markNomeDefaultChatRelaySeeded(for: currentUser)
+            }
+            return true
+        }
+
+        let (serverErrors, _) = try await validateServers(userServers: userServers)
+        guard serverErrors.isEmpty else {
+            logger.error("Nome official server configuration did not pass validation")
+            return false
+        }
+
+        try await setUserServers(userServers: userServers)
+        if shouldSeedChatRelay {
+            markNomeDefaultChatRelaySeeded(for: currentUser)
+        }
+        logger.info("Nome official message, file and channel relay configuration is active; preset operators are disabled")
+        return true
+    } catch {
+        logger.error("Nome official server configuration could not be applied")
+        return false
+    }
+}
+
+private func seedNomeChatRelay(_ address: String, in relays: inout [UserChatRelay]) -> Bool {
+    let normalizedAddress = address.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !relays.contains(where: { isNomeChatRelay($0, address: normalizedAddress) }) else { return false }
+
+    relays.append(
+        UserChatRelay(
+            address: normalizedAddress,
+            name: "Nome Relay",
+            domains: ["nome.im"],
+            preset: false,
+            enabled: true,
+            deleted: false
+        )
+    )
+    return true
+}
+
+private func isNomeChatRelay(_ relay: UserChatRelay, address: String) -> Bool {
+    relay.address.trimmingCharacters(in: .whitespacesAndNewlines) == address ||
+    (relay.displayName == "Nome Relay" && relay.domains.contains("nome.im"))
+}
+
+private func enableNomeServer(_ address: String, in servers: inout [UserServer]) -> Bool {
+    let endpoint = nomeServerEndpoint(address)
+    let matchingIndices = servers.indices.filter {
+        nomeServerEndpoint(servers[$0].server) == endpoint
+    }
+    if let index = matchingIndices.first(where: {
+        servers[$0].server.trimmingCharacters(in: .whitespacesAndNewlines) == address
+    }) ?? matchingIndices.first {
+        var changed = false
+        if servers[index].server != address {
+            servers[index].server = address
+            servers[index].preset = false
+            servers[index].tested = nil
+            changed = true
+        }
+        if !servers[index].enabled {
+            servers[index].enabled = true
+            changed = true
+        }
+        if servers[index].deleted {
+            servers[index].deleted = false
+            changed = true
+        }
+        for duplicateIndex in matchingIndices where duplicateIndex != index {
+            if servers[duplicateIndex].enabled {
+                servers[duplicateIndex].enabled = false
+                changed = true
+            }
+            if !servers[duplicateIndex].deleted {
+                servers[duplicateIndex].deleted = true
+                changed = true
+            }
+        }
+        return changed
+    }
+
+    servers.append(
+        UserServer(
+            serverId: nil,
+            server: address,
+            preset: false,
+            tested: nil,
+            enabled: true,
+            deleted: false
+        )
+    )
+    return true
+}
+
+private func nomeServerEndpoint(_ address: String) -> String {
+    let trimmed = address.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard let schemeRange = trimmed.range(of: "://") else {
+        return trimmed
+    }
+    let scheme = trimmed[..<schemeRange.lowerBound].lowercased()
+    let authority = trimmed[schemeRange.upperBound...]
+    let endpointWithOptions = authority.lastIndex(of: "@")
+        .map { authority[authority.index(after: $0)...] }
+        ?? authority[authority.startIndex...]
+    let endpoint = endpointWithOptions.prefix { $0 != "?" && $0 != "#" }
+    let host: Substring
+    if endpoint.first == "[", let closingBracket = endpoint.firstIndex(of: "]") {
+        host = endpoint[...closingBracket]
+    } else if let portSeparator = endpoint.lastIndex(of: ":"),
+              !endpoint[endpoint.index(after: portSeparator)...].isEmpty,
+              endpoint[endpoint.index(after: portSeparator)...].allSatisfy(\.isNumber) {
+        host = endpoint[..<portSeparator]
+    } else {
+        host = endpoint
+    }
+    return "\(scheme)://\(host.lowercased())"
+}
+
 func setUserServers(userServers: [UserOperatorServers]) async throws {
     let userId = try currentUserId("setUserServers")
     let r: ChatResponse2 = try await chatSendCmd(.apiSetUserServers(userId: userId, userServers: userServers))
@@ -1006,7 +1273,10 @@ func apiVerifyGroupMember(_ groupId: Int64, _ groupMemberId: Int64, connectionCo
 func apiAddContact(incognito: Bool) async -> ((CreatedConnLink, PendingContactConnection)?, Alert?) {
     guard let userId = ChatModel.shared.currentUser?.userId else {
         logger.error("apiAddContact: no current user")
-        return (nil, nil)
+        return (nil, mkAlert(
+            title: "Profile not ready",
+            message: "Create or unlock your local profile before adding friends."
+        ))
     }
     let r: APIResult<ChatResponse1>? = await chatApiSendCmdWithRetry(.apiAddContact(userId: userId, incognito: incognito), bgTask: false)
     if case let .result(.invitation(_, connLinkInv, connection)) = r { return ((connLinkInv, connection), nil) }
@@ -2105,6 +2375,17 @@ private func currentUserId(_ funcName: String) throws -> Int64 {
     throw RuntimeError("\(funcName): no current user")
 }
 
+func realChatCoreReadinessError() -> String? {
+    let m = ChatModel.shared
+    if m.currentUser?.agentUserId == "preview-agent" {
+        return "当前模拟器连接的是预览 core，只能预览 Nome 界面，不能生成真实邀请链接或加入群组。安装真实 iOS core 库后再测试。"
+    }
+    if m.currentUser != nil && !hasDatabase() {
+        return "本地聊天数据库还没有准备好。请重新打开 Nome，或安装真实 iOS core 库后再测试。"
+    }
+    return nil
+}
+
 func initializeChat(start: Bool, confirmStart: Bool = false, dbKey: String? = nil, refreshInvitations: Bool = true, confirmMigrations: MigrationConfirmation? = nil) throws {
     logger.debug("initializeChat")
     let m = ChatModel.shared
@@ -2121,6 +2402,11 @@ func initializeChat(start: Bool, confirmStart: Bool = false, dbKey: String? = ni
     try apiSetEncryptLocalFiles(privacyEncryptLocalFilesGroupDefault.get())
     m.chatInitialized = true
     m.currentUser = try apiGetActiveUser()
+    let hasUsableLocalProfile = m.currentUser != nil
+    NomeActivationGate.bootstrapInstallation(hasUsableLocalProfile: hasUsableLocalProfile)
+    Task { @MainActor in
+        NomeActivationStore.shared.bootstrapInstallation(hasUsableLocalProfile: hasUsableLocalProfile)
+    }
     m.conditions = try getServerOperatorsSync()
     if shouldImportAppSettingsDefault.get() {
         do {
@@ -2140,12 +2426,18 @@ func initializeChat(start: Bool, confirmStart: Bool = false, dbKey: String? = ni
             do {
                 if start { AppChatState.shared.set(.active) }
                 try chatInitialized(start: start, refreshInvitations: refreshInvitations)
+                if NomeActivationGate.allowsNetworking {
+                    Task { await applyNomeStartupConfiguration() }
+                }
             } catch let error {
                 logger.error("ChatInitialized error: \(error)")
             }
         }
     } else {
         try chatInitialized(start: start, refreshInvitations: refreshInvitations)
+        if NomeActivationGate.allowsNetworking {
+            Task { await applyNomeStartupConfiguration() }
+        }
     }
 }
 
@@ -2259,7 +2551,12 @@ func changeActiveUserAsync_(_ userId: Int64?, viewPwd: String?, keepingChatId: S
 
 func getUserChatData() throws {
     let m = ChatModel.shared
-    m.userAddress = try apiGetUserAddress()
+    if NomeActivationGate.allowsNetworking {
+        m.userAddress = try apiGetUserAddress()
+    } else {
+        // A usable address is a connection capability, not required for local history browsing.
+        m.userAddress = nil
+    }
     m.chatItemTTL = try getChatItemTTL()
     let chats = try apiGetChats()
     let tags = try apiGetChatTags()
@@ -2274,7 +2571,11 @@ private func getUserChatDataAsync(keepingChatId: String?) async throws {
     let m = ChatModel.shared
     let tm = ChatTagsModel.shared
     if m.currentUser != nil {
-        let userAddress = try await apiGetUserAddressAsync()
+        let userAddress: UserContactLink? = if NomeActivationGate.allowsNetworking {
+            try await apiGetUserAddressAsync()
+        } else {
+            nil
+        }
         let chatItemTTL = try await getChatItemTTLAsync()
         let chats = try await apiGetChatsAsync()
         let tags = try await apiGetChatTagsAsync()
@@ -2767,11 +3068,20 @@ func processReceivedMsg(_ res: ChatEvent) async {
         }
     case let .callEnded(_, contact):
         if let invitation = await MainActor.run(body: { m.callInvitations.removeValue(forKey: contact.id) }) {
-            CallController.shared.reportCallRemoteEnded(invitation: invitation)
+            await MainActor.run {
+                CallController.shared.reportCallRemoteEnded(invitation: invitation)
+            }
         }
         await withCall(contact) { call in
-            await m.callCommand.processCommand(.end)
-            CallController.shared.reportCallRemoteEnded(call: call)
+            await MainActor.run {
+                call.callState = .ended
+                if m.activeCall == call {
+                    m.activeCall = nil
+                    m.activeCallViewIsCollapsed = false
+                    m.showCallView = false
+                }
+                CallController.shared.reportCallRemoteEnded(call: call)
+            }
         }
     case .chatSuspended:
         chatSuspended()

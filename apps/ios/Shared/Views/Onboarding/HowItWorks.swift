@@ -17,14 +17,14 @@ struct OldHowItWorks: View {
 
     var body: some View {
         VStack(alignment: .leading) {
-            Text("How SimpleX works")
+            Text("How Nome protects your privacy")
                 .font(.largeTitle)
                 .bold()
                 .padding(.vertical)
             ScrollView {
                 VStack(alignment: .leading) {
                     Group {
-                        Text("To protect your privacy, SimpleX uses separate IDs for each of your contacts.")
+                        Text("To protect your privacy, Nome uses a separate connection ID for each contact.")
                         Text("Only client devices store user profiles, contacts, groups, and messages.")
                         Text("All messages and files are sent **end-to-end encrypted**, with post-quantum security in direct messages.")
                         if !onboarding {
@@ -68,21 +68,44 @@ struct WhySimpleX: View {
     @Binding var createProfileNavLinkActive: Bool
 
     var body: some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 16) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text("You were born without an account")
-                        .font(.title)
-                        .bold()
-                        .padding(.top)
-                    Text("Nobody tracked your conversations. No one drew a map of where you'd been. Privacy was never a feature - it was the way of life.")
-                    Text("Then we moved online, and every platform asked for a piece of you - your name, your number, your friends. We accepted that the price of talking to others is letting someone know who we talk to. Every generation, people and tech, had it this way - telephone, email, messengers, social media. It seemed the only way possible.")
-                    Text("There is another way. A network with no phone numbers. No usernames. No accounts. No user identities of any kind. A network that connects people and carries encrypted messages without knowing who is connected.")
-                    Text("Not a better lock on someone else's door. Not a nicer landlord that respects your privacy, but still keeps the record of all visitors. You are not a guest. You are home. No king can enter it - you are sovereign.")
-                    Text("Your conversations belong to you, as it had always been before the Internet. The network is not a place you visit. It is a place you create and own. And nobody can take it from you, whether you make it private or public.")
-                    Text("The oldest human freedom - to speak to another person without being watched - built on infrastructure that cannot betray it.")
-                    Text("Because we destroyed the power to know who you are. So that your power can never be taken.")
-                    Text("Be free in your network.")
+                    NomeOnboardingLogoHeader()
+                        .padding(.top, 4)
+
+                    NomeOnboardingHeroCard(
+                        symbol: "checkmark.shield.fill",
+                        title: "保护的是关系，而不只是消息",
+                        subtitle: "普通聊天软件通常先给你一个账号，再把联系人关系放进服务器。Nome 的目标是让连接本身也更少暴露。",
+                        tint: NomeOnboardingPalette.green,
+                        pills: [
+                            ("person.crop.circle.badge.xmark", "无公开账号"),
+                            ("lock", "端到端加密"),
+                            ("server.rack", "服务器少知道")
+                        ]
+                    )
+
+                    VStack(spacing: 10) {
+                        NomeOnboardingFeatureRow(
+                            icon: "link.badge.plus",
+                            title: "每个朋友用不同连接",
+                            text: "建立联系靠邀请链接或二维码，不靠一个永久公开 ID。",
+                            tint: NomeOnboardingPalette.green
+                        )
+                        NomeOnboardingFeatureRow(
+                            icon: "externaldrive",
+                            title: "你的资料在本机",
+                            text: "身份、联系人和消息不作为普通云账号同步，备份与迁移需要你主动操作。",
+                            tint: NomeOnboardingPalette.blue
+                        )
+                        NomeOnboardingFeatureRow(
+                            icon: "network.badge.shield.half.filled",
+                            title: "网络隐私单独设置",
+                            text: "匿名资料和 Tor 不是一回事。身份显示、服务器和网络路径会分开解释。",
+                            tint: NomeOnboardingPalette.purple
+                        )
+                    }
                 }
             }
             .padding(.bottom, 16)
@@ -103,7 +126,7 @@ struct WhySimpleX: View {
             dismiss()
             createProfileNavLinkActive = true
         } label: {
-            Text("Get started")
+            Text("开始使用 Nome")
         }
         .buttonStyle(OnboardingButtonStyle(isDisabled: false))
     }

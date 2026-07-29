@@ -23,6 +23,7 @@ private enum NoticesSheet: Identifiable {
 // Spec: spec/client/navigation.md#ContentView
 struct ContentView: View {
     @EnvironmentObject var chatModel: ChatModel
+    @EnvironmentObject var activationStore: NomeActivationStore
     @ObservedObject var alertManager = AlertManager.shared
     @ObservedObject var callController = CallController.shared
     // Spec: spec/client/navigation.md#AppSheetState
@@ -46,6 +47,7 @@ struct ContentView: View {
     @AppStorage(DEFAULT_NOTIFICATION_ALERT_SHOWN) private var notificationAlertShown = false
     @State private var noticesShown = false
     @State private var noticesSheetItem: NoticesSheet? = nil
+    @State private var ntfAuthorizationRequested = false
     @State private var showChooseLAMode = false
     @State private var showSetPasscode = false
     @State private var waitingForOrPassedAuth = true
@@ -114,7 +116,11 @@ struct ContentView: View {
             }
         }
         .alert(isPresented: $alertManager.presentAlert) { alertManager.alertView! }
-        .confirmationDialog("SimpleX Lock mode", isPresented: $showChooseLAMode, titleVisibility: .visible) {
+        .sheet(item: $activationStore.presentation) { presentation in
+            NomeActivationSheetView(action: presentation.action)
+                .environmentObject(activationStore)
+        }
+        .confirmationDialog("Nome Lock mode", isPresented: $showChooseLAMode, titleVisibility: .visible) {
             Button("System authentication") { initialEnableLA() }
             Button("Passcode entry") { showSetPasscode = true }
         }
@@ -171,12 +177,22 @@ struct ContentView: View {
             DatabaseErrorView(status: status)
         } else if !chatModel.v3DBMigration.startChat {
             MigrateToAppGroupView()
+        } else if chatModel.chatDbStatus == .ok,
+                  chatModel.currentUser == nil {
+            OnboardingView(onboarding: .step1_SimpleXInfo)
+                .onAppear { activationStore.bootstrapInstallation(hasUsableLocalProfile: false) }
         } else if let step = chatModel.onboardingStage {
             if case .onboardingComplete = step,
                chatModel.currentUser != nil {
                 mainView()
+                    .onAppear { activationStore.bootstrapInstallation(hasUsableLocalProfile: true) }
             } else {
                 OnboardingView(onboarding: step)
+                    .onAppear {
+                        activationStore.bootstrapInstallation(
+                            hasUsableLocalProfile: chatModel.currentUser != nil
+                        )
+                    }
             }
         }
     }
@@ -185,11 +201,13 @@ struct ContentView: View {
     @ViewBuilder private func callView(_ call: Call) -> some View {
         if CallController.useCallKit() {
             ActiveCallView(call: call, canConnectCall: Binding.constant(true))
+                .id(call.callUUID)
                 .onDisappear {
                     if prefPerformLA && !accessAuthenticated { authenticateContentViewAccess() }
                 }
         } else {
             ActiveCallView(call: call, canConnectCall: $canConnectViewCall)
+                .id(call.callUUID)
             if prefPerformLA && !accessAuthenticated {
                 Rectangle()
                     .fill(colorScheme == .dark ? .black : .white)
@@ -257,7 +275,7 @@ struct ContentView: View {
             ChatListView(activeUserPickerSheet: $chatListUserPickerSheet)
                 .redacted(reason: appSheetState.redactionReasons(protectScreen))
             .onAppear {
-                requestNtfAuthorization()
+                requestNtfAuthorizationWhenReady()
                 // Local Authentication notice is to be shown on next start after onboarding is complete
                 if (!prefLANoticeShown && prefShowLANotice && chatModel.chats.count > 2) {
                     prefLANoticeShown = true
@@ -265,7 +283,8 @@ struct ContentView: View {
                 } else if !chatModel.showCallView && CallController.shared.activeCallInvitation == nil {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                         if !noticesShown {
-                            let showWhatsNew = shouldShowWhatsNew()
+                            // Nome should not interrupt first launch with upstream SimpleX release notes.
+                            let showWhatsNew = false
                             let showUpdatedConditions = chatModel.conditions.conditionsAction?.showNotice ?? false
                             noticesShown = showWhatsNew || showUpdatedConditions
                             if showWhatsNew || showUpdatedConditions {
@@ -280,6 +299,11 @@ struct ContentView: View {
             }
             .onChange(of: chatModel.appOpenUrl) { _ in connectViaUrl() }
             .onChange(of: chatModel.reRegisterTknStatus) { _ in showReRegisterTokenAlert() }
+            .onChange(of: chatModel.setDeliveryReceipts) { needsDecision in
+                if !needsDecision {
+                    requestNtfAuthorization()
+                }
+            }
             .sheet(item: $noticesSheetItem) { item in
                 switch item {
                 case let .whatsNew(updatedConditions):
@@ -328,7 +352,21 @@ struct ContentView: View {
 
     private func callToRecentContact(_ contacts: [INPerson]?, _ mediaType: CallMediaType) {
         logger.debug("callToRecentContact")
-        if let contactId = contacts?.first?.personHandle?.value,
+        let contactId = contacts?.first?.personHandle?.value
+        guard NomeActivationGate.allowsNetworking else {
+            if let contactId {
+                Task { @MainActor in
+                    NomeActivationStore.shared.presentCallIntent(
+                        contactId: contactId,
+                        video: mediaType == .video
+                    )
+                }
+            } else {
+                _ = NomeActivationGate.require(.call)
+            }
+            return
+        }
+        if let contactId,
            let chat = chatModel.getChat(contactId),
            case let .direct(contact) = chat.chatInfo {
             let activeCall = chatModel.activeCall
@@ -384,6 +422,9 @@ struct ContentView: View {
     }
 
     func requestNtfAuthorization() {
+        guard NomeActivationGate.allowsNetworking else { return }
+        guard chatModel.notificationMode != .off, !ntfAuthorizationRequested else { return }
+        ntfAuthorizationRequested = true
         NtfManager.shared.requestAuthorization(
             onDeny: {
                 if (!notificationAlertShown) {
@@ -395,10 +436,18 @@ struct ContentView: View {
         )
     }
 
+    func requestNtfAuthorizationWhenReady() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            if !chatModel.setDeliveryReceipts && noticesSheetItem == nil {
+                requestNtfAuthorization()
+            }
+        }
+    }
+
     func laNoticeAlert() -> Alert {
         Alert(
-            title: Text("SimpleX Lock"),
-            message: Text("To protect your information, turn on SimpleX Lock.\nYou will be prompted to complete authentication before this feature is enabled."),
+            title: Text("Nome Lock"),
+            message: Text("To protect your information, turn on Nome Lock.\nYou will be prompted to complete authentication before this feature is enabled."),
             primaryButton: .default(Text("Turn on")) { showChooseLAMode = true },
             secondaryButton: .cancel()
          )
@@ -406,7 +455,7 @@ struct ContentView: View {
 
     private func initialEnableLA () {
         privacyLocalAuthModeDefault.set(.system)
-        authenticate(reason: NSLocalizedString("Enable SimpleX Lock", comment: "authentication reason")) { laResult in
+        authenticate(reason: NSLocalizedString("Enable Nome Lock", comment: "authentication reason")) { laResult in
             switch laResult {
             case .success:
                 chatModel.contentViewAccessAuthenticated = true
@@ -440,10 +489,18 @@ struct ContentView: View {
         let m = ChatModel.shared
         if let url = m.appOpenUrl {
             m.appOpenUrl = nil
+            guard NomeActivationGate.allowsNetworking else {
+                activationStore.presentDeepLink(url)
+                return
+            }
             connectViaUrl_(url)
         } else if let url = m.appOpenUrlLater, AppChatState.shared.value == .active, scenePhase == .active {
             // correcting branch in case .onChange(of: scenePhase) in SimpleXApp doesn't trigger and transfer appOpenUrlLater into appOpenUrl
             m.appOpenUrlLater = nil
+            guard NomeActivationGate.allowsNetworking else {
+                activationStore.presentDeepLink(url)
+                return
+            }
             connectViaUrl_(url)
         }
     }
@@ -473,6 +530,10 @@ struct ContentView: View {
     func showReRegisterTokenAlert() {
         dismissAllSheets() {
             let m = ChatModel.shared
+            guard m.notificationMode != .off else {
+                m.reRegisterTknStatus = nil
+                return
+            }
             if let errorTknStatus = m.reRegisterTknStatus, let token = chatModel.deviceToken {
                 chatModel.reRegisterTknStatus = nil
                 AlertManager.shared.showAlert(Alert(
@@ -509,6 +570,201 @@ func mkAlert(title: LocalizedStringKey, message: LocalizedStringKey? = nil) -> A
         return Alert(title: Text(title), message: Text(message))
     } else {
         return Alert(title: Text(title))
+    }
+}
+
+private enum NomeActivationPendingConfirmation: String, Identifiable {
+    case deepLink
+    case call
+    case notification
+
+    var id: String { rawValue }
+}
+
+struct NomeActivationSheetView: View {
+    let action: NomeActivationProtectedAction
+
+    @EnvironmentObject private var activationStore: NomeActivationStore
+    @Environment(\.dismiss) private var dismiss
+    @State private var inviteCode = ""
+    @State private var pendingConfirmation: NomeActivationPendingConfirmation?
+    @FocusState private var inviteCodeFocused: Bool
+
+    var body: some View {
+        NavigationView {
+            Form {
+                Section {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Image(systemName: "person.badge.key.fill")
+                            .font(.system(size: 34, weight: .semibold))
+                            .foregroundColor(.green)
+                        Text(activationStore.hasActiveInvitation ? "延长 Nome 使用期限" : action.title)
+                            .font(.title3.weight(.semibold))
+                        Text(activationStore.hasActiveInvitation
+                             ? "输入新的邀请码可在现有到期日基础上续期。永久授权不会被限时邀请码缩短。"
+                             : "你仍可浏览本机已有内容和调整本地设置。输入邀请码后，才能连接好友、发送消息、加入群组、传输文件或使用通话。")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.vertical, 8)
+                }
+
+                Section("邀请码") {
+                    TextField("输入邀请码", text: $inviteCode)
+                        .textInputAutocapitalization(.characters)
+                        .autocorrectionDisabled()
+                        .focused($inviteCodeFocused)
+                        .accessibilityIdentifier("nome.activation.inviteCode")
+
+                    Button {
+                        Task {
+                            if await activationStore.redeem(inviteCode: inviteCode) {
+                                finishSuccessfulActivation()
+                            }
+                        }
+                    } label: {
+                        HStack {
+                            Spacer()
+                            if activationStore.isRedeeming {
+                                ProgressView().padding(.trailing, 6)
+                            }
+                            Text(activationStore.isRedeeming
+                                 ? "正在兑换…"
+                                 : activationStore.hasActiveInvitation ? "兑换并续期" : "激活 Nome")
+                                .fontWeight(.semibold)
+                            Spacer()
+                        }
+                    }
+                    .disabled(inviteCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || activationStore.isRedeeming)
+                    .accessibilityIdentifier("nome.activation.redeem")
+                }
+
+                if activationStore.effectiveAccess == .migrationRequired {
+                    Section("设备迁移") {
+                        Text("此邀请码已绑定其他设备。管理员重置旧设备后，可在这里完成迁移。")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                        Button("检查并迁移到此设备") {
+                            Task {
+                                if await activationStore.migrate() { finishSuccessfulActivation() }
+                            }
+                        }
+                        .disabled(activationStore.isRedeeming)
+                    }
+                }
+
+                if let error = activationStore.lastError {
+                    Section {
+                        Label(error, systemImage: "exclamationmark.triangle.fill")
+                            .font(.footnote)
+                            .foregroundColor(.red)
+                            .accessibilityIdentifier("nome.activation.error")
+                    }
+                }
+
+                Section {
+                    Text("邀请码只用于启用 Nome 的联网社交功能，不会读取或上传你的聊天内容。")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .navigationTitle(activationStore.hasActiveInvitation ? "邀请码续期" : "激活 Nome")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("稍后") { dismiss() }
+                }
+            }
+            .onAppear {
+                activationStore.clearError()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                    inviteCodeFocused = true
+                }
+            }
+        }
+        .alert(item: $pendingConfirmation) { confirmation in
+            switch confirmation {
+            case .deepLink:
+                return Alert(
+                    title: Text("继续打开邀请链接？"),
+                    message: Text("邀请码已验证。是否返回刚才的链接并查看连接确认信息？Nome 不会自动建立连接；取消后需重新打开链接。"),
+                    primaryButton: .default(Text("继续")) { resumePendingDeepLink() },
+                    secondaryButton: .cancel(Text("取消")) { discardPending(.deepLink) }
+                )
+            case .call:
+                return Alert(
+                    title: Text("继续刚才的通话？"),
+                    message: Text("Nome 已激活。是否继续发起刚才选择的通话？通话不会自动开始；取消后需重新发起。"),
+                    primaryButton: .default(Text("继续")) { resumePendingCall() },
+                    secondaryButton: .cancel(Text("取消")) { discardPending(.call) }
+                )
+            case .notification:
+                return Alert(
+                    title: Text("继续处理通知？"),
+                    message: Text("Nome 已激活。是否继续执行刚才选择的通知操作？该操作不会自动执行；取消后本次操作会被丢弃。"),
+                    primaryButton: .default(Text("继续")) { resumePendingNotification() },
+                    secondaryButton: .cancel(Text("取消")) { discardPending(.notification) }
+                )
+            }
+        }
+    }
+
+    private func finishSuccessfulActivation() {
+        if action == .deepLink, activationStore.pendingDeepLink != nil {
+            pendingConfirmation = .deepLink
+        } else if action == .call, activationStore.pendingCallIntent != nil {
+            pendingConfirmation = .call
+        } else if action == .notification, activationStore.pendingNotificationResponse != nil {
+            pendingConfirmation = .notification
+        } else {
+            dismiss()
+        }
+    }
+
+    private func resumePendingDeepLink() {
+        let model = ChatModel.shared
+        let pending = activationStore.takePendingDeepLink()
+        model.appOpenUrl = nil
+        model.appOpenUrlLater = nil
+        dismiss()
+        guard let pending else { return }
+        DispatchQueue.main.async {
+            model.appOpenUrl = pending
+        }
+    }
+
+    private func resumePendingCall() {
+        let pending = activationStore.takePendingCallIntent()
+        dismiss()
+        guard let pending,
+              let chat = ChatModel.shared.getChat(pending.contactId),
+              case let .direct(contact) = chat.chatInfo,
+              ChatModel.shared.activeCall == nil
+        else { return }
+        DispatchQueue.main.async {
+            CallController.shared.startCall(contact, pending.video ? .video : .audio)
+        }
+    }
+
+    private func resumePendingNotification() {
+        let pending = activationStore.takePendingNotificationResponse()
+        dismiss()
+        guard let pending else { return }
+        DispatchQueue.main.async {
+            NtfManager.shared.processNotificationResponse(pending)
+        }
+    }
+
+    private func discardPending(_ confirmation: NomeActivationPendingConfirmation) {
+        switch confirmation {
+        case .deepLink:
+            _ = activationStore.takePendingDeepLink()
+        case .call:
+            _ = activationStore.takePendingCallIntent()
+        case .notification:
+            _ = activationStore.takePendingNotificationResponse()
+        }
+        dismiss()
     }
 }
 

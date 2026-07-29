@@ -11,9 +11,46 @@ import SwiftUI
 import SimpleXChat
 import WebRTC
 
+#if DEBUG
+enum CallAudioDiagnosticLog {
+    private static let queue = DispatchQueue(label: "chat.simplex.app.call-audio-diagnostic")
+
+    static func reset() {
+        queue.async {
+            guard let url = logURL else { return }
+            try? FileManager.default.removeItem(at: url)
+        }
+    }
+
+    static func write(_ message: String) {
+        let line = "[NOME_CALL_AUDIO] \(ISO8601DateFormatter().string(from: Date())) \(message)\n"
+        print(line, terminator: "")
+        queue.async {
+            guard let url = logURL, let data = line.data(using: .utf8) else { return }
+            if FileManager.default.fileExists(atPath: url.path),
+               let handle = try? FileHandle(forWritingTo: url) {
+                defer { try? handle.close() }
+                _ = try? handle.seekToEnd()
+                try? handle.write(contentsOf: data)
+            } else {
+                try? data.write(to: url, options: .atomic)
+            }
+        }
+    }
+
+    private static var logURL: URL? {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?
+            .appendingPathComponent("nome-call-audio.log")
+    }
+}
+#endif
+
 class Call: ObservableObject, Equatable {
     static func == (lhs: Call, rhs: Call) -> Bool {
-        lhs.contact.apiId == rhs.contact.apiId
+        if let lhsUUID = lhs.callUUID, let rhsUUID = rhs.callUUID {
+            return lhsUUID == rhsUUID
+        }
+        return lhs === rhs
     }
 
     var direction: CallDirection
@@ -374,6 +411,17 @@ actor WebRTCCommandProcessor {
         }
     }
 
+    func clearClient(_ client: WebRTCClient?) {
+        if let client {
+            guard self.client === client else { return }
+        } else {
+            guard self.client == nil else { return }
+        }
+        logger.debug("WebRTC: clear current client")
+        self.client = nil
+        commands.removeAll()
+    }
+
     func processCommand(_ c: WCallCommand) async {
 //        logger.debug("WebRTC: process command \(c.cmdType)")
         commands.append(c)
@@ -494,15 +542,20 @@ func parseRTCIceServers(_ servers: [String]) -> [RTCIceServer]? {
 }
 
 func getIceServers() -> [RTCIceServer]? {
-    if let servers = UserDefaults.standard.stringArray(forKey: DEFAULT_WEBRTC_ICE_SERVERS) {
+    if let servers = configuredRTCIceServerStrings() {
         return parseRTCIceServers(servers)
     }
     return nil
 }
 
 func getWebRTCIceServers() -> [WebRTC.RTCIceServer]? {
-    if let servers = UserDefaults.standard.stringArray(forKey: DEFAULT_WEBRTC_ICE_SERVERS) {
+    if let servers = configuredRTCIceServerStrings() {
         return parseRTCIceServers(servers)?.toWebRTCIceServers()
     }
     return nil
+}
+
+private func configuredRTCIceServerStrings() -> [String]? {
+    UserDefaults.standard.stringArray(forKey: DEFAULT_WEBRTC_ICE_SERVERS)
+        ?? NomeServerConfiguration.webRTCIceServers
 }

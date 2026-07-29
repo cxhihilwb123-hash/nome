@@ -135,6 +135,13 @@ class ShareModel: ObservableObject {
     }
 
     func send() {
+        guard nomeActivationAllowsNetworking() else {
+            errorAlert = ErrorAlert(
+                title: "需要激活 Nome",
+                message: "请先打开 Nome 输入邀请码，再返回分享。"
+            )
+            return
+        }
         if let sharedContent, let selected {
             Task {
                 await MainActor.run { self.bottomBar = .loadingSpinner }
@@ -172,6 +179,12 @@ class ShareModel: ObservableObject {
     }
 
     private func initChat(with dbKey: String? = nil) -> ErrorAlert? {
+        guard nomeActivationAllowsNetworking() else {
+            return ErrorAlert(
+                title: "需要激活 Nome",
+                message: "请先打开 Nome 输入邀请码，再返回分享。"
+            )
+        }
         do {
             if hasChatCtrl() && dbKey == nil {
                 try apiActivateChat()
@@ -539,4 +552,3 @@ fileprivate func isFileTooLarge(for url: URL) -> Bool {
         .map { $0 > getMaxFileSize(.xftp) }
         ?? false
 }
-

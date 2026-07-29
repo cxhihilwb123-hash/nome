@@ -44,10 +44,12 @@ struct IncomingCallView: View {
                 callButton("Reject", "phone.down.fill", .red) {
                     cc.endCall(invitation: invitation)
                 }
+                .accessibilityIdentifier("incoming-call-reject")
 
                 callButton("Ignore", "multiply", .primary) {
                     cc.activeCallInvitation = nil
                 }
+                .accessibilityIdentifier("incoming-call-ignore")
 
                 callButton("Accept", "checkmark", .green) {
                     if let call = m.activeCall {
@@ -60,6 +62,7 @@ struct IncomingCallView: View {
                         cc.answerCall(invitation: invitation)
                     }
                 }
+                .accessibilityIdentifier("incoming-call-accept")
             }
         }
         .padding(.horizontal, 16)

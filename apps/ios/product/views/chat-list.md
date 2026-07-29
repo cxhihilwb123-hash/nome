@@ -1,6 +1,7 @@
 # Chat List (Home Screen)
 
 > **Related spec:** [spec/client/chat-list.md](../../spec/client/chat-list.md)
+> **Nome overlay:** [Nome Product Experience](nome-experience.md)
 
 ## Purpose
 

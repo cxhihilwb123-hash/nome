@@ -25,6 +25,8 @@ struct ActiveCallView: View {
     @State var prevColorScheme: ColorScheme = .dark
     @State var pipShown = false
     @State var wasConnected = false
+    @State private var permissionsResolved = false
+    @State private var viewActive = false
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -70,11 +72,16 @@ struct ActiveCallView: View {
         .opacity(m.activeCallViewIsCollapsed ? 0 : 1)
         .onAppear {
             logger.debug("ActiveCallView: appear client is nil \(client == nil), scenePhase \(String(describing: scenePhase)), canConnectCall \(canConnectCall)")
+            viewActive = true
             AppDelegate.keepScreenOn(true)
             Task {
                 await askRequiredPermissions()
+                await MainActor.run {
+                    guard viewActive, m.activeCall == call else { return }
+                    permissionsResolved = true
+                    createWebRTCClient()
+                }
             }
-            createWebRTCClient()
             dismissAllSheets()
             hideKeyboard()
             prevColorScheme = colorScheme
@@ -88,11 +95,14 @@ struct ActiveCallView: View {
         }
         .onDisappear {
             logger.debug("ActiveCallView: disappear")
-            Task { await m.callCommand.setClient(nil) }
+            viewActive = false
+            Task { await m.callCommand.clearClient(client) }
             AppDelegate.keepScreenOn(false)
             client?.endCall()
             CallSoundsPlayer.shared.stop()
-            try? AVAudioSession.sharedInstance().setCategory(.soloAmbient)
+            if !CallController.useCallKit(callUUID: call.callUUID) {
+                try? AVAudioSession.sharedInstance().setCategory(.soloAmbient)
+            }
             if (wasConnected) {
                 CallSoundsPlayer.shared.vibrate(long: true)
             }
@@ -103,7 +113,7 @@ struct ActiveCallView: View {
     }
 
     private func createWebRTCClient() {
-        if client == nil && canConnectCall {
+        if client == nil && canConnectCall && permissionsResolved {
             client = WebRTCClient({ msg in await MainActor.run { processRtcMessage(msg: msg) } }, $localRendererAspectRatio)
             Task {
                 await m.callCommand.setClient(client)
@@ -121,17 +131,26 @@ struct ActiveCallView: View {
             case let .capabilities(capabilities):
                 let callType = CallType(media: call.initialCallType, capabilities: capabilities)
                 Task {
+                    guard await MainActor.run(body: {
+                        m.activeCall == call && call.callState != .ended
+                    }) else { return }
                     do {
                         try await apiSendCallInvitation(call.contact, callType)
                     } catch {
                         logger.error("apiSendCallInvitation \(responseError(error))")
+                        return
                     }
-                    await MainActor.run {
+                    let invitationStillActive = await MainActor.run {
+                        guard m.activeCall == call, call.callState != .ended else {
+                            return false
+                        }
                         call.callState = .invitationSent
                         call.localCapabilities = capabilities
+                        return true
                     }
-                    if call.hasVideo && !AVAudioSession.sharedInstance().hasExternalAudioDevice() {
-                        try? AVAudioSession.sharedInstance().setCategory(.playback, options: [.allowBluetooth, .allowAirPlay, .allowBluetoothA2DP])
+                    guard invitationStillActive else {
+                        try? await apiEndCall(call.contact)
+                        return
                     }
                     CallSoundsPlayer.shared.startConnectingCallSound()
                     activeCallWaitDeliveryReceipt()
@@ -175,12 +194,7 @@ struct ActiveCallView: View {
                     call.direction == .outgoing
                     ? CallController.shared.reportOutgoingCall(call: call, connectedAt: nil)
                     : CallController.shared.reportIncomingCall(call: call, connectedAt: nil)
-                    call.callState = .connected
-                    call.connectedAt = .now
-                    if !wasConnected {
-                        CallSoundsPlayer.shared.vibrate(long: false)
-                        wasConnected = true
-                    }
+                    markCallConnected(call, client)
                 }
                 if state.connectionState == "closed" {
                     closeCallView(client)
@@ -198,13 +212,8 @@ struct ActiveCallView: View {
                     }
                 }
             case let .connected(connectionInfo):
-                call.callState = .connected
                 call.connectionInfo = connectionInfo
-                call.connectedAt = .now
-                if !wasConnected {
-                    CallSoundsPlayer.shared.vibrate(long: false)
-                    wasConnected = true
-                }
+                markCallConnected(call, client)
             case let .peerMedia(source, enabled):
                 switch source {
                     case .mic: call.peerMediaSources.mic = enabled
@@ -213,6 +222,9 @@ struct ActiveCallView: View {
                     case .screenVideo: call.peerMediaSources.screenVideo = enabled
                     case .unknown: ()
                 }
+#if DEBUG
+                CallAudioDiagnosticLog.write("peer-media source=\(source.rawValue) enabled=\(enabled)")
+#endif
             case .ended:
                 closeCallView(client)
                 call.callState = .ended
@@ -254,6 +266,19 @@ struct ActiveCallView: View {
                 CallSoundsPlayer.shared.startInCallSound()
                 ChatReceiver.shared.messagesChannel = nil
             }
+        }
+    }
+
+    private func markCallConnected(_ call: Call, _ client: WebRTCClient) {
+        call.callState = .connected
+        call.connectedAt = .now
+        client.activateAudioSessionAfterConnect(speakerEnabled: call.speakerEnabled)
+#if DEBUG
+        CallAudioDiagnosticLog.write("ui-connected direction=\(call.direction) mic=\(call.localMediaSources.mic) speaker=\(call.speakerEnabled)")
+#endif
+        if !wasConnected {
+            CallSoundsPlayer.shared.vibrate(long: false)
+            wasConnected = true
         }
     }
 
@@ -413,6 +438,7 @@ struct ActiveCallOverlay: View {
                 cc.endCall(call: call) {}
             }
         }
+        .accessibilityIdentifier("active-call-end")
     }
 
     private func toggleMicButton() -> some View {
@@ -450,14 +476,19 @@ struct ActiveCallOverlay: View {
     }
 
     private func toggleSpeakerButton() -> some View {
-        controlButton(call, !call.peerMediaSources.mic ? "speaker.slash" : call.speakerEnabled ? "speaker.wave.2.fill" : "speaker.wave.1.fill", padding: !call.peerMediaSources.mic ? 16 : call.speakerEnabled ? 15 : 17) {
+        controlButton(call, call.speakerEnabled ? "speaker.wave.2.fill" : "speaker.wave.1.fill", padding: call.speakerEnabled ? 15 : 17) {
             let speakerEnabled = AVAudioSession.sharedInstance().currentRoute.outputs.first?.portType == .builtInSpeaker
             client.setSpeakerEnabledAndConfigureSession(!speakerEnabled)
             call.speakerEnabled = !speakerEnabled
+#if DEBUG
+            CallAudioDiagnosticLog.write("speaker-toggle enabled=\(!speakerEnabled) peerMic=\(call.peerMediaSources.mic)")
+#endif
         }
+        .accessibilityIdentifier("active-call-speaker")
+        .accessibilityValue(call.speakerEnabled ? "speaker" : "receiver")
         .onAppear {
             deviceManager.call = call
-            //call.speakerEnabled = AVAudioSession.sharedInstance().currentRoute.outputs.first?.portType == .builtInSpeaker
+            deviceManager.reloadDevices()
         }
     }
 

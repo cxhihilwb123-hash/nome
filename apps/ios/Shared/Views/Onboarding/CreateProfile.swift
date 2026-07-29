@@ -174,7 +174,7 @@ struct CreateProfile: View {
             m.currentUser = try apiCreateActiveUser(profile)
             // .isEmpty check is redundant here, but it makes it clearer what is going on
             if m.users.isEmpty || m.users.allSatisfy({ $0.user.hidden }) {
-                try startChat()
+                try finishNomeProfileCreation(startNetworking: NomeActivationGate.allowsNetworking)
                 withAnimation {
                     onboardingStageDefault.set(.step3_ChooseServerOperators)
                     m.onboardingStage = .step3_ChooseServerOperators
@@ -198,60 +198,63 @@ struct CreateFirstProfile: View {
     @Environment(\.colorScheme) var colorScheme: ColorScheme
     @State private var displayName: String = ""
     @FocusState private var focusDisplayName
-    @State private var nextStepNavLinkActive = false
+    @State private var creationInProgress = false
     @State private var showMigrateSheet = false
     var body: some View {
-        let spacing: CGFloat = 10
+        let spacing: CGFloat = 16
         let topPadding: CGFloat = 8
         let padding: CGFloat = 25
         GeometryReader { g in
             let v = ScrollView {
-                VStack(alignment: .center, spacing: spacing) {
-                    #if SIMPLEX_ASSETS
-                    Image(colorScheme == .light ? "your-profile" : "your-profile-light")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxWidth: .infinity)
-                    #else
-                    ZStack {
-                        let gp = OnboardingCardView.gradientPoints(aspectRatio: 1.0, scale: colorScheme == .light ? 1.2 : 1.5)
-                        LinearGradient(
-                            stops: colorScheme == .light ? OnboardingCardView.lightStops : OnboardingCardView.darkStops,
-                            startPoint: gp.start,
-                            endPoint: gp.end
+                VStack(alignment: .leading, spacing: spacing) {
+                    NomeOnboardingLogoHeader()
+                        .padding(.top, 10)
+
+                    NomeOnboardingHeroCard(
+                        symbol: "person.crop.circle.badge.checkmark",
+                        title: "创建本机身份",
+                        subtitle: "这不是云端账号。它只是你在这台设备上的显示资料，之后可以为不同联系人使用不同资料。",
+                        tint: NomeOnboardingPalette.blue,
+                        pills: [
+                            ("iphone", "保存在本机"),
+                            ("person.2.slash", "不公开搜索"),
+                            ("arrow.triangle.2.circlepath", "可迁移")
+                        ]
+                    )
+
+                    VStack(spacing: 10) {
+                        NomeOnboardingFeatureRow(
+                            icon: "person.text.rectangle",
+                            title: "别人看到的名字",
+                            text: "连接朋友后，这个名称会作为默认资料展示给对方。",
+                            tint: NomeOnboardingPalette.green
                         )
-                        Image(systemName: "person.crop.rectangle")
-                            .font(.system(size: 72))
-                            .foregroundColor(theme.colors.primary)
+                        NomeOnboardingFeatureRow(
+                            icon: "eye.slash",
+                            title: "以后可用匿名资料",
+                            text: "加入新联系人或群组时，可以选择不暴露主资料。",
+                            tint: NomeOnboardingPalette.purple
+                        )
                     }
-                    .aspectRatio(1.0, contentMode: .fit)
-                    .clipShape(RoundedRectangle(cornerRadius: 24))
-                    .padding(.horizontal, 25)
-                    .frame(maxWidth: .infinity)
-                    #endif
 
-                    Text("Your profile")
-                        .font(.largeTitle)
-                        .bold()
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Text("On your phone, not on servers.")
-                        .font(.title3)
-                        .fontWeight(.medium)
-                        .foregroundColor(theme.colors.secondary)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Text("No account. No phone. No email. No ID.\nThe most secure encryption.")
-                        .font(.footnote)
-                        .foregroundColor(theme.colors.secondary)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    profileNameField()
-                        .padding(.top)
-                        .padding(.bottom, 5)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("显示名称")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundColor(NomeOnboardingPalette.navy)
+                        profileNameField()
+                        if let validationMessage = firstProfileNameValidationMessage(displayName) {
+                            Text(validationMessage)
+                                .font(.caption)
+                                .foregroundColor(.red)
+                                .fixedSize(horizontal: false, vertical: true)
+                        } else {
+                            Text("只需要一个名字。手机号、邮箱和密码都不是必须项。")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .padding(.top, 2)
 
                     Spacer(minLength: 0)
 
@@ -264,11 +267,23 @@ struct CreateFirstProfile: View {
                 .frame(minHeight: g.size.height)
             }
             .onTapGesture { focusDisplayName = false }
-            .sheet(isPresented: $showMigrateSheet, onDismiss: { m.migrationState = nil }) {
+            .sheet(isPresented: $showMigrateSheet, onDismiss: {
+                m.migrationState = nil
+                MigrationToDeviceState.save(nil)
+            }) {
                 NavigationView {
                     MigrateToDevice(migrationState: $m.migrationState)
-                        .navigationTitle("Migrate here")
+                        .navigationTitle("迁移到这台设备")
                         .modifier(ThemedBackground(grouped: true))
+                        .toolbar {
+                            ToolbarItem(placement: .navigationBarLeading) {
+                                Button("关闭") {
+                                    m.migrationState = nil
+                                    MigrationToDeviceState.save(nil)
+                                    showMigrateSheet = false
+                                }
+                            }
+                        }
                 }
             }
             if #available(iOS 17, *) {
@@ -289,7 +304,7 @@ struct CreateFirstProfile: View {
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "tray.and.arrow.down")
-                        Text("Migrate")
+                        Text("迁移")
                             .fontWeight(.medium)
                     }
                 }
@@ -308,62 +323,45 @@ struct CreateFirstProfile: View {
     }
 
     private func profileNameField() -> some View {
-        let name = displayName.trimmingCharacters(in: .whitespaces)
-        let validName = mkValidName(name)
-        return ZStack(alignment: .trailing) {
-            TextField("Enter profile name...", text: $displayName)
+        ZStack(alignment: .leading) {
+            TextField("输入你的显示名称", text: $displayName)
                 .focused($focusDisplayName)
                 .padding(.horizontal)
-                .padding(.trailing, name != validName ? 20 : 0)
-                .padding(.vertical, 10)
+                .padding(.vertical, 13)
                 .background(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
                         .fill(Color(uiColor: .tertiarySystemFill))
                 )
-            if name != validName {
-                Button {
-                    showAlert(.invalidNameError(validName: validName))
-                } label: {
-                    Image(systemName: "exclamationmark.circle")
-                        .foregroundColor(.red)
-                        .padding(.horizontal, 10)
-                }
-            }
         }
     }
 
     private func createProfileButton() -> some View {
-        ZStack {
-            Button {
-                createProfile()
-            } label: {
-                Text("Create profile")
+        let disabled = creationInProgress || !canCreateFirstProfile(displayName)
+        return Button {
+            createProfile()
+        } label: {
+            HStack(spacing: 8) {
+                if creationInProgress {
+                    ProgressView()
+                        .tint(.white)
+                }
+                Text(creationInProgress ? "正在创建…" : "创建本机身份")
             }
-            .buttonStyle(OnboardingButtonStyle(isDisabled: !canCreateProfile(displayName)))
-            .disabled(!canCreateProfile(displayName))
-
-            NavigationLink(isActive: $nextStepNavLinkActive) {
-                nextStepDestinationView()
-            } label: {
-                EmptyView()
-            }
-            .frame(width: 1, height: 1)
-            .hidden()
         }
-    }
-
-    private func showAlert(_ alert: UserProfileAlert) {
-        AlertManager.shared.showAlert(userProfileAlert(alert, $displayName))
-    }
-
-    private func nextStepDestinationView() -> some View {
-        YourNetworkView()
-            .navigationBarBackButtonHidden(true)
-            .modifier(ThemedBackground())
+        .buttonStyle(OnboardingTransitionButtonStyle(isDisabled: disabled))
+        .disabled(disabled)
     }
 
     private func createProfile() {
+        guard !creationInProgress else { return }
+        creationInProgress = true
         hideKeyboard()
+        DispatchQueue.main.async {
+            performCreateProfile()
+        }
+    }
+
+    private func performCreateProfile() {
         let profile = Profile(
             displayName: displayName.trimmingCharacters(in: .whitespaces),
             fullName: ""
@@ -372,13 +370,45 @@ struct CreateFirstProfile: View {
         do {
             AppChatState.shared.set(.active)
             m.currentUser = try apiCreateActiveUser(profile)
-            try startChat(onboarding: true)
+            try finishNomeProfileCreation(startNetworking: NomeActivationGate.allowsNetworking, onboarding: true)
             onboardingStageDefault.set(.step3_ChooseServerOperators)
-            nextStepNavLinkActive = true
+            m.onboardingStage = .step3_ChooseServerOperators
         } catch let error {
-            showCreateProfileAlert(showAlert: showAlert, error)
+            creationInProgress = false
+            showCreateProfileAlert(
+                showAlert: { AlertManager.shared.showAlert(userProfileAlert($0, $displayName)) },
+                error
+            )
         }
     }
+}
+
+/// Creating an identity is a local operation and must remain available before activation.
+/// When activation enforcement is active, load the new profile from the local database without
+/// starting chat transports; the activation store starts networking after a successful redeem.
+private func finishNomeProfileCreation(startNetworking: Bool, onboarding: Bool = false) throws {
+    let m = ChatModel.shared
+    if startNetworking {
+        try startChat(onboarding: onboarding)
+        Task { await applyNomeStartupConfiguration() }
+    } else {
+        m.chatRunning = false
+        m.users = try listUsers()
+        try getUserChatData()
+        AppChatState.shared.set(.stopped)
+    }
+}
+
+private func canCreateFirstProfile(_ displayName: String) -> Bool {
+    let name = displayName.trimmingCharacters(in: .whitespaces)
+    return !name.isEmpty && mkValidName(name) == name
+}
+
+private func firstProfileNameValidationMessage(_ displayName: String) -> String? {
+    let name = displayName.trimmingCharacters(in: .whitespaces)
+    return !name.isEmpty && mkValidName(name) != name
+        ? "显示名称包含不支持的字符或过长，请修改后继续。"
+        : nil
 }
 
 private func showCreateProfileAlert(

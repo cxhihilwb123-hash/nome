@@ -9,6 +9,15 @@
 import SwiftUI
 import SimpleXChat
 
+private enum NomeHiddenProfilePalette {
+    static let navy = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor.label.resolvedColor(with: traits)
+            : UIColor(red: 14.0 / 255.0, green: 27.0 / 255.0, blue: 45.0 / 255.0, alpha: 1)
+    })
+    static let purple = Color(red: 116.0 / 255.0, green: 89.0 / 255.0, blue: 238.0 / 255.0)
+}
+
 struct HiddenProfileView: View {
     @State var user: User
     @Binding var profileHidden: Bool
@@ -22,11 +31,10 @@ struct HiddenProfileView: View {
 
     var body: some View {
         List {
-            Text("Hide profile")
-                .font(.title)
-                .bold()
+            NomeHiddenProfileHeader()
                 .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                 .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
 
             Section() {
                 ProfilePreview(profileOf: user)
@@ -34,11 +42,11 @@ struct HiddenProfileView: View {
             }
 
             Section {
-                PassphraseField(key: $hidePassword, placeholder: "Password to show", valid: passwordValid, showStrength: true)
-                PassphraseField(key: $confirmHidePassword, placeholder: "Confirm password", valid: confirmValid)
+                PassphraseField(key: $hidePassword, placeholder: "用于显示身份的密码", valid: passwordValid, showStrength: true)
+                PassphraseField(key: $confirmHidePassword, placeholder: "再次输入密码", valid: confirmValid)
 
                 settingsRow("lock", color: theme.colors.secondary) {
-                    Button("Save profile password") {
+                    Button("保存并隐藏身份") {
                         Task {
                             do {
                                 let u = try await apiHideUser(user.userId, viewPwd: hidePassword)
@@ -58,10 +66,10 @@ struct HiddenProfileView: View {
                 }
                 .disabled(saveDisabled)
             } header: {
-                Text("Hidden profile password")
+                Text("隐藏身份密码")
                     .foregroundColor(theme.colors.secondary)
             } footer: {
-                Text("To reveal your hidden profile, enter a full password into a search field in **Your chat profiles** page.")
+                Text("之后需要在**身份中心**搜索框输入完整密码，才能重新显示这个身份。")
                     .foregroundColor(theme.colors.secondary)
                     .font(.body)
                     .padding(.top, 8)
@@ -69,7 +77,7 @@ struct HiddenProfileView: View {
         }
         .alert(isPresented: $saveErrorAlert) {
             Alert(
-                title: Text("Error saving user password"),
+                title: Text("保存身份密码失败"),
                 message: Text(savePasswordError ?? "")
             )
         }
@@ -81,6 +89,39 @@ struct HiddenProfileView: View {
     var confirmValid: Bool { confirmHidePassword == "" || hidePassword == confirmHidePassword }
 
     var saveDisabled: Bool { hidePassword == "" || !passwordValid || confirmHidePassword == "" || !confirmValid }
+}
+
+private struct NomeHiddenProfileHeader: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+                Image(systemName: "eye.slash.fill")
+                    .font(.system(size: 19, weight: .semibold))
+                    .foregroundColor(.white)
+                    .frame(width: 42, height: 42)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(NomeHiddenProfilePalette.purple)
+                    )
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("隐藏身份")
+                        .font(.title2.weight(.bold))
+                        .foregroundColor(NomeHiddenProfilePalette.navy)
+                    Text("设置密码后，这个身份会从身份中心列表中隐藏。")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+
+            Text("隐藏身份不会删除聊天数据。请记住这个密码，忘记后无法通过列表直接找回。")
+                .font(.subheadline)
+                .lineSpacing(2)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+    }
 }
 
 struct ProfilePrivacyView_Previews: PreviewProvider {

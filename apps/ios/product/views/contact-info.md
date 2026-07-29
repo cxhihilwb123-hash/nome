@@ -1,6 +1,7 @@
 # Contact Info
 
 > **Related spec:** [spec/client/chat-view.md](../../spec/client/chat-view.md)
+> **Nome overlay:** [Nome Product Experience](nome-experience.md)
 
 ## Purpose
 

@@ -447,7 +447,7 @@ struct GroupChatInfoView: View {
 
     private func channelLinkActionButton(width: CGFloat) -> some View {
         ZStack {
-            InfoViewButton(image: "link", title: "link", width: width) {
+            InfoViewButton(image: "link", title: "Channel link", width: width) {
                 groupLinkNavLinkActive = true
             }
 

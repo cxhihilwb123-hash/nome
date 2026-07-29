@@ -14,26 +14,35 @@ This is the first document to read for current Nome repository status. Older pla
 - Phase 4 build discipline: PASS.
 - Phase 5 documentation/evidence governance: PASS after the execution record in this branch.
 - Phase 6 deletion/cleanup: PASS; exact cache/worktree removal, AVD migration, backup re-verification, and post-clean builds are recorded below.
+- Post-Phase-6 local unified-client consolidation: IN PROGRESS. The candidate must preserve both client authority heads and pass the platform-specific gates before it becomes authoritative.
 - Phase 7 push/deploy/public release: NOT AUTHORIZED and not performed.
 
-## Authoritative local lines
+## Unified candidate and retained recovery lines
 
-| Scope | Worktree / repository | Branch | Phase 6 pre-record clean source gate |
+| Scope | Worktree / repository | Branch | Recorded local source state |
 |---|---|---|---|
-| iOS | `/Users/forkman03/project/nome/simplex-chat-ios-consolidated` | `codex/nome-v656-consolidated-ios` | `5f8e97c08c238ec85e6d5451be22ae9e1fd2cbe9` |
-| Android/Core/Desktop | `/Users/forkman03/project/nome/simplex-chat-android-consolidated` | `codex/nome-v656-consolidated-android` | `0ac96edaef352445d64a9cda9dc5329d8247c1ce` |
-| Website/control plane | `/Users/forkman03/project/nome/website` | `main` | `de292bf63128b749f64687a66a4d7b8e6f0508a5` |
+| Client candidate (Core/Android/iOS/Desktop) | `/Users/forkman03/project/nome/nome-client` | `codex/nome-v656-unified` | merge source heads `6cd16da945bc45683eab23f82dc58ba996109960` and `fb4a81780aa7518735f5d1a3c245808bd3b81f0b`; acceptance pending |
+| Website/control plane authority | `/Users/forkman03/project/nome/website` | `main` | current local tip `568d47dde9d81465cad1139f3b9c90c0f1c9f041` |
+| Retained iOS recovery source | `/Users/forkman03/project/nome/simplex-chat-ios-consolidated` | `codex/nome-v656-consolidated-ios` | `fb4a81780aa7518735f5d1a3c245808bd3b81f0b` |
+| Retained Android/Core/Desktop recovery source | `/Users/forkman03/project/nome/simplex-chat-android-consolidated` | `codex/nome-v656-consolidated-android` | `6cd16da945bc45683eab23f82dc58ba996109960` |
 
-Phase 6 execution-record commits follow these clean build-source SHAs. Use `git rev-parse HEAD` in the selected worktree for the current local tip; do not substitute another platform's HEAD.
+The unified client candidate is not authoritative until the merge, dependency normalization, platform-specific verification, documentation update, and post-unification restore test pass. The retained consolidated worktrees remain recovery sources and must not be deleted during this work.
+
+## Worktree model
+
+- `nome-client` is the candidate single long-lived client worktree. Core, Android, iOS, and Desktop are modules in this one Git history, not separate permanent worktree authorities.
+- Release, hotfix, and large platform-migration worktrees are temporary and require an explicit purpose and cleanup gate.
+- Website/control plane remains an independent Git repository and is not part of the client merge.
 
 ## Current execution and release records
 
+- iOS consolidation: [`consolidation/20260729_phase1_ios_execution_record.md`](./consolidation/20260729_phase1_ios_execution_record.md)
 - Android/Core/Desktop consolidation: [`consolidation/20260729_phase2_android_core_desktop_execution_record.md`](./consolidation/20260729_phase2_android_core_desktop_execution_record.md)
-- Android/Core/Desktop build discipline: [`consolidation/20260729_phase4_build_discipline_execution_record.md`](./consolidation/20260729_phase4_build_discipline_execution_record.md)
+- Cross-platform build discipline: [`consolidation/20260729_phase4_build_discipline_execution_record.md`](./consolidation/20260729_phase4_build_discipline_execution_record.md)
 - Documentation/evidence governance: [`consolidation/20260729_phase5_docs_evidence_governance_execution_record.md`](./consolidation/20260729_phase5_docs_evidence_governance_execution_record.md)
 - Phase 6 cleanup: [`consolidation/20260729_phase6_cleanup_execution_record.md`](./consolidation/20260729_phase6_cleanup_execution_record.md)
 - Latest locally verified Android artifacts and hashes are in the Phase 2 record; they are not public-release claims.
-- iOS consolidation/build record: `/Users/forkman03/project/nome/simplex-chat-ios-consolidated/plans/consolidation/20260729_phase1_ios_execution_record.md` and `/Users/forkman03/project/nome/simplex-chat-ios-consolidated/plans/builds/20260729_nome_ios_6.5.6_build349_consolidated.md`.
+- Latest reproducibly identified iOS artifact: [`builds/20260729_nome_ios_6.5.6_build349_consolidated.md`](./builds/20260729_nome_ios_6.5.6_build349_consolidated.md), internal Simulator diagnostic only.
 - Website acceptance: `/Users/forkman03/project/nome/website/docs/consolidation/20260729_phase3_website_execution_record.md`.
 - Build record rules/template: [`builds/README.md`](./builds/README.md) and [`builds/TEMPLATE.md`](./builds/TEMPLATE.md).
 

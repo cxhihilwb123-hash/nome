@@ -13,6 +13,18 @@ import CodeScanner
 import AVFoundation
 import SimpleXChat
 
+private enum NomeConnectPalette {
+    static let navy = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor.label.resolvedColor(with: traits)
+            : UIColor(red: 14.0 / 255.0, green: 27.0 / 255.0, blue: 45.0 / 255.0, alpha: 1)
+    })
+    static let green = Color(red: 22.0 / 255.0, green: 174.0 / 255.0, blue: 102.0 / 255.0)
+    static let blue = Color(red: 39.0 / 255.0, green: 107.0 / 255.0, blue: 255.0 / 255.0)
+    static let purple = Color(red: 116.0 / 255.0, green: 89.0 / 255.0, blue: 238.0 / 255.0)
+    static let border = Color.black.opacity(0.06)
+}
+
 struct SomeAlert: Identifiable {
     var alert: Alert
     var id: String
@@ -80,11 +92,13 @@ struct NewChatView: View {
     @EnvironmentObject var theme: AppTheme
     @State var selection: NewChatOption
     @State var showQRCodeScanner = false
+    var connectMode: NewChatConnectMode = .general
     var onboarding: Bool = false
     @State private var invitationUsed: Bool = false
     @State private var connLinkInvitation: CreatedConnLink = CreatedConnLink(connFullLink: "", connShortLink: nil)
     @State private var showShortLink = true
     @State private var creatingConnReq = false
+    @State private var invitationError: String? = nil
     @State var choosingProfile = false
     @State private var pastedLink: String = ""
     @State private var alert: NewChatViewAlert?
@@ -92,11 +106,11 @@ struct NewChatView: View {
 
     var body: some View {
         VStack(alignment: .leading) {
-            if !onboarding {
-                Picker("New chat", selection: $selection) {
-                    Label("1-time link", systemImage: "link")
+            if !onboarding && connectMode == .general {
+                Picker("添加方式", selection: $selection) {
+                    Label("一次性链接", systemImage: "link")
                         .tag(NewChatOption.invite)
-                    Label("Connect via link", systemImage: "qrcode")
+                    Label("扫码或粘贴", systemImage: "qrcode")
                         .tag(NewChatOption.connect)
                 }
                 .pickerStyle(.segmented)
@@ -119,7 +133,7 @@ struct NewChatView: View {
                         }
                 }
                 if case .connect = selection {
-                    ConnectView(showQRCodeScanner: $showQRCodeScanner, pastedLink: $pastedLink, alert: $alert, onboarding: onboarding)
+                    ConnectView(showQRCodeScanner: $showQRCodeScanner, pastedLink: $pastedLink, alert: $alert, onboarding: onboarding, mode: connectMode)
                         .transition(.move(edge: .trailing))
                 }
             }
@@ -149,6 +163,9 @@ struct NewChatView: View {
             )
         }
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                NomeInlineBrandMark()
+            }
             ToolbarItem(placement: .navigationBarTrailing) {
                 if !onboarding {
                     InfoSheetButton {
@@ -194,13 +211,26 @@ struct NewChatView: View {
             } else if creatingConnReq {
                 creatingLinkProgressView()
             } else {
-                retryButton()
+                retryButton(error: invitationError)
             }
         }
     }
 
     private func createInvitation() {
         if connLinkInvitation.connFullLink == "" && contactConnection == nil && !creatingConnReq {
+            guard m.currentUser != nil else {
+                invitationError = "本地资料还没有准备好。请先完成资料创建，再生成邀请链接。"
+                return
+            }
+            guard m.chatRunning == true else {
+                invitationError = "聊天服务还没有启动。请稍后重试，或重新打开 Nome。"
+                return
+            }
+            if let readinessError = realChatCoreReadinessError() {
+                invitationError = readinessError
+                return
+            }
+            invitationError = nil
             creatingConnReq = true
             Task {
                 _ = try? await Task.sleep(nanoseconds: 250_000000)
@@ -215,9 +245,12 @@ struct NewChatView: View {
                 } else {
                     await MainActor.run {
                         creatingConnReq = false
-                        if let apiAlert = apiAlert {
-                            alert = .newChatSomeAlert(alert: SomeAlert(alert: apiAlert, id: "createInvitation error"))
-                        }
+                        invitationError = "暂时无法创建邀请链接。请确认本地资料已完成、聊天服务正在运行，然后重试。"
+                        let fallbackAlert = mkAlert(
+                            title: "Cannot create link",
+                            message: "Nome could not create an invitation yet. Check that your local profile is ready and chat is running."
+                        )
+                        alert = .newChatSomeAlert(alert: SomeAlert(alert: apiAlert ?? fallbackAlert, id: "createInvitation error"))
                     }
                 }
             }
@@ -226,17 +259,277 @@ struct NewChatView: View {
 
     // Rectangle here and in retryButton are needed for gesture to work
     private func creatingLinkProgressView() -> some View {
-        ProgressView("Creating link…")
+        ProgressView("正在创建链接...")
             .progressViewStyle(.circular)
     }
 
-    private func retryButton() -> some View {
-        Button(action: createInvitation) {
-            VStack(spacing: 6) {
-                Image(systemName: "arrow.counterclockwise")
-                Text("Retry")
+    private func retryButton(error: String?) -> some View {
+        NomeInviteUnavailableView(error: error, retry: createInvitation)
+    }
+}
+
+private struct NomeInviteUnavailableView: View {
+    let error: String?
+    let retry: () -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 14) {
+                NomeFlowPageHeader(
+                    title: "添加朋友",
+                    subtitle: "用一次性链接或二维码开始私聊，连接成功后自动失效。",
+                    icon: "person.badge.plus",
+                    tint: NomeConnectPalette.green
+                )
+                NomeOneTimeLinkHero()
+                NomeDisabledInvitationLinkCard(error: error, retry: retry)
+                NomeDisabledQRCodeCard()
+                NomeOneTimeInviteSafetyNote()
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, 24)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+private struct NomeOneTimeLinkHero: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                Image(systemName: "link.badge.plus")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(.white)
+                    .frame(width: 44, height: 44)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(NomeConnectPalette.green)
+                    )
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("一次性链接")
+                        .font(.headline)
+                        .foregroundColor(NomeConnectPalette.navy)
+                    Text("只给一个人使用，连接成功后失效")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                Spacer(minLength: 0)
+            }
+
+            Text("生成后可以复制、分享或让对方扫码。对方连接前不会看到你的手机号或公开用户名。")
+                .font(.subheadline)
+                .lineSpacing(2)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 8) {
+                NomeConnectPill(icon: "person.badge.plus", text: "朋友邀请")
+                NomeConnectPill(icon: "timer", text: "一次有效")
+                NomeConnectPill(icon: "lock.shield", text: "端到端加密")
             }
         }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color(uiColor: .systemBackground))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(NomeConnectPalette.border, lineWidth: 1)
+        )
+    }
+}
+
+private struct NomeDisabledInvitationLinkCard: View {
+    let error: String?
+    let retry: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                Image(systemName: "link")
+                    .font(.system(size: 19, weight: .semibold))
+                    .foregroundColor(NomeConnectPalette.green)
+                    .frame(width: 42, height: 42)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(NomeConnectPalette.green.opacity(0.12))
+                    )
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("邀请链接")
+                        .font(.headline)
+                        .foregroundColor(NomeConnectPalette.navy)
+                    Text("真实链接会在聊天 core 就绪后生成")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                Spacer(minLength: 0)
+            }
+
+            HStack(spacing: 10) {
+                Text("nome://inv/等待生成")
+                    .font(.system(.callout, design: .monospaced))
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Image(systemName: "doc.on.doc")
+                    .foregroundColor(.secondary)
+            }
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Color(uiColor: .secondarySystemGroupedBackground))
+            )
+
+            if let error, !error.isEmpty {
+                Label(error, systemImage: "exclamationmark.triangle.fill")
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            HStack(spacing: 10) {
+                Button(action: retry) {
+                    Label("重试生成", systemImage: "arrow.clockwise")
+                        .font(.body.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .foregroundColor(.white)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(NomeConnectPalette.green)
+                        )
+                }
+                .buttonStyle(.plain)
+
+                Button {} label: {
+                    Label("分享", systemImage: "square.and.arrow.up")
+                        .font(.body.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .foregroundColor(NomeConnectPalette.navy.opacity(0.45))
+                        .background(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(Color(uiColor: .secondarySystemGroupedBackground))
+                        )
+                }
+                .buttonStyle(.plain)
+                .disabled(true)
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color(uiColor: .systemBackground))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(NomeConnectPalette.border, lineWidth: 1)
+        )
+    }
+}
+
+private struct NomeDisabledQRCodeCard: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("一次性二维码")
+                    .font(.headline)
+                    .foregroundColor(NomeConnectPalette.navy)
+                Spacer()
+                Text("等待生成")
+                    .font(.caption.weight(.medium))
+                    .foregroundColor(NomeConnectPalette.green)
+                    .padding(.horizontal, 9)
+                    .frame(height: 26)
+                    .background(Capsule().fill(NomeConnectPalette.green.opacity(0.12)))
+            }
+
+            ZStack {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Color(uiColor: .secondarySystemGroupedBackground))
+                Image(systemName: "qrcode")
+                    .font(.system(size: 112, weight: .regular))
+                    .foregroundColor(NomeConnectPalette.navy.opacity(0.16))
+                Image("icon-light")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 58, height: 58)
+                    .padding(8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(Color(uiColor: .systemBackground))
+                    )
+            }
+            .aspectRatio(1, contentMode: .fit)
+
+            HStack(spacing: 10) {
+                Button {} label: {
+                    Label("分享二维码", systemImage: "square.and.arrow.up")
+                        .font(.body.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .foregroundColor(.white)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(NomeConnectPalette.blue.opacity(0.45))
+                        )
+                }
+                .buttonStyle(.plain)
+                .disabled(true)
+
+                Button {} label: {
+                    Label("重新生成", systemImage: "arrow.triangle.2.circlepath")
+                        .font(.body.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .foregroundColor(NomeConnectPalette.navy.opacity(0.45))
+                        .background(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(Color(uiColor: .secondarySystemGroupedBackground))
+                        )
+                }
+                .buttonStyle(.plain)
+                .disabled(true)
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color(uiColor: .systemBackground))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(NomeConnectPalette.border, lineWidth: 1)
+        )
+    }
+}
+
+private struct NomeOneTimeInviteSafetyNote: View {
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "lock.shield.fill")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(width: 32, height: 32)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(NomeConnectPalette.green)
+                )
+            Text("对方连接成功后，此链接会自动失效。没有真实聊天 core 时，Nome 只展示页面预览，不会伪造可用邀请。")
+                .font(.subheadline)
+                .foregroundColor(NomeConnectPalette.navy)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(NomeConnectPalette.green.opacity(0.1))
+        )
     }
 }
 
@@ -263,6 +556,18 @@ private struct InviteView: View {
 
     var body: some View {
         List {
+            if !onboarding {
+                NomeFlowPageHeader(
+                    title: "添加朋友",
+                    subtitle: "生成只给一个人使用的邀请方式，对方连接前不会看到手机号或公开用户名。",
+                    icon: "person.badge.plus",
+                    tint: NomeConnectPalette.green
+                )
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 12, trailing: 16))
+            }
+
             Section(header: sectionHeader) {
                 shareLinkView()
             }
@@ -327,10 +632,10 @@ private struct InviteView: View {
 
     @ViewBuilder private var sectionHeaderText: some View {
         if onboarding {
-            Text("Send the link via any messenger - it's secure. Ask to paste into SimpleX.")
+            Text("把链接发给对方，连接成功后会失效。对方可以在 Nome 中粘贴或扫码加入。")
                 .font(.body).foregroundColor(theme.colors.onBackground).textCase(nil)
         } else {
-            Text("Share this 1-time invite link").foregroundColor(theme.colors.secondary)
+            Text("分享这个一次性邀请链接").foregroundColor(theme.colors.secondary)
         }
     }
 
@@ -641,18 +946,76 @@ private struct ConnectView: View {
     @Binding var pastedLink: String
     @Binding var alert: NewChatViewAlert?
     var onboarding: Bool = false
+    var mode: NewChatConnectMode = .general
     @State var scannerPaused: Bool = false
     @State private var pasteboardHasStrings = UIPasteboard.general.hasStrings
+    @State private var manualLink = ""
+    @State private var manualLinkError: String? = nil
 
     var body: some View {
         List {
-            Section(header: connectSectionHeader) {
-                pasteLinkView()
-            }
-            .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
+            if !onboarding {
+                NomeFlowPageHeader(
+                    title: mode == .group ? "加入群组" : "扫码或粘贴邀请",
+                    subtitle: mode == .group
+                        ? "粘贴群组邀请，或扫描群主和成员分享的二维码。"
+                        : "Nome 会识别朋友邀请、群组邀请和公开联系方式。",
+                    icon: mode == .group ? "person.2.fill" : "qrcode.viewfinder",
+                    tint: mode == .group ? NomeConnectPalette.blue : NomeConnectPalette.green
+                )
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 4, trailing: 16))
 
-            Section(header: Text("Or scan QR code").foregroundColor(theme.colors.secondary)) {
+                Group {
+                    if mode == .group {
+                        NomeJoinGroupHero()
+                    } else {
+                        NomeConnectHero()
+                    }
+                }
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 12, trailing: 16))
+            }
+
+            if mode == .group {
+                Section {
+                    groupInviteLinkView()
+                }
+                .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
+            } else {
+                Section(header: connectSectionHeader) {
+                    pasteLinkView()
+                }
+                .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
+            }
+
+            Section {
                 ScannerInView(showQRCodeScanner: $showQRCodeScanner, scannerPaused: $scannerPaused, processQRCode: processQRCode)
+            } header: {
+                Text(mode == .group ? "扫描群组二维码" : "扫描二维码").foregroundColor(theme.colors.secondary)
+            } footer: {
+                Text(mode == .group
+                     ? "扫描群主或成员分享的群组邀请二维码。连接前请确认群组来源。"
+                     : "支持 Nome / SimpleX 邀请二维码。扫描后会先识别邀请类型，再进入确认流程。")
+                    .foregroundColor(theme.colors.secondary)
+            }
+
+            if mode == .group {
+                NomeGroupPreviewPlaceholder()
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 12, trailing: 16))
+
+                NomeGroupSourceWarning()
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 12, trailing: 16))
+
+                Section {
+                    NomeDisabledBrowseGroupsRow()
+                }
             }
         }
         .onDisappear {
@@ -660,35 +1023,108 @@ private struct ConnectView: View {
         }
     }
 
+    private func groupInviteLinkView() -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                Image(systemName: "link")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(NomeConnectPalette.green)
+                    .frame(width: 38, height: 38)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(NomeConnectPalette.green.opacity(0.12))
+                    )
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("群组邀请链接")
+                        .font(.body.weight(.semibold))
+                        .foregroundColor(NomeConnectPalette.navy)
+                    Text("拥有邀请链接可申请加入群组")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+
+            HStack(spacing: 8) {
+                TextField("粘贴群组邀请链接", text: $manualLink)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .keyboardType(.URL)
+
+                Button {
+                    if let str = UIPasteboard.general.string {
+                        manualLink = str.trimmingCharacters(in: .whitespacesAndNewlines)
+                    }
+                } label: {
+                    Image(systemName: "doc.on.clipboard")
+                        .font(.system(size: 17, weight: .semibold))
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 12)
+            .frame(minHeight: 48)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Color(uiColor: .secondarySystemGroupedBackground))
+            )
+
+            Button {
+                submitLink(manualLink, invalidMessage: "粘贴的内容不是 Nome 可识别的群组邀请链接。")
+            } label: {
+                Text("粘贴并检查")
+                    .font(.body.weight(.semibold))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(NomeConnectPalette.green)
+                    )
+            }
+            .buttonStyle(.plain)
+            .disabled(manualLink.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .opacity(manualLink.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.45 : 1)
+
+            if let manualLinkError {
+                Text(manualLinkError)
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.vertical, 8)
+    }
+
     @ViewBuilder private func pasteLinkView() -> some View {
         if pastedLink == "" {
             ZStack(alignment: .trailing) {
                 Button {
                     if let str = UIPasteboard.general.string {
-                        switch strConnectTarget(str.trimmingCharacters(in: .whitespaces)) {
-                        case let .link(text, _, _):
-                            pastedLink = text
-                            connect(pastedLink)
-                        case let .name(nameInfo):
-                            showUnsupportedNameAlert(nameInfo)
-                        case .none:
-                            alert = .newChatSomeAlert(alert: SomeAlert(
-                                alert: mkAlert(title: "Invalid link", message: "The text you pasted is not a SimpleX link."),
-                                id: "pasteLinkView: code is not a SimpleX link"
-                            ))
-                        }
+                        submitLink(str, invalidMessage: "粘贴的内容不是 Nome 可识别的邀请链接。")
                     }
                 } label: {
-                    Text("Tap to paste link").foregroundColor(theme.colors.primary)
+                    NomeConnectActionLabel(
+                        icon: pasteboardHasStrings ? "doc.on.clipboard" : "clipboard",
+                        title: pasteboardHasStrings ? "粘贴邀请链接" : "剪贴板没有邀请链接",
+                        subtitle: "支持朋友邀请、群组邀请和公开联系方式",
+                        tint: pasteboardHasStrings ? NomeConnectPalette.green : theme.colors.secondary
+                    )
                 }
                 .disabled(!pasteboardHasStrings)
-                .frame(maxWidth: .infinity, alignment: .center)
                 if connectProgressManager.showConnectProgress != nil {
                     ProgressView()
                 }
             }
         } else {
-            HStack {
+            HStack(spacing: 12) {
+                Image(systemName: "link")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(NomeConnectPalette.green)
+                    .frame(width: 36, height: 36)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(NomeConnectPalette.green.opacity(0.12))
+                    )
                 linkTextView(pastedLink)
                 if connectProgressManager.showConnectProgress != nil {
                     ProgressView()
@@ -705,7 +1141,7 @@ private struct ConnectView: View {
                 connect(link)
             } else {
                 alert = .newChatSomeAlert(alert: SomeAlert(
-                    alert: mkAlert(title: "Invalid QR code", message: "The code you scanned is not a SimpleX link QR code."),
+                    alert: mkAlert(title: "二维码无效", message: "扫描到的内容不是 Nome 可识别的邀请二维码。"),
                     id: "processQRCode: code is not a SimpleX link"
                 ))
             }
@@ -718,24 +1154,48 @@ private struct ConnectView: View {
         }
     }
 
+    private func submitLink(_ raw: String, invalidMessage: LocalizedStringKey) {
+        let link = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !link.isEmpty else {
+            manualLinkError = "请先粘贴群组邀请链接。"
+            return
+        }
+        switch strConnectTarget(link) {
+        case let .link(text, _, _):
+            manualLinkError = nil
+            pastedLink = text
+            connect(text)
+        case let .name(nameInfo):
+            manualLinkError = nil
+            showUnsupportedNameAlert(nameInfo)
+        case .none:
+            manualLinkError = "链接格式无效。"
+            alert = .newChatSomeAlert(alert: SomeAlert(
+                alert: mkAlert(title: "链接无效", message: invalidMessage),
+                id: "submitLink: code is not a SimpleX link"
+            ))
+        }
+    }
+
     private var connectSectionHeader: some View {
         #if SIMPLEX_ASSETS
         VStack(alignment: .leading, spacing: 0) {
-            Image(colorScheme == .light
-                ? (onboarding ? "connect-via-link" : "connect-via-link-small")
-                : (onboarding ? "connect-via-link-light" : "connect-via-link-small-light"))
-                .resizable()
-                .scaledToFit()
-                .frame(maxWidth: .infinity)
-            Text("Paste the link you received").foregroundColor(theme.colors.secondary)
+            Text("粘贴收到的邀请链接").foregroundColor(theme.colors.secondary)
         }
         .padding(.bottom, 4)
         #else
-        Text("Paste the link you received").foregroundColor(theme.colors.secondary)
+        Text("粘贴收到的邀请链接").foregroundColor(theme.colors.secondary)
         #endif
     }
 
     private func connect(_ link: String) {
+        if let readinessError = realChatCoreReadinessError() {
+            alert = .newChatSomeAlert(alert: SomeAlert(
+                alert: Alert(title: Text("真实聊天功能未就绪"), message: Text(readinessError)),
+                id: "connect: real chat core not ready"
+            ))
+            return
+        }
         scannerPaused = true
         planAndConnect(
             link,
@@ -746,6 +1206,293 @@ private struct ConnectView: View {
                 scannerPaused = false
             }
         )
+    }
+}
+
+private struct NomeJoinGroupHero: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                Image(systemName: "person.2.fill")
+                    .font(.system(size: 19, weight: .semibold))
+                    .foregroundColor(.white)
+                    .frame(width: 42, height: 42)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(NomeConnectPalette.blue)
+                    )
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("通过邀请加入群组")
+                        .font(.headline)
+                        .foregroundColor(NomeConnectPalette.navy)
+                    Text("粘贴邀请链接，或扫描群组二维码。")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                Spacer(minLength: 0)
+            }
+
+            Text("加入前先检查邀请来源。公开群可能需要管理员审核，私密群只有成员分享邀请后才能加入。")
+                .font(.subheadline)
+                .lineSpacing(2)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 8) {
+                NomeConnectPill(icon: "link", text: "邀请链接")
+                NomeConnectPill(icon: "qrcode", text: "群组二维码")
+                NomeConnectPill(icon: "checkmark.shield", text: "先确认来源")
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color(uiColor: .systemBackground))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(NomeConnectPalette.border, lineWidth: 1)
+        )
+    }
+}
+
+private struct NomeConnectHero: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                Image(systemName: "qrcode.viewfinder")
+                    .font(.system(size: 19, weight: .semibold))
+                    .foregroundColor(.white)
+                    .frame(width: 42, height: 42)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(NomeConnectPalette.blue)
+                    )
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("加入群组或连接朋友")
+                        .font(.headline)
+                        .foregroundColor(NomeConnectPalette.navy)
+                    Text("粘贴链接或扫描二维码即可开始。")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                Spacer(minLength: 0)
+            }
+
+            Text("Nome 会识别邀请类型：一次性朋友链接、群组邀请或公开联系方式。连接前会进入确认流程，避免误加入。")
+                .font(.subheadline)
+                .lineSpacing(2)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 8) {
+                NomeConnectPill(icon: "person.badge.plus", text: "朋友邀请")
+                NomeConnectPill(icon: "person.2.fill", text: "群组邀请")
+                NomeConnectPill(icon: "globe", text: "公开联系方式")
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color(uiColor: .systemBackground))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(NomeConnectPalette.border, lineWidth: 1)
+        )
+    }
+}
+
+private struct NomeGroupPreviewPlaceholder: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("邀请预览")
+                .font(.subheadline.weight(.semibold))
+                .foregroundColor(NomeConnectPalette.navy)
+
+            HStack(spacing: 12) {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(NomeConnectPalette.blue.opacity(0.12))
+                    .frame(width: 58, height: 58)
+                    .overlay {
+                        Image(systemName: "person.2.fill")
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundColor(NomeConnectPalette.blue)
+                    }
+
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("粘贴或扫描后显示群组信息")
+                        .font(.headline)
+                        .foregroundColor(NomeConnectPalette.navy)
+                        .lineLimit(2)
+                    Label("群名、成员数、审核方式会在确认页展示", systemImage: "checkmark.shield")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .lineLimit(2)
+                }
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color(uiColor: .systemBackground))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(NomeConnectPalette.border, lineWidth: 1)
+        )
+    }
+}
+
+private struct NomeGroupSourceWarning: View {
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "checkmark.shield.fill")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(width: 32, height: 32)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(NomeConnectPalette.green)
+                )
+            Text("加入公开群前，请确认群组来源和管理员信息。")
+                .font(.subheadline)
+                .foregroundColor(NomeConnectPalette.navy)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(NomeConnectPalette.green.opacity(0.1))
+        )
+    }
+}
+
+private struct NomeDisabledBrowseGroupsRow: View {
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "globe")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(NomeConnectPalette.blue)
+                .frame(width: 38, height: 38)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(NomeConnectPalette.blue.opacity(0.1))
+                )
+            VStack(alignment: .leading, spacing: 3) {
+                Text("浏览公开群组")
+                    .font(.body.weight(.semibold))
+                    .foregroundColor(NomeConnectPalette.navy)
+                Text("目录服务暂未接入，后续可通过 directory bot 或自建目录实现")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .opacity(0.72)
+    }
+}
+
+private struct NomeInlineBrandMark: View {
+    var body: some View {
+        Image("nome_header_logo")
+            .resizable()
+            .scaledToFit()
+            .frame(width: 82, height: 34)
+            .accessibilityLabel("Nome")
+    }
+}
+
+private struct NomeFlowPageHeader: View {
+    let title: LocalizedStringKey
+    let subtitle: LocalizedStringKey
+    let icon: String
+    let tint: Color
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(width: 38, height: 38)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(tint)
+                )
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 27, weight: .bold))
+                    .foregroundColor(NomeConnectPalette.navy)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                Text(subtitle)
+                    .font(.subheadline)
+                    .lineSpacing(2)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.top, 2)
+        .padding(.bottom, 2)
+    }
+}
+
+private struct NomeConnectPill: View {
+    let icon: String
+    let text: LocalizedStringKey
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+            Text(text)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+        }
+        .font(.caption2.weight(.medium))
+        .foregroundColor(NomeConnectPalette.navy)
+        .padding(.horizontal, 8)
+        .frame(height: 26)
+        .background(Capsule().fill(NomeConnectPalette.blue.opacity(0.1)))
+    }
+}
+
+private struct NomeConnectActionLabel: View {
+    let icon: String
+    let title: LocalizedStringKey
+    let subtitle: LocalizedStringKey
+    let tint: Color
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundColor(tint)
+                .frame(width: 36, height: 36)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(tint.opacity(0.12))
+                )
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.body.weight(.semibold))
+                    .foregroundColor(NomeConnectPalette.navy)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 4)
     }
 }
 
@@ -783,9 +1530,9 @@ struct ScannerInView: View {
                             .foregroundColor(Color.clear)
                         switch cameraAuthorizationStatus {
                         case .authorized, nil: EmptyView()
-                        case .restricted: Text("Camera not available")
-                        case .denied:  Label("Enable camera access", systemImage: "camera")
-                        default: Label("Tap to scan", systemImage: "qrcode")
+                        case .restricted: Text("相机不可用")
+                        case .denied:  Label("允许相机权限", systemImage: "camera")
+                        default: Label("点击扫码", systemImage: "qrcode")
                         }
                     }
                 }
@@ -1446,7 +2193,7 @@ func planAndConnect(
                         logger.debug("planAndConnect, .contactAddress, .ownLink")
                         await MainActor.run {
                             showAskCurrentOrIncognitoProfileSheet(
-                                title: NSLocalizedString("Connect to yourself?\nThis is your own SimpleX address!", comment: "new chat sheet title"),
+                                title: NSLocalizedString("Connect to yourself?\nThis is your own public contact address!", comment: "new chat sheet title"),
                                 actionStyle: .destructive,
                                 connectionLink: connectionLink,
                                 connectionPlan: connectionPlan,

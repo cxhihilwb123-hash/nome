@@ -44,6 +44,10 @@ class BGManager {
 
     // Spec: spec/services/notifications.md#schedule
     func schedule(interval: TimeInterval? = nil) {
+        guard NomeActivationGate.allowsNetworking else {
+            logger.debug("BGManager.schedule: blocked by Nome activation")
+            return
+        }
         if !ChatModel.shared.ntfEnableLocal {
             logger.debug("BGManager.schedule: disabled")
             return
@@ -72,6 +76,11 @@ class BGManager {
 
     // Spec: spec/services/notifications.md#handleRefresh
     private func handleRefresh(_ task: BGAppRefreshTask) {
+        guard NomeActivationGate.allowsNetworking else {
+            logger.debug("BGManager.handleRefresh: blocked by Nome activation")
+            task.setTaskCompleted(success: true)
+            return
+        }
         if !ChatModel.shared.ntfEnableLocal {
             logger.debug("BGManager.handleRefresh: disabled")
             return
@@ -110,6 +119,10 @@ class BGManager {
 
     // Spec: spec/services/notifications.md#receiveMessages-BG
     func receiveMessages(_ completeReceiving: @escaping (String) -> Void) {
+        guard NomeActivationGate.allowsNetworking else {
+            completeReceiving("blocked by Nome activation")
+            return
+        }
         if (!self.completed) {
             logger.debug("BGManager.receiveMessages: in progress, exiting")
             return

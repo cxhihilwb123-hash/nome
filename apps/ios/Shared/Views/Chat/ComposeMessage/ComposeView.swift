@@ -455,7 +455,7 @@ struct ComposeView: View {
                 let voiceProhibited = composeState.voicePreview && !chat.chatInfo.featureEnabled(.voice)
                 let disableSendButton = simplexLinkProhibited || fileProhibited || voiceProhibited
                 if simplexLinkProhibited {
-                    msgNotAllowedView("SimpleX links not allowed", icon: "link")
+                    msgNotAllowedView("Invitation links not allowed", icon: "link")
                     Divider()
                 } else if fileProhibited {
                     msgNotAllowedView("Files and media not allowed", icon: "doc")
@@ -1119,6 +1119,7 @@ struct ComposeView: View {
     }
 
     private func sendMemberContactInvitation() {
+        guard NomeActivationGate.require(.connect) else { return }
         Task {
             do {
                 await MainActor.run { hideKeyboard() }
@@ -1141,6 +1142,7 @@ struct ComposeView: View {
     }
 
     private func sendConnectPreparedContactRequest() {
+        guard NomeActivationGate.require(.connect) else { return }
         hideKeyboard()
         let empty = composeState.whitespaceOnly
         AlertManager.shared.showAlert(Alert(
@@ -1158,6 +1160,7 @@ struct ComposeView: View {
     }
 
     private func sendConnectPreparedContact() {
+        guard NomeActivationGate.require(.connect) else { return }
         Task {
             await MainActor.run { hideKeyboard() }
             await sending()
@@ -1175,6 +1178,7 @@ struct ComposeView: View {
     }
 
     private func connectPreparedGroup() {
+        guard NomeActivationGate.require(.group) else { return }
         Task {
             await MainActor.run { hideKeyboard() }
             await sending()
@@ -1456,6 +1460,20 @@ struct ComposeView: View {
 
     // Spec: spec/client/compose.md#sendMessageAsync
     private func sendMessageAsync(_ text: String?, live: Bool, ttl: Int?) async -> ChatItem? {
+        // Local notes remain usable before activation. For every social chat, stop before
+        // entering the sending state so text, attachments, quotes and edit context stay intact.
+        guard chat.chatInfo.chatType == .local || NomeActivationGate.require(.message) else {
+            return nil
+        }
+        #if DEBUG
+        // The conversation preview has no Core controller. Once the activation gate allows the
+        // action, finish it locally so UI automation can verify the unlocked path without calling
+        // an intentionally absent chat engine.
+        if ProcessInfo.processInfo.arguments.contains("-NomeConversationPreview") {
+            composeState = ComposeState()
+            return nil
+        }
+        #endif
         var sent: ChatItem?
         let msgText = text ?? composeState.message
         let liveMessage = composeState.liveMessage

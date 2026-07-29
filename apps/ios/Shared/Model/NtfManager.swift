@@ -41,6 +41,17 @@ class NtfManager: NSObject, UNUserNotificationCenterDelegate, ObservableObject {
                                 didReceive response: UNNotificationResponse,
                                 withCompletionHandler handler: () -> Void) {
         logger.debug("NtfManager.userNotificationCenter: didReceive")
+        guard NomeActivationGate.allowsNetworking else {
+            logger.notice("Nome activation blocked notification response")
+            // Keep this separate from ChatModel.notificationResponse, which the normal foreground
+            // lifecycle auto-consumes. Activation resumes it only after a second confirmation.
+            ChatModel.shared.notificationResponse = nil
+            Task { @MainActor in
+                NomeActivationStore.shared.presentNotificationResponse(response)
+            }
+            handler()
+            return
+        }
         if appStateGroupDefault.get() == .active {
             processNotificationResponse(response)
         } else {
@@ -52,6 +63,7 @@ class NtfManager: NSObject, UNUserNotificationCenterDelegate, ObservableObject {
 
     // Spec: spec/services/notifications.md#processNotificationResponse
     func processNotificationResponse(_ ntfResponse: UNNotificationResponse) {
+        guard NomeActivationGate.require(.notification) else { return }
         let chatModel = ChatModel.shared
         let content = ntfResponse.notification.request.content
         let action = ntfResponse.actionIdentifier
@@ -200,7 +212,7 @@ class NtfManager: NSObject, UNUserNotificationCenterDelegate, ObservableObject {
                 identifier: ntfCategoryConnectionEvent,
                 actions: [],
                 intentIdentifiers: [],
-                hiddenPreviewsBodyPlaceholder: NSLocalizedString("SimpleX encrypted message or connection event", comment: "notification")
+                hiddenPreviewsBodyPlaceholder: NSLocalizedString("Nome encrypted message or connection event", comment: "notification")
             ),
             UNNotificationCategory(
                 identifier: ntfCategoryManyEvents,

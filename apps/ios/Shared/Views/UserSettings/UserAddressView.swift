@@ -10,6 +10,19 @@ import SwiftUI
 import MessageUI
 @preconcurrency import SimpleXChat
 
+private enum NomeAddressPalette {
+    static let navy = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor.label.resolvedColor(with: traits)
+            : UIColor(red: 14.0 / 255.0, green: 27.0 / 255.0, blue: 45.0 / 255.0, alpha: 1)
+    })
+    static let brandNavy = Color(red: 14.0 / 255.0, green: 27.0 / 255.0, blue: 45.0 / 255.0)
+    static let green = Color(red: 22.0 / 255.0, green: 174.0 / 255.0, blue: 102.0 / 255.0)
+    static let blue = Color(red: 39.0 / 255.0, green: 107.0 / 255.0, blue: 255.0 / 255.0)
+    static let purple = Color(red: 116.0 / 255.0, green: 89.0 / 255.0, blue: 238.0 / 255.0)
+    static let border = Color.black.opacity(0.06)
+}
+
 struct UserAddressView: View {
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.dismiss) var dismiss: DismissAction
@@ -25,17 +38,22 @@ struct UserAddressView: View {
     @State private var mailViewResult: Result<MFMailComposeResult, Error>? = nil
     @State private var alert: UserAddressAlert?
     @State private var progressIndicator = false
+    @State private var addressCopied = false
 
     private enum UserAddressAlert: Identifiable {
         case deleteAddress
+        case replaceAddress
         case shareOnCreate
         case error(title: LocalizedStringKey, error: LocalizedStringKey?)
+        case runtimeError(title: String, message: String?)
 
         var id: String {
             switch self {
             case .deleteAddress: return "deleteAddress"
+            case .replaceAddress: return "replaceAddress"
             case .shareOnCreate: return "shareOnCreate"
             case let .error(title, _): return "error \(title)"
+            case let .runtimeError(title, _): return "runtimeError \(title)"
             }
         }
     }
@@ -64,6 +82,13 @@ struct UserAddressView: View {
             }
             .navigationBarTitleDisplayMode(.inline)
         }
+        .if(!onboarding) { v in
+            v.toolbar {
+                ToolbarItem(placement: .principal) {
+                    NomeAddressInlineBrandMark()
+                }
+            }
+        }
         .onAppear {
             if chatModel.userAddress == nil, autoCreate {
                 createAddress()
@@ -72,35 +97,34 @@ struct UserAddressView: View {
     }
 
     private func userAddressView() -> some View {
-        List {
-            if let userAddress = chatModel.userAddress {
-                if onboarding {
-                    onboardingAddressView(userAddress)
-                } else {
-                    existingAddressView(userAddress)
-                        .onAppear {
-                            settings = AddressSettingsState(settings: userAddress.addressSettings)
-                            savedSettings = AddressSettingsState(settings: userAddress.addressSettings)
+        Group {
+            if onboarding {
+                List {
+                    if let userAddress = chatModel.userAddress {
+                        onboardingAddressView(userAddress)
+                    }
+                }
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        NomeAddressPageHeader()
+                        NomeAddressIntroCard()
+
+                        if let userAddress = chatModel.userAddress {
+                            existingAddressDashboard(userAddress)
+                                .onAppear {
+                                    settings = AddressSettingsState(settings: userAddress.addressSettings)
+                                    savedSettings = AddressSettingsState(settings: userAddress.addressSettings)
+                                }
+                        } else {
+                            noAddressDashboard()
                         }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 12)
+                    .padding(.bottom, 32)
                 }
-            } else if !onboarding {
-                Section {
-                    createAddressButton()
-                } header: {
-                    Text("For social media")
-                        .foregroundColor(theme.colors.secondary)
-                }
-
-                Section {
-                    createOneTimeLinkButton()
-                } header: {
-                    Text("Or to share privately")
-                        .foregroundColor(theme.colors.secondary)
-                }
-
-                Section {
-                    learnMoreButton()
-                }
+                .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
             }
         }
         .alert(item: $alert) { alert in
@@ -110,9 +134,11 @@ struct UserAddressView: View {
                     title: Text("Delete address?"),
                     message:
                         shareViaProfile
-                    ? Text("All your contacts will remain connected. Profile update will be sent to your contacts.")
-                    : Text("All your contacts will remain connected."),
-                    primaryButton: .destructive(Text("Delete")) {
+                    ? Text("已有联系人仍会保持连接。你的联系人会收到资料更新。")
+                    : Text("已有联系人仍会保持连接。"),
+                    primaryButton: .destructive(Text("关闭")) {
+                        guard NomeActivationGate.require(.address) else { return }
+                        if showRealCoreErrorIfNeeded() { return }
                         progressIndicator = true
                         Task {
                             do {
@@ -133,81 +159,68 @@ struct UserAddressView: View {
                         }
                     }, secondaryButton: .cancel()
                 )
+            case .replaceAddress:
+                return Alert(
+                    title: Text("更换公开联系方式？"),
+                    message: Text("当前公开地址会停用，并生成一个新的地址。已有联系人不会被移除。"),
+                    primaryButton: .destructive(Text("更换")) {
+                        replaceAddress()
+                    }, secondaryButton: .cancel()
+                )
             case .shareOnCreate:
                 return Alert(
-                    title: Text("Share address with SimpleX contacts?"),
-                    message: Text("Add address to your profile, so that your SimpleX contacts can share it with other people. Profile update will be sent to your SimpleX contacts."),
-                    primaryButton: .default(Text("Share")) {
+                    title: Text("分享公开联系方式给联系人？"),
+                    message: Text("它会添加到你的资料里，已有联系人会收到资料更新。"),
+                    primaryButton: .default(Text("分享")) {
+                        guard NomeActivationGate.require(.address) else { return }
+                        if showRealCoreErrorIfNeeded() { return }
                         setProfileAddress($progressIndicator, true)
                         shareViaProfile = true
                     }, secondaryButton: .cancel()
                 )
             case let .error(title, error):
                 return mkAlert(title: title, message: error)
+            case let .runtimeError(title, message):
+                if let message {
+                    return Alert(title: Text(title), message: Text(message))
+                } else {
+                    return Alert(title: Text(title))
+                }
             }
         }
     }
 
-    @ViewBuilder private func existingAddressView(_ userAddress: UserContactLink) -> some View {
-        Section {
-            SimpleXCreatedLinkQRCode(link: userAddress.connLinkContact, short: $showShortLink)
-                .id("simplex-contact-address-qrcode-\(userAddress.connLinkContact.simplexChatUri(short: showShortLink))")
-            if userAddress.shouldBeUpgraded {
-                upgradeAddressButton()
-            }
-            shareAddressButton(userAddress)
-            // if MFMailComposeViewController.canSendMail() {
-            //     shareViaEmailButton(userAddress)
-            // }
-            settingsRow("briefcase", color: theme.colors.secondary) {
-                Toggle("Business address", isOn: $settings.businessAddress)
-                    .onChange(of: settings.businessAddress) { ba in
-                        if ba {
-                            settings.autoAccept = true
-                            settings.autoAcceptIncognito = false
-                        }
-                        saveAddressSettings(settings, $savedSettings)
-                    }
-            }
-            addressSettingsButton(userAddress)
-        } header: {
-            #if SIMPLEX_ASSETS
-            VStack(alignment: .leading, spacing: 0) {
-                Image(colorScheme == .light ? "simplex-address-small" : "simplex-address-small-light")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, -20)
-                ToggleShortLinkHeader(text: Text("For social media"), link: userAddress.connLinkContact, short: $showShortLink)
-            }
-            .padding(.bottom, 4)
-            #else
-            ToggleShortLinkHeader(text: Text("For social media"), link: userAddress.connLinkContact, short: $showShortLink)
-            #endif
-        } footer: {
-            if settings.businessAddress {
-                Text("Add your team members to the conversations.")
-                    .foregroundColor(theme.colors.secondary)
-            }
-        }
+    @ViewBuilder private func existingAddressDashboard(_ userAddress: UserContactLink) -> some View {
+        NomePublicAddressCard(
+            link: addressLink(userAddress),
+            copied: addressCopied,
+            copyAction: { copyAddress(userAddress) },
+            shareAction: { shareAddress(userAddress) }
+        )
 
-        Section {
+        NomeConfirmationCard(needsConfirmation: needsConfirmationBinding)
+
+        NomeAddressManagementCard(
+            replaceTitle: userAddress.shouldBeUpgraded ? "升级地址" : "更换地址",
+            replaceSubtitle: userAddress.shouldBeUpgraded ? "生成更短的公开地址" : "生成新的公开地址",
+            replaceAction: {
+                if userAddress.shouldBeUpgraded {
+                    upgradeAddress()
+                } else {
+                    alert = .replaceAddress
+                }
+            },
+            settingsAction: { addressSettingsButton(userAddress) },
+            deleteAction: { alert = .deleteAddress }
+        )
+
+        NomeAddressPanel {
             createOneTimeLinkButton()
-        } header: {
-            Text("Or to share privately")
-                .foregroundColor(theme.colors.secondary)
-        }
-
-        Section {
+            Divider().padding(.leading, 48)
             learnMoreButton()
         }
 
-        Section {
-            deleteAddressButton()
-        } footer: {
-            Text("Your contacts will remain connected.")
-                .foregroundColor(theme.colors.secondary)
-        }
+        NomeAddressTrustNote()
     }
 
     @ViewBuilder private func onboardingAddressView(_ userAddress: UserContactLink) -> some View {
@@ -258,15 +271,36 @@ struct UserAddressView: View {
         }
     }
 
+    @ViewBuilder private func noAddressDashboard() -> some View {
+        NomeAddressPanel {
+            createAddressButton()
+        }
+
+        NomeAddressPanel {
+            createOneTimeLinkButton()
+            Divider().padding(.leading, 48)
+            learnMoreButton()
+        }
+
+        NomeAddressTrustNote()
+    }
+
     private func createAddressButton() -> some View {
         Button {
             createAddress()
         } label: {
-            Label("Create SimpleX address", systemImage: "qrcode")
+            NomeAddressActionLabel(
+                icon: "globe",
+                title: "创建公开联系方式",
+                subtitle: "可重复分享，别人发起连接前需要你确认",
+                tint: NomeAddressPalette.green
+            )
         }
     }
 
     private func createAddress() {
+        guard NomeActivationGate.require(.address) else { return }
+        if showRealCoreErrorIfNeeded() { return }
         progressIndicator = true
         Task {
             do {
@@ -300,25 +334,53 @@ struct UserAddressView: View {
         }
     }
 
-    private func upgradeAddressButton() -> some View {
-        Button {
-            upgradeAndShareAddressAlert(progressIndicator: $progressIndicator)
-        } label: {
-            settingsRow("arrow.up", color: theme.colors.primary) {
-                Text("Upgrade address")
+    private func replaceAddress() {
+        guard NomeActivationGate.require(.address) else { return }
+        if showRealCoreErrorIfNeeded() { return }
+        progressIndicator = true
+        Task {
+            do {
+                _ = try await apiDeleteUserAddress()
+                let connLinkContact = try await apiCreateUserAddress()
+                await MainActor.run {
+                    if let connLinkContact {
+                        chatModel.userAddress = UserContactLink(connLinkContact)
+                    }
+                    shareViaProfile = false
+                    settings = AddressSettingsState()
+                    savedSettings = AddressSettingsState()
+                    progressIndicator = false
+                }
+            } catch let error {
+                logger.error("UserAddressView replace address: \(responseError(error))")
+                let a = getErrorAlert(error, "Error changing address")
+                await MainActor.run {
+                    alert = .error(title: a.title, error: a.message)
+                    progressIndicator = false
+                }
             }
         }
+    }
+
+    private func upgradeAddress() {
+        guard NomeActivationGate.require(.address) else { return }
+        if showRealCoreErrorIfNeeded() { return }
+        upgradeAndShareAddressAlert(progressIndicator: $progressIndicator)
     }
 
     private func createOneTimeLinkButton() -> some View {
         NavigationLink {
             NewChatView(selection: .invite)
-                .navigationTitle("New chat")
+                .navigationTitle("添加朋友")
                 .navigationBarTitleDisplayMode(.large)
                 .modifier(ThemedBackground(grouped: true))
         } label: {
-            Label("Create 1-time link", systemImage: "link.badge.plus")
-                .foregroundColor(theme.colors.primary)
+            NomeAddressActionLabel(
+                icon: "link.badge.plus",
+                title: "创建一次性朋友链接",
+                subtitle: "只用于一次私下邀请，连接成功后失效",
+                tint: NomeAddressPalette.blue
+            )
         }
     }
 
@@ -326,27 +388,51 @@ struct UserAddressView: View {
         Button(role: .destructive) {
             alert = .deleteAddress
         } label: {
-            Label("Delete address", systemImage: "trash")
+            Label("关闭公开联系方式", systemImage: "trash")
                 .foregroundColor(Color.red)
         }
     }
 
     private func shareAddressButton(_ userAddress: UserContactLink) -> some View {
         return Button {
-            if userAddress.shouldBeUpgraded {
-                upgradeAndShareAddressAlert(progressIndicator: $progressIndicator, shareAddress: { userAddress.shareAddress(short: showShortLink) })
-            } else {
-                userAddress.shareAddress(short: showShortLink)
-            }
+            shareAddress(userAddress)
         } label: {
-            settingsRow("square.and.arrow.up", color: theme.colors.secondary) {
-                Text("Share address")
-            }
+            NomeAddressActionLabel(
+                icon: "square.and.arrow.up",
+                title: "分享公开联系方式",
+                subtitle: "复制、发送或展示二维码",
+                tint: NomeAddressPalette.green
+            )
         }
+    }
+
+    private func shareAddress(_ userAddress: UserContactLink) {
+        guard NomeActivationGate.require(.address) else { return }
+        if showRealCoreErrorIfNeeded() { return }
+        if userAddress.shouldBeUpgraded {
+            upgradeAndShareAddressAlert(progressIndicator: $progressIndicator, shareAddress: { userAddress.shareAddress(short: showShortLink) })
+        } else {
+            userAddress.shareAddress(short: showShortLink)
+        }
+    }
+
+    private func copyAddress(_ userAddress: UserContactLink) {
+        guard NomeActivationGate.require(.address) else { return }
+        if showRealCoreErrorIfNeeded() { return }
+        UIPasteboard.general.string = addressLink(userAddress)
+        addressCopied = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
+            addressCopied = false
+        }
+    }
+
+    private func addressLink(_ userAddress: UserContactLink) -> String {
+        simplexChatLink(userAddress.connLinkContact.simplexChatUri(short: showShortLink))
     }
 
     private func shareViaEmailButton(_ userAddress: UserContactLink) -> some View {
         Button {
+            guard NomeActivationGate.require(.address) else { return }
             showMailView = true
         } label: {
             settingsRow("envelope", color: theme.colors.secondary) {
@@ -378,29 +464,503 @@ struct UserAddressView: View {
     private func addressSettingsButton(_ userAddress: UserContactLink) -> some View {
         NavigationLink {
             UserAddressSettingsView(shareViaProfile: $shareViaProfile)
-                .navigationTitle("Address settings")
+                .navigationTitle("公开联系方式设置")
                 .navigationBarTitleDisplayMode(.large)
                 .modifier(ThemedBackground(grouped: true))
         } label: {
-            Text("Address settings")
+            NomeAddressActionLabel(
+                icon: "slider.horizontal.3",
+                title: "地址设置",
+                subtitle: "确认方式、资料分享和欢迎语",
+                tint: NomeAddressPalette.purple
+            )
         }
     }
 
     private func learnMoreButton() -> some View {
         NavigationLink {
             UserAddressLearnMore()
-                .navigationTitle("Address or 1-time link?")
+                .navigationTitle("公开联系方式和一次性链接")
                 .modifier(ThemedBackground(grouped: true))
                 .navigationBarTitleDisplayMode(.inline)
         } label: {
             settingsRow("info.circle", color: theme.colors.secondary) {
-                Text("SimpleX address or 1-time link?")
+                Text("公开联系方式和一次性链接有什么不同？")
+            }
+        }
+    }
+
+    private var needsConfirmationBinding: Binding<Bool> {
+        Binding(
+            get: { !settings.autoAccept },
+            set: { needsConfirmation in
+                guard NomeActivationGate.require(.address) else { return }
+                if showRealCoreErrorIfNeeded() { return }
+                settings.autoAccept = !needsConfirmation
+                if needsConfirmation {
+                    settings.businessAddress = false
+                    settings.autoAcceptIncognito = false
+                    settings.autoReply = ""
+                }
+                saveAddressSettings(settings, $savedSettings)
+            }
+        )
+    }
+
+    private func showRealCoreErrorIfNeeded() -> Bool {
+        guard let error = realChatCoreReadinessError() else { return false }
+        alert = .runtimeError(title: "真实聊天 core 尚未可用", message: error)
+        return true
+    }
+}
+
+private struct NomeAddressTitleHeader: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("公开联系方式")
+                .font(.system(size: 34, weight: .bold))
+                .foregroundColor(NomeAddressPalette.navy)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("让别人安全地向你发起联系请求，是否通过仍由你决定。")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.top, 4)
+    }
+}
+
+private struct NomeAddressIntroCard: View {
+    var body: some View {
+        NomeAddressPanel {
+            HStack(alignment: .top, spacing: 14) {
+                Image(systemName: "globe")
+                    .font(.system(size: 24, weight: .semibold))
+                    .foregroundColor(NomeAddressPalette.green)
+                    .frame(width: 46, height: 46)
+                    .background(Circle().fill(NomeAddressPalette.green.opacity(0.12)))
+                Text("公开联系方式是你的可重复使用地址，方便别人向你发起联系请求。")
+                    .font(.body)
+                    .lineSpacing(3)
+                    .foregroundColor(NomeAddressPalette.navy)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
             }
         }
     }
 }
 
+private struct NomeAddressInlineBrandMark: View {
+    var body: some View {
+        Image("nome_header_logo")
+            .resizable()
+            .scaledToFit()
+            .frame(width: 82, height: 34)
+            .accessibilityLabel("Nome")
+    }
+}
+
+private struct NomeAddressPageHeader: View {
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Image(systemName: "globe")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(width: 38, height: 38)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(NomeAddressPalette.green)
+                )
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("公开联系方式")
+                    .font(.system(size: 27, weight: .bold))
+                    .foregroundColor(NomeAddressPalette.navy)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                Text("让别人向你发起联系请求，是否通过仍由你决定。")
+                    .font(.subheadline)
+                    .lineSpacing(2)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.top, 2)
+        .padding(.bottom, 2)
+    }
+}
+
+private struct NomeAddressPanel<Content: View>: View {
+    let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            content
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color(uiColor: .systemBackground))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(NomeAddressPalette.border, lineWidth: 1)
+        )
+        .buttonStyle(.plain)
+    }
+}
+
+private struct NomePublicAddressCard: View {
+    let link: String
+    let copied: Bool
+    let copyAction: () -> Void
+    let shareAction: () -> Void
+
+    var body: some View {
+        NomeAddressPanel {
+            HStack(alignment: .top, spacing: 14) {
+                Image(systemName: "globe")
+                    .font(.system(size: 24, weight: .semibold))
+                    .foregroundColor(NomeAddressPalette.green)
+                    .frame(width: 46, height: 46)
+                    .background(Circle().fill(NomeAddressPalette.green.opacity(0.12)))
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("公开联系方式")
+                        .font(.headline)
+                        .foregroundColor(NomeAddressPalette.navy)
+                    Text(link)
+                        .font(.system(.callout, design: .monospaced))
+                        .foregroundColor(NomeAddressPalette.navy.opacity(0.88))
+                        .lineLimit(3)
+                        .truncationMode(.middle)
+                        .textSelection(.enabled)
+                }
+                Spacer(minLength: 0)
+                Button(action: copyAction) {
+                    Image(systemName: copied ? "checkmark" : "doc.on.doc")
+                        .font(.system(size: 22, weight: .medium))
+                        .foregroundColor(copied ? NomeAddressPalette.green : NomeAddressPalette.navy)
+                        .frame(width: 38, height: 38)
+                }
+                .accessibilityLabel(copied ? "已复制" : "复制公开联系方式")
+            }
+
+            HStack(spacing: 12) {
+                Button(action: copyAction) {
+                    NomeAddressButtonLabel(
+                        icon: copied ? "checkmark" : "doc.on.doc",
+                        text: copied ? "已复制" : "复制",
+                        tint: NomeAddressPalette.navy,
+                        filled: false
+                    )
+                }
+
+                Button(action: shareAction) {
+                    NomeAddressButtonLabel(
+                        icon: "square.and.arrow.up",
+                        text: "分享",
+                        tint: .white,
+                        filled: true
+                    )
+                }
+            }
+            .padding(.top, 16)
+        }
+    }
+}
+
+private struct NomeAddressButtonLabel: View {
+    let icon: String
+    let text: String
+    let tint: Color
+    let filled: Bool
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+            Text(text)
+                .fontWeight(.semibold)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .font(.body)
+        .foregroundColor(tint)
+        .frame(maxWidth: .infinity)
+        .frame(height: 52)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(filled ? NomeAddressPalette.blue : Color.clear)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(filled ? Color.clear : NomeAddressPalette.border, lineWidth: 1)
+        )
+    }
+}
+
+private struct NomeConfirmationCard: View {
+    @Binding var needsConfirmation: Bool
+
+    var body: some View {
+        NomeAddressPanel {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("需要确认")
+                        .font(.headline)
+                        .foregroundColor(NomeAddressPalette.navy)
+                    Text("收到联系请求时需要你确认")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+                Toggle("", isOn: $needsConfirmation)
+                    .labelsHidden()
+                    .tint(NomeAddressPalette.green)
+            }
+        }
+    }
+}
+
+private struct NomeAddressManagementCard<SettingsAction: View>: View {
+    let replaceTitle: String
+    let replaceSubtitle: String
+    let replaceAction: () -> Void
+    let settingsAction: SettingsAction
+    let deleteAction: () -> Void
+
+    init(
+        replaceTitle: String,
+        replaceSubtitle: String,
+        replaceAction: @escaping () -> Void,
+        @ViewBuilder settingsAction: () -> SettingsAction,
+        deleteAction: @escaping () -> Void
+    ) {
+        self.replaceTitle = replaceTitle
+        self.replaceSubtitle = replaceSubtitle
+        self.replaceAction = replaceAction
+        self.settingsAction = settingsAction()
+        self.deleteAction = deleteAction
+    }
+
+    var body: some View {
+        NomeAddressPanel {
+            Text("地址管理")
+                .font(.headline)
+                .foregroundColor(NomeAddressPalette.navy)
+                .padding(.bottom, 12)
+
+            HStack(spacing: 12) {
+                Button(action: replaceAction) {
+                    NomeAddressMiniAction(
+                        icon: "arrow.triangle.2.circlepath",
+                        title: replaceTitle,
+                        subtitle: replaceSubtitle,
+                        tint: NomeAddressPalette.blue
+                    )
+                }
+
+                Button(role: .destructive, action: deleteAction) {
+                    NomeAddressMiniAction(
+                        icon: "trash",
+                        title: "关闭地址",
+                        subtitle: "停用此地址",
+                        tint: .red
+                    )
+                }
+            }
+
+            Divider().padding(.vertical, 12)
+            settingsAction
+
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: "info.circle")
+                    .foregroundColor(.secondary)
+                    .padding(.top, 1)
+                Text("关闭或更换地址不会影响已建立的联系人。")
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.top, 12)
+        }
+    }
+}
+
+private struct NomeAddressMiniAction: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+    let tint: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundColor(tint)
+            Text(title)
+                .font(.body.weight(.semibold))
+                .foregroundColor(NomeAddressPalette.navy)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            Text(subtitle)
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, minHeight: 116, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(tint.opacity(0.08))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(tint.opacity(0.18), lineWidth: 1)
+        )
+    }
+}
+
+private struct NomeAddressTrustNote: View {
+    var body: some View {
+        HStack(alignment: .top, spacing: 14) {
+            Image(systemName: "shield.lefthalf.filled.badge.checkmark")
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundColor(NomeAddressPalette.blue)
+                .frame(width: 46, height: 46)
+                .background(Circle().fill(NomeAddressPalette.blue.opacity(0.1)))
+            Text("这个地址只用于建立联系，不用于后续消息投递。")
+                .font(.body)
+                .lineSpacing(3)
+                .foregroundColor(NomeAddressPalette.navy)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(NomeAddressPalette.blue.opacity(0.06))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(NomeAddressPalette.blue.opacity(0.14), lineWidth: 1)
+        )
+    }
+}
+
+private struct NomeAddressHero: View {
+    let hasAddress: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                Image(systemName: hasAddress ? "checkmark.shield.fill" : "globe.badge.plus")
+                    .font(.system(size: 19, weight: .semibold))
+                    .foregroundColor(.white)
+                    .frame(width: 42, height: 42)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(hasAddress ? NomeAddressPalette.green : NomeAddressPalette.brandNavy)
+                    )
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("公开联系方式")
+                        .font(.headline)
+                        .foregroundColor(NomeAddressPalette.navy)
+                    Text(hasAddress ? "已启用，可分享给更多人。" : "适合放在社媒、网站或名片上。")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                Spacer(minLength: 0)
+            }
+
+            Text("别人通过这个地址联系你时，你仍然可以先确认再连接。关闭或更换地址不会移除已有联系人。")
+                .font(.subheadline)
+                .lineSpacing(2)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 8) {
+                NomeAddressPill(icon: "person.badge.shield.checkmark", text: "需要确认")
+                NomeAddressPill(icon: "arrow.clockwise", text: "可更换")
+                NomeAddressPill(icon: "person.2.slash", text: "不影响已有联系人")
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color(uiColor: .systemBackground))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(NomeAddressPalette.border, lineWidth: 1)
+        )
+    }
+}
+
+private struct NomeAddressPill: View {
+    let icon: String
+    let text: LocalizedStringKey
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+            Text(text)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+        }
+        .font(.caption2.weight(.medium))
+        .foregroundColor(NomeAddressPalette.navy)
+        .padding(.horizontal, 8)
+        .frame(height: 26)
+        .background(Capsule().fill(NomeAddressPalette.green.opacity(0.1)))
+    }
+}
+
+private struct NomeAddressActionLabel: View {
+    let icon: String
+    let title: LocalizedStringKey
+    let subtitle: LocalizedStringKey
+    let tint: Color
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundColor(tint)
+                .frame(width: 36, height: 36)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(tint.opacity(0.12))
+                )
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.body.weight(.semibold))
+                    .foregroundColor(NomeAddressPalette.navy)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 4)
+    }
+}
+
 func upgradeAndShareAddressAlert(progressIndicator: Binding<Bool>, shareAddress: (() -> Void)? = nil) {
+    guard NomeActivationGate.require(.address) else { return }
     showAlert(
         NSLocalizedString("Upgrade address?", comment: "alert message"),
         message: NSLocalizedString("The address will be short, and your profile will be shared via the address.", comment: "alert message"),
@@ -420,6 +980,8 @@ func upgradeAndShareAddressAlert(progressIndicator: Binding<Bool>, shareAddress:
 }
 
 private func addShortLink(progressIndicator: Binding<Bool>, shareOnCompletion: Bool = false) {
+    guard NomeActivationGate.require(.address) else { return }
+    if showRealChatCoreUnavailableIfNeeded() { return }
     progressIndicator.wrappedValue = true
     Task {
         do {
@@ -487,7 +1049,14 @@ struct AddressSettingsState: Equatable {
     }
 }
 
+private func showRealChatCoreUnavailableIfNeeded() -> Bool {
+    guard let error = realChatCoreReadinessError() else { return false }
+    showAlert("真实聊天 core 尚未可用", message: error)
+    return true
+}
+
 private func setProfileAddress(_ progressIndicator: Binding<Bool>, _ on: Bool) {
+    if showRealChatCoreUnavailableIfNeeded() { return }
     progressIndicator.wrappedValue = true
     Task {
         do {
@@ -530,7 +1099,7 @@ struct UserAddressSettingsView: View {
                     .onDisappear {
                         if savedSettings != settings {
                             showAlert(
-                                title: NSLocalizedString("SimpleX address settings", comment: "alert title"),
+                                title: NSLocalizedString("Public contact address settings", comment: "alert title"),
                                 message: NSLocalizedString("Settings were changed.", comment: "alert message"),
                                 buttonTitle: NSLocalizedString("Save", comment: "alert button"),
                                 buttonAction: { saveAddressSettings(settings, $savedSettings) },
@@ -573,15 +1142,20 @@ struct UserAddressSettingsView: View {
 
     private func shareWithContactsButton() -> some View {
         settingsRow("person", color: theme.colors.secondary) {
-            Toggle("Share with SimpleX contacts", isOn: $shareViaProfile)
+            Toggle("Share with Nome contacts", isOn: $shareViaProfile)
                 .onChange(of: shareViaProfile) { on in
                     if ignoreShareViaProfileChange {
                         ignoreShareViaProfileChange = false
                     } else {
+                        if showRealChatCoreUnavailableIfNeeded() {
+                            ignoreShareViaProfileChange = true
+                            shareViaProfile = !on
+                            return
+                        }
                         if on {
                             showAlert(
-                                NSLocalizedString("Share address with SimpleX contacts?", comment: "alert title"),
-                                message: NSLocalizedString("Profile update will be sent to your SimpleX contacts.", comment: "alert message"),
+                                NSLocalizedString("Share address with Nome contacts?", comment: "alert title"),
+                                message: NSLocalizedString("Profile update will be sent to your Nome contacts.", comment: "alert message"),
                                 actions: {[
                                     UIAlertAction(
                                         title: NSLocalizedString("Cancel", comment: "alert action"),
@@ -603,7 +1177,7 @@ struct UserAddressSettingsView: View {
                         } else {
                             showAlert(
                                 NSLocalizedString("Stop sharing address?", comment: "alert title"),
-                                message: NSLocalizedString("Profile update will be sent to your SimpleX contacts.", comment: "alert message"),
+                                message: NSLocalizedString("Profile update will be sent to your Nome contacts.", comment: "alert message"),
                                 actions: {[
                                     UIAlertAction(
                                         title: NSLocalizedString("Cancel", comment: "alert action"),
@@ -632,6 +1206,10 @@ struct UserAddressSettingsView: View {
         settingsRow("checkmark", color: theme.colors.secondary) {
             Toggle("Auto-accept", isOn: $settings.autoAccept)
                 .onChange(of: settings.autoAccept) { _ in
+                    if showRealChatCoreUnavailableIfNeeded() {
+                        settings = savedSettings
+                        return
+                    }
                     saveAddressSettings(settings, $savedSettings)
                 }
         }
@@ -666,6 +1244,10 @@ struct UserAddressSettingsView: View {
     private func saveAddressSettingsButton() -> some View {
         Button {
             hideKeyboard()
+            if showRealChatCoreUnavailableIfNeeded() {
+                settings = savedSettings
+                return
+            }
             saveAddressSettings(settings, $savedSettings)
         } label: {
             Text("Save")
@@ -674,6 +1256,7 @@ struct UserAddressSettingsView: View {
 }
 
 private func saveAddressSettings(_ settings: AddressSettingsState, _ savedSettings: Binding<AddressSettingsState>) {
+    if showRealChatCoreUnavailableIfNeeded() { return }
     Task {
         do {
             if let address = try await apiSetUserAddressSettings(settings.addressSettings) {

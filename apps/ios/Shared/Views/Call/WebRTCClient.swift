@@ -21,6 +21,7 @@ final class WebRTCClient: NSObject, RTCVideoViewDelegate, RTCFrameEncryptorDeleg
     private static let ivTagBytes: Int = 28
     private static let enableEncryption: Bool = true
     private var chat_ctrl = getChatCtrl()
+    private let callUsesCallKit: Bool
 
     struct Call {
         var connection: RTCPeerConnection
@@ -65,6 +66,9 @@ final class WebRTCClient: NSObject, RTCVideoViewDelegate, RTCFrameEncryptorDeleg
     var activeCall: Call?
     var notConnectedCall: NotConnectedCall?
     private var localRendererAspectRatio: Binding<CGFloat?>
+#if DEBUG
+    private var audioDiagnosticsScheduled = false
+#endif
 
     var cameraRenderers: [RTCVideoRenderer] = []
     var screenRenderers: [RTCVideoRenderer] = []
@@ -77,10 +81,17 @@ final class WebRTCClient: NSObject, RTCVideoViewDelegate, RTCFrameEncryptorDeleg
     required init(_ sendCallResponse: @escaping (WVAPIMessage) async -> Void, _ localRendererAspectRatio: Binding<CGFloat?>) {
         self.sendCallResponse = sendCallResponse
         self.localRendererAspectRatio = localRendererAspectRatio
-        rtcAudioSession.useManualAudio = CallController.useCallKit()
-        rtcAudioSession.isAudioEnabled = !CallController.useCallKit()
+        let callUsesCallKit = CallController.useCallKit(callUUID: ChatModel.shared.activeCall?.callUUID)
+        self.callUsesCallKit = callUsesCallKit
+        rtcAudioSession.useManualAudio = callUsesCallKit
+        rtcAudioSession.isAudioEnabled = callUsesCallKit
+            ? CallController.shared.isAudioSessionActive
+            : true
         logger.debug("WebRTCClient: rtcAudioSession has manual audio \(self.rtcAudioSession.useManualAudio) and audio enabled \(self.rtcAudioSession.isAudioEnabled)")
         super.init()
+#if DEBUG
+        recordAudioDiagnostic("client-init useCallKit=\(callUsesCallKit)")
+#endif
     }
 
     let defaultIceServers: [WebRTC.RTCIceServer] = [
@@ -192,6 +203,9 @@ final class WebRTCClient: NSObject, RTCVideoViewDelegate, RTCFrameEncryptorDeleg
             setupLocalTracks(true, call)
             let (offer, error) = await call.connection.offer()
             if let offer = offer {
+#if DEBUG
+                recordSDPDiagnostic("local-offer", offer)
+#endif
                 setupEncryptionForLocalTracks(call)
                 resp = .offer(
                     offer: compressToBase64(input: encodeJSON(CustomRTCSessionDescription(type: offer.type.toSdpType(), sdp: offer.sdp))),
@@ -213,7 +227,11 @@ final class WebRTCClient: NSObject, RTCVideoViewDelegate, RTCFrameEncryptorDeleg
                 activeCall = call
                 let pc = call.connection
                 if let type = offer.type, let sdp = offer.sdp {
-                    if (try? await pc.setRemoteDescription(RTCSessionDescription(type: type.toWebRTCSdpType(), sdp: sdp))) != nil {
+                    let remoteOffer = RTCSessionDescription(type: type.toWebRTCSdpType(), sdp: sdp)
+                    if (try? await pc.setRemoteDescription(remoteOffer)) != nil {
+#if DEBUG
+                        recordSDPDiagnostic("remote-offer", remoteOffer)
+#endif
                         setupLocalTracks(false, call)
                         setupEncryptionForLocalTracks(call)
                         pc.transceivers.forEach { transceiver in
@@ -222,6 +240,9 @@ final class WebRTCClient: NSObject, RTCVideoViewDelegate, RTCFrameEncryptorDeleg
                         await adaptToOldVersion(pc.transceivers.count <= 2)
                         let (answer, error) = await pc.answer()
                         if let answer = answer {
+#if DEBUG
+                            recordSDPDiagnostic("local-answer", answer)
+#endif
                             self.addIceCandidates(pc, remoteIceCandidates)
                             resp = .answer(
                                 answer: compressToBase64(input: encodeJSON(CustomRTCSessionDescription(type: answer.type.toSdpType(), sdp: answer.sdp))),
@@ -247,7 +268,11 @@ final class WebRTCClient: NSObject, RTCVideoViewDelegate, RTCFrameEncryptorDeleg
                       let remoteIceCandidates: [RTCIceCandidate] = decodeJSON(decompressFromBase64(input: iceCandidates)),
                       let type = answer.type, let sdp = answer.sdp,
                       let pc = pc {
-                if (try? await pc.setRemoteDescription(RTCSessionDescription(type: type.toWebRTCSdpType(), sdp: sdp))) != nil {
+                let remoteAnswer = RTCSessionDescription(type: type.toWebRTCSdpType(), sdp: sdp)
+                if (try? await pc.setRemoteDescription(remoteAnswer)) != nil {
+#if DEBUG
+                    recordSDPDiagnostic("remote-answer", remoteAnswer)
+#endif
                     var currentDirection: RTCRtpTransceiverDirection = .sendOnly
                     pc.transceivers[2].currentDirection(&currentDirection)
                     await adaptToOldVersion(currentDirection == .sendOnly)
@@ -349,6 +374,9 @@ final class WebRTCClient: NSObject, RTCVideoViewDelegate, RTCFrameEncryptorDeleg
         guard let activeCall = ChatModel.shared.activeCall else { return }
         let source = mediaSourceFromTransceiverMid(transceiverMid)
         logger.log("Mute/unmute \(source.rawValue) track = \(mute) with mid = \(transceiverMid ?? "nil")")
+#if DEBUG
+        CallAudioDiagnosticLog.write("peer-flow mid=\(transceiverMid ?? "nil") source=\(source.rawValue) muted=\(mute)")
+#endif
         if source == .mic && activeCall.peerMediaSources.mic == mute {
             activeCall.peerMediaSources.mic = !mute
         } else if (source == .camera && activeCall.peerMediaSources.camera == mute) {
@@ -455,12 +483,17 @@ final class WebRTCClient: NSObject, RTCVideoViewDelegate, RTCFrameEncryptorDeleg
             // new version
             if transceivers.count > 2 {
                 // Outgoing call. All transceivers are ready. Don't addTrack() because it will create new transceivers, replace existing (nil) tracks
-                transceivers
-                    .first(where: { elem in mediaSourceFromTransceiverMid(elem.mid) == .mic })?
-                    .sender.track = audioTrack
-                transceivers
-                    .first(where: { elem in mediaSourceFromTransceiverMid(elem.mid) == .camera })?
-                    .sender.track = videoTrack
+                // The remote description normally assigns usable mids before this point. For an
+                // unresolved mid, preserve the offer's guaranteed mic/camera order instead of
+                // silently leaving the outgoing microphone sender without a track.
+                let micTransceiver = transceivers
+                    .first(where: { elem in mediaSourceFromTransceiverMid(elem.mid) == .mic })
+                    ?? transceivers.first
+                let cameraTransceiver = transceivers
+                    .first(where: { elem in mediaSourceFromTransceiverMid(elem.mid) == .camera })
+                    ?? (transceivers.count > 1 ? transceivers[1] : nil)
+                micTransceiver?.sender.track = audioTrack
+                cameraTransceiver?.sender.track = videoTrack
             } else {
                 // old version, only two transceivers
                 if let audioTrack {
@@ -481,6 +514,17 @@ final class WebRTCClient: NSObject, RTCVideoViewDelegate, RTCFrameEncryptorDeleg
                 }
             }
         }
+#if DEBUG
+        let senders = pc.transceivers.enumerated().map { index, transceiver in
+            let source = mediaSourceFromTransceiverMid(transceiver.mid).rawValue
+            let senderTrack = transceiver.sender.track
+            return "\(index):\(transceiver.mid):\(source):\(String(describing: transceiver.direction)):\(senderTrack?.kind ?? "none"):\(senderTrack?.isEnabled ?? false)"
+        }.joined(separator: ",")
+        recordAudioDiagnostic(
+            "tracks-setup incoming=\(incomingCall) audioTrack=\(audioTrack != nil) audioEnabled=\(audioTrack?.isEnabled ?? false) " +
+            "transceivers=\(pc.transceivers.count) senders=[\(senders)]"
+        )
+#endif
     }
 
     func mediaSourceFromTransceiverMid(_ mid: String?) -> CallMediaSource {
@@ -613,10 +657,11 @@ final class WebRTCClient: NSObject, RTCVideoViewDelegate, RTCFrameEncryptorDeleg
 
         logger.debug("Format for camera is \(format.description)")
 
-        capturer.stopCapture()
-        capturer.startCapture(with: camera,
-            format: format,
-            fps: Int(min(24, fps.maxFrameRate)))
+        capturer.stopCapture {
+            capturer.startCapture(with: camera,
+                format: format,
+                fps: Int(min(24, fps.maxFrameRate)))
+        }
 #endif
     }
 
@@ -624,6 +669,11 @@ final class WebRTCClient: NSObject, RTCVideoViewDelegate, RTCFrameEncryptorDeleg
         let audioConstrains = RTCMediaConstraints(mandatoryConstraints: nil, optionalConstraints: nil)
         let audioSource = WebRTCClient.factory.audioSource(with: audioConstrains)
         let audioTrack = WebRTCClient.factory.audioTrack(with: audioSource, trackId: "audio0")
+#if DEBUG
+        CallAudioDiagnosticLog.write(
+            "audio-track-created permission=\(AVCaptureDevice.authorizationStatus(for: .audio).rawValue) enabled=\(audioTrack.isEnabled)"
+        )
+#endif
         return audioTrack
     }
 
@@ -660,7 +710,9 @@ final class WebRTCClient: NSObject, RTCVideoViewDelegate, RTCFrameEncryptorDeleg
         call.frameEncryptor?.delegate = nil
         call.frameDecryptor?.delegate = nil
         (call.localCamera as? RTCCameraVideoCapturer)?.stopCapture()
-        audioSessionToDefaults()
+        if !callUsesCallKit {
+            audioSessionToDefaults()
+        }
         activeCall = nil
     }
 
@@ -733,6 +785,12 @@ extension WebRTCClient: RTCPeerConnectionDelegate {
 
     func peerConnection(_ peerConnection: RTCPeerConnection, didStartReceivingOn transceiver: RTCRtpTransceiver) {
         if let track = transceiver.receiver.track {
+#if DEBUG
+            CallAudioDiagnosticLog.write(
+                "remote-track mid=\(transceiver.mid) source=\(mediaSourceFromTransceiverMid(transceiver.mid).rawValue) " +
+                "kind=\(track.kind) enabled=\(track.isEnabled) state=\(track.readyState.rawValue)"
+            )
+#endif
             DispatchQueue.main.async {
                 // Doesn't work for outgoing video call (audio in video call works ok still, same as incoming call)
 //                if let decryptor = self.activeCall?.frameDecryptor {
@@ -789,8 +847,16 @@ extension WebRTCClient: RTCPeerConnectionDelegate {
                     connection.receivers.forEach { $0.setRtcFrameDecryptor(frameDecryptor) }
                 }
                 let enableSpeaker: Bool = ChatModel.shared.activeCall?.localMediaSources.hasVideo == true
-                setSpeakerEnabledAndConfigureSession(enableSpeaker)
-            case .connected: sendConnectedEvent(connection)
+                setSpeakerEnabledAndConfigureSession(enableSpeaker, activateSession: !callUsesCallKit)
+                #if DEBUG
+                recordAudioDiagnostic("ice-checking speaker=\(enableSpeaker)")
+                #endif
+            case .connected:
+                #if DEBUG
+                recordAudioDiagnostic("ice-connected")
+                scheduleAudioStatistics()
+                #endif
+                sendConnectedEvent(connection)
             case .disconnected, .failed: endCall()
             default: ()
             }
@@ -894,7 +960,11 @@ extension WebRTCClient {
         }
     }
 
-    func setSpeakerEnabledAndConfigureSession( _ enabled: Bool, skipExternalDevice: Bool = false) {
+    func setSpeakerEnabledAndConfigureSession(
+        _ enabled: Bool,
+        skipExternalDevice: Bool = false,
+        activateSession: Bool = true
+    ) {
         logger.debug("WebRTCClient: configuring session with speaker enabled \(enabled)")
         audioQueue.async { [weak self] in
             guard let self = self else { return }
@@ -905,7 +975,7 @@ extension WebRTCClient {
             do {
                 let hasExternalAudioDevice = self.rtcAudioSession.session.hasExternalAudioDevice()
                 if enabled {
-                    try self.rtcAudioSession.setCategory(AVAudioSession.Category.playAndRecord.rawValue, with: [.defaultToSpeaker, .allowBluetooth, .allowAirPlay, .allowBluetoothA2DP])
+                    try self.rtcAudioSession.setCategory(AVAudioSession.Category.playAndRecord.rawValue, with: [.defaultToSpeaker, .allowBluetoothHFP])
                     try self.rtcAudioSession.setMode(AVAudioSession.Mode.videoChat.rawValue)
                     if hasExternalAudioDevice && !skipExternalDevice, let preferred = self.rtcAudioSession.session.preferredInputDevice() {
                         try self.rtcAudioSession.setPreferredInput(preferred)
@@ -913,20 +983,118 @@ extension WebRTCClient {
                         try self.rtcAudioSession.overrideOutputAudioPort(.speaker)
                     }
                 } else {
-                    try self.rtcAudioSession.setCategory(AVAudioSession.Category.playAndRecord.rawValue, with: [.allowBluetooth, .allowAirPlay, .allowBluetoothA2DP])
+                    try self.rtcAudioSession.setCategory(AVAudioSession.Category.playAndRecord.rawValue, with: [.allowBluetoothHFP])
                     try self.rtcAudioSession.setMode(AVAudioSession.Mode.voiceChat.rawValue)
                     try self.rtcAudioSession.overrideOutputAudioPort(.none)
                 }
                 if hasExternalAudioDevice && !skipExternalDevice {
                     logger.debug("WebRTCClient: configuring session with external device available, skip configuring speaker")
                 }
-                try self.rtcAudioSession.setActive(true)
+                if activateSession {
+                    try self.rtcAudioSession.setActive(true)
+                }
                 logger.debug("WebRTCClient: configuring session with speaker enabled \(enabled) success")
+#if DEBUG
+                self.recordAudioDiagnostic("session-configured speaker=\(enabled) activate=\(activateSession)")
+#endif
             } catch let error {
                 logger.debug("Error configuring AVAudioSession: \(error)")
+#if DEBUG
+                CallAudioDiagnosticLog.write("session-configure-failed code=\((error as NSError).code)")
+#endif
             }
         }
     }
+
+    func activateAudioSessionAfterConnect(speakerEnabled: Bool) {
+        if callUsesCallKit && !CallController.shared.isAudioSessionActive {
+            logger.debug("WebRTCClient: waiting for CallKit to activate connected audio session")
+            return
+        }
+        logger.debug("WebRTCClient: activating connected audio session with speaker enabled \(speakerEnabled)")
+        rtcAudioSession.isAudioEnabled = true
+        setSpeakerEnabledAndConfigureSession(speakerEnabled, activateSession: !callUsesCallKit)
+#if DEBUG
+        recordAudioDiagnostic("connected-audio speaker=\(speakerEnabled) useCallKit=\(callUsesCallKit)")
+#endif
+    }
+
+#if DEBUG
+    private func recordAudioDiagnostic(_ phase: String) {
+        let session = rtcAudioSession.session
+        let inputs = session.currentRoute.inputs.map { $0.portType.rawValue }.joined(separator: ",")
+        let outputs = session.currentRoute.outputs.map { $0.portType.rawValue }.joined(separator: ",")
+        let localTrack = activeCall?.localAudioTrack ?? notConnectedCall?.audioTrack
+        CallAudioDiagnosticLog.write(
+            "\(phase) manual=\(rtcAudioSession.useManualAudio) enabled=\(rtcAudioSession.isAudioEnabled) " +
+            "track=\(localTrack != nil) trackEnabled=\(localTrack?.isEnabled ?? false) " +
+            "category=\(session.category.rawValue) mode=\(session.mode.rawValue) inputs=[\(inputs)] outputs=[\(outputs)]"
+        )
+    }
+
+    private func recordSDPDiagnostic(_ phase: String, _ description: RTCSessionDescription) {
+        var currentMedia: String?
+        var currentMid: String?
+        var currentDirection: String?
+        var audioSections: [String] = []
+
+        func appendCurrentSection() {
+            guard currentMedia == "audio" else { return }
+            audioSections.append("mid=\(currentMid ?? "?"):direction=\(currentDirection ?? "unspecified")")
+        }
+
+        for rawLine in description.sdp.split(whereSeparator: \.isNewline) {
+            let line = String(rawLine)
+            if line.hasPrefix("m=") {
+                appendCurrentSection()
+                currentMedia = line.dropFirst(2).split(separator: " ").first.map(String.init)
+                currentMid = nil
+                currentDirection = nil
+            } else if line.hasPrefix("a=mid:") {
+                currentMid = String(line.dropFirst("a=mid:".count))
+            } else if ["a=sendrecv", "a=sendonly", "a=recvonly", "a=inactive"].contains(line) {
+                currentDirection = String(line.dropFirst(2))
+            }
+        }
+        appendCurrentSection()
+        CallAudioDiagnosticLog.write("sdp phase=\(phase) audio=[\(audioSections.joined(separator: ","))]")
+    }
+
+    private func scheduleAudioStatistics() {
+        guard !audioDiagnosticsScheduled, let connection = activeCall?.connection else { return }
+        audioDiagnosticsScheduled = true
+        for delay in [0.0, 2.0, 5.0] {
+            DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + delay) { [weak self, weak connection] in
+                guard let self, let connection else { return }
+                connection.statistics { report in
+                    let stats = report.statistics.values
+                    let outbound = stats.filter {
+                        $0.type == "outbound-rtp" && (($0.values["kind"] as? String) ?? ($0.values["mediaType"] as? String)) == "audio"
+                    }
+                    let inbound = stats.filter {
+                        $0.type == "inbound-rtp" && (($0.values["kind"] as? String) ?? ($0.values["mediaType"] as? String)) == "audio"
+                    }
+                    func values(_ entries: [RTCStatistics], _ key: String) -> String {
+                        guard !entries.isEmpty else { return "missing" }
+                        return entries.map { stat in
+                            let mid = stat.values["mid"].map(String.init(describing:)) ?? "?"
+                            let value = stat.values[key].map(String.init(describing:)) ?? "missing"
+                            return "\(mid):\(value)"
+                        }.sorted().joined(separator: ",")
+                    }
+                    let sent = values(outbound, "bytesSent")
+                    let sentPackets = values(outbound, "packetsSent")
+                    let received = values(inbound, "bytesReceived")
+                    let receivedPackets = values(inbound, "packetsReceived")
+                    self.recordAudioDiagnostic(
+                        "rtp delay=\(Int(delay)) outbound=\(outbound.count) sent=[\(sent)] sentPackets=[\(sentPackets)] " +
+                        "inbound=\(inbound.count) received=[\(received)] receivedPackets=[\(receivedPackets)]"
+                    )
+                }
+            }
+        }
+    }
+#endif
 
     func audioSessionToDefaults() {
         logger.debug("WebRTCClient: audioSession to defaults")
