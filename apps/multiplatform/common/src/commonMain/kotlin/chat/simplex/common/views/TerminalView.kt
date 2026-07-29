@@ -74,7 +74,11 @@ fun TerminalLayout(
   val focusRequester = remember { FocusRequester() }
 
   LaunchedEffect(Unit) {
-    focusRequester.requestFocus()
+    // Android's composer is an AndroidView-backed EditText and does not attach this Compose
+    // FocusRequester. Requesting it there throws before the terminal can render.
+    if (!appPlatform.isAndroid) {
+      focusRequester.requestFocus()
+    }
   }
 
   fun onMessageChange(s: ComposeMessage) {

@@ -220,7 +220,7 @@ fun NomeOneTimeInvitationContent(
   val ready = invitation.connFullLink.isNotEmpty()
   val link =
     if (ready) {
-      invitation.simplexChatUri(short = true)
+      invitation.simplexChatUri(short = false)
     } else {
       ""
     }

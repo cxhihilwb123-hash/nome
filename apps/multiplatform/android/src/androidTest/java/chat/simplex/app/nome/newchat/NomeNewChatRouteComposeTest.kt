@@ -36,11 +36,14 @@ class NomeNewChatRouteComposeTest {
       CreatedConnLink(
         connFullLink =
           "https://simplex.chat/contact#/?v=1&smp=fixture",
-        connShortLink = null,
+        connShortLink = "https://smp.nome.im/i#short-fixture",
       )
     var copied = 0
     var shared = 0
     var qrShared = 0
+    var copiedLink: String? = null
+    var sharedLink: String? = null
+    var qrSharedLink: String? = null
     var profileOpened = 0
 
     composeRule.setContent {
@@ -50,9 +53,18 @@ class NomeNewChatRouteComposeTest {
           invitationCreating = false,
           currentProfileName = "Lin",
           onOpenProfile = { profileOpened++ },
-          onCopyLink = { copied++ },
-          onShareLink = { shared++ },
-          onShareQr = { qrShared++ },
+          onCopyLink = {
+            copied++
+            copiedLink = it
+          },
+          onShareLink = {
+            shared++
+            sharedLink = it
+          },
+          onShareQr = {
+            qrShared++
+            qrSharedLink = it
+          },
           onQrImageShared = {},
           onRetryInvitation = {},
           onClose = {},
@@ -88,14 +100,20 @@ class NomeNewChatRouteComposeTest {
       .assertHasClickAction()
       .assertHeightIsAtLeast(48.dp)
       .performClick()
-    composeRule.runOnIdle { assertEquals(1, copied) }
+    composeRule.runOnIdle {
+      assertEquals(1, copied)
+      assertEquals(invitation.simplexChatUri(short = false), copiedLink)
+    }
 
     composeRule
       .onNodeWithText(target.getString(R.string.nome_p11_share))
       .assertHasClickAction()
       .assertHeightIsAtLeast(48.dp)
       .performClick()
-    composeRule.runOnIdle { assertEquals(1, shared) }
+    composeRule.runOnIdle {
+      assertEquals(1, shared)
+      assertEquals(invitation.simplexChatUri(short = false), sharedLink)
+    }
 
     composeRule
       .onNodeWithText(
@@ -106,7 +124,10 @@ class NomeNewChatRouteComposeTest {
       .assertHasClickAction()
       .assertHeightIsAtLeast(48.dp)
       .performClick()
-    composeRule.runOnIdle { assertEquals(1, qrShared) }
+    composeRule.runOnIdle {
+      assertEquals(1, qrShared)
+      assertEquals(invitation.simplexChatUri(short = false), qrSharedLink)
+    }
 
     composeRule
       .onNodeWithText("24 hours", substring = true)

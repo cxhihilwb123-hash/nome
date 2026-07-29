@@ -7766,6 +7766,7 @@ data class CreatedConnLink(val connFullLink: String, val connShortLink: String?)
 }
 
 private const val NOME_PUBLIC_LINK_PREFIX = "https://nome.im/"
+private const val NOME_HOSTED_SHORT_LINK_PREFIX = "https://smp.nome.im/"
 private const val LEGACY_SIMPLEX_PUBLIC_LINK_PREFIX = "https://simplex.chat/"
 private const val LEGACY_SIMPLEX_PUBLIC_HTTP_LINK_PREFIX = "http://simplex.chat/"
 private const val SIMPLEX_INTERNAL_LINK_PREFIX = "simplex:/"
@@ -7782,9 +7783,17 @@ private val nomeChatLinkPathSegments = setOf(
   "invitation",
   "r",
 )
+private val hostedShortLinkPathSegments = setOf("a", "g", "i", "r")
 
 private val legacyHostedShortLink =
   Regex("""(?i)^https://(?:smp(?:\d+)?\.simplex\.im|smp\.nome\.im)/((?:a|g|i|r)#.*)$""")
+
+private fun isHostedShortLinkSuffix(suffix: String): Boolean =
+  suffix.substringBefore('#').substringBefore('?') in hostedShortLinkPathSegments
+
+private fun nomeShareableLink(suffix: String): String =
+  if (isHostedShortLinkSuffix(suffix)) NOME_HOSTED_SHORT_LINK_PREFIX + suffix
+  else NOME_PUBLIC_LINK_PREFIX + suffix
 
 private fun publicChatLinkSuffix(uri: String, prefix: String): String? {
   if (!uri.startsWith(prefix, ignoreCase = true)) return null
@@ -7807,16 +7816,19 @@ private fun recognizedPublicChatLinkSuffix(uri: String): String? =
 
 /** Presents all user-shareable connection links under the Nome brand. */
 fun simplexChatLink(uri: String): String = when {
+  legacyHostedShortLink.matches(uri) -> uri
   uri.startsWith(SIMPLEX_INTERNAL_LINK_PREFIX) ->
-    NOME_PUBLIC_LINK_PREFIX + uri.substring(SIMPLEX_INTERNAL_LINK_PREFIX.length)
+    nomeShareableLink(uri.substring(SIMPLEX_INTERNAL_LINK_PREFIX.length))
   recognizedPublicChatLinkSuffix(uri) != null ->
-    NOME_PUBLIC_LINK_PREFIX + requireNotNull(recognizedPublicChatLinkSuffix(uri))
+    nomeShareableLink(requireNotNull(recognizedPublicChatLinkSuffix(uri)))
   else -> uri
 }
 
 /** Converts a recognized Nome or legacy public link to the protocol form understood by the native core. */
 internal fun normalizeNomeChatLink(uri: String): String {
+  if (legacyHostedShortLink.matches(uri)) return uri
   val suffix = recognizedPublicChatLinkSuffix(uri) ?: return uri
+  if (isHostedShortLinkSuffix(suffix)) return NOME_HOSTED_SHORT_LINK_PREFIX + suffix
   return SIMPLEX_INTERNAL_LINK_PREFIX + suffix
 }
 

@@ -25,11 +25,11 @@ class NomeLinkBrandingTest {
       simplexChatLink("https://simplex.chat/invitation#opaque"),
     )
     assertEquals(
-      "https://nome.im/a#opaque",
+      "https://smp6.simplex.im/a#opaque",
       simplexChatLink("https://smp6.simplex.im/a#opaque"),
     )
     assertEquals(
-      "https://nome.im/r#opaque",
+      "https://smp.nome.im/r#opaque",
       simplexChatLink("https://smp.nome.im/r#opaque"),
     )
     assertEquals(
@@ -53,8 +53,12 @@ class NomeLinkBrandingTest {
       normalizeNomeChatLink("http://simplex.chat/file#legacy"),
     )
     assertEquals(
-      "simplex:/a#hosted",
+      "https://smp6.simplex.im/a#hosted",
       normalizeNomeChatLink("https://smp6.simplex.im/a#hosted"),
+    )
+    assertEquals(
+      "https://smp.nome.im/i#hosted",
+      normalizeNomeChatLink("https://nome.im/i#hosted"),
     )
   }
 
@@ -92,5 +96,19 @@ class NomeLinkBrandingTest {
 
     assertEquals("https://nome.im/contact#full", link.simplexChatUri(short = false))
     assertEquals("https://nome.im/contact#short", link.simplexChatUri(short = true))
+  }
+
+  @Test
+  fun hostedNomeShortLinksKeepTheirResolverHost() {
+    val link = CreatedConnLink(
+      connFullLink = "simplex:/contact#full",
+      connShortLink = "https://smp.nome.im/i#short",
+    )
+
+    assertEquals("https://smp.nome.im/i#short", link.simplexChatUri(short = true))
+    assertEquals(
+      "https://smp.nome.im/i#short",
+      normalizeNomeChatLink(link.simplexChatUri(short = true)),
+    )
   }
 }
