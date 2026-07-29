@@ -4,6 +4,9 @@ Date: 2026-07-29 (Asia/Shanghai)
 
 Status: **PASS**
 
+Remote protection status: **PASS** for the explicitly authorized GitHub/LAN
+branch backup. No deployment or public release was performed.
+
 ## Result
 
 Core, Android, iOS, and Desktop now share one long-lived local client authority:
@@ -35,8 +38,10 @@ The post-Phase-6 backup was created before unification at:
   bare repositories, exact ref comparison, exact authority-head checks, and
   `git fsck --full --strict`.
 
-No reset, Git clean, stash, rebase, force push, remote push, backup deletion,
-worktree deletion, or bulk add was performed.
+Before the explicitly authorized Phase 7 branch backup, no reset, Git clean,
+stash, rebase, force push, remote push, backup deletion, worktree deletion, or
+bulk add was performed. Phase 7 used only ordinary, named-ref pushes to the
+confirmed personal GitHub and LAN repositories.
 
 ## Merge resolution
 
@@ -106,14 +111,67 @@ Windows Desktop source remains in the unified history, but no Windows host,
 installer, signing, or runtime acceptance was available in this macOS pass.
 Windows is therefore **NOT RUN**, not implied by the macOS Desktop result.
 
+## Phase 7 remote protection
+
+The user explicitly authorized the bounded remote operation with `推送` on
+2026-07-29. The authorization covered the unified client branch and independent
+Website main branch on the already configured personal GitHub and LAN remotes.
+It did not cover the official SimpleX `origin`, tags, pull requests, deployment,
+production mutation, TestFlight/App Store actions, or public release.
+
+Preflight acceptance:
+
+- Client and Website worktrees were clean.
+- `codex/nome-v656-unified` did not exist on either target remote, so publication
+  created a new branch without overwriting an existing ref.
+- Both previously published Android/iOS heads were ancestors of the unified
+  client history.
+- Website `main` was 10 commits ahead and 0 behind both remote `main` refs, so
+  both updates were ordinary fast-forwards.
+- The post-unification backup checksum passed again immediately before the
+  remote operation.
+- No newly introduced blob of 10 MiB or more was found. The obvious-credential
+  scan found no Website match and only the pre-existing upstream TLS test
+  fixture `tests/fixtures/tls/server.key` in the client tree.
+
+Initial remote readback:
+
+| Authority | Remote ref | Read-back SHA |
+|---|---|---|
+| Client personal GitHub (`github`) | `refs/heads/codex/nome-v656-unified` | `73ea48894ca37294aac43394b9eb94831829c9c4` |
+| Client LAN Gitea (`lan`) | `refs/heads/codex/nome-v656-unified` | `73ea48894ca37294aac43394b9eb94831829c9c4` |
+| Website personal GitHub (`origin`) | `refs/heads/main` | `568d47dde9d81465cad1139f3b9c90c0f1c9f041` |
+| Website LAN Gitea (`lan`) | `refs/heads/main` | `568d47dde9d81465cad1139f3b9c90c0f1c9f041` |
+
+The first client GitHub HTTPS attempt was rejected because the active GitHub
+OAuth credential lacked the `workflow` scope required for the already committed
+`.github/workflows/build.yml`. GitHub created no branch during that failed
+attempt. The existing `cxhihilwb123-hash` login was refreshed through GitHub's
+official device authorization flow with the additional `workflow` scope, and
+the same ordinary push then succeeded. No workflow file or Git history was
+altered to bypass the protection.
+
+This Phase 7 evidence update changes documentation only. Product source and
+previously accepted build trees are unchanged, so the complete platform test
+matrix above remains bound to the accepted merge history. The documentation
+diff and staged diff must pass `git diff --check` before this evidence commit is
+pushed. The final client branch-tip SHA is read back from both remotes and stored
+in the external Phase 7 evidence packet.
+
 ## Authority and publication boundary
 
 The unified client worktree is accepted as the single local client authority.
 Normal work should branch from it; temporary release, hotfix, or large migration
 worktrees require a specific purpose and later cleanup approval.
 
+The client authority branch is protected on the personal GitHub and LAN remotes;
+the independent Website `main` is protected on its personal GitHub and LAN
+remotes. No pull request, tag, deployment, production mutation, TestFlight/App
+Store action, or public release was performed.
+
 Post-unification bundle/restore evidence is stored outside source Git under
 `/Users/forkman03/project/nome/consolidation-evidence/20260729_unified_client`.
-Deleting retained worktrees or caches remains a destructive Phase 6 action.
-Any GitHub/LAN push, deployment, production mutation, TestFlight/App Store
-action, or public release remains Phase 7 and requires explicit authorization.
+Deleting retained worktrees or caches remains a destructive Phase 6 action and
+still requires explicit authorization. Any deployment, production mutation,
+TestFlight/App Store action, public release, or additional remote publication
+outside the refs recorded above also requires separate explicit authorization.

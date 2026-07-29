@@ -15,14 +15,17 @@ This is the first document to read for current Nome repository status. Older pla
 - Phase 5 documentation/evidence governance: PASS after the execution record in this branch.
 - Phase 6 deletion/cleanup: PASS; exact cache/worktree removal, AVD migration, backup re-verification, and post-clean builds are recorded below.
 - Post-Phase-6 local unified-client consolidation: PASS; both client authority heads are preserved, local build inputs are normalized, and the platform-specific gates are recorded below.
-- Phase 7 push/deploy/public release: NOT AUTHORIZED and not performed.
+- Phase 7 remote branch protection: PASS after explicit authorization; the
+  unified client branch and Website `main` were ordinarily pushed to their
+  personal GitHub and LAN remotes and read back. Deployment and public release
+  remain not authorized and were not performed.
 
 ## Unified authority and retained recovery lines
 
 | Scope | Worktree / repository | Branch | Recorded local source state |
 |---|---|---|---|
-| Client authority (Core/Android/iOS/Desktop) | `/Users/forkman03/project/nome/nome-client` | `codex/nome-v656-unified` | accepted merge `124863fe607eb84c177f8ccce7c76793f1ceeb55`; parents `6cd16da945bc45683eab23f82dc58ba996109960` and `fb4a81780aa7518735f5d1a3c245808bd3b81f0b` |
-| Website/control plane authority | `/Users/forkman03/project/nome/website` | `main` | current local tip `568d47dde9d81465cad1139f3b9c90c0f1c9f041` |
+| Client authority (Core/Android/iOS/Desktop) | `/Users/forkman03/project/nome/nome-client` | `codex/nome-v656-unified` | accepted merge `124863fe607eb84c177f8ccce7c76793f1ceeb55`; parents `6cd16da945bc45683eab23f82dc58ba996109960` and `fb4a81780aa7518735f5d1a3c245808bd3b81f0b`; current branch tip protected on personal GitHub and LAN |
+| Website/control plane authority | `/Users/forkman03/project/nome/website` | `main` | local, personal GitHub, and LAN tip `568d47dde9d81465cad1139f3b9c90c0f1c9f041` |
 | Retained iOS recovery source | `/Users/forkman03/project/nome/simplex-chat-ios-consolidated` | `codex/nome-v656-consolidated-ios` | `fb4a81780aa7518735f5d1a3c245808bd3b81f0b` |
 | Retained Android/Core/Desktop recovery source | `/Users/forkman03/project/nome/simplex-chat-android-consolidated` | `codex/nome-v656-consolidated-android` | `6cd16da945bc45683eab23f82dc58ba996109960` |
 
@@ -65,4 +68,8 @@ New Git evidence should be concise text, SHA256SUMS, and only a few necessary sc
 
 ## Authorization boundary
 
-Local commits and authorized cleanup are complete through Phase 6. Any GitHub/LAN push, Sites or production deployment, policy mutation, TestFlight/App Store action, or public release requires separate explicit Phase 7 authorization.
+Local consolidation and the explicitly authorized Phase 7 GitHub/LAN branch
+protection are complete. No official SimpleX remote was changed. Any retained
+worktree/cache deletion, Sites or production deployment, policy mutation,
+TestFlight/App Store action, public release, tag, or publication outside the
+recorded refs requires separate explicit authorization.
