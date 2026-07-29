@@ -17,7 +17,10 @@ android/release
 common/build
 desktop/build
 release
+/.gradle-review/
+/.gradle-tmp/
 /.nome-local/
+/Screenshot_*.png
 
 # Generated SimpleX assets
 common/src/commonMain/resources/assets/simplex/
