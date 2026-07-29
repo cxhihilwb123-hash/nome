@@ -19,17 +19,29 @@ This is the first document to read for current Nome repository status. Older pla
   unified client branch and Website `main` were ordinarily pushed to their
   personal GitHub and LAN remotes and read back. Deployment and public release
   remain not authorized and were not performed.
+- Post-Phase-7 authorized worktree/cache cleanup: PASS for the safe subset;
+  three clean obsolete worktrees and exact rebuildable caches were removed,
+  post-clean Android/iOS/Website gates passed, and unsafe retained worktrees
+  remain explicitly documented.
 
 ## Unified authority and retained recovery lines
 
 | Scope | Worktree / repository | Branch | Recorded local source state |
 |---|---|---|---|
-| Client authority (Core/Android/iOS/Desktop) | `/Users/forkman03/project/nome/nome-client` | `codex/nome-v656-unified` | accepted merge `124863fe607eb84c177f8ccce7c76793f1ceeb55`; parents `6cd16da945bc45683eab23f82dc58ba996109960` and `fb4a81780aa7518735f5d1a3c245808bd3b81f0b`; current branch tip protected on personal GitHub and LAN |
+| Client authority (Core/Android/iOS/Desktop) | `/Users/forkman03/project/nome/nome-client` | `codex/nome-v656-unified` | accepted merge `124863fe607eb84c177f8ccce7c76793f1ceeb55`; parents `6cd16da945bc45683eab23f82dc58ba996109960` and `fb4a81780aa7518735f5d1a3c245808bd3b81f0b`; remote branch protected through Phase 7 commit `cad37e62ef183c3d929496b054b64b45a29bd863` |
 | Website/control plane authority | `/Users/forkman03/project/nome/website` | `main` | local, personal GitHub, and LAN tip `568d47dde9d81465cad1139f3b9c90c0f1c9f041` |
-| Retained iOS recovery source | `/Users/forkman03/project/nome/simplex-chat-ios-consolidated` | `codex/nome-v656-consolidated-ios` | `fb4a81780aa7518735f5d1a3c245808bd3b81f0b` |
-| Retained Android/Core/Desktop recovery source | `/Users/forkman03/project/nome/simplex-chat-android-consolidated` | `codex/nome-v656-consolidated-android` | `6cd16da945bc45683eab23f82dc58ba996109960` |
+| Shared Git administrative/dirty evidence worktree | `/Users/forkman03/project/nome/simplex-chat` | `codex/nome-android-v656` | `33b97d66155c80dd01956a438b483b13660f331e`; retained because it owns the shared `.git` directory and is dirty |
+| Retained iOS recovery source | `/Users/forkman03/project/nome/simplex-chat-ios-consolidated` | `codex/nome-v656-consolidated-ios` | `fb4a81780aa7518735f5d1a3c245808bd3b81f0b`; retained while live Xcode services use it as cwd |
+| Retained iOS dirty evidence source | `/Users/forkman03/project/nome/simplex-chat-ios-integration` | `codex/nome-ios-v656-integration` | `e50f32fcec027029c95d4556cceaf600f8a83edb`; retained with tracked and untracked changes |
+| Branch-only Android/Core/Desktop recovery ref | no worktree | `codex/nome-v656-consolidated-android` | `6cd16da945bc45683eab23f82dc58ba996109960`; worktree removed after backup/process gates |
+| Branch-only old iOS recovery ref | no worktree | `codex/nome-ios-v656` | `3f75e9840a5046697e21d6e4c5a87afb59deae09`; worktree removed after backup/process gates |
+| Branch-only real-core diagnostic ref | no worktree | `codex/nome-ios-v655-realcore-lab` | `711076b9cde8ecc9be4a0b97bb1ee5f4698caa15`; worktree removed after backup/process gates |
 
-The unified client is the local authority after its history-preserving merge, dependency normalization, platform verification, documentation update, and post-unification restore test. The retained consolidated worktrees remain recovery sources and must not be deleted without explicit destructive-cleanup authorization.
+The unified client is the local authority after its history-preserving merge,
+dependency normalization, platform verification, documentation update,
+post-unification restore test, authorized remote protection, and bounded
+worktree/cache cleanup. Retained dirty, administrative, or active-process
+worktrees are recovery/evidence sources, not parallel development authorities.
 
 ## Worktree model
 
@@ -44,6 +56,7 @@ The unified client is the local authority after its history-preserving merge, de
 - Cross-platform build discipline: [`consolidation/20260729_phase4_build_discipline_execution_record.md`](./consolidation/20260729_phase4_build_discipline_execution_record.md)
 - Documentation/evidence governance: [`consolidation/20260729_phase5_docs_evidence_governance_execution_record.md`](./consolidation/20260729_phase5_docs_evidence_governance_execution_record.md)
 - Phase 6 cleanup: [`consolidation/20260729_phase6_cleanup_execution_record.md`](./consolidation/20260729_phase6_cleanup_execution_record.md)
+- Authorized worktree/cache cleanup addendum: [`consolidation/20260729_authorized_worktree_cache_cleanup_record.md`](./consolidation/20260729_authorized_worktree_cache_cleanup_record.md)
 - Unified client acceptance: [`consolidation/20260729_unified_client_execution_record.md`](./consolidation/20260729_unified_client_execution_record.md)
 - Latest locally verified Android artifacts and hashes are in the Phase 2 record; they are not public-release claims.
 - Latest reproducibly identified iOS artifact: [`builds/20260729_nome_ios_6.5.6_build349_consolidated.md`](./builds/20260729_nome_ios_6.5.6_build349_consolidated.md), internal Simulator diagnostic only.
@@ -68,8 +81,11 @@ New Git evidence should be concise text, SHA256SUMS, and only a few necessary sc
 
 ## Authorization boundary
 
-Local consolidation and the explicitly authorized Phase 7 GitHub/LAN branch
-protection are complete. No official SimpleX remote was changed. Any retained
-worktree/cache deletion, Sites or production deployment, policy mutation,
-TestFlight/App Store action, public release, tag, or publication outside the
-recorded refs requires separate explicit authorization.
+Local consolidation, the explicitly authorized Phase 7 GitHub/LAN branch
+protection, and the safe subset of the explicitly authorized worktree/cache
+cleanup are complete. No official SimpleX remote was changed. Further deletion
+of the retained dirty, administrative, or active-process worktrees is forbidden
+until their recorded safety gates are cleared and the action is revisited.
+Sites or production deployment, policy mutation, TestFlight/App Store action,
+public release, tag, or publication outside the recorded refs requires separate
+explicit authorization.
