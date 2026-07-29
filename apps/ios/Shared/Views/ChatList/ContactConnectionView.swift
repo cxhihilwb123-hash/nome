@@ -15,7 +15,7 @@ struct ContactConnectionView: View {
     @EnvironmentObject var theme: AppTheme
     @Environment(\.dynamicTypeSize) private var userFont: DynamicTypeSize
     @ScaledMetric(relativeTo: .body) private var nomeCompactRowHeight: CGFloat = 72
-    @ScaledMetric(relativeTo: .body) private var nomeCompactIconSize: CGFloat = 44
+    @ScaledMetric(relativeTo: .body) private var nomeCompactAvatarSize: CGFloat = 44
     @ScaledMetric(relativeTo: .body) private var nomeCompactTitleSize: CGFloat = 16
     @ScaledMetric(relativeTo: .body) private var nomeCompactSupportingSize: CGFloat = 13
     var nomeCompactStyle = false
@@ -25,49 +25,45 @@ struct ContactConnectionView: View {
     var body: some View {
         if case let .contactConnection(conn) = chat.chatInfo {
             if nomeCompactStyle {
-                nomeCompactConnectionView(conn)
+                compactContactConnectionView(conn)
             } else {
                 contactConnectionView(conn)
             }
         }
     }
 
-    private func nomeCompactConnectionView(_ contactConnection: PendingContactConnection) -> some View {
-        HStack(alignment: .center, spacing: 12) {
-            Image(systemName: contactConnection.initiated ? "link.badge.plus" : "link")
-                .font(.system(size: 28, weight: .medium))
-                .foregroundColor(theme.colors.secondary.opacity(0.62))
-                .frame(width: nomeCompactIconSize, height: nomeCompactIconSize)
+    private func compactContactConnectionView(_ contactConnection: PendingContactConnection) -> some View {
+        HStack(spacing: 12) {
+            ChatInfoImage(chat: chat, size: nomeCompactAvatarSize)
 
-            HStack(alignment: .top, spacing: 8) {
-                VStack(alignment: .leading, spacing: 1) {
-                    HStack(spacing: 5) {
-                        Text(contactConnection.chatViewName)
-                            .font(.system(size: nomeCompactTitleSize, weight: .medium))
-                            .foregroundColor(theme.colors.secondary)
-                            .lineLimit(1)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(contactConnection.chatViewName)
+                    .font(.system(size: nomeCompactTitleSize, weight: .medium))
+                    .foregroundColor(theme.colors.onBackground)
+                    .lineLimit(1)
 
-                        if contactConnection.incognito {
-                            Image(systemName: "theatermasks")
-                                .font(.system(size: nomeCompactSupportingSize, weight: .medium))
-                                .foregroundColor(theme.colors.secondary)
-                                .accessibilityHidden(true)
-                        }
-                    }
-
+                HStack(spacing: 4) {
                     Text(contactConnection.description)
                         .font(.system(size: nomeCompactSupportingSize, weight: .regular))
-                        .foregroundColor(theme.colors.onBackground)
+                        .foregroundColor(theme.colors.secondary)
                         .lineLimit(1)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
 
-                formatTimestampText(contactConnection.updatedAt)
-                    .font(.system(size: nomeCompactSupportingSize, weight: .regular))
-                    .foregroundColor(theme.colors.secondary)
-                    .frame(minWidth: 48, alignment: .trailing)
-                    .padding(.top, 1)
+                    if contactConnection.incognito {
+                        incognitoIcon(
+                            true,
+                            theme.colors.secondary,
+                            size: nomeCompactSupportingSize + 3
+                        )
+                        .fixedSize()
+                    }
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            formatTimestampText(contactConnection.updatedAt)
+                .font(.system(size: nomeCompactSupportingSize, weight: .regular))
+                .foregroundColor(theme.colors.secondary)
+                .frame(minWidth: 52, alignment: .trailing)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)

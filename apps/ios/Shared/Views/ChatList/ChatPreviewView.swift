@@ -164,10 +164,11 @@ struct ChatPreviewView: View {
                         .foregroundColor(theme.colors.onBackground)
                         .lineLimit(1)
 
-                    if case .group = chat.chatInfo {
+                    if case let .group(groupInfo, _) = chat.chatInfo {
+                        let isChannel = groupInfo.useRelays
                         HStack(spacing: 3) {
-                            Image(systemName: "person.2.fill")
-                            Text("群")
+                            Image(systemName: isChannel ? "megaphone.fill" : "person.2.fill")
+                            Text(isChannel ? "频道" : "群")
                         }
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundColor(nomeAction)
@@ -175,7 +176,7 @@ struct ChatPreviewView: View {
                         .frame(height: 18)
                         .background(Capsule().fill(nomeAction.opacity(0.11)))
                         .fixedSize()
-                        .accessibilityLabel(Text("群聊"))
+                        .accessibilityLabel(Text(isChannel ? "频道" : "群聊"))
                     }
                 }
 

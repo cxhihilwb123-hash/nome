@@ -47,7 +47,6 @@ struct ChatListNavLink: View {
     @EnvironmentObject var chatTagsModel: ChatTagsModel
     @Environment(\.dynamicTypeSize) private var userFont: DynamicTypeSize
     @ScaledMetric(relativeTo: .body) private var nomeCompactRowHeight: CGFloat = 72
-    @AppStorage(GROUP_DEFAULT_ONE_HAND_UI, store: groupDefaults) private var oneHandUI = false
     @ObservedObject var chat: Chat
     @Binding var parentSheet: SomeSheet<AnyView>?
     var nomeCompactStyle = false
@@ -150,20 +149,20 @@ struct ChatListNavLink: View {
                         if let contactRequestId = contact.contactRequestId {
                             Button {
                                 Task { await acceptContactRequest(incognito: false, contactRequestId: contactRequestId) }
-                            } label: { SwipeLabel(NSLocalizedString("Accept", comment: "swipe action"), systemImage: "checkmark", inverted: oneHandUI) }
+                            } label: { SwipeLabel(NSLocalizedString("Accept", comment: "swipe action"), systemImage: "checkmark") }
                                 .tint(theme.colors.primary)
                             if !ChatModel.shared.addressShortLinkDataSet {
                                 Button {
                                     Task { await acceptContactRequest(incognito: true, contactRequestId: contactRequestId) }
                                 } label: {
-                                    SwipeLabel(NSLocalizedString("Accept incognito", comment: "swipe action"), systemImage: "theatermasks.fill", inverted: oneHandUI)
+                                    SwipeLabel(NSLocalizedString("Accept incognito", comment: "swipe action"), systemImage: "theatermasks.fill")
                                 }
                                 .tint(.indigo)
                             }
                             Button {
                                 AlertManager.shared.showAlert(rejectContactRequestAlert(contactRequestId))
                             } label: {
-                                SwipeLabel(NSLocalizedString("Reject", comment: "swipe action"), systemImage: "multiply", inverted: oneHandUI)
+                                SwipeLabel(NSLocalizedString("Reject", comment: "swipe action"), systemImage: "multiply")
                             }
                             .tint(.red)
                         } else if let groupDirectInv = contact.groupDirectInv, !groupDirectInv.memberRemoved {
@@ -358,7 +357,7 @@ struct ChatListNavLink: View {
                 await MainActor.run { inProgress = false }
             }
         } label: {
-            SwipeLabel(NSLocalizedString("Join", comment: "swipe action"), systemImage: chat.chatInfo.incognito ? "theatermasks" : "ipad.and.arrow.forward", inverted: oneHandUI)
+            SwipeLabel(NSLocalizedString("Join", comment: "swipe action"), systemImage: chat.chatInfo.incognito ? "theatermasks" : "ipad.and.arrow.forward")
         }
         .tint(chat.chatInfo.incognito ? .indigo : theme.colors.primary)
     }
@@ -369,14 +368,14 @@ struct ChatListNavLink: View {
             Button {
                 Task { await markChatRead(ItemsModel.shared, chat) }
             } label: {
-                SwipeLabel(NSLocalizedString("Read", comment: "swipe action"), systemImage: "checkmark", inverted: oneHandUI)
+                SwipeLabel(NSLocalizedString("Read", comment: "swipe action"), systemImage: "checkmark")
             }
             .tint(theme.colors.primary)
         } else {
             Button {
                 Task { await markChatUnread(chat) }
             } label: {
-                SwipeLabel(NSLocalizedString("Unread", comment: "swipe action"), systemImage: "circlebadge.fill", inverted: oneHandUI)
+                SwipeLabel(NSLocalizedString("Unread", comment: "swipe action"), systemImage: "circlebadge.fill")
             }
             .tint(theme.colors.primary)
         }
@@ -389,14 +388,14 @@ struct ChatListNavLink: View {
             Button {
                 toggleChatFavorite(chat, favorite: false)
             } label: {
-                SwipeLabel(NSLocalizedString("Unfav.", comment: "swipe action"), systemImage: "star.slash.fill", inverted: oneHandUI)
+                SwipeLabel(NSLocalizedString("Unfav.", comment: "swipe action"), systemImage: "star.slash.fill")
             }
             .tint(.green)
         } else {
             Button {
                 toggleChatFavorite(chat, favorite: true)
             } label: {
-                SwipeLabel(NSLocalizedString("Favorite", comment: "swipe action"), systemImage: "star.fill", inverted: oneHandUI)
+                SwipeLabel(NSLocalizedString("Favorite", comment: "swipe action"), systemImage: "star.fill")
             }
             .tint(.green)
         }
@@ -408,7 +407,7 @@ struct ChatListNavLink: View {
             Button {
                 toggleNotifications(chat, enableNtfs: nextMode)
             } label: {
-                SwipeLabel(nextMode.text(mentions: chat.chatInfo.hasMentions), systemImage: nextMode.iconFilled, inverted: oneHandUI)
+                SwipeLabel(nextMode.text(mentions: chat.chatInfo.hasMentions), systemImage: nextMode.iconFilled)
             }
         } else {
             EmptyView()
@@ -419,7 +418,7 @@ struct ChatListNavLink: View {
         Button {
             AlertManager.shared.showAlert(archiveAllReportsAlert())
         } label: {
-            SwipeLabel(NSLocalizedString("Archive reports", comment: "swipe action"), systemImage: "archivebox", inverted: oneHandUI)
+            SwipeLabel(NSLocalizedString("Archive reports", comment: "swipe action"), systemImage: "archivebox")
         }
     }
 
@@ -428,7 +427,7 @@ struct ChatListNavLink: View {
         Button {
             AlertManager.shared.showAlert(clearChatAlert())
         } label: {
-            SwipeLabel(NSLocalizedString("Clear", comment: "swipe action"), systemImage: "gobackward", inverted: oneHandUI)
+            SwipeLabel(NSLocalizedString("Clear", comment: "swipe action"), systemImage: "gobackward")
         }
         .tint(Color.orange)
     }
@@ -437,7 +436,7 @@ struct ChatListNavLink: View {
         Button {
             setTagChatSheet(chat)
         } label: {
-            SwipeLabel(NSLocalizedString("List", comment: "swipe action"), systemImage: "tag.fill", inverted: oneHandUI)
+            SwipeLabel(NSLocalizedString("List", comment: "swipe action"), systemImage: "tag.fill")
         }
         .tint(.mint)
     }
@@ -494,7 +493,7 @@ struct ChatListNavLink: View {
                 id: "other options"
             )
         } label: {
-            SwipeLabel(NSLocalizedString("More", comment: "swipe action"), systemImage: "ellipsis", inverted: oneHandUI)
+            SwipeLabel(NSLocalizedString("More", comment: "swipe action"), systemImage: "ellipsis")
         }
     }
     
@@ -502,7 +501,7 @@ struct ChatListNavLink: View {
         Button {
             AlertManager.shared.showAlert(clearNoteFolderAlert())
         } label: {
-            SwipeLabel(NSLocalizedString("Clear", comment: "swipe action"), systemImage: "gobackward", inverted: oneHandUI)
+            SwipeLabel(NSLocalizedString("Clear", comment: "swipe action"), systemImage: "gobackward")
         }
         .tint(Color.orange)
     }
@@ -511,7 +510,7 @@ struct ChatListNavLink: View {
         Button {
             AlertManager.shared.showAlert(leaveGroupAlert(groupInfo))
         } label: {
-            SwipeLabel(NSLocalizedString("Leave", comment: "swipe action"), systemImage: "rectangle.portrait.and.arrow.right.fill", inverted: oneHandUI)
+            SwipeLabel(NSLocalizedString("Leave", comment: "swipe action"), systemImage: "rectangle.portrait.and.arrow.right.fill")
         }
         .tint(Color.yellow)
     }
@@ -532,20 +531,20 @@ struct ChatListNavLink: View {
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button {
                 Task { await acceptContactRequest(incognito: false, contactRequestId: contactRequest.apiId) }
-            } label: { SwipeLabel(NSLocalizedString("Accept", comment: "swipe action"), systemImage: "checkmark", inverted: oneHandUI) }
+            } label: { SwipeLabel(NSLocalizedString("Accept", comment: "swipe action"), systemImage: "checkmark") }
                 .tint(theme.colors.primary)
             if !ChatModel.shared.addressShortLinkDataSet {
                 Button {
                     Task { await acceptContactRequest(incognito: true, contactRequestId: contactRequest.apiId) }
                 } label: {
-                    SwipeLabel(NSLocalizedString("Accept incognito", comment: "swipe action"), systemImage: "theatermasks.fill", inverted: oneHandUI)
+                    SwipeLabel(NSLocalizedString("Accept incognito", comment: "swipe action"), systemImage: "theatermasks.fill")
                 }
                 .tint(.indigo)
             }
             Button {
                 AlertManager.shared.showAlert(rejectContactRequestAlert(contactRequest.apiId))
             } label: {
-                SwipeLabel(NSLocalizedString("Reject", comment: "swipe action"), systemImage: "multiply", inverted: oneHandUI)
+                SwipeLabel(NSLocalizedString("Reject", comment: "swipe action"), systemImage: "multiply")
             }
             .tint(.red)
         }
@@ -577,7 +576,7 @@ struct ChatListNavLink: View {
             Button {
                 showContactConnectionInfo = true
             } label: {
-                SwipeLabel(NSLocalizedString("Name", comment: "swipe action"), systemImage: "pencil", inverted: oneHandUI)
+                SwipeLabel(NSLocalizedString("Name", comment: "swipe action"), systemImage: "pencil")
             }
             .tint(theme.colors.primary)
         }
@@ -595,7 +594,7 @@ struct ChatListNavLink: View {
     }
 
     private var deleteLabel: some View {
-        SwipeLabel(NSLocalizedString("Delete", comment: "swipe action"), systemImage: "trash.fill", inverted: oneHandUI)
+        SwipeLabel(NSLocalizedString("Delete", comment: "swipe action"), systemImage: "trash.fill")
     }
 
     private func deleteGroupAlert(_ groupInfo: GroupInfo) -> Alert {

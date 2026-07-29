@@ -12,7 +12,7 @@ struct SwipeLabel: View {
     private let text: String
     private let systemImage: String
 
-    init(_ text: String, systemImage: String, inverted _: Bool) {
+    init(_ text: String, systemImage: String, inverted _: Bool = false) {
         self.text = text
         self.systemImage = systemImage
     }

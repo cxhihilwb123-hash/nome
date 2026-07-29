@@ -211,15 +211,22 @@ private struct NomeChatSecurityBanner: View {
                 ),
                 retentionStatusItem
             ]
-        case .group:
-            return [
-                NomeChatStatusItem(icon: "person.2.badge.key", title: "可核对", tint: NomeChatPalette.blue),
-                retentionStatusItem
-            ]
+        case let .group(groupInfo, _):
+            if groupInfo.useRelays {
+                return [
+                    NomeChatStatusItem(icon: "dot.radiowaves.left.and.right", title: "中继", tint: NomeChatPalette.blue),
+                    NomeChatStatusItem(icon: "person.2", title: channelMemberStatusTitle(groupInfo), tint: NomeChatPalette.purple)
+                ]
+            } else {
+                return [
+                    NomeChatStatusItem(icon: "person.2.badge.key", title: "可核对", tint: NomeChatPalette.blue),
+                    retentionStatusItem
+                ]
+            }
         case .local:
             return [
-                NomeChatStatusItem(icon: "iphone", title: "仅本机", tint: NomeChatPalette.blue),
-                NomeChatStatusItem(icon: "tray.full", title: "消息保留", tint: NomeChatPalette.green)
+                NomeChatStatusItem(icon: "iphone", title: "仅本机", tint: NomeChatPalette.navy),
+                NomeChatStatusItem(icon: "tray.full", title: "消息保留", tint: NomeChatPalette.navy.opacity(0.72))
             ]
         case .contactRequest:
             return [
@@ -248,11 +255,19 @@ private struct NomeChatSecurityBanner: View {
         }
     }
 
+    private func channelMemberStatusTitle(_ groupInfo: GroupInfo) -> String {
+        if let count = groupInfo.groupSummary.publicMemberCount, count > 0 {
+            "\(count) 位"
+        } else {
+            "成员"
+        }
+    }
+
     private var icon: String {
         switch chatInfo {
         case .local: "note.text"
         case .direct: "lock.shield"
-        case .group: "person.2.fill"
+        case let .group(groupInfo, _): groupInfo.useRelays ? "megaphone.fill" : "person.2.fill"
         case .contactRequest: "person.crop.circle.badge.questionmark"
         case .contactConnection: "link"
         case .invalidJSON: "exclamationmark.triangle"
@@ -272,7 +287,8 @@ private struct NomeChatSecurityBanner: View {
     private var title: LocalizedStringKey {
         switch chatInfo {
         case .local: "本地笔记"
-        case .direct, .group: "已加密"
+        case .direct: "已加密"
+        case let .group(groupInfo, _): groupInfo.useRelays ? "频道消息" : "群聊已加密"
         case .contactRequest: "等待确认"
         case .contactConnection: "正在连接"
         case .invalidJSON: "会话异常"
@@ -285,8 +301,10 @@ private struct NomeChatSecurityBanner: View {
             "仅保存在你的设备上。"
         case .direct:
             "端到端加密保护中，可核对安全码。"
-        case .group:
-            "群消息端到端加密保护中，成员安全码可核对。"
+        case let .group(groupInfo, _):
+            groupInfo.useRelays
+                ? "消息通过频道中继稳定分发。"
+                : "群消息端到端加密保护中，成员安全码可核对。"
         case .contactRequest:
             "确认后才会建立联系人。"
         case .contactConnection:

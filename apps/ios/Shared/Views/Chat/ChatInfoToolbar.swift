@@ -92,7 +92,7 @@ struct ChatInfoToolbar: View {
         case .direct:
             "安全会话"
         case let .group(groupInfo, _):
-            groupInfo.useRelays ? "安全频道" : "安全群组"
+            groupInfo.useRelays ? "频道" : "安全群组"
         case .local:
             "本地笔记"
         case .contactRequest:

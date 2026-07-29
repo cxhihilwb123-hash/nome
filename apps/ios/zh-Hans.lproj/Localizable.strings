@@ -1,6 +1,12 @@
 /* No comment provided by engineer. */
 " (can be copied)" = " （可复制）";
 
+/* Channel member labels. */
+"%d subscriber" = "%d 位订阅者";
+"%d subscribers" = "%d 位订阅者";
+"Owners" = "频道所有者";
+"Subscribers" = "订阅者";
+
 /* No comment provided by engineer. */
 "_italic_" = "\\_斜体_";
 
@@ -6430,6 +6436,38 @@ server test failure */
 "new" = "新建";
 "accepted" = "已接受";
 "active" = "已连接";
+"Share via chat" = "分享到聊天";
+"You can share a link or a QR code - anybody will be able to join the channel." = "你可以分享链接或二维码，任何获得它的人都可以加入频道。";
+"Only channel owners can change channel preferences." = "只有频道所有者可以修改频道设置。";
+"Chat relays" = "频道中继";
+"Edit channel profile" = "编辑频道资料";
+"Delete channel" = "删除频道";
+"Leave channel" = "退出频道";
+"Delete channel?" = "删除频道？";
+"Leave channel?" = "退出频道？";
+"You will stop receiving messages from this channel. Chat history will be preserved." = "退出后将不再接收该频道的消息，聊天记录会保留。";
+"Remove relay?" = "移除频道中继？";
+"This is the last active relay. Removing it will prevent message delivery to subscribers." = "这是最后一个可用中继，移除后频道消息将无法送达订阅者。";
+"Relay will be removed from channel - this cannot be undone!" = "频道中继将被移除，此操作无法撤销！";
+"Remove subscriber?" = "移除订阅者？";
+"Subscriber will be removed from channel - this cannot be undone!" = "订阅者将被移出频道，此操作无法撤销！";
+"Channel will be deleted for all subscribers - this cannot be undone!" = "频道将对所有订阅者删除，此操作无法撤销！";
+"Channel will be deleted for you - this cannot be undone!" = "频道将从你的设备中删除，此操作无法撤销！";
+"Channel preferences" = "频道设置";
+"Save and notify subscribers" = "保存并通知订阅者";
+"Share channel" = "分享频道";
+"Error sharing channel" = "分享频道失败";
+"No chat relays" = "暂无频道中继";
+"Chat relays forward messages to channel subscribers." = "频道中继负责将消息分发给订阅者。";
+"Add relay" = "添加频道中继";
+"Remove relay" = "移除频道中继";
+"No available relays" = "暂无可用中继";
+"Add relays" = "添加频道中继";
+"Add" = "添加";
+"Relays added: %@." = "已添加中继：%@。";
+"Error adding relays" = "添加频道中继失败";
+"Channel messages are delivered through chat relays." = "频道消息通过中继稳定分发。";
+"Your profile **%@** will be used to connect to channel relays and subscribers." = "你的资料 **%@** 将用于连接频道中继和订阅者。";
 
 /* Nome invitation fallback */
 "Cannot create link" = "无法创建链接";

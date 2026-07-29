@@ -270,7 +270,7 @@ struct ChatItemContentView<Content: View>: View {
 
     private func groupE2EEInfoText(_ info: E2EEInfo) -> Text {
         info.public == true
-        ? e2eeInfoText("Messages in this channel are **not end-to-end encrypted**. Chat relays can see these messages.")
+        ? e2eeInfoText("Channel messages are delivered through chat relays.")
         : e2eeInfoNoPQText()
     }
 
