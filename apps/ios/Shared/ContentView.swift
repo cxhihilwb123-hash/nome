@@ -201,11 +201,13 @@ struct ContentView: View {
     @ViewBuilder private func callView(_ call: Call) -> some View {
         if CallController.useCallKit() {
             ActiveCallView(call: call, canConnectCall: Binding.constant(true))
+                .id(call.callUUID)
                 .onDisappear {
                     if prefPerformLA && !accessAuthenticated { authenticateContentViewAccess() }
                 }
         } else {
             ActiveCallView(call: call, canConnectCall: $canConnectViewCall)
+                .id(call.callUUID)
             if prefPerformLA && !accessAuthenticated {
                 Rectangle()
                     .fill(colorScheme == .dark ? .black : .white)

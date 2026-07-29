@@ -810,6 +810,7 @@ func getUserServers() async throws -> [UserOperatorServers] {
 enum NomeServerConfiguration {
     static let smpServer = configuredAddress(key: "NomeSMPServer", requiredScheme: "smp://")
     static let xftpServer = configuredAddress(key: "NomeXFTPServer", requiredScheme: "xftp://")
+    static let chatRelay = configuredAddress(key: "NomeChatRelay", requiredScheme: "https://")
     static let webRTCIceServers = configuredList(key: "NomeWebRTCIceServers")
 
     static var isConfigured: Bool {
@@ -837,6 +838,20 @@ enum NomeServerConfiguration {
             .filter { !$0.isEmpty && !$0.contains("$(") }
         return entries.isEmpty ? nil : entries
     }
+}
+
+private let nomeDefaultChatRelaySeededUsersKey = "nomeDefaultChatRelaySeededAgentUserIds"
+
+private func nomeDefaultChatRelayWasSeeded(for user: User) -> Bool {
+    (UserDefaults.standard.stringArray(forKey: nomeDefaultChatRelaySeededUsersKey) ?? [])
+        .contains(user.agentUserId)
+}
+
+private func markNomeDefaultChatRelaySeeded(for user: User) {
+    var agentUserIds = UserDefaults.standard.stringArray(forKey: nomeDefaultChatRelaySeededUsersKey) ?? []
+    guard !agentUserIds.contains(user.agentUserId) else { return }
+    agentUserIds.append(user.agentUserId)
+    UserDefaults.standard.set(agentUserIds, forKey: nomeDefaultChatRelaySeededUsersKey)
 }
 
 private let nomeUpstreamPresetContactNames: Set<String> = [
@@ -886,7 +901,7 @@ func applyNomeOfficialServersIfConfigured() async -> Bool {
     guard
         let smpServer = NomeServerConfiguration.smpServer,
         let xftpServer = NomeServerConfiguration.xftpServer,
-        ChatModel.shared.currentUser != nil
+        let currentUser = ChatModel.shared.currentUser
     else {
         return false
     }
@@ -894,6 +909,7 @@ func applyNomeOfficialServersIfConfigured() async -> Bool {
     do {
         var userServers = try await getUserServers()
         var changed = false
+        let shouldSeedChatRelay = NomeServerConfiguration.chatRelay != nil && !nomeDefaultChatRelayWasSeeded(for: currentUser)
 
         for operatorIndex in userServers.indices where userServers[operatorIndex].operator != nil {
             if userServers[operatorIndex].operator?.enabled == true {
@@ -929,8 +945,14 @@ func applyNomeOfficialServersIfConfigured() async -> Bool {
 
         changed = enableNomeServer(smpServer, in: &userServers[customIndex].smpServers) || changed
         changed = enableNomeServer(xftpServer, in: &userServers[customIndex].xftpServers) || changed
+        if let chatRelay = NomeServerConfiguration.chatRelay, shouldSeedChatRelay {
+            changed = seedNomeChatRelay(chatRelay, in: &userServers[customIndex].chatRelays) || changed
+        }
 
         guard changed else {
+            if shouldSeedChatRelay {
+                markNomeDefaultChatRelaySeeded(for: currentUser)
+            }
             return true
         }
 
@@ -941,12 +963,37 @@ func applyNomeOfficialServersIfConfigured() async -> Bool {
         }
 
         try await setUserServers(userServers: userServers)
-        logger.info("Nome official message and file servers are active; preset operators are disabled")
+        if shouldSeedChatRelay {
+            markNomeDefaultChatRelaySeeded(for: currentUser)
+        }
+        logger.info("Nome official message, file and channel relay configuration is active; preset operators are disabled")
         return true
     } catch {
         logger.error("Nome official server configuration could not be applied")
         return false
     }
+}
+
+private func seedNomeChatRelay(_ address: String, in relays: inout [UserChatRelay]) -> Bool {
+    let normalizedAddress = address.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !relays.contains(where: { isNomeChatRelay($0, address: normalizedAddress) }) else { return false }
+
+    relays.append(
+        UserChatRelay(
+            address: normalizedAddress,
+            name: "Nome Relay",
+            domains: ["nome.im"],
+            preset: false,
+            enabled: true,
+            deleted: false
+        )
+    )
+    return true
+}
+
+private func isNomeChatRelay(_ relay: UserChatRelay, address: String) -> Bool {
+    relay.address.trimmingCharacters(in: .whitespacesAndNewlines) == address ||
+    (relay.displayName == "Nome Relay" && relay.domains.contains("nome.im"))
 }
 
 private func enableNomeServer(_ address: String, in servers: inout [UserServer]) -> Bool {
@@ -1005,10 +1052,21 @@ private func nomeServerEndpoint(_ address: String) -> String {
     }
     let scheme = trimmed[..<schemeRange.lowerBound].lowercased()
     let authority = trimmed[schemeRange.upperBound...]
-    let endpoint = authority.lastIndex(of: "@")
+    let endpointWithOptions = authority.lastIndex(of: "@")
         .map { authority[authority.index(after: $0)...] }
         ?? authority[authority.startIndex...]
-    return "\(scheme)://\(endpoint.lowercased())"
+    let endpoint = endpointWithOptions.prefix { $0 != "?" && $0 != "#" }
+    let host: Substring
+    if endpoint.first == "[", let closingBracket = endpoint.firstIndex(of: "]") {
+        host = endpoint[...closingBracket]
+    } else if let portSeparator = endpoint.lastIndex(of: ":"),
+              !endpoint[endpoint.index(after: portSeparator)...].isEmpty,
+              endpoint[endpoint.index(after: portSeparator)...].allSatisfy(\.isNumber) {
+        host = endpoint[..<portSeparator]
+    } else {
+        host = endpoint
+    }
+    return "\(scheme)://\(host.lowercased())"
 }
 
 func setUserServers(userServers: [UserOperatorServers]) async throws {
@@ -3010,11 +3068,20 @@ func processReceivedMsg(_ res: ChatEvent) async {
         }
     case let .callEnded(_, contact):
         if let invitation = await MainActor.run(body: { m.callInvitations.removeValue(forKey: contact.id) }) {
-            CallController.shared.reportCallRemoteEnded(invitation: invitation)
+            await MainActor.run {
+                CallController.shared.reportCallRemoteEnded(invitation: invitation)
+            }
         }
         await withCall(contact) { call in
-            await m.callCommand.processCommand(.end)
-            CallController.shared.reportCallRemoteEnded(call: call)
+            await MainActor.run {
+                call.callState = .ended
+                if m.activeCall == call {
+                    m.activeCall = nil
+                    m.activeCallViewIsCollapsed = false
+                    m.showCallView = false
+                }
+                CallController.shared.reportCallRemoteEnded(call: call)
+            }
         }
     case .chatSuspended:
         chatSuspended()

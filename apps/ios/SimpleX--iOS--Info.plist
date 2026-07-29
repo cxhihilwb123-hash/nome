@@ -49,6 +49,8 @@
 	<string>$(NOME_SMP_SERVER)</string>
 	<key>NomeActivationBaseURL</key>
 	<string>$(NOME_ACTIVATION_BASE_URL)</string>
+	<key>NomeChatRelay</key>
+	<string>$(NOME_CHAT_RELAY)</string>
 	<key>NomeWebRTCIceServers</key>
 	<string>$(NOME_WEBRTC_ICE_SERVERS)</string>
 	<key>NomeXFTPServer</key>
