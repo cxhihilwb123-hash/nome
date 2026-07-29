@@ -14,23 +14,23 @@ This is the first document to read for current Nome repository status. Older pla
 - Phase 4 build discipline: PASS.
 - Phase 5 documentation/evidence governance: PASS after the execution record in this branch.
 - Phase 6 deletion/cleanup: PASS; exact cache/worktree removal, AVD migration, backup re-verification, and post-clean builds are recorded below.
-- Post-Phase-6 local unified-client consolidation: IN PROGRESS. The candidate must preserve both client authority heads and pass the platform-specific gates before it becomes authoritative.
+- Post-Phase-6 local unified-client consolidation: PASS; both client authority heads are preserved, local build inputs are normalized, and the platform-specific gates are recorded below.
 - Phase 7 push/deploy/public release: NOT AUTHORIZED and not performed.
 
-## Unified candidate and retained recovery lines
+## Unified authority and retained recovery lines
 
 | Scope | Worktree / repository | Branch | Recorded local source state |
 |---|---|---|---|
-| Client candidate (Core/Android/iOS/Desktop) | `/Users/forkman03/project/nome/nome-client` | `codex/nome-v656-unified` | merge source heads `6cd16da945bc45683eab23f82dc58ba996109960` and `fb4a81780aa7518735f5d1a3c245808bd3b81f0b`; acceptance pending |
+| Client authority (Core/Android/iOS/Desktop) | `/Users/forkman03/project/nome/nome-client` | `codex/nome-v656-unified` | accepted merge `124863fe607eb84c177f8ccce7c76793f1ceeb55`; parents `6cd16da945bc45683eab23f82dc58ba996109960` and `fb4a81780aa7518735f5d1a3c245808bd3b81f0b` |
 | Website/control plane authority | `/Users/forkman03/project/nome/website` | `main` | current local tip `568d47dde9d81465cad1139f3b9c90c0f1c9f041` |
 | Retained iOS recovery source | `/Users/forkman03/project/nome/simplex-chat-ios-consolidated` | `codex/nome-v656-consolidated-ios` | `fb4a81780aa7518735f5d1a3c245808bd3b81f0b` |
 | Retained Android/Core/Desktop recovery source | `/Users/forkman03/project/nome/simplex-chat-android-consolidated` | `codex/nome-v656-consolidated-android` | `6cd16da945bc45683eab23f82dc58ba996109960` |
 
-The unified client candidate is not authoritative until the merge, dependency normalization, platform-specific verification, documentation update, and post-unification restore test pass. The retained consolidated worktrees remain recovery sources and must not be deleted during this work.
+The unified client is the local authority after its history-preserving merge, dependency normalization, platform verification, documentation update, and post-unification restore test. The retained consolidated worktrees remain recovery sources and must not be deleted without explicit destructive-cleanup authorization.
 
 ## Worktree model
 
-- `nome-client` is the candidate single long-lived client worktree. Core, Android, iOS, and Desktop are modules in this one Git history, not separate permanent worktree authorities.
+- `nome-client` is the single long-lived client worktree. Core, Android, iOS, and Desktop are modules in this one Git history, not separate permanent worktree authorities.
 - Release, hotfix, and large platform-migration worktrees are temporary and require an explicit purpose and cleanup gate.
 - Website/control plane remains an independent Git repository and is not part of the client merge.
 
@@ -41,6 +41,7 @@ The unified client candidate is not authoritative until the merge, dependency no
 - Cross-platform build discipline: [`consolidation/20260729_phase4_build_discipline_execution_record.md`](./consolidation/20260729_phase4_build_discipline_execution_record.md)
 - Documentation/evidence governance: [`consolidation/20260729_phase5_docs_evidence_governance_execution_record.md`](./consolidation/20260729_phase5_docs_evidence_governance_execution_record.md)
 - Phase 6 cleanup: [`consolidation/20260729_phase6_cleanup_execution_record.md`](./consolidation/20260729_phase6_cleanup_execution_record.md)
+- Unified client acceptance: [`consolidation/20260729_unified_client_execution_record.md`](./consolidation/20260729_unified_client_execution_record.md)
 - Latest locally verified Android artifacts and hashes are in the Phase 2 record; they are not public-release claims.
 - Latest reproducibly identified iOS artifact: [`builds/20260729_nome_ios_6.5.6_build349_consolidated.md`](./builds/20260729_nome_ios_6.5.6_build349_consolidated.md), internal Simulator diagnostic only.
 - Website acceptance: `/Users/forkman03/project/nome/website/docs/consolidation/20260729_phase3_website_execution_record.md`.
@@ -58,6 +59,7 @@ Other dated files under `plans/` and the existing `plans/evidence/` tree remain 
 - Deliverable binaries/screenshots: `/Users/forkman03/project/nome/deliverables` (not source commits).
 - Sensitive device recovery data: `/Users/forkman03/project/nome/device-backups` (never commit; do not delete until two encrypted, readable copies are independently verified).
 - Phase 0 recovery backup: `/Users/forkman03/project/nome/project-backups/20260729T072000+0800_nome_phase0` (never delete during consolidation).
+- Post-Phase-6 recovery backup: `/Users/forkman03/project/nome/project-backups/20260729T144307+0800_nome_post_phase6` (restore-tested before the unified merge).
 
 New Git evidence should be concise text, SHA256SUMS, and only a few necessary screenshots. Large or reproducible artifacts belong under `deliverables`, with one authoritative build record per artifact identity.
 
