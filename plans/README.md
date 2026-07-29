@@ -4,6 +4,11 @@ Updated: 2026-07-29 (Asia/Shanghai)
 
 This is the first document to read for current Nome repository status. Older plans and handoffs remain historical evidence; they do not override this index.
 
+New coding tasks must also follow the repository-wide instructions in
+[`../AGENTS.md`](../AGENTS.md). A copy-paste prompt and start-of-task checks for
+future tasks are maintained in
+[`20260729_nome_next_thread_development_entry.md`](./20260729_nome_next_thread_development_entry.md).
+
 ## Current plan and phase status
 
 - Governing execution plan: [`20260729_nome_project_consolidation_plan.md`](./20260729_nome_project_consolidation_plan.md)
