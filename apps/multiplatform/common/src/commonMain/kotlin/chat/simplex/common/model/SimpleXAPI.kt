@@ -760,6 +760,9 @@ object ChatController {
     user: User,
     onStarted: suspend () -> Unit,
   ): Boolean {
+    if (appPlatform.isAndroid) {
+      return startAndroidChatTransition(user, onStarted)
+    }
     Log.d(TAG, "user: $user")
     val previousUser = chatModel.currentUser.value
     var nomeGateRequiresCleanup = false
@@ -793,8 +796,8 @@ object ChatController {
           val users = listUsers(null)
           chatModel.users.clear()
           chatModel.users.addAll(users)
-          // The core exposes get/validate/set server commands while stopped. Do not call StartChat
-          // before this completes: it immediately resumes SMP/XFTP and delivery workers.
+          // The rebuilt core exposes get/validate/set server commands while stopped. Do not call
+          // StartChat before this completes: it resumes SMP/XFTP and delivery workers.
           retryableFailure = retryableNomeServerChatStart(user, onStarted) {
             NomeServerConfiguration.applyBeforeNetwork(this, user)
           }
@@ -871,6 +874,101 @@ object ChatController {
       throw safeNomeChatStartFailure(e)
     }
     return true
+  }
+
+  /**
+   * The shipped Android v6.5.6 native core only exposes server commands after StartChat. Keep its
+   * previously verified bootstrap order isolated to Android; Desktop continues to use the stopped
+   * pre-network gate in [startChatTransition].
+   */
+  private suspend fun startAndroidChatTransition(
+    user: User,
+    onStarted: suspend () -> Unit,
+  ): Boolean {
+    Log.d(TAG, "user: $user")
+    val previousUser = chatModel.currentUser.value
+    try {
+      chatModel.retryableChatStart.value = null
+      chatModel.currentUser.value = user
+      apiSetNetworkConfig(getNetCfg())
+      val chatRunning = apiCheckChatRunning()
+      val users = listUsers(null)
+      chatModel.users.clear()
+      chatModel.users.addAll(users)
+      val startedForNomeConfiguration = !chatRunning
+      if (startedForNomeConfiguration) {
+        apiStartChat()
+      }
+      val retryableFailure = retryableNomeServerChatStart(user, onStarted) {
+        NomeServerConfiguration.applyBeforeNetwork(this, user)
+      }
+      if (retryableFailure != null) {
+        Log.e(TAG, "Nome server configuration remains pending and will be retried")
+        if (startedForNomeConfiguration) {
+          try {
+            apiStopChat()
+          } catch (_: Throwable) {
+            Log.e(TAG, "Unable to stop the Nome server configuration bootstrap")
+          }
+        }
+        chatModel.chatRunning.value = false
+        chatModel.currentUser.value = previousUser
+        chatModel.retryableChatStart.value = retryableFailure
+        return false
+      }
+      removeAndroidLegacySeedContacts()
+      if (!chatRunning) {
+        chatModel.currentUser.value = user
+        chatModel.localUserCreated.value = true
+        getUserChatData(null)
+        appPrefs.chatLastStart.set(Clock.System.now())
+        chatModel.chatRunning.value = true
+        startReceiver()
+        setLocalDeviceName(appPrefs.deviceNameForRemoteAccess.get()!!)
+        if (appPreferences.onboardingStage.get() == OnboardingStage.OnboardingComplete && !chatModel.controller.appPrefs.privacyDeliveryReceiptsSet.get()) {
+          chatModel.setDeliveryReceipts.value = true
+        }
+        Log.d(TAG, "startChat: started")
+      } else {
+        val attemptId = chatModel.beginChatListLoad(null, hideRows = true)
+        withContext(Dispatchers.Main) {
+          chatModel.applyChatListLoadResult(apiGetChatsResult(null), attemptId)
+        }
+        Log.d(TAG, "startChat: running")
+      }
+      if (!startedForNomeConfiguration) apiStartChat()
+      appPrefs.chatStopped.set(false)
+      return true
+    } catch (e: Throwable) {
+      chatModel.currentUser.value = previousUser
+      chatModel.chatRunning.value = false
+      Log.e(TAG, nomeChatStartFailureSummary(e))
+      throw safeNomeChatStartFailure(e)
+    }
+  }
+
+  private suspend fun removeAndroidLegacySeedContacts() {
+    val legacySeeds = apiGetChats(null).filter(NomeLegacySeedContacts::shouldRemove)
+    if (legacySeeds.isEmpty()) return
+
+    var removed = 0
+    legacySeeds.forEach { chat ->
+      val direct = chat.chatInfo as ChatInfo.Direct
+      val response = sendCmd(
+        null,
+        CC.ApiDeleteChat(
+          ChatType.Direct,
+          direct.contact.contactId,
+          ChatDeleteMode.Full(notify = false),
+        ),
+      )
+      if (response is API.Result && response.res is CR.ContactDeleted) {
+        removed += 1
+      } else {
+        Log.e(TAG, "Unable to remove a legacy upstream contact card")
+      }
+    }
+    if (removed > 0) Log.i(TAG, "Removed $removed legacy upstream contact card(s)")
   }
 
   suspend fun startChatWithoutUser() {

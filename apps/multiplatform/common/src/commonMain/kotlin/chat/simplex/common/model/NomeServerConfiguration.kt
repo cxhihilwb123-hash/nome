@@ -1,6 +1,7 @@
 package chat.simplex.common.model
 
 import chat.simplex.common.platform.Log
+import chat.simplex.common.platform.appPlatform
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -36,6 +37,8 @@ internal object NomeServerConfiguration {
 
   internal fun migrate(userServers: List<UserOperatorServers>): Migration {
     var changed = false
+    val currentSmpServer = if (appPlatform.isAndroid) smpServerHostOnly else smpServer
+    val managedServerPreset = !appPlatform.isAndroid
     val hasNomeOperator = userServers.any { it.operator?.operatorTag == OperatorTag.Nome }
     val migrated = userServers.map { group ->
       val operator = group.operator
@@ -46,8 +49,8 @@ internal object NomeServerConfiguration {
             smpRoles = ServerRoles(storage = true, proxy = true),
             xftpRoles = ServerRoles(storage = true, proxy = true),
           )
-          val migratedSmp = enableManagedServer(group.smpServers, ServerProtocol.SMP, smpServer)
-          val migratedXftp = enableManagedServer(group.xftpServers, ServerProtocol.XFTP, xftpServer)
+          val migratedSmp = enableManagedServer(group.smpServers, ServerProtocol.SMP, currentSmpServer, managedServerPreset)
+          val migratedXftp = enableManagedServer(group.xftpServers, ServerProtocol.XFTP, xftpServer, managedServerPreset)
           val updated = group.copy(
             operator = enabledOperator,
             smpServers = migratedSmp.first,
@@ -64,7 +67,7 @@ internal object NomeServerConfiguration {
             // rebuilt core exposes OTNome, retire only those exact managed rows so the enabled
             // Nome operator remains the single routing owner. User-created entries stay intact.
             val updated = group.copy(
-              smpServers = retireManagedServers(group.smpServers, ServerProtocol.SMP, smpServer),
+              smpServers = retireManagedServers(group.smpServers, ServerProtocol.SMP, currentSmpServer),
               xftpServers = retireManagedServers(group.xftpServers, ServerProtocol.XFTP, xftpServer),
             )
             if (updated != group) changed = true
@@ -107,8 +110,8 @@ internal object NomeServerConfiguration {
       }
 
       val custom = migrated[customIndex]
-      val migratedSmp = enableManagedServer(custom.smpServers, ServerProtocol.SMP, smpServer)
-      val migratedXftp = enableManagedServer(custom.xftpServers, ServerProtocol.XFTP, xftpServer)
+      val migratedSmp = enableManagedServer(custom.smpServers, ServerProtocol.SMP, currentSmpServer, managedServerPreset)
+      val migratedXftp = enableManagedServer(custom.xftpServers, ServerProtocol.XFTP, xftpServer, managedServerPreset)
       val updatedCustom = custom.copy(
         smpServers = migratedSmp.first,
         xftpServers = migratedXftp.first,
@@ -165,6 +168,7 @@ internal object NomeServerConfiguration {
     servers: List<UserServer>,
     protocol: ServerProtocol,
     currentAddress: String,
+    preset: Boolean,
   ): Pair<List<UserServer>, Boolean> {
     val matchingIndices = servers.indices.filter { isManagedServer(servers[it], protocol, currentAddress) }
     if (matchingIndices.isEmpty()) {
@@ -172,9 +176,9 @@ internal object NomeServerConfiguration {
         remoteHostId = null,
         serverId = null,
         server = currentAddress,
-        // Managed routes are always read-only presets. Otherwise ProtocolServerView exposes the
-        // full credential-bearing address in an editor and QR code.
-        preset = true,
+        // The shipped Android core predates the Nome operator and keeps managed routes in the
+        // custom bucket, where preset rows fail validation. Rebuilt Desktop cores use presets.
+        preset = preset,
         tested = null,
         enabled = true,
         deleted = false,
@@ -190,7 +194,7 @@ internal object NomeServerConfiguration {
           val addressChanged = server.server.trim() != currentAddress
           server.copy(
             server = currentAddress,
-            preset = true,
+            preset = preset,
             tested = if (addressChanged) null else server.tested,
             enabled = true,
             deleted = false,
