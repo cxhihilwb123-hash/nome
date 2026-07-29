@@ -5,6 +5,7 @@ import chat.simplex.common.model.CIContent
 import chat.simplex.common.model.ChatItem
 import chat.simplex.common.model.E2EEInfo
 import chat.simplex.common.model.MsgContent
+import chat.simplex.common.views.chat.item.nomeHidePublicChannelE2EEHistory
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -36,6 +37,17 @@ class NomeConversationPresentationTest {
         listOf(ChatItem.getSampleData()),
       ),
     )
+  }
+
+  @Test
+  fun androidPublicChannelHidesEncryptionHistoryWithoutChangingOtherFacts() {
+    val publicInfo = E2EEInfo(pqEnabled = false, public = true)
+    val privateInfo = E2EEInfo(pqEnabled = false, public = false)
+
+    assertTrue(nomeHidePublicChannelE2EEHistory(isAndroid = true, isChannel = true, publicInfo))
+    assertFalse(nomeHidePublicChannelE2EEHistory(isAndroid = false, isChannel = true, publicInfo))
+    assertFalse(nomeHidePublicChannelE2EEHistory(isAndroid = true, isChannel = false, publicInfo))
+    assertFalse(nomeHidePublicChannelE2EEHistory(isAndroid = true, isChannel = true, privateInfo))
   }
 
   @Test
@@ -137,15 +149,4 @@ class NomeConversationPresentationTest {
     )
   }
 
-  @Test
-  fun channelDisclosureReservesHistoryMarkerAndScaledText() {
-    assertEquals(
-      120.dp,
-      nomeChannelDisclosureHeight(1f),
-    )
-    assertEquals(
-      240.dp,
-      nomeChannelDisclosureHeight(2f),
-    )
-  }
 }

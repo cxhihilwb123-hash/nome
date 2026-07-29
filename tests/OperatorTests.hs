@@ -336,8 +336,11 @@ nomePresetConfigTest = describe "Nome preset configuration" $ do
           map srvHost xftp `shouldBe` map srvHost nomeXFTPServers
           map srvHost xftp `shouldBe` [["xftp.nome.im"]]
           useXFTP `shouldBe` 1
-          null chatRelays `shouldBe` True
-          useChatRelays `shouldBe` 0
+          map (strEncode . chatRelayAddress) chatRelays `shouldBe` map (strEncode . chatRelayAddress) nomeChatRelays
+          map (\UserChatRelay {relayProfile = RelayProfile {displayName}} -> displayName) chatRelays `shouldBe` ["Nome Relay"]
+          map (\UserChatRelay {domains} -> domains) chatRelays `shouldBe` [["nome.im"]]
+          map (\UserChatRelay {preset, enabled, deleted} -> (preset, enabled, deleted)) chatRelays `shouldBe` [(True, True, False)]
+          useChatRelays `shouldBe` 1
         _ -> expectationFailure "expected one Nome preset operator"
 
 deriving instance Eq User

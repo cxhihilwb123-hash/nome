@@ -32,7 +32,7 @@ class NomeChannelIdentityComposeTest {
   val composeRule = createComposeRule()
 
   @Test
-  fun channelChromeKeepsDisclosureAndObserverStateExplicit() {
+  fun channelChromeKeepsObserverStateExplicit() {
     val target =
       InstrumentationRegistry
         .getInstrumentation()
@@ -47,16 +47,6 @@ class NomeChannelIdentityComposeTest {
       }
     }
 
-    composeRule
-      .onNodeWithText(
-        target.getString(R.string.nome_p21_non_e2ee),
-      )
-      .assertIsDisplayed()
-    composeRule
-      .onNodeWithText(
-        target.getString(R.string.nome_p21_history),
-      )
-      .assertIsDisplayed()
     composeRule
       .onNodeWithText(
         target.getString(R.string.nome_p21_observer),

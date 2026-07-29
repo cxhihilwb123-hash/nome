@@ -2,6 +2,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
   <application>
+    <receiver
+        android:name=".nome.smp.NomeSmpLogicalNetworkReceiver"
+        android:enabled="true"
+        android:exported="true"
+        android:permission="android.permission.DUMP">
+        <intent-filter>
+          <action android:name="chat.simplex.app.NOME_SMP_LOGICAL_NETWORK_SCHEDULE" />
+          <action android:name="chat.simplex.app.NOME_SMP_LOGICAL_NETWORK_RUN" />
+          <action android:name="chat.simplex.app.NOME_SMP_LOGICAL_NETWORK_RECOVER" />
+        </intent-filter>
+    </receiver>
     <activity
         android:name=".nome.database.NomeDatabaseRootEvidenceActivity"
         android:excludeFromRecents="true"
