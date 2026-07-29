@@ -64,7 +64,8 @@ worktrees are recovery/evidence sources, not parallel development authorities.
 - Authorized worktree/cache cleanup addendum: [`consolidation/20260729_authorized_worktree_cache_cleanup_record.md`](./consolidation/20260729_authorized_worktree_cache_cleanup_record.md)
 - Unified client acceptance: [`consolidation/20260729_unified_client_execution_record.md`](./consolidation/20260729_unified_client_execution_record.md)
 - Latest locally verified Android artifacts and hashes are in the Phase 2 record; they are not public-release claims.
-- Latest reproducibly identified iOS artifact: [`builds/20260729_nome_ios_6.5.6_build349_consolidated.md`](./builds/20260729_nome_ios_6.5.6_build349_consolidated.md), internal Simulator diagnostic only.
+- Latest directly installed iOS device artifact: [`builds/20260729_nome_ios_6.5.6_build375_cryhandsome.md`](./builds/20260729_nome_ios_6.5.6_build375_cryhandsome.md), Personal Team internal build from the unified source plus a recorded temporary signing patch; installation PASS, automatic launch BLOCKED only because the phone was locked.
+- Latest consolidated Simulator artifact: [`builds/20260729_nome_ios_6.5.6_build349_consolidated.md`](./builds/20260729_nome_ios_6.5.6_build349_consolidated.md), internal Simulator diagnostic only.
 - Website acceptance: `/Users/forkman03/project/nome/website/docs/consolidation/20260729_phase3_website_execution_record.md`.
 - Build record rules/template: [`builds/README.md`](./builds/README.md) and [`builds/TEMPLATE.md`](./builds/TEMPLATE.md).
 
