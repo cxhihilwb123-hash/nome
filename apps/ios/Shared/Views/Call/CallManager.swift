@@ -91,26 +91,28 @@ class CallManager {
         let m = ChatModel.shared
         if case .ended = call.callState {
             logger.debug("CallManager.endCall: call ended")
-            m.activeCall = nil
-            m.activeCallViewIsCollapsed = false
-            m.showCallView = false
+            dismissCall(call, in: m)
             completed()
         } else {
             logger.debug("CallManager.endCall: ending call...")
+            dismissCall(call, in: m)
+            completed()
             Task {
-                await m.callCommand.processCommand(.end)
-                await MainActor.run {
-                    m.activeCall = nil
-                    m.activeCallViewIsCollapsed = false
-                    m.showCallView = false
-                    completed()
-                }
                 do {
                     try await apiEndCall(call.contact)
                 } catch {
                     logger.error("CallController.provider apiEndCall error: \(responseError(error))")
                 }
             }
+        }
+    }
+
+    private func dismissCall(_ call: Call, in model: ChatModel) {
+        call.callState = .ended
+        if model.activeCall == call {
+            model.activeCall = nil
+            model.activeCallViewIsCollapsed = false
+            model.showCallView = false
         }
     }
 

@@ -28,6 +28,10 @@ class CallController: NSObject, CXProviderDelegate, PKPushRegistryDelegate, Obse
         return !isInChina && callKitEnabledGroupDefault.get()
     }
 
+    static func useCallKit(callUUID: String?) -> Bool {
+        useCallKit() && callUUID.flatMap { UUID(uuidString: $0) } != nil
+    }
+
     private let provider = CXProvider(configuration: {
         let configuration = CXProviderConfiguration()
         configuration.supportsVideo = true
@@ -43,6 +47,7 @@ class CallController: NSObject, CXProviderDelegate, PKPushRegistryDelegate, Obse
     @Published var activeCallInvitation: RcvCallInvitation?
     var shouldSuspendChat: Bool = false
     var fulfillOnConnect: CXAnswerCallAction? = nil
+    private(set) var isAudioSessionActive = false
 
     // PKPushRegistry is used from notification service extension
     private let registry = PKPushRegistry(queue: nil)
@@ -65,6 +70,10 @@ class CallController: NSObject, CXProviderDelegate, PKPushRegistryDelegate, Obse
             action.fail()
             return
         }
+        configureAudioSession(action.isVideo ? .video : .audio)
+#if DEBUG
+        CallAudioDiagnosticLog.write("provider-start video=\(action.isVideo) useCallKit=\(CallController.useCallKit()) china=\(CallController.isInChina) \(audioSessionState())")
+#endif
         if callManager.startOutgoingCall(callUUID: action.callUUID.uuidString.lowercased()) {
             action.fulfill()
             provider.reportOutgoingCall(with: action.callUUID, startedConnectingAt: nil)
@@ -94,6 +103,10 @@ class CallController: NSObject, CXProviderDelegate, PKPushRegistryDelegate, Obse
             await MainActor.run {
                 logger.debug("CallController.provider will answer on call")
 
+                let media = ChatModel.shared.callInvitations.values
+                    .first(where: { $0.callUUID == action.callUUID.uuidString.lowercased() })?
+                    .callType.media ?? .audio
+                self.configureAudioSession(media)
                 if callManager.answerIncomingCall(callUUID: action.callUUID.uuidString.lowercased()) {
                     logger.debug("CallController.provider answered on call")
                     // WebRTC call should be in connected state to fulfill.
@@ -139,44 +152,30 @@ class CallController: NSObject, CXProviderDelegate, PKPushRegistryDelegate, Obse
 
     func provider(_ provider: CXProvider, didActivate audioSession: AVAudioSession) {
         logger.debug("CallController: activating audioSession and audio in WebRTCClient")
+        isAudioSessionActive = true
         RTCAudioSession.sharedInstance().audioSessionDidActivate(audioSession)
         RTCAudioSession.sharedInstance().isAudioEnabled = true
-        do {
-            let hasVideo = ChatModel.shared.activeCall?.hasVideo == true
-            if hasVideo {
-                try audioSession.setCategory(.playAndRecord, mode: .videoChat, options: [.defaultToSpeaker, .mixWithOthers, .allowBluetooth, .allowAirPlay, .allowBluetoothA2DP])
-            } else {
-                try audioSession.setCategory(.playAndRecord, mode: .voiceChat, options: [.mixWithOthers, .allowBluetooth, .allowAirPlay, .allowBluetoothA2DP])
+#if DEBUG
+        CallAudioDiagnosticLog.write("did-activate \(audioSessionState(audioSession))")
+#endif
+        if ChatModel.shared.activeCall?.hasVideo == true {
+            let activeExternalOutput = audioSession.currentRoute.outputs.contains {
+                $0.portType != .builtInReceiver && $0.portType != .builtInSpeaker
             }
-            // Without any delay sound is not playing from speaker or external device in incoming call
-            Task {
-                for i in 0 ... 3 {
-                    try? await Task.sleep(nanoseconds: UInt64(i) * 300_000000)
-                    if let preferred = audioSession.preferredInputDevice() {
-                        await MainActor.run { try? audioSession.setPreferredInput(preferred) }
-                    } else if hasVideo {
-                        await MainActor.run { try? audioSession.overrideOutputAudioPort(.speaker) }
-                    }
-                }
+            if !activeExternalOutput {
+                try? audioSession.overrideOutputAudioPort(.speaker)
             }
-            logger.debug("audioSession category set")
-            try audioSession.setActive(true)
-            logger.debug("audioSession activated")
-        } catch {
-            logger.error("failed activating audio session")
         }
     }
 
     func provider(_ provider: CXProvider, didDeactivate audioSession: AVAudioSession) {
         logger.debug("CallController: deactivating audioSession and audio in WebRTCClient")
+        isAudioSessionActive = false
         RTCAudioSession.sharedInstance().audioSessionDidDeactivate(audioSession)
         RTCAudioSession.sharedInstance().isAudioEnabled = false
-        do {
-            try audioSession.setActive(false)
-            logger.debug("audioSession deactivated")
-        } catch {
-            logger.error("failed deactivating audio session")
-        }
+#if DEBUG
+        CallAudioDiagnosticLog.write("did-deactivate \(audioSessionState(audioSession))")
+#endif
         suspendOnEndCall()
     }
 
@@ -308,7 +307,9 @@ class CallController: NSObject, CXProviderDelegate, PKPushRegistryDelegate, Obse
     // Spec: spec/services/calls.md#reportNewIncomingCall
     func reportNewIncomingCall(invitation: RcvCallInvitation, completion: @escaping (Error?) -> Void) {
         logger.debug("CallController.reportNewIncomingCall, UUID=\(String(describing: invitation.callUUID))")
-        if CallController.useCallKit(), let callUUID = invitation.callUUID, let uuid = UUID(uuidString: callUUID) {
+        if CallController.useCallKit(callUUID: invitation.callUUID),
+           let callUUID = invitation.callUUID,
+           let uuid = UUID(uuidString: callUUID) {
             if invitation.callTs.timeIntervalSinceNow >= -180 {
                 let update = cxCallUpdate(invitation: invitation)
                 provider.reportNewIncomingCall(with: uuid, update: update, completion: completion)
@@ -339,7 +340,7 @@ class CallController: NSObject, CXProviderDelegate, PKPushRegistryDelegate, Obse
 
     func reportIncomingCall(call: Call, connectedAt dateConnected: Date?) {
         logger.debug("CallController: reporting incoming call connected")
-        if CallController.useCallKit() {
+        if CallController.useCallKit(callUUID: call.callUUID) {
             // Fulfilling this action only after connect, otherwise there are no audio and mic on lockscreen
             fulfillOnConnect?.fulfill()
             fulfillOnConnect = nil
@@ -349,14 +350,14 @@ class CallController: NSObject, CXProviderDelegate, PKPushRegistryDelegate, Obse
     // Spec: spec/services/calls.md#reportOutgoingCall
     func reportOutgoingCall(call: Call, connectedAt dateConnected: Date?) {
         logger.debug("CallController: reporting outgoing call connected")
-        if CallController.useCallKit(), let callUUID = call.callUUID, let uuid = UUID(uuidString: callUUID) {
+        if CallController.useCallKit(callUUID: call.callUUID), let callUUID = call.callUUID, let uuid = UUID(uuidString: callUUID) {
             provider.reportOutgoingCall(with: uuid, connectedAt: dateConnected)
         }
     }
 
     func reportCallRemoteEnded(invitation: RcvCallInvitation) {
         logger.debug("CallController: reporting remote ended")
-        if CallController.useCallKit(), let callUUID = invitation.callUUID, let uuid = UUID(uuidString: callUUID) {
+        if CallController.useCallKit(callUUID: invitation.callUUID), let callUUID = invitation.callUUID, let uuid = UUID(uuidString: callUUID) {
             provider.reportCall(with: uuid, endedAt: nil, reason: .remoteEnded)
         } else if invitation.contact.id == activeCallInvitation?.contact.id {
             activeCallInvitation = nil
@@ -365,7 +366,9 @@ class CallController: NSObject, CXProviderDelegate, PKPushRegistryDelegate, Obse
 
     func reportCallRemoteEnded(call: Call) {
         logger.debug("CallController: reporting remote ended")
-        if CallController.useCallKit(), let callUUID = call.callUUID, let uuid = UUID(uuidString: callUUID) {
+        fulfillOnConnect?.fail()
+        fulfillOnConnect = nil
+        if CallController.useCallKit(callUUID: call.callUUID), let callUUID = call.callUUID, let uuid = UUID(uuidString: callUUID) {
             provider.reportCall(with: uuid, endedAt: nil, reason: .remoteEnded)
         }
     }
@@ -373,6 +376,10 @@ class CallController: NSObject, CXProviderDelegate, PKPushRegistryDelegate, Obse
     func startCall(_ contact: Contact, _ media: CallMediaType) {
         logger.debug("CallController.startCall")
         guard NomeActivationGate.require(.call) else { return }
+#if DEBUG
+        CallAudioDiagnosticLog.reset()
+        CallAudioDiagnosticLog.write("start-call direction=outgoing media=\(media) useCallKit=\(CallController.useCallKit()) china=\(CallController.isInChina) micPermission=\(AVCaptureDevice.authorizationStatus(for: .audio).rawValue) \(audioSessionState())")
+#endif
         let callUUID = callManager.newOutgoingCall(contact, media)
         guard let uuid = UUID(uuidString: callUUID) else {
             return
@@ -398,7 +405,13 @@ class CallController: NSObject, CXProviderDelegate, PKPushRegistryDelegate, Obse
     func answerCall(invitation: RcvCallInvitation) {
         logger.debug("CallController: answering a call")
         guard NomeActivationGate.require(.call) else { return }
-        if CallController.useCallKit(), let callUUID = invitation.callUUID, let uuid = UUID(uuidString: callUUID) {
+#if DEBUG
+        CallAudioDiagnosticLog.reset()
+        CallAudioDiagnosticLog.write("start-call direction=incoming media=\(invitation.callType.media) useCallKit=\(CallController.useCallKit()) callKitUUID=\(CallController.useCallKit(callUUID: invitation.callUUID)) china=\(CallController.isInChina) micPermission=\(AVCaptureDevice.authorizationStatus(for: .audio).rawValue) \(audioSessionState())")
+#endif
+        if CallController.useCallKit(callUUID: invitation.callUUID),
+           let callUUID = invitation.callUUID,
+           let uuid = UUID(uuidString: callUUID) {
             requestTransaction(with: CXAnswerCallAction(call: uuid))
         } else {
             callManager.answerIncomingCall(invitation: invitation)
@@ -408,13 +421,42 @@ class CallController: NSObject, CXProviderDelegate, PKPushRegistryDelegate, Obse
         }
     }
 
+    private func configureAudioSession(_ media: CallMediaType) {
+        let audioSession = AVAudioSession.sharedInstance()
+        do {
+            let options: AVAudioSession.CategoryOptions = media == .video
+                ? [.defaultToSpeaker, .allowBluetoothHFP]
+                : [.allowBluetoothHFP]
+            try audioSession.setCategory(
+                .playAndRecord,
+                mode: media == .video ? .videoChat : .voiceChat,
+                options: options
+            )
+            logger.debug("CallController: audio session configured before CallKit activation")
+#if DEBUG
+            CallAudioDiagnosticLog.write("configured media=\(media) \(audioSessionState(audioSession))")
+#endif
+        } catch {
+            logger.error("CallController: failed configuring audio session: \(error.localizedDescription)")
+#if DEBUG
+            CallAudioDiagnosticLog.write("configure-failed code=\((error as NSError).code)")
+#endif
+        }
+    }
+
+#if DEBUG
+    private func audioSessionState(_ session: AVAudioSession = .sharedInstance()) -> String {
+        let inputs = session.currentRoute.inputs.map { $0.portType.rawValue }.joined(separator: ",")
+        let outputs = session.currentRoute.outputs.map { $0.portType.rawValue }.joined(separator: ",")
+        return "activeFlag=\(isAudioSessionActive) category=\(session.category.rawValue) mode=\(session.mode.rawValue) inputs=[\(inputs)] outputs=[\(outputs)]"
+    }
+#endif
+
     func endCall(callUUID: String) {
         let uuid = UUID(uuidString: callUUID)
         logger.debug("CallController: ending the call with UUID \(callUUID)")
-        if CallController.useCallKit() {
-            if let uuid {
-                requestTransaction(with: CXEndCallAction(call: uuid))
-            }
+        if CallController.useCallKit(callUUID: callUUID), let uuid {
+            requestTransaction(with: CXEndCallAction(call: uuid))
         } else {
             callManager.endCall(callUUID: callUUID) { ok in
                 if ok {

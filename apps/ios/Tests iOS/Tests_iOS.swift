@@ -24,6 +24,8 @@ class Tests_iOS: XCTestCase {
     private let activationInviteCodeKey = "NOME_ACTIVATION_INVITE_CODE"
     private let callContactKey = "NOME_CALL_DIAGNOSTIC_CONTACT"
     private let callMediaKey = "NOME_CALL_DIAGNOSTIC_MEDIA"
+    private let callAnswerKey = "NOME_CALL_DIAGNOSTIC_ANSWER"
+    private let callRoundsKey = "NOME_CALL_DIAGNOSTIC_ROUNDS"
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.
@@ -256,37 +258,77 @@ class Tests_iOS: XCTestCase {
 
     func testStartNomeCallDiagnostic() throws {
         let environment = ProcessInfo.processInfo.environment
-        guard let contact = environment[callContactKey], !contact.isEmpty,
-              let media = environment[callMediaKey], ["audio", "video"].contains(media) else {
-            throw XCTSkip("Set \(callContactKey) and \(callMediaKey)=audio|video to enable the call diagnostic")
+        guard let media = environment[callMediaKey], ["audio", "video"].contains(media) else {
+            throw XCTSkip("Set \(callMediaKey)=audio|video to enable the call diagnostic")
         }
 
         let app = XCUIApplication()
-        app.launchEnvironment[callContactKey] = contact
+        if let contact = environment[callContactKey], !contact.isEmpty {
+            app.launchEnvironment[callContactKey] = contact
+        }
         app.launchEnvironment[callMediaKey] = media
         app.launchEnvironment["NOME_DISABLE_CALLKIT_FOR_TESTS"] = "1"
         app.launch()
         skipQuiescenceWaits(in: app)
 
+        let rounds = max(1, Int(environment[callRoundsKey] ?? "1") ?? 1)
+        let contact = try environment[callContactKey].flatMap { $0.isEmpty ? nil : $0 }
+            ?? detectDiagnosticIdentity(in: app).contact
         let contactLabel = app.staticTexts[contact].firstMatch
         XCTAssertTrue(contactLabel.waitForExistence(timeout: 30), "Call diagnostic contact is not visible: \(contact)")
         contactLabel.tap()
         XCTAssertTrue(app.textViews["chat-compose-editor"].firstMatch.waitForExistence(timeout: 20))
 
-        let callMenu = app.buttons["chat-call-menu"].firstMatch
-        XCTAssertTrue(callMenu.waitForExistence(timeout: 10), "Call menu is not accessible")
-        callMenu.tap()
+        for round in 1 ... rounds {
+            let callMenu = app.buttons["chat-call-menu"].firstMatch
+            XCTAssertTrue(callMenu.waitForExistence(timeout: 10), "Call menu is not accessible in round \(round)")
+            callMenu.tap()
 
-        let mediaButton = app.buttons[media == "audio" ? "chat-audio-call" : "chat-video-call"].firstMatch
-        XCTAssertTrue(mediaButton.waitForExistence(timeout: 10), "Call media action is not accessible: \(media)")
-        print("[NOME_CALL_DIAG] start media=\(media) contact=\(contact)")
-        mediaButton.tap()
+            let mediaButton = app.buttons[media == "audio" ? "chat-audio-call" : "chat-video-call"].firstMatch
+            XCTAssertTrue(mediaButton.waitForExistence(timeout: 10), "Call media action is not accessible: \(media), round \(round)")
+            print("[NOME_CALL_DIAG] start media=\(media) contact=\(contact) round=\(round)")
+            mediaButton.tap()
 
-        // Keep the caller alive while the peer accepts and require the connected state.
-        let connected = app.staticTexts["已连接"].firstMatch
-        XCTAssertTrue(connected.waitForExistence(timeout: 40), "Call did not reach the connected state: \(media)")
-        RunLoop.current.run(until: Date().addingTimeInterval(5))
-        attachDiagnosticScreenshot(app, name: "call-\(media)-connected")
+            let connected = app.staticTexts["已连接"].firstMatch
+            XCTAssertTrue(connected.waitForExistence(timeout: 40), "Call did not reach the connected state: \(media), round \(round)")
+            RunLoop.current.run(until: Date().addingTimeInterval(5))
+            attachDiagnosticScreenshot(app, name: "call-\(media)-connected-round-\(round)")
+
+            let end = app.buttons["active-call-end"].firstMatch
+            XCTAssertTrue(end.waitForExistence(timeout: 10), "End call button is not accessible in round \(round)")
+            end.tap()
+            XCTAssertTrue(app.textViews["chat-compose-editor"].firstMatch.waitForExistence(timeout: 20), "Chat did not return after round \(round)")
+            RunLoop.current.run(until: Date().addingTimeInterval(2))
+        }
+    }
+
+    func testAnswerNomeCallDiagnostic() throws {
+        guard ProcessInfo.processInfo.environment[callAnswerKey] == "1" else {
+            throw XCTSkip("Set \(callAnswerKey)=1 to enable the incoming call diagnostic")
+        }
+
+        let app = XCUIApplication()
+        app.launchEnvironment["NOME_DISABLE_CALLKIT_FOR_TESTS"] = "1"
+        app.launch()
+        skipQuiescenceWaits(in: app)
+
+        let rounds = max(1, Int(ProcessInfo.processInfo.environment[callRoundsKey] ?? "1") ?? 1)
+        for round in 1 ... rounds {
+            let accept = app.buttons["incoming-call-accept"].firstMatch
+            XCTAssertTrue(accept.waitForExistence(timeout: 60), "Incoming call did not arrive in round \(round)")
+            accept.tap()
+
+            let connected = app.staticTexts["已连接"].firstMatch
+            XCTAssertTrue(connected.waitForExistence(timeout: 40), "Incoming call did not reach the connected state in round \(round)")
+            RunLoop.current.run(until: Date().addingTimeInterval(5))
+            attachDiagnosticScreenshot(app, name: "call-incoming-connected-round-\(round)")
+            let end = app.buttons["active-call-end"].firstMatch
+            XCTAssertTrue(
+                waitForDisappearance(end, timeout: 20),
+                "Incoming call UI did not close after the caller ended round \(round)"
+            )
+            RunLoop.current.run(until: Date().addingTimeInterval(2))
+        }
     }
 
     func testLaunchPerformance() throws {
@@ -346,19 +388,30 @@ class Tests_iOS: XCTestCase {
         setter(app, selector, 3)
     }
 
+    private func waitForDisappearance(_ element: XCUIElement, timeout: TimeInterval) -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if !element.exists {
+                return true
+            }
+            RunLoop.current.run(until: Date().addingTimeInterval(0.25))
+        }
+        return !element.exists
+    }
+
     private func detectDiagnosticIdentity(in app: XCUIApplication) throws -> DiagnosticIdentity {
-        let mainContact = app.staticTexts["nomepeer"].firstMatch
-        let peerContact = app.staticTexts["nometest"].firstMatch
+        let identities = [
+            (element: app.staticTexts["nomepeer"].firstMatch, identity: DiagnosticIdentity(sender: "main", contact: "nomepeer")),
+            (element: app.staticTexts["nometest"].firstMatch, identity: DiagnosticIdentity(sender: "peer", contact: "nometest")),
+            (element: app.staticTexts["NomeTokyoB"].firstMatch, identity: DiagnosticIdentity(sender: "main", contact: "NomeTokyoB")),
+            (element: app.staticTexts["NomeTokyoA"].firstMatch, identity: DiagnosticIdentity(sender: "peer", contact: "NomeTokyoA")),
+        ]
         let deadline = Date().addingTimeInterval(30)
 
         while Date() < deadline {
-            if mainContact.exists && mainContact.isHittable {
-                print("[NOME_DIAG] identity sender=main contact=nomepeer")
-                return DiagnosticIdentity(sender: "main", contact: "nomepeer")
-            }
-            if peerContact.exists && peerContact.isHittable {
-                print("[NOME_DIAG] identity sender=peer contact=nometest")
-                return DiagnosticIdentity(sender: "peer", contact: "nometest")
+            for candidate in identities where candidate.element.exists && candidate.element.isHittable {
+                print("[NOME_DIAG] identity sender=\(candidate.identity.sender) contact=\(candidate.identity.contact)")
+                return candidate.identity
             }
             RunLoop.current.run(until: Date().addingTimeInterval(0.25))
         }
