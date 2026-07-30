@@ -5632,7 +5632,9 @@ data class NetCfg(
         tcpTimeout = NetworkTimeout(backgroundTimeout = 30_000_000, interactiveTimeout = 10_000_000),
         tcpTimeoutPerKb = 10_000,
         rcvConcurrency = 12,
-        smpPingInterval = 1200_000_000
+        tcpKeepAlive = KeepAliveOpts.defaults,
+        smpPingInterval = 120_000_000,
+        smpPingCount = 1,
       )
 
     val proxyDefaults: NetCfg =
@@ -5642,7 +5644,9 @@ data class NetCfg(
         tcpTimeout = NetworkTimeout(backgroundTimeout = 40_000_000, interactiveTimeout = 20_000_000),
         tcpTimeoutPerKb = 15_000,
         rcvConcurrency = 8,
-        smpPingInterval = 1200_000_000
+        tcpKeepAlive = KeepAliveOpts.defaults,
+        smpPingInterval = 120_000_000,
+        smpPingCount = 1,
       )
   }
 
