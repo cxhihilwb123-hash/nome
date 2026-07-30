@@ -809,6 +809,7 @@ func getUserServers() async throws -> [UserOperatorServers] {
 
 enum NomeServerConfiguration {
     static let smpServer = configuredAddress(key: "NomeSMPServer", requiredScheme: "smp://")
+        .map { withDefaultPort($0, defaultPort: 5223) }
     static let xftpServer = configuredAddress(key: "NomeXFTPServer", requiredScheme: "xftp://")
     static let chatRelay = configuredAddress(key: "NomeChatRelay", requiredScheme: "https://")
     static let webRTCIceServers = configuredList(key: "NomeWebRTCIceServers")
@@ -826,6 +827,13 @@ enum NomeServerConfiguration {
             return nil
         }
         return address
+    }
+
+    private static func withDefaultPort(_ address: String, defaultPort: Int) -> String {
+        guard let credentialsEnd = address.lastIndex(of: "@") else { return address }
+        let hostAndPort = address[address.index(after: credentialsEnd)...]
+        guard !hostAndPort.isEmpty, !hostAndPort.contains(":") else { return address }
+        return "\(address):\(defaultPort)"
     }
 
     private static func configuredList(key: String) -> [String]? {
@@ -909,48 +917,74 @@ func applyNomeOfficialServersIfConfigured() async -> Bool {
     do {
         var userServers = try await getUserServers()
         var changed = false
-        let shouldSeedChatRelay = NomeServerConfiguration.chatRelay != nil && !nomeDefaultChatRelayWasSeeded(for: currentUser)
+        let nomeOperatorIndex = userServers.firstIndex { $0.operator?.operatorTag == .nome }
+        let shouldMarkChatRelaySeeded = NomeServerConfiguration.chatRelay != nil && !nomeDefaultChatRelayWasSeeded(for: currentUser)
 
         for operatorIndex in userServers.indices where userServers[operatorIndex].operator != nil {
-            if userServers[operatorIndex].operator?.enabled == true {
-                userServers[operatorIndex].operator?.enabled = false
-                changed = true
-            }
-            if userServers[operatorIndex].operator?.smpRoles != ServerRoles(storage: false, proxy: false) {
-                userServers[operatorIndex].operator?.smpRoles = ServerRoles(storage: false, proxy: false)
-                changed = true
-            }
-            if userServers[operatorIndex].operator?.xftpRoles != ServerRoles(storage: false, proxy: false) {
-                userServers[operatorIndex].operator?.xftpRoles = ServerRoles(storage: false, proxy: false)
-                changed = true
-            }
-            for serverIndex in userServers[operatorIndex].smpServers.indices where userServers[operatorIndex].smpServers[serverIndex].enabled {
-                userServers[operatorIndex].smpServers[serverIndex].enabled = false
-                changed = true
-            }
-            for serverIndex in userServers[operatorIndex].xftpServers.indices where userServers[operatorIndex].xftpServers[serverIndex].enabled {
-                userServers[operatorIndex].xftpServers[serverIndex].enabled = false
-                changed = true
+            if userServers[operatorIndex].operator?.operatorTag == .nome {
+                if userServers[operatorIndex].operator?.enabled != true {
+                    userServers[operatorIndex].operator?.enabled = true
+                    changed = true
+                }
+                if userServers[operatorIndex].operator?.smpRoles != ServerRoles(storage: true, proxy: true) {
+                    userServers[operatorIndex].operator?.smpRoles = ServerRoles(storage: true, proxy: true)
+                    changed = true
+                }
+                if userServers[operatorIndex].operator?.xftpRoles != ServerRoles(storage: true, proxy: true) {
+                    userServers[operatorIndex].operator?.xftpRoles = ServerRoles(storage: true, proxy: true)
+                    changed = true
+                }
+            } else {
+                if userServers[operatorIndex].operator?.enabled == true {
+                    userServers[operatorIndex].operator?.enabled = false
+                    changed = true
+                }
+                if userServers[operatorIndex].operator?.smpRoles != ServerRoles(storage: false, proxy: false) {
+                    userServers[operatorIndex].operator?.smpRoles = ServerRoles(storage: false, proxy: false)
+                    changed = true
+                }
+                if userServers[operatorIndex].operator?.xftpRoles != ServerRoles(storage: false, proxy: false) {
+                    userServers[operatorIndex].operator?.xftpRoles = ServerRoles(storage: false, proxy: false)
+                    changed = true
+                }
+                for serverIndex in userServers[operatorIndex].smpServers.indices where userServers[operatorIndex].smpServers[serverIndex].enabled {
+                    userServers[operatorIndex].smpServers[serverIndex].enabled = false
+                    changed = true
+                }
+                for serverIndex in userServers[operatorIndex].xftpServers.indices where userServers[operatorIndex].xftpServers[serverIndex].enabled {
+                    userServers[operatorIndex].xftpServers[serverIndex].enabled = false
+                    changed = true
+                }
             }
         }
 
-        let customIndex: Int
-        if let existingIndex = userServers.firstIndex(where: { $0.operator == nil }) {
-            customIndex = existingIndex
+        let managedIndex: Int
+        if let nomeOperatorIndex {
+            managedIndex = nomeOperatorIndex
+            for customIndex in userServers.indices where userServers[customIndex].operator == nil {
+                changed = retireNomeServer(smpServer, in: &userServers[customIndex].smpServers) || changed
+                changed = retireNomeServer(xftpServer, in: &userServers[customIndex].xftpServers) || changed
+            }
+        } else if let existingIndex = userServers.firstIndex(where: { $0.operator == nil }) {
+            managedIndex = existingIndex
         } else {
             userServers.append(UserOperatorServers(operator: nil, smpServers: [], xftpServers: [], chatRelays: []))
-            customIndex = userServers.index(before: userServers.endIndex)
+            managedIndex = userServers.index(before: userServers.endIndex)
             changed = true
         }
 
-        changed = enableNomeServer(smpServer, in: &userServers[customIndex].smpServers) || changed
-        changed = enableNomeServer(xftpServer, in: &userServers[customIndex].xftpServers) || changed
-        if let chatRelay = NomeServerConfiguration.chatRelay, shouldSeedChatRelay {
-            changed = seedNomeChatRelay(chatRelay, in: &userServers[customIndex].chatRelays) || changed
+        changed = enableNomeServer(smpServer, preset: nomeOperatorIndex != nil, in: &userServers[managedIndex].smpServers) || changed
+        changed = enableNomeServer(xftpServer, preset: nomeOperatorIndex != nil, in: &userServers[managedIndex].xftpServers) || changed
+        if let chatRelay = NomeServerConfiguration.chatRelay {
+            changed = reconcileNomeChatRelay(
+                chatRelay,
+                allowAdd: shouldMarkChatRelaySeeded,
+                in: &userServers[managedIndex].chatRelays
+            ) || changed
         }
 
         guard changed else {
-            if shouldSeedChatRelay {
+            if shouldMarkChatRelaySeeded {
                 markNomeDefaultChatRelaySeeded(for: currentUser)
             }
             return true
@@ -963,10 +997,10 @@ func applyNomeOfficialServersIfConfigured() async -> Bool {
         }
 
         try await setUserServers(userServers: userServers)
-        if shouldSeedChatRelay {
+        if shouldMarkChatRelaySeeded {
             markNomeDefaultChatRelaySeeded(for: currentUser)
         }
-        logger.info("Nome official message, file and channel relay configuration is active; preset operators are disabled")
+        logger.info("Nome official message, file and channel relay configuration is active; non-Nome preset operators are disabled")
         return true
     } catch {
         logger.error("Nome official server configuration could not be applied")
@@ -974,9 +1008,19 @@ func applyNomeOfficialServersIfConfigured() async -> Bool {
     }
 }
 
-private func seedNomeChatRelay(_ address: String, in relays: inout [UserChatRelay]) -> Bool {
+private func reconcileNomeChatRelay(_ address: String, allowAdd: Bool, in relays: inout [UserChatRelay]) -> Bool {
     let normalizedAddress = address.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !relays.contains(where: { isNomeChatRelay($0, address: normalizedAddress) }) else { return false }
+    guard !relays.contains(where: {
+        $0.address.trimmingCharacters(in: .whitespacesAndNewlines) == normalizedAddress
+    }) else { return false }
+
+    if let index = relays.firstIndex(where: isNomeChatRelayIdentity) {
+        relays[index].address = normalizedAddress
+        relays[index].tested = nil
+        return true
+    }
+
+    guard allowAdd else { return false }
 
     relays.append(
         UserChatRelay(
@@ -991,12 +1035,26 @@ private func seedNomeChatRelay(_ address: String, in relays: inout [UserChatRela
     return true
 }
 
-private func isNomeChatRelay(_ relay: UserChatRelay, address: String) -> Bool {
-    relay.address.trimmingCharacters(in: .whitespacesAndNewlines) == address ||
-    (relay.displayName == "Nome Relay" && relay.domains.contains("nome.im"))
+private func isNomeChatRelayIdentity(_ relay: UserChatRelay) -> Bool {
+    guard relay.displayName == "Nome Relay" else { return false }
+    if relay.domains.contains(where: isNomeDomain) { return true }
+    guard let host = URLComponents(
+        string: relay.address.trimmingCharacters(in: .whitespacesAndNewlines)
+    )?.host else {
+        return false
+    }
+    return isNomeDomain(host)
 }
 
-private func enableNomeServer(_ address: String, in servers: inout [UserServer]) -> Bool {
+private func isNomeDomain(_ domain: String) -> Bool {
+    let normalized = domain
+        .trimmingCharacters(in: .whitespacesAndNewlines)
+        .lowercased()
+        .trimmingCharacters(in: CharacterSet(charactersIn: "."))
+    return normalized == "nome.im" || normalized.hasSuffix(".nome.im")
+}
+
+private func enableNomeServer(_ address: String, preset: Bool, in servers: inout [UserServer]) -> Bool {
     let endpoint = nomeServerEndpoint(address)
     let matchingIndices = servers.indices.filter {
         nomeServerEndpoint(servers[$0].server) == endpoint
@@ -1007,8 +1065,11 @@ private func enableNomeServer(_ address: String, in servers: inout [UserServer])
         var changed = false
         if servers[index].server != address {
             servers[index].server = address
-            servers[index].preset = false
             servers[index].tested = nil
+            changed = true
+        }
+        if servers[index].preset != preset {
+            servers[index].preset = preset
             changed = true
         }
         if !servers[index].enabled {
@@ -1036,13 +1097,32 @@ private func enableNomeServer(_ address: String, in servers: inout [UserServer])
         UserServer(
             serverId: nil,
             server: address,
-            preset: false,
+            preset: preset,
             tested: nil,
             enabled: true,
             deleted: false
         )
     )
     return true
+}
+
+private func retireNomeServer(_ address: String, in servers: inout [UserServer]) -> Bool {
+    let normalizedAddress = address.trimmingCharacters(in: .whitespacesAndNewlines)
+    let endpoint = nomeServerEndpoint(normalizedAddress)
+    var changed = false
+    for index in servers.indices where
+        nomeServerEndpoint(servers[index].server) == endpoint &&
+        (servers[index].preset || servers[index].server.trimmingCharacters(in: .whitespacesAndNewlines) == normalizedAddress) {
+        if servers[index].enabled {
+            servers[index].enabled = false
+            changed = true
+        }
+        if !servers[index].deleted {
+            servers[index].deleted = true
+            changed = true
+        }
+    }
+    return changed
 }
 
 private func nomeServerEndpoint(_ address: String) -> String {
@@ -1301,7 +1381,10 @@ func apiConnectPlan(connLink: String, linkOwnerSig: LinkOwnerSig? = nil, inProgr
         logger.error("apiConnectPlan: no current user")
         return (nil, nil)
     }
-    let r: APIResult<ChatResponse1>? = await chatApiSendCmdWithRetry(.apiConnectPlan(userId: userId, connLink: connLink, linkOwnerSig: linkOwnerSig), inProgress: inProgress)
+    let r: APIResult<ChatResponse1>? = await chatApiSendCmdWithRetry(
+        .apiConnectPlan(userId: userId, connLink: normalizeNomeChatLink(connLink), linkOwnerSig: linkOwnerSig),
+        inProgress: inProgress
+    )
     if case let .result(.connectionPlan(_, connLink, connPlan)) = r { return ((connLink, connPlan), nil) }
     let alert: Alert? = if let r { apiConnectResponseAlert(r) } else { nil }
     return (nil, alert)
@@ -1759,7 +1842,10 @@ func uploadStandaloneFile(user: any UserLike, file: CryptoFile, ctrl: chat_ctrl?
 }
 
 func downloadStandaloneFile(user: any UserLike, url: String, file: CryptoFile, ctrl: chat_ctrl? = nil) async -> (RcvFileTransfer?, String?) {
-    let r: APIResult<ChatResponse2> = await chatApiSendCmd(.apiDownloadStandaloneFile(userId: user.userId, url: url, file: file), ctrl: ctrl)
+    let r: APIResult<ChatResponse2> = await chatApiSendCmd(
+        .apiDownloadStandaloneFile(userId: user.userId, url: normalizeNomeChatLink(url), file: file),
+        ctrl: ctrl
+    )
     if case let .result(.rcvStandaloneFileCreated(_, rcvFileTransfer)) = r {
         return (rcvFileTransfer, nil)
     } else {
@@ -1770,7 +1856,7 @@ func downloadStandaloneFile(user: any UserLike, url: String, file: CryptoFile, c
 }
 
 func standaloneFileInfo(url: String, ctrl: chat_ctrl? = nil) async -> MigrationFileLinkData? {
-    let r: APIResult<ChatResponse2> = await chatApiSendCmd(.apiStandaloneFileInfo(url: url), ctrl: ctrl)
+    let r: APIResult<ChatResponse2> = await chatApiSendCmd(.apiStandaloneFileInfo(url: normalizeNomeChatLink(url)), ctrl: ctrl)
     if case let .result(.standaloneFileInfo(fileMeta)) = r {
         return fileMeta
     } else {
@@ -2468,9 +2554,33 @@ private func chatInitialized(start: Bool, refreshInvitations: Bool) throws {
 }
 
 // Spec: spec/architecture.md#startChat
+private func applyNomeStandardSMPPortMigrationIfNeeded() {
+    guard NomeServerConfiguration.isConfigured,
+          !groupDefaults.bool(forKey: GROUP_DEFAULT_NOME_STANDARD_SMP_PORT_MIGRATION) else {
+        return
+    }
+    if networkSMPWebPortServersDefault.get() == .preset {
+        networkSMPWebPortServersDefault.set(.off)
+    }
+    groupDefaults.set(true, forKey: GROUP_DEFAULT_NOME_STANDARD_SMP_PORT_MIGRATION)
+}
+
+private func applyNomeSMPProxyFallbackMigrationIfNeeded() {
+    guard NomeServerConfiguration.isConfigured,
+          !groupDefaults.bool(forKey: GROUP_DEFAULT_NOME_SMP_PROXY_FALLBACK_MIGRATION) else {
+        return
+    }
+    if networkSMPProxyFallbackGroupDefault.get() == .allowProtected {
+        networkSMPProxyFallbackGroupDefault.set(.allow)
+    }
+    groupDefaults.set(true, forKey: GROUP_DEFAULT_NOME_SMP_PROXY_FALLBACK_MIGRATION)
+}
+
 func startChat(refreshInvitations: Bool = true, onboarding: Bool = false) throws {
     logger.debug("startChat")
     let m = ChatModel.shared
+    applyNomeStandardSMPPortMigrationIfNeeded()
+    applyNomeSMPProxyFallbackMigrationIfNeeded()
     try setNetworkConfig(getNetCfg())
     let chatRunning = try apiCheckChatRunning()
     m.users = try listUsers()
@@ -2507,6 +2617,8 @@ func startChat(refreshInvitations: Bool = true, onboarding: Bool = false) throws
 func startChatWithTemporaryDatabase(ctrl: chat_ctrl) throws -> User? {
     logger.debug("startChatWithTemporaryDatabase")
     let migrationActiveUser = try? apiGetActiveUser(ctrl: ctrl) ?? apiCreateActiveUser(Profile(displayName: "Temp", fullName: ""), ctrl: ctrl)
+    applyNomeStandardSMPPortMigrationIfNeeded()
+    applyNomeSMPProxyFallbackMigrationIfNeeded()
     try setNetworkConfig(getNetCfg(), ctrl: ctrl)
     try apiSetAppFilePaths(filesFolder: getMigrationTempFilesDirectory().path, tempFolder: getMigrationTempFilesDirectory().path, assetsFolder: getWallpaperDirectory().deletingLastPathComponent().path, ctrl: ctrl)
     _ = try apiStartChat(ctrl: ctrl)

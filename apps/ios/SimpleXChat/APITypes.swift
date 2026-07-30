@@ -165,14 +165,8 @@ public struct CreatedConnLink: Decodable, Hashable {
     }
 
     public func simplexChatUri(short: Bool = true) -> String {
-        short ? (connShortLink ?? simplexChatLink(connFullLink)) : simplexChatLink(connFullLink)
+        short ? (connShortLink.map(simplexChatLink) ?? simplexChatLink(connFullLink)) : simplexChatLink(connFullLink)
     }
-}
-
-public func simplexChatLink(_ uri: String) -> String {
-    uri.starts(with: "simplex:/")
-    ? uri.replacingOccurrences(of: "simplex:/", with: "https://simplex.chat/")
-    : uri
 }
 
 public struct ComposedMessage: Encodable {
@@ -243,7 +237,7 @@ public struct NetCfg: Codable, Equatable {
     public var requiredHostMode = true
     public var sessionMode = TransportSessionMode.user
     public var smpProxyMode: SMPProxyMode = .always
-    public var smpProxyFallback: SMPProxyFallback = .allowProtected
+    public var smpProxyFallback: SMPProxyFallback = .allow
     public var smpWebPortServers: SMPWebPortServers = .preset
     public var tcpConnectTimeout: NetworkTimeout
     public var tcpTimeout: NetworkTimeout

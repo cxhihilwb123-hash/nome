@@ -17,12 +17,15 @@ struct NomeActivationPolicyTests {
         runRefreshReducerTests()
         runCredentialResetPolicyTests()
         runDefaultDenyClassifierTests()
+        runChatCommandAllowListRegressionTests()
+        runNomeOperatorTagRegressionTest()
+        runNomeNetworkDefaultsRegressionTests()
 
         guard failures.isEmpty else {
             failures.forEach { fputs("FAIL: \($0)\n", stderr) }
             exit(1)
         }
-        print("PASS: NomeActivationPolicyReducers (28 cases)")
+        print("PASS: NomeActivationPolicyReducers (42 cases)")
     }
 
     private static func runPolicyEvaluatorTests() {
@@ -232,6 +235,153 @@ struct NomeActivationPolicyTests {
         expect(
             "default-deny classifier rejects unlisted commands",
             !classifier.allows(.sendMessage)
+        )
+    }
+
+    private static func runChatCommandAllowListRegressionTests() {
+        let activationSourceURL = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Shared/Model/NomeActivation.swift")
+        guard let source = try? String(contentsOf: activationSourceURL, encoding: .utf8),
+              let allowListStart = source.range(of: "var nomeAllowedWithoutActivation: Bool"),
+              let defaultCase = source.range(
+                of: "\n        default:",
+                range: allowListStart.upperBound ..< source.endIndex
+              ) else {
+            failures.append("ChatCommand allow-list source could not be inspected")
+            return
+        }
+        let allowList = source[allowListStart.lowerBound ..< defaultCase.lowerBound]
+        expect(
+            "server validation remains available before activation",
+            allowList.contains(".apiValidateServers")
+        )
+        expect(
+            "server selection remains available before activation",
+            allowList.contains(".apiSetUserServers")
+        )
+    }
+
+    private static func runNomeOperatorTagRegressionTest() {
+        let apiTypesURL = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Shared/Model/AppAPITypes.swift")
+        guard let source = try? String(contentsOf: apiTypesURL, encoding: .utf8),
+              let enumStart = source.range(of: "enum OperatorTag: String, Codable"),
+              let enumEnd = source.range(of: "\n}", range: enumStart.upperBound ..< source.endIndex) else {
+            failures.append("OperatorTag source could not be inspected")
+            return
+        }
+        let operatorTag = source[enumStart.lowerBound ..< enumEnd.upperBound]
+        expect(
+            "current Core Nome operator tag remains decodable on iOS",
+            operatorTag.contains("case nome = \"nome\"")
+        )
+
+        let simplexAPIURL = apiTypesURL.deletingLastPathComponent().appendingPathComponent("SimpleXAPI.swift")
+        let simplexAPISource = try? String(contentsOf: simplexAPIURL, encoding: .utf8)
+        expect(
+            "current Core Nome operator remains the managed routing owner on iOS",
+            simplexAPISource?.contains("operatorTag == .nome") == true &&
+                simplexAPISource?.contains("preset: nomeOperatorIndex != nil") == true
+        )
+        expect(
+            "preset Nome SMP route pins the explicit 5223 service port",
+            simplexAPISource?.contains("withDefaultPort($0, defaultPort: 5223)") == true
+        )
+        if let simplexAPISource,
+           let reconcileStart = simplexAPISource.range(of: "private func reconcileNomeChatRelay"),
+           let reconcileEnd = simplexAPISource.range(
+               of: "private func isNomeChatRelayIdentity",
+               range: reconcileStart.upperBound ..< simplexAPISource.endIndex
+           ) {
+            let reconciliation = simplexAPISource[reconcileStart.lowerBound ..< reconcileEnd.lowerBound]
+            expect(
+                "existing Nome relay presets rotate to the current bundled address",
+                reconciliation.contains("relays[index].address = normalizedAddress") &&
+                    reconciliation.contains("relays[index].tested = nil")
+            )
+            expect(
+                "relay address rotation preserves the user's enabled and deleted choices",
+                !reconciliation.contains("relays[index].enabled =") &&
+                    !reconciliation.contains("relays[index].deleted =")
+            )
+        } else {
+            failures.append("Nome relay reconciliation source could not be inspected")
+        }
+        if let simplexAPISource,
+           let identityStart = simplexAPISource.range(of: "private func isNomeChatRelayIdentity"),
+           let identityEnd = simplexAPISource.range(
+               of: "private func enableNomeServer",
+               range: identityStart.upperBound ..< simplexAPISource.endIndex
+           ) {
+            let identity = simplexAPISource[identityStart.lowerBound ..< identityEnd.lowerBound]
+            expect(
+                "Nome relay rotation requires a Nome-controlled domain in addition to its display name",
+                identity.contains("guard relay.displayName == \"Nome Relay\"") &&
+                    identity.contains("relay.domains.contains(where: isNomeDomain)") &&
+                    identity.contains("URLComponents(") &&
+                    identity.contains("normalized.hasSuffix(\".nome.im\")")
+            )
+        } else {
+            failures.append("Nome relay identity source could not be inspected")
+        }
+    }
+
+    private static func runNomeNetworkDefaultsRegressionTests() {
+        let iosRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let appGroupSource = try? String(
+            contentsOf: iosRoot.appendingPathComponent("SimpleXChat/AppGroup.swift"),
+            encoding: .utf8
+        )
+        let simplexAPISource = try? String(
+            contentsOf: iosRoot.appendingPathComponent("Shared/Model/SimpleXAPI.swift"),
+            encoding: .utf8
+        )
+        let networkViewSource = try? String(
+            contentsOf: iosRoot.appendingPathComponent("Shared/Views/UserSettings/NetworkAndServers/NetworkAndServers.swift"),
+            encoding: .utf8
+        )
+        expect(
+            "fresh Nome installs use the standard SMP service port",
+            appGroupSource?.contains("GROUP_DEFAULT_NETWORK_SMP_WEB_PORT_SERVERS: SMPWebPortServers.off.rawValue") == true
+        )
+        expect(
+            "missing SMP port preference falls back to the standard service port",
+            appGroupSource?.contains("forKey: GROUP_DEFAULT_NETWORK_SMP_WEB_PORT_SERVERS,\n    withDefault: .off") == true
+        )
+        expect(
+            "fresh Nome installs allow direct fallback when the private route is unavailable",
+            appGroupSource?.contains("GROUP_DEFAULT_NETWORK_SMP_PROXY_FALLBACK: SMPProxyFallback.allow.rawValue") == true &&
+                appGroupSource?.contains("forKey: GROUP_DEFAULT_NETWORK_SMP_PROXY_FALLBACK,\n    withDefault: .allow") == true
+        )
+        expect(
+            "existing preset web-port installs receive a one-time migration",
+            simplexAPISource?.contains("applyNomeStandardSMPPortMigrationIfNeeded()") == true &&
+                simplexAPISource?.contains("networkSMPWebPortServersDefault.get() == .preset") == true &&
+                simplexAPISource?.contains("networkSMPWebPortServersDefault.set(.off)") == true
+        )
+        expect(
+            "the SMP port migration runs before Core network configuration",
+            simplexAPISource?.contains("applyNomeStandardSMPPortMigrationIfNeeded()\n    applyNomeSMPProxyFallbackMigrationIfNeeded()\n    try setNetworkConfig(getNetCfg())") == true
+        )
+        expect(
+            "existing protected-only fallback installs receive a one-time Nome migration",
+            simplexAPISource?.contains("applyNomeSMPProxyFallbackMigrationIfNeeded()") == true &&
+                simplexAPISource?.contains("networkSMPProxyFallbackGroupDefault.get() == .allowProtected") == true &&
+                simplexAPISource?.contains("networkSMPProxyFallbackGroupDefault.set(.allow)") == true
+        )
+        expect(
+            "the SMP proxy fallback migration runs before Core network configuration",
+            simplexAPISource?.contains("applyNomeSMPProxyFallbackMigrationIfNeeded()\n    try setNetworkConfig(getNetCfg())") == true
+        )
+        expect(
+            "network settings show the real Nome operator group",
+            networkViewSource?.contains("$0.operator?.operatorTag == .nome") == true
         )
     }
 

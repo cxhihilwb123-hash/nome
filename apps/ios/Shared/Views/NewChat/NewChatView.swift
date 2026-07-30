@@ -1605,7 +1605,7 @@ struct InfoSheetButton<Content: View>: View {
 }
 
 func strIsSimplexLink(_ str: String) -> Bool {
-    if let parsedMd = parseSimpleXMarkdown(str),
+    if let parsedMd = parseSimpleXMarkdown(normalizeNomeChatLink(str)),
        parsedMd.count == 1,
        case .simplexLink = parsedMd[0].format {
         return true
@@ -1620,7 +1620,7 @@ enum ConnectTarget {
 }
 
 func strConnectTarget(_ str: String) -> ConnectTarget? {
-    let parsedMd = parseSimpleXMarkdown(str)
+    let parsedMd = parseSimpleXMarkdown(normalizeNomeChatLink(str))
     let links = parsedMd?.filter { $0.format?.isSimplexLink ?? false } ?? []
     return if links.count == 1, case let .simplexLink(_, linkType, _, smpHosts) = links[0].format {
         .link(text: links[0].text, linkType: linkType, linkText: simplexLinkText(linkType, smpHosts))

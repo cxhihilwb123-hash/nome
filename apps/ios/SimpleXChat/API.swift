@@ -188,11 +188,15 @@ struct ParsedServerAddress: Decodable {
 }
 
 public func parseSanitizeUri(_ s: String, safe: Bool) -> ParsedUri? {
-    var c = s.cString(using: .utf8)!
+    var c = normalizeNomeChatLink(s).cString(using: .utf8)!
     if let cjson = chat_parse_uri(&c, safe ? 1 : 0) {
          if let d = dataFromCString(cjson) {
             do {
-                return try jsonDecoder.decode(ParsedUri.self, from: d)
+                var parsedUri = try jsonDecoder.decode(ParsedUri.self, from: d)
+                if let sanitized = parsedUri.uriInfo?.sanitized {
+                    parsedUri.uriInfo?.sanitized = simplexChatLink(sanitized)
+                }
+                return parsedUri
             } catch {
                 logger.error("parseSanitizeUri jsonDecoder.decode error: \(error.localizedDescription)")
             }

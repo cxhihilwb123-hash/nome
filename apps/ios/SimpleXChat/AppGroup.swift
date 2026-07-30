@@ -71,6 +71,8 @@ public let GROUP_DEFAULT_NOME_ACTIVATION_MIGRATION = "nomeActivationGateMigratio
 public let GROUP_DEFAULT_NOME_ACTIVATION_ACCESS = "nomeActivationEffectiveAccessV1"
 public let GROUP_DEFAULT_NOME_ACTIVATION_WOULD_BLOCK = "nomeActivationWouldBlockV1"
 public let GROUP_DEFAULT_NOME_ACTIVATION_CREDENTIAL_RESET_REQUIRED = "nomeActivationCredentialResetRequiredV1"
+public let GROUP_DEFAULT_NOME_STANDARD_SMP_PORT_MIGRATION = "nomeStandardSMPPortMigrationV1"
+public let GROUP_DEFAULT_NOME_SMP_PROXY_FALLBACK_MIGRATION = "nomeSMPProxyFallbackMigrationV1"
 
 public let APP_GROUP_NAME = "group.chat.simplex.app"
 
@@ -82,8 +84,8 @@ public let groupAppDefaults: [String: Any] = [
     GROUP_DEFAULT_NETWORK_USE_ONION_HOSTS: OnionHosts.no.rawValue,
     GROUP_DEFAULT_NETWORK_SESSION_MODE: TransportSessionMode.session.rawValue,
     GROUP_DEFAULT_NETWORK_SMP_PROXY_MODE: SMPProxyMode.unknown.rawValue,
-    GROUP_DEFAULT_NETWORK_SMP_PROXY_FALLBACK: SMPProxyFallback.allowProtected.rawValue,
-    GROUP_DEFAULT_NETWORK_SMP_WEB_PORT_SERVERS: SMPWebPortServers.preset.rawValue,
+    GROUP_DEFAULT_NETWORK_SMP_PROXY_FALLBACK: SMPProxyFallback.allow.rawValue,
+    GROUP_DEFAULT_NETWORK_SMP_WEB_PORT_SERVERS: SMPWebPortServers.off.rawValue,
     GROUP_DEFAULT_NETWORK_TCP_CONNECT_TIMEOUT_BACKGROUND: NetCfg.defaults.tcpConnectTimeout.backgroundTimeout,
     GROUP_DEFAULT_NETWORK_TCP_CONNECT_TIMEOUT_INTERACTIVE: NetCfg.defaults.tcpConnectTimeout.interactiveTimeout,
     GROUP_DEFAULT_NETWORK_TCP_TIMEOUT_BACKGROUND: NetCfg.defaults.tcpTimeout.backgroundTimeout,
@@ -282,13 +284,13 @@ public let networkSMPProxyModeGroupDefault = EnumDefault<SMPProxyMode>(
 public let networkSMPProxyFallbackGroupDefault = EnumDefault<SMPProxyFallback>(
     defaults: groupDefaults,
     forKey: GROUP_DEFAULT_NETWORK_SMP_PROXY_FALLBACK,
-    withDefault: .allowProtected
+    withDefault: .allow
 )
 
 public let networkSMPWebPortServersDefault = EnumDefault<SMPWebPortServers>(
     defaults: groupDefaults,
     forKey: GROUP_DEFAULT_NETWORK_SMP_WEB_PORT_SERVERS,
-    withDefault: .preset
+    withDefault: .off
 )
 
 public let storeDBPassphraseGroupDefault = BoolDefault(defaults: groupDefaults, forKey: GROUP_DEFAULT_STORE_DB_PASSPHRASE)

@@ -1612,6 +1612,7 @@ struct DBEncryptionConfig: Codable {
 enum OperatorTag: String, Codable {
     case simplex = "simplex"
     case flux = "flux"
+    case nome = "nome"
 }
 
 struct ServerOperatorInfo {
@@ -1625,6 +1626,17 @@ struct ServerOperatorInfo {
 }
 
 let operatorsInfo: Dictionary<OperatorTag, ServerOperatorInfo> = [
+    .nome: ServerOperatorInfo(
+        description: [
+            "Nome official message and file routing service.",
+            "Available through Nome's official smp.nome.im (messages) and xftp.nome.im (files) endpoints."
+        ],
+        website: URL(string: "https://nome.im")!,
+        logo: "nome_header_logo",
+        largeLogo: "nome_header_logo",
+        logoDarkMode: "nome_header_logo",
+        largeLogoDarkMode: "nome_header_logo"
+    ),
     .simplex: ServerOperatorInfo(
         description: [
             "SimpleX Chat is the first communication network that has no user profile IDs of any kind, not even random numbers or identity keys.",

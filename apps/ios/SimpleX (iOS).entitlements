@@ -6,6 +6,10 @@
 	<string>development</string>
 	<key>com.apple.developer.associated-domains</key>
 	<array>
+		<string>applinks:nome.im</string>
+		<string>applinks:nome.im?mode=developer</string>
+		<string>applinks:smp.nome.im</string>
+		<string>applinks:smp.nome.im?mode=developer</string>
 		<string>applinks:simplex.chat</string>
 		<string>applinks:www.simplex.chat</string>
 		<string>applinks:simplex.chat?mode=developer</string>

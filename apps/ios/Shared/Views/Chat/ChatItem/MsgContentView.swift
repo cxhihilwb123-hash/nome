@@ -192,13 +192,13 @@ private func handleTextTaps(
                     }
                 }
                 if let index, let (uri, browser, simplex) = attributedStringLink(s, for: index) {
-                    if browser {
-                        openBrowserAlert(uri: uri)
-                    } else if simplex, let url = URL(string: uri) {
+                    if (simplex || isRecognizedPublicChatLink(uri)), let url = URL(string: uri) {
                         // SimpleX links target this same app (simplex: scheme / simplex.chat universal link),
                         // so UIApplication.shared.open is dropped by iOS while the app is in the foreground.
                         // Route to the in-app connect flow instead (same sink onOpenURL feeds).
                         ChatModel.shared.appOpenUrl = url
+                    } else if browser {
+                        openBrowserAlert(uri: uri)
                     } else if let url = URL(string: uri) {
                         UIApplication.shared.open(url)
                     } else {

@@ -897,6 +897,8 @@ extension ChatCommand {
              .apiGetServerOperators,
              .apiSetServerOperators,
              .apiGetUserServers,
+             .apiSetUserServers,
+             .apiValidateServers,
              .apiGetUsageConditions,
              .apiSetConditionsNotified,
              .apiAcceptConditions,

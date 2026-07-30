@@ -32,7 +32,8 @@ struct NetworkAndServers: View {
         VStack {
             List {
                 Section {
-                    if let idx = ss.servers.userServers.firstIndex(where: { $0.operator == nil }) {
+                    if let idx = ss.servers.userServers.firstIndex(where: { $0.operator?.operatorTag == .nome })
+                        ?? ss.servers.userServers.firstIndex(where: { $0.operator == nil }) {
                         NavigationLink {
                             YourServersView(
                                 userServers: $ss.servers.userServers,
