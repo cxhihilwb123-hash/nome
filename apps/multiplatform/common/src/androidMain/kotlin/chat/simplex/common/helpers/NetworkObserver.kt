@@ -8,6 +8,7 @@ import androidx.core.content.getSystemService
 import chat.simplex.common.activation.runActivationAwareBackgroundCommand
 import chat.simplex.common.model.ChatModel.controller
 import chat.simplex.common.model.NomeCoreHostRecoveryState
+import chat.simplex.common.model.NomeForegroundNetworkRecoveryPolicy
 import chat.simplex.common.model.UserNetworkInfo
 import chat.simplex.common.model.UserNetworkType
 import chat.simplex.common.platform.*
@@ -26,6 +27,7 @@ class NetworkObserver {
   private val coreHostRecoveryState = NomeCoreHostRecoveryState()
   private val coreHostRecoveryLock = Any()
   private var coreHostRecoveryJob: Job? = null
+  private var lastForegroundReconstructionAtMillis: Long? = null
 
   /**
    * The latest fact observed directly from Android connectivity, or null before the first
@@ -46,12 +48,34 @@ class NetworkObserver {
       result
     }
 
-  /** Replay Android's current validated network whenever the UI returns to the foreground. */
-  suspend fun reconcileForegroundNetwork() {
+  /**
+   * Replay Android's current validated network whenever the UI returns to the foreground. After a
+   * long background gap, reconstruct the logical session because Android or an OEM freezer may
+   * have suppressed the native host-disconnect event while the physical network stayed online.
+   */
+  suspend fun reconcileForegroundNetwork(backgroundDurationMillis: Long?, resumedAtMillis: Long) {
     coreCommandMutex.withLock {
       val current = latestNetworkInfo()
       if (current?.online == true && chatModel.chatRunning.value == true) {
-        applyNetworkInfoLocked(current)
+        val callInProgress = chatModel.activeCall.value != null ||
+          chatModel.activeCallInvitation.value != null ||
+          chatModel.callInvitations.isNotEmpty() ||
+          chatModel.switchingCall.value
+        if (NomeForegroundNetworkRecoveryPolicy.shouldReconstruct(
+            backgroundDurationMillis = backgroundDurationMillis,
+            resumedAtMillis = resumedAtMillis,
+            lastReconstructionAtMillis = lastForegroundReconstructionAtMillis,
+            chatRunning = true,
+            online = true,
+            callInProgress = callInProgress,
+          )) {
+          Log.w(TAG, "Reconstructing logical Android network after ${backgroundDurationMillis}ms in background")
+          if (reconstructLogicalNetworkLocked()) {
+            lastForegroundReconstructionAtMillis = resumedAtMillis
+          }
+        } else {
+          applyNetworkInfoLocked(current)
+        }
       }
     }
   }
@@ -165,6 +189,17 @@ class NetworkObserver {
       chatModel.networkInfo.value = info
     }
     return applied
+  }
+
+  /** The caller must hold [coreCommandMutex]. */
+  private suspend fun reconstructLogicalNetworkLocked(): Boolean {
+    val forcedOffline = applyNetworkInfoLocked(
+      UserNetworkInfo(networkType = UserNetworkType.NONE, online = false),
+    )
+    if (!forcedOffline) return false
+    delay(CORE_HOST_LOGICAL_OFFLINE_MILLIS)
+    val refreshed = latestNetworkInfo()
+    return refreshed?.online == true && applyNetworkInfoLocked(refreshed)
   }
 
   private suspend fun recoverDisconnectedCoreHost(token: Long) {

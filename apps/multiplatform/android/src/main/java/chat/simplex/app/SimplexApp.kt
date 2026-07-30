@@ -54,6 +54,7 @@ class SimplexApp: Application(), LifecycleEventObserver {
   private val activationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
   private val activationTransitionMutex = Mutex()
   private lateinit var activationRuntime: AndroidActivationRuntime
+  private var backgroundedAtElapsedRealtimeMillis: Long? = null
 
   override fun onCreate() {
     super.onCreate()
@@ -114,12 +115,30 @@ class SimplexApp: Application(), LifecycleEventObserver {
 
   override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
     Log.d(TAG, "onStateChanged: $event")
+    val resumedAtElapsedRealtimeMillis = android.os.SystemClock.elapsedRealtime()
+    val backgroundDurationMillis = when (event) {
+      Lifecycle.Event.ON_START -> backgroundedAtElapsedRealtimeMillis?.let { backgroundedAtMillis ->
+        if (resumedAtElapsedRealtimeMillis >= backgroundedAtMillis) {
+          resumedAtElapsedRealtimeMillis - backgroundedAtMillis
+        } else {
+          null
+        }
+      }.also { backgroundedAtElapsedRealtimeMillis = null }
+      Lifecycle.Event.ON_STOP -> {
+        backgroundedAtElapsedRealtimeMillis = resumedAtElapsedRealtimeMillis
+        null
+      }
+      else -> null
+    }
     withLongRunningApi {
       when (event) {
         Lifecycle.Event.ON_START -> {
           isAppOnForeground = true
           activationRuntime.refreshBeforeProtectedAction()
-          NetworkObserver.shared.reconcileForegroundNetwork()
+          NetworkObserver.shared.reconcileForegroundNetwork(
+            backgroundDurationMillis = backgroundDurationMillis,
+            resumedAtMillis = resumedAtElapsedRealtimeMillis,
+          )
           if (ActivationGate.permits(ActivationCapability.START_CHAT) && chatModel.chatRunning.value == true) {
             withContext(Dispatchers.Main) {
               try {
