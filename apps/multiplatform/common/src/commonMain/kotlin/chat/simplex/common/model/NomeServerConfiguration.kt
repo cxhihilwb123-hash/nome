@@ -35,6 +35,11 @@ internal object NomeServerConfiguration {
     val changed: Boolean,
   )
 
+  internal data class ApplyResult(
+    val success: Boolean,
+    val changed: Boolean,
+  )
+
   internal fun migrate(userServers: List<UserOperatorServers>): Migration {
     var changed = false
     val currentSmpServer = if (appPlatform.isAndroid) smpServerHostOnly else smpServer
@@ -124,9 +129,10 @@ internal object NomeServerConfiguration {
   }
 
   /** Runs before the core starts normal network work. It is safe to call on every startup. */
-  internal suspend fun applyBeforeNetwork(controller: ChatController, user: User): Boolean =
+  internal suspend fun applyBeforeNetwork(controller: ChatController, user: User): ApplyResult =
     applyMutex.withLock {
-      runWithRetry {
+      var changed = false
+      val success = runWithRetry {
         val rh = user.remoteHostId
         val existing = controller.getUserServers(rh) ?: return@runWithRetry false
         val migration = migrate(existing)
@@ -141,10 +147,12 @@ internal object NomeServerConfiguration {
         if (!controller.setUserServers(rh, migration.userServers, showError = false)) {
           return@runWithRetry false
         }
+        changed = true
         controller.getServerOperators(rh)?.let { controller.chatModel.conditions.value = it }
         Log.i(LOG_TAG, "Nome servers active: $smpHostname, $xftpHostname")
         true
       }
+      ApplyResult(success = success, changed = changed)
     }
 
   internal suspend fun runWithRetry(

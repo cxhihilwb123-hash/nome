@@ -165,15 +165,7 @@ fun TerminalLog(floating: Boolean, composeViewHeight: State<Dp>) {
         }
     }
   }
-  LazyColumnWithScrollBar (
-    state = listState,
-    contentPadding = PaddingValues(
-      top = topPaddingToContent(false),
-      bottom = composeViewHeight.value
-    ),
-    reverseLayout = true,
-    additionalBarOffset = composeViewHeight
-  ) {
+  val terminalItems: LazyListScope.() -> Unit = {
     items(reversedTerminalItems, key = { item -> item.id to item.createdAtNanos }) { item ->
       val clipboard = LocalClipboardManager.current
       val rhId = item.remoteHostId
@@ -206,6 +198,27 @@ fun TerminalLog(floating: Boolean, composeViewHeight: State<Dp>) {
           }.padding(horizontal = 8.dp, vertical = 4.dp)
       )
     }
+  }
+  val contentPadding = PaddingValues(
+    top = topPaddingToContent(false),
+    bottom = composeViewHeight.value
+  )
+  if (LocalAppBarHandler.current == null) {
+    LazyColumnWithScrollBarNoAppBar(
+      state = listState,
+      contentPadding = contentPadding,
+      reverseLayout = true,
+      additionalBarOffset = composeViewHeight,
+      content = terminalItems,
+    )
+  } else {
+    LazyColumnWithScrollBar(
+      state = listState,
+      contentPadding = contentPadding,
+      reverseLayout = true,
+      additionalBarOffset = composeViewHeight,
+      content = terminalItems,
+    )
   }
   DisposableEffect(Unit) {
     val terminals = chatModel.terminalsVisible.toMutableSet()

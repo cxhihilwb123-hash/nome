@@ -23,7 +23,7 @@ android {
         versionCode = (extra["android.version_code"] as String).toInt()
         versionName = extra["android.version_name"] as String
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "chat.simplex.app.nome.testing.NomeAndroidTestRunner"
         vectorDrawables {
             useSupportLibrary = true
         }

@@ -13,16 +13,32 @@ import chat.simplex.common.platform.*
 import chat.simplex.common.views.helpers.withBGApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 class NetworkObserver {
   private var prevInfo: UserNetworkInfo? = null
   private val _platformNetworkInfo = mutableStateOf<UserNetworkInfo?>(null)
+  private val coreCommandMutex = Mutex()
 
   /**
    * The latest fact observed directly from Android connectivity, or null before the first
    * observation. Unlike ChatModel's legacy default, null must not be interpreted as online.
    */
   val platformNetworkInfo: State<UserNetworkInfo?> = _platformNetworkInfo
+
+  /**
+   * Prevent connectivity callbacks from entering the frozen native core during its compatibility
+   * stop/start window, then replay the newest Android network fact to the final live Agent.
+   */
+  suspend fun <T> coordinateChatStart(block: suspend () -> T): T =
+    coreCommandMutex.withLock {
+      val result = block()
+      if (controller.hasChatCtrl() && chatModel.chatRunning.value == true) {
+        latestNetworkInfo()?.let { applyNetworkInfoLocked(it) }
+      }
+      result
+    }
 
   // When having both mobile and Wi-Fi networks enabled with Wi-Fi being active, then disabling Wi-Fi, network reports its offline (which is true)
   // but since it will be online after switching to mobile, there is no need to inform backend about such temporary change.
@@ -93,17 +109,28 @@ class NetworkObserver {
     noNetworkJob.cancel()
     if (info.online) {
       withBGApi {
-        if (controller.hasChatCtrl() && runActivationAwareBackgroundCommand { controller.apiSetNetworkInfo(info) }) {
-          chatModel.networkInfo.value = info
-        }
+        applyLatestNetworkInfo(info)
       }
     } else {
       noNetworkJob = withBGApi {
         delay(3000)
-        if (controller.hasChatCtrl() && runActivationAwareBackgroundCommand { controller.apiSetNetworkInfo(info) }) {
-          chatModel.networkInfo.value = info
-        }
+        applyLatestNetworkInfo(info)
       }
+    }
+  }
+
+  private fun latestNetworkInfo(): UserNetworkInfo? = _platformNetworkInfo.value ?: prevInfo
+
+  private suspend fun applyLatestNetworkInfo(info: UserNetworkInfo) {
+    coreCommandMutex.withLock {
+      // A delayed offline callback must not overwrite a newer online observation.
+      if (latestNetworkInfo() == info) applyNetworkInfoLocked(info)
+    }
+  }
+
+  private suspend fun applyNetworkInfoLocked(info: UserNetworkInfo) {
+    if (controller.hasChatCtrl() && runActivationAwareBackgroundCommand { controller.apiSetNetworkInfo(info) }) {
+      chatModel.networkInfo.value = info
     }
   }
 

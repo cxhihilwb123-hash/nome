@@ -43,6 +43,7 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 
 const val TAG = "SIMPLEX"
+private const val NOME_INSTRUMENTATION_PROCESS_PROPERTY = "im.nome.app.instrumentation_process"
 
 class SimplexApp: Application(), LifecycleEventObserver {
   val chatModel: ChatModel
@@ -61,17 +62,21 @@ class SimplexApp: Application(), LifecycleEventObserver {
       return
     } else {
       registerGlobalErrorHandler()
-      Handler(Looper.getMainLooper()).post {
-        while (true) {
-          try {
-            Looper.loop()
-          } catch (e: Throwable) {
-            if (e is UnsatisfiedLinkError || e.message?.startsWith("Unable to start activity") == true) {
-              Process.killProcess(Process.myPid())
-              break
-            } else {
-              // Send it to our exception handled because it will not get the exception otherwise
-              Thread.getDefaultUncaughtExceptionHandler()?.uncaughtException(Looper.getMainLooper().thread, e)
+      // The production crash bridge deliberately owns a nested main-loop dispatch. Espresso must
+      // see the host looper become idle, so the dedicated test runner disables only this bridge.
+      if (System.getProperty(NOME_INSTRUMENTATION_PROCESS_PROPERTY) != "true") {
+        Handler(Looper.getMainLooper()).post {
+          while (true) {
+            try {
+              Looper.loop()
+            } catch (e: Throwable) {
+              if (e is UnsatisfiedLinkError || e.message?.startsWith("Unable to start activity") == true) {
+                Process.killProcess(Process.myPid())
+                break
+              } else {
+                // Send it to our exception handled because it will not get the exception otherwise
+                Thread.getDefaultUncaughtExceptionHandler()?.uncaughtException(Looper.getMainLooper().thread, e)
+              }
             }
           }
         }
@@ -281,6 +286,9 @@ class SimplexApp: Application(), LifecycleEventObserver {
       override fun androidCallServiceSafeStop() {
         CallService.stopService()
       }
+
+      override suspend fun <T> androidCoordinateNetworkDuringChatStart(block: suspend () -> T): T =
+        NetworkObserver.shared.coordinateChatStart(block)
 
       override fun androidNotificationsModeChanged(mode: NotificationsMode) {
         if (mode.requiresIgnoringBattery && !SimplexService.isBackgroundAllowed()) {

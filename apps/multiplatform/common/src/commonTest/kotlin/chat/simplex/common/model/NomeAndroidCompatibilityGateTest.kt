@@ -11,7 +11,7 @@ import kotlin.test.assertTrue
 
 class NomeAndroidCompatibilityGateTest {
   @Test
-  fun stoppedCoreBootstrapsConfiguresStopsAndStartsCleanly() = runBlocking {
+  fun stoppedCoreWithPersistedRoutesUsesBootstrapAsFinalStart() = runBlocking {
     val events = mutableListOf<String>()
 
     val result = runNomeAndroidCompatibilityGate(
@@ -19,7 +19,10 @@ class NomeAndroidCompatibilityGateTest {
       isChatRunning = { events += "state checked"; false },
       stopRunningChat = { events += "native stopped" },
       startBootstrapChat = { events += "bootstrap started"; true },
-      configureWhileRunning = { events += "servers configured"; true },
+      configureWhileRunning = {
+        events += "servers already configured"
+        NomeAndroidServerConfigurationState.AlreadyConfigured
+      },
       startConfiguredChat = { events += "configured start"; true },
     )
 
@@ -27,19 +30,16 @@ class NomeAndroidCompatibilityGateTest {
     assertTrue(result.started)
     assertEquals(
       listOf(
-        "receiver stopped",
         "state checked",
         "bootstrap started",
-        "servers configured",
-        "native stopped",
-        "configured start",
+        "servers already configured",
       ),
       events,
     )
   }
 
   @Test
-  fun runningCoreIsStoppedBeforeTheCompatibilityBootstrap() = runBlocking {
+  fun runningCoreWithPersistedRoutesIsNotRestarted() = runBlocking {
     val events = mutableListOf<String>()
 
     val result = runNomeAndroidCompatibilityGate(
@@ -47,7 +47,10 @@ class NomeAndroidCompatibilityGateTest {
       isChatRunning = { events += "state checked"; true },
       stopRunningChat = { events += "native stopped" },
       startBootstrapChat = { events += "bootstrap started"; true },
-      configureWhileRunning = { events += "servers configured"; true },
+      configureWhileRunning = {
+        events += "servers already configured"
+        NomeAndroidServerConfigurationState.AlreadyConfigured
+      },
       startConfiguredChat = { events += "configured start"; true },
     )
 
@@ -55,13 +58,8 @@ class NomeAndroidCompatibilityGateTest {
     assertTrue(result.started)
     assertEquals(
       listOf(
-        "receiver stopped",
         "state checked",
-        "native stopped",
-        "bootstrap started",
-        "servers configured",
-        "native stopped",
-        "configured start",
+        "servers already configured",
       ),
       events,
     )
@@ -73,21 +71,28 @@ class NomeAndroidCompatibilityGateTest {
 
     val result = runNomeAndroidCompatibilityGate(
       quiesceReceiver = { events += "receiver stopped" },
+      awaitReceiverQuiesced = { events += "receiver joined" },
       isChatRunning = { events += "state checked"; false },
       stopRunningChat = { events += "native stopped" },
+      awaitNativeStopSettled = { events += "native settled" },
       startBootstrapChat = { events += "bootstrap started"; true },
-      configureWhileRunning = { events += "servers pending"; false },
+      configureWhileRunning = {
+        events += "servers pending"
+        NomeAndroidServerConfigurationState.Pending
+      },
       startConfiguredChat = { events += "configured start"; true },
     )
 
     assertFalse(result.started)
     assertEquals(
       listOf(
-        "receiver stopped",
         "state checked",
         "bootstrap started",
         "servers pending",
+        "receiver stopped",
         "native stopped",
+        "receiver joined",
+        "native settled",
       ),
       events,
     )
@@ -100,8 +105,10 @@ class NomeAndroidCompatibilityGateTest {
     assertFailsWith<IllegalStateException> {
       runNomeAndroidCompatibilityGate(
         quiesceReceiver = { events += "receiver stopped" },
+        awaitReceiverQuiesced = { events += "receiver joined" },
         isChatRunning = { events += "state checked"; false },
         stopRunningChat = { events += "native stopped" },
+        awaitNativeStopSettled = { events += "native settled" },
         startBootstrapChat = { events += "bootstrap started"; true },
         configureWhileRunning = {
           events += "configuration failed"
@@ -114,11 +121,12 @@ class NomeAndroidCompatibilityGateTest {
 
     assertEquals(
       listOf(
-        "receiver stopped",
         "state checked",
         "bootstrap started",
         "configuration failed",
+        "receiver stopped",
         "fail-closed stop",
+        "receiver joined",
       ),
       events,
     )
@@ -132,8 +140,10 @@ class NomeAndroidCompatibilityGateTest {
     val thrown = assertFailsWith<CancellationException> {
       runNomeAndroidCompatibilityGate(
         quiesceReceiver = { events += "receiver stopped" },
+        awaitReceiverQuiesced = { events += "receiver joined" },
         isChatRunning = { events += "state checked"; false },
         stopRunningChat = { events += "native stopped" },
+        awaitNativeStopSettled = { events += "native settled" },
         startBootstrapChat = { events += "bootstrap started"; true },
         configureWhileRunning = {
           events += "configuration cancelled"
@@ -147,11 +157,12 @@ class NomeAndroidCompatibilityGateTest {
     assertSame(cancellation, thrown)
     assertEquals(
       listOf(
-        "receiver stopped",
         "state checked",
         "bootstrap started",
         "configuration cancelled",
+        "receiver stopped",
         "fail-closed stop",
+        "receiver joined",
       ),
       events,
     )
@@ -167,7 +178,10 @@ class NomeAndroidCompatibilityGateTest {
         isChatRunning = { events += "state checked"; false },
         stopRunningChat = { events += "native stopped" },
         startBootstrapChat = { events += "bootstrap rejected"; false },
-        configureWhileRunning = { events += "servers configured"; true },
+        configureWhileRunning = {
+          events += "servers configured"
+          NomeAndroidServerConfigurationState.AlreadyConfigured
+        },
         startConfiguredChat = { events += "configured start"; true },
         onUnsafeFailure = { events += "fail-closed stop" },
       )
@@ -175,9 +189,9 @@ class NomeAndroidCompatibilityGateTest {
 
     assertEquals(
       listOf(
-        "receiver stopped",
         "state checked",
         "bootstrap rejected",
+        "receiver stopped",
         "fail-closed stop",
       ),
       events,
@@ -191,10 +205,15 @@ class NomeAndroidCompatibilityGateTest {
     assertFailsWith<IllegalStateException> {
       runNomeAndroidCompatibilityGate(
         quiesceReceiver = { events += "receiver stopped" },
+        awaitReceiverQuiesced = { events += "receiver joined" },
         isChatRunning = { events += "state checked"; false },
         stopRunningChat = { events += "native stopped" },
+        awaitNativeStopSettled = { events += "native settled" },
         startBootstrapChat = { events += "bootstrap started"; true },
-        configureWhileRunning = { events += "servers configured"; true },
+        configureWhileRunning = {
+          events += "servers configured"
+          NomeAndroidServerConfigurationState.Changed
+        },
         startConfiguredChat = { events += "configured start rejected"; false },
         onUnsafeFailure = { events += "fail-closed stop" },
       )
@@ -202,11 +221,13 @@ class NomeAndroidCompatibilityGateTest {
 
     assertEquals(
       listOf(
-        "receiver stopped",
         "state checked",
         "bootstrap started",
         "servers configured",
+        "receiver stopped",
         "native stopped",
+        "receiver joined",
+        "native settled",
         "configured start rejected",
         "fail-closed stop",
       ),

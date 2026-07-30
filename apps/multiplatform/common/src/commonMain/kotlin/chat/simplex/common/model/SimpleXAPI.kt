@@ -125,38 +125,73 @@ internal suspend fun runNomePreNetworkGate(
   }
 }
 
-/**
- * Compatibility gate for the official Android v6.5.6 native core.
- *
- * That core exposes user-server commands only while chat is running. The bootstrap start exists
- * solely to persist the Nome routes; it must always be followed by a confirmed stop so the final
- * start creates subscriptions and delivery workers from the newly persisted configuration.
- */
+internal enum class NomeAndroidServerConfigurationState {
+  AlreadyConfigured,
+  Changed,
+  Pending,
+}
+
+/** Compatibility gate for the official Android v6.5.6 native core. */
 internal suspend fun runNomeAndroidCompatibilityGate(
   quiesceReceiver: () -> Unit,
+  awaitReceiverQuiesced: suspend () -> Unit = {},
   isChatRunning: suspend () -> Boolean,
   stopRunningChat: suspend () -> Unit,
+  awaitNativeStopSettled: suspend () -> Unit = {},
   startBootstrapChat: suspend () -> Boolean,
-  configureWhileRunning: suspend () -> Boolean,
+  configureWhileRunning: suspend () -> NomeAndroidServerConfigurationState,
   startConfiguredChat: suspend () -> Boolean,
   onUnsafeFailure: suspend () -> Unit = {},
 ): NomePreNetworkGateResult {
-  quiesceReceiver()
+  var receiverQuiesced = false
+  var receiverAwaited = false
+  fun quiesceReceiverOnce() {
+    if (!receiverQuiesced) {
+      quiesceReceiver()
+      receiverQuiesced = true
+    }
+  }
+  suspend fun awaitReceiverOnce() {
+    if (receiverQuiesced && !receiverAwaited) {
+      awaitReceiverQuiesced()
+      receiverAwaited = true
+    }
+  }
+
   return try {
     val wasRunning = isChatRunning()
-    if (wasRunning) stopRunningChat()
+    if (!wasRunning) {
+      check(startBootstrapChat()) { "Native chat bootstrap did not start from a confirmed stop" }
+    }
 
-    check(startBootstrapChat()) { "Native chat bootstrap did not start from a confirmed stop" }
-    if (!configureWhileRunning()) {
-      stopRunningChat()
-      NomePreNetworkGateResult(wasRunning, started = false)
-    } else {
-      stopRunningChat()
-      check(startConfiguredChat()) { "Native chat did not start with the configured Nome routes" }
-      NomePreNetworkGateResult(wasRunning, started = true)
+    when (configureWhileRunning()) {
+      NomeAndroidServerConfigurationState.AlreadyConfigured ->
+        // The current core was either already live or was just bootstrapped from the persisted
+        // Nome routes. Avoid a stop/start cycle: the frozen native core reports StopChat before
+        // all old subscriber work has actually finished.
+        NomePreNetworkGateResult(wasRunning, started = true)
+
+      NomeAndroidServerConfigurationState.Changed -> {
+        quiesceReceiverOnce()
+        stopRunningChat()
+        awaitReceiverOnce()
+        awaitNativeStopSettled()
+        check(startConfiguredChat()) { "Native chat did not start with the configured Nome routes" }
+        NomePreNetworkGateResult(wasRunning, started = true)
+      }
+
+      NomeAndroidServerConfigurationState.Pending -> {
+        quiesceReceiverOnce()
+        stopRunningChat()
+        awaitReceiverOnce()
+        awaitNativeStopSettled()
+        NomePreNetworkGateResult(wasRunning, started = false)
+      }
     }
   } catch (e: Throwable) {
+    quiesceReceiverOnce()
     onUnsafeFailure()
+    awaitReceiverOnce()
     throw e
   }
 }
@@ -713,7 +748,11 @@ internal fun newRetryableChatStart(
 
 private val nomeServerChatStartAttemptIds = AtomicLong(0)
 
-private const val MESSAGE_TIMEOUT: Int = 300_000_000
+// Keep the blocking JNI receive bounded so a cancelled receiver can be joined before a replacement
+// starts. The native timeout is expressed in microseconds.
+private const val MESSAGE_TIMEOUT: Int = 1_000_000
+private const val RECEIVER_STOP_TIMEOUT_MILLIS = 5_000L
+private const val NOME_NATIVE_STOP_SETTLE_MILLIS = 500L
 
 object ChatController {
   private var chatCtrl: ChatCtrl? = -1
@@ -797,7 +836,9 @@ object ChatController {
     onStarted: suspend () -> Unit,
   ): Boolean {
     if (appPlatform.isAndroid) {
-      return startAndroidChatTransition(user, onStarted)
+      return platform.androidCoordinateNetworkDuringChatStart {
+        startAndroidChatTransition(user, onStarted)
+      }
     }
     Log.d(TAG, "user: $user")
     val previousUser = chatModel.currentUser.value
@@ -835,7 +876,7 @@ object ChatController {
           // The rebuilt core exposes get/validate/set server commands while stopped. Do not call
           // StartChat before this completes: it resumes SMP/XFTP and delivery workers.
           retryableFailure = retryableNomeServerChatStart(user, onStarted) {
-            NomeServerConfiguration.applyBeforeNetwork(this, user)
+            NomeServerConfiguration.applyBeforeNetwork(this, user).success
           }
           retryableFailure == null
         },
@@ -925,6 +966,7 @@ object ChatController {
     val previousUser = chatModel.currentUser.value
     var nomeGateRequiresCleanup = false
     var retryableFailure: RetryableChatStart? = null
+    var quiescedReceiver: Job? = null
     try {
       chatModel.retryableChatStart.value = null
       chatModel.currentUser.value = user
@@ -936,7 +978,16 @@ object ChatController {
       // long enough to persist Nome routes, then confirm a stop and start clean delivery workers.
       nomeGateRequiresCleanup = true
       val gate = runNomeAndroidCompatibilityGate(
-        quiesceReceiver = ::stopReceiver,
+        quiesceReceiver = {
+          if (quiescedReceiver == null) quiescedReceiver = cancelReceiver()
+        },
+        awaitReceiverQuiesced = {
+          val receiver = quiescedReceiver
+          if (receiver != null) {
+            withTimeout(RECEIVER_STOP_TIMEOUT_MILLIS) { receiver.join() }
+            quiescedReceiver = null
+          }
+        },
         isChatRunning = {
           check(apiSetNetworkConfig(getNetCfg())) {
             "Native network configuration was rejected before the Android Nome server gate"
@@ -951,12 +1002,25 @@ object ChatController {
             terminate = ::terminateForUnsafeNetworkState,
           )
         },
+        awaitNativeStopSettled = {
+          // The frozen Android core acknowledges StopChat before its forked subscriber
+          // cancellation has necessarily completed. A bounded settle window prevents an
+          // immediate StartChat from racing that cancellation.
+          delay(NOME_NATIVE_STOP_SETTLE_MILLIS)
+        },
         startBootstrapChat = ::apiStartChat,
         configureWhileRunning = {
+          var configurationChanged = false
           retryableFailure = retryableNomeServerChatStart(user, onStarted) {
-            NomeServerConfiguration.applyBeforeNetwork(this, user)
+            val result = NomeServerConfiguration.applyBeforeNetwork(this, user)
+            configurationChanged = configurationChanged || result.changed
+            result.success
           }
-          retryableFailure == null
+          when {
+            retryableFailure != null -> NomeAndroidServerConfigurationState.Pending
+            configurationChanged -> NomeAndroidServerConfigurationState.Changed
+            else -> NomeAndroidServerConfigurationState.AlreadyConfigured
+          }
         },
         startConfiguredChat = ::apiStartChat,
         onUnsafeFailure = {
@@ -1196,11 +1260,16 @@ object ChatController {
 
   internal fun stopReceiver() {
     Log.d(TAG, "ChatController stopReceiver")
+    cancelReceiver()
+  }
+
+  private fun cancelReceiver(): Job? {
     val job = receiverJob
     if (job != null) {
       receiverJob = null
       job.cancel()
     }
+    return job
   }
 
   /** Stop receiver delivery before the core so local-only mode has no network ingress. */
