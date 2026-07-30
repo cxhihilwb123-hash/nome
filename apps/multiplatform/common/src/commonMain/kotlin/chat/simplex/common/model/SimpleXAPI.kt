@@ -4053,6 +4053,12 @@ object ChatController {
             chatModel.chatsContext.updateContact(rhId, r.contact)
           }
         }
+      is CR.Response ->
+        when (r.type) {
+          "hostDisconnected" -> platform.androidCoreHostStateChanged(connected = false)
+          "hostConnected" -> platform.androidCoreHostStateChanged(connected = true)
+          else -> Log.d(TAG , "unsupported event: ${msg.responseType}")
+        }
       else ->
         Log.d(TAG , "unsupported event: ${msg.responseType}")
     }

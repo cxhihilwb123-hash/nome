@@ -7,19 +7,25 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.getSystemService
 import chat.simplex.common.activation.runActivationAwareBackgroundCommand
 import chat.simplex.common.model.ChatModel.controller
+import chat.simplex.common.model.NomeCoreHostRecoveryState
 import chat.simplex.common.model.UserNetworkInfo
 import chat.simplex.common.model.UserNetworkType
 import chat.simplex.common.platform.*
 import chat.simplex.common.views.helpers.withBGApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 class NetworkObserver {
   private var prevInfo: UserNetworkInfo? = null
   private val _platformNetworkInfo = mutableStateOf<UserNetworkInfo?>(null)
   private val coreCommandMutex = Mutex()
+  private val coreHostRecoveryState = NomeCoreHostRecoveryState()
+  private val coreHostRecoveryLock = Any()
+  private var coreHostRecoveryJob: Job? = null
 
   /**
    * The latest fact observed directly from Android connectivity, or null before the first
@@ -39,6 +45,30 @@ class NetworkObserver {
       }
       result
     }
+
+  /** Replay Android's current validated network whenever the UI returns to the foreground. */
+  suspend fun reconcileForegroundNetwork() {
+    coreCommandMutex.withLock {
+      val current = latestNetworkInfo()
+      if (current?.online == true && chatModel.chatRunning.value == true) {
+        applyNetworkInfoLocked(current)
+      }
+    }
+  }
+
+  /**
+   * The v6.5.6 Android core can report a host disconnect without completing the matching
+   * reconnect. First replay the validated Android network; if the disconnect remains current,
+   * reconstruct the logical network session with a bounded offline/online transition.
+   */
+  fun coreHostStateChanged(connected: Boolean) {
+    synchronized(coreHostRecoveryLock) {
+      coreHostRecoveryJob?.cancel()
+      coreHostRecoveryJob = null
+      val token = coreHostRecoveryState.hostStateChanged(connected) ?: return
+      coreHostRecoveryJob = withBGApi { recoverDisconnectedCoreHost(token) }
+    }
+  }
 
   // When having both mobile and Wi-Fi networks enabled with Wi-Fi being active, then disabling Wi-Fi, network reports its offline (which is true)
   // but since it will be online after switching to mobile, there is no need to inform backend about such temporary change.
@@ -128,11 +158,57 @@ class NetworkObserver {
     }
   }
 
-  private suspend fun applyNetworkInfoLocked(info: UserNetworkInfo) {
-    if (controller.hasChatCtrl() && runActivationAwareBackgroundCommand { controller.apiSetNetworkInfo(info) }) {
+  private suspend fun applyNetworkInfoLocked(info: UserNetworkInfo): Boolean {
+    val applied = controller.hasChatCtrl() &&
+      runActivationAwareBackgroundCommand { controller.apiSetNetworkInfo(info) }
+    if (applied) {
       chatModel.networkInfo.value = info
     }
+    return applied
   }
+
+  private suspend fun recoverDisconnectedCoreHost(token: Long) {
+    delay(CORE_HOST_REPLAY_DELAY_MILLIS)
+    if (!isCurrentCoreHostDisconnect(token)) return
+
+    coreCommandMutex.withLock {
+      if (!isCurrentCoreHostDisconnect(token)) return@withLock
+      val current = latestNetworkInfo()
+      if (current?.online != true || chatModel.chatRunning.value != true) return@withLock
+      Log.w(TAG, "Core host remains disconnected; replaying current Android network")
+      applyNetworkInfoLocked(current)
+    }
+
+    delay(CORE_HOST_ESCALATION_DELAY_MILLIS)
+    if (!isCurrentCoreHostDisconnect(token)) return
+
+    var forcedOffline = false
+    try {
+      coreCommandMutex.withLock {
+        if (!isCurrentCoreHostDisconnect(token)) return@withLock
+        val current = latestNetworkInfo()
+        if (current?.online != true || chatModel.chatRunning.value != true) return@withLock
+        Log.w(TAG, "Core host reconnect is stale; reconstructing logical Android network")
+        forcedOffline = applyNetworkInfoLocked(
+          UserNetworkInfo(networkType = UserNetworkType.NONE, online = false),
+        )
+      }
+      if (forcedOffline) delay(CORE_HOST_LOGICAL_OFFLINE_MILLIS)
+    } finally {
+      if (forcedOffline) {
+        withContext(NonCancellable) {
+          coreCommandMutex.withLock {
+            latestNetworkInfo()?.let { applyNetworkInfoLocked(it) }
+          }
+        }
+      }
+    }
+  }
+
+  private fun isCurrentCoreHostDisconnect(token: Long): Boolean =
+    synchronized(coreHostRecoveryLock) {
+      coreHostRecoveryState.isCurrentDisconnect(token)
+    }
 
   private fun networkTypeFromCapabilities(capabilities: NetworkCapabilities): UserNetworkType = when {
     capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> UserNetworkType.ETHERNET
@@ -142,6 +218,9 @@ class NetworkObserver {
   }
 
   companion object {
+    private const val CORE_HOST_REPLAY_DELAY_MILLIS = 3_000L
+    private const val CORE_HOST_ESCALATION_DELAY_MILLIS = 3_000L
+    private const val CORE_HOST_LOGICAL_OFFLINE_MILLIS = 3_000L
     val shared = NetworkObserver()
   }
 }

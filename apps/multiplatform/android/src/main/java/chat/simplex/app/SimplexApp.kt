@@ -119,6 +119,7 @@ class SimplexApp: Application(), LifecycleEventObserver {
         Lifecycle.Event.ON_START -> {
           isAppOnForeground = true
           activationRuntime.refreshBeforeProtectedAction()
+          NetworkObserver.shared.reconcileForegroundNetwork()
           if (ActivationGate.permits(ActivationCapability.START_CHAT) && chatModel.chatRunning.value == true) {
             withContext(Dispatchers.Main) {
               try {
@@ -417,6 +418,10 @@ class SimplexApp: Application(), LifecycleEventObserver {
 
       override fun androidRestartNetworkObserver() {
         NetworkObserver.shared.restartNetworkObserver()
+      }
+
+      override fun androidCoreHostStateChanged(connected: Boolean) {
+        NetworkObserver.shared.coreHostStateChanged(connected)
       }
 
       override fun androidIsXiaomiDevice(): Boolean = setOf("xiaomi", "redmi", "poco").contains(Build.BRAND.lowercase())

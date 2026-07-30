@@ -27,6 +27,7 @@ interface PlatformInterface {
   fun androidPictureInPictureAllowed(): Boolean = true
   fun androidCallEnded() {}
   fun androidRestartNetworkObserver() {}
+  fun androidCoreHostStateChanged(connected: Boolean) {}
   suspend fun <T> androidCoordinateNetworkDuringChatStart(block: suspend () -> T): T = block()
   fun androidCreateActiveCallState(): Closeable = Closeable { }
   fun androidIsXiaomiDevice(): Boolean = false
