@@ -37,6 +37,8 @@ import java.net.URI
 import dev.icerock.moko.resources.compose.painterResource
 import kotlinx.coroutines.*
 
+private const val CHANNEL_RELAY_REFRESH_MILLIS = 1_000L
+
 @Composable
 fun AddChannelView(
   chatModel: ChatModel,
@@ -498,11 +500,27 @@ private fun ProgressStepView(
       .collect { relays ->
         if (ChannelRelaysModel.groupId.value != gInfo.groupId) return@collect
         groupRelays.value = relays.sortedBy { relayDisplayName(it) }
-        if (relays.all { it.relayStatus == RelayStatus.Active && relayMemberConnFailed(chatModel, it) == null }) {
+        if (relays.isNotEmpty() && relays.all { it.relayStatus == RelayStatus.Active && relayMemberConnFailed(chatModel, it) == null }) {
           onLinkReady()
           ChannelRelaysModel.reset()
         }
       }
+  }
+
+  LaunchedEffect(gInfo.groupId) {
+    while (currentCoroutineContext().isActive && ChannelRelaysModel.groupId.value == gInfo.groupId) {
+      val relays = withContext(Dispatchers.Default) {
+        chatModel.controller.apiGetGroupRelays(gInfo.groupId)
+      }
+      if (
+        relays.isNotEmpty() &&
+        ChannelRelaysModel.groupId.value == gInfo.groupId &&
+        relays != ChannelRelaysModel.groupRelays.toList()
+      ) {
+        ChannelRelaysModel.set(gInfo.groupId, relays)
+      }
+      delay(CHANNEL_RELAY_REFRESH_MILLIS)
+    }
   }
 
   ModalView(
