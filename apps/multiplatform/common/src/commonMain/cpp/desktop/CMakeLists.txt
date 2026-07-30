@@ -78,7 +78,8 @@ endif()
 
 if(APPLE)
     add_custom_command(TARGET app-lib POST_BUILD
-        COMMAND  ${CMAKE_CURRENT_SOURCE_DIR}/patch-libapp-mac.sh
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/patch-libapp-mac.sh $<TARGET_FILE:app-lib>
+        VERBATIM
 )
 endif()
 

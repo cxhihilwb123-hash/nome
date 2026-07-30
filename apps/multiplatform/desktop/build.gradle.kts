@@ -248,17 +248,24 @@ compose {
 val cppPath = "../common/src/commonMain/cpp"
 
 val prepareMacArm64AppResources by tasks.registering {
-  // cmakeBuildAndCopy creates libapp-lib.dylib in the reviewed native tree. Serializing this
-  // gate after that task prevents Gradle from racing JNI output against manifest verification.
-  dependsOn("cmakeBuildAndCopy")
+  // Prebuilt Haskell/VLC dependencies are pinned by the reviewed manifest. libapp-lib.dylib is
+  // built from this checkout, so it is validated separately instead of pinning its unstable
+  // Mach-O UUID to a previous build.
+  dependsOn("cmakeBuild")
   val nativeResources = project.file("$cppPath/desktop/libs/mac-aarch64").toPath()
+  val generatedLibApp = layout.buildDirectory.file("cmake/main/mac-aarch64/libapp-lib.dylib")
   val appResourcesLink = project.file("../build/links/macos-arm64").toPath()
   val nativeManifest = project.file("native/macos-arm64-native.sha256").toPath()
+  val generatedLibAppEvidence = layout.buildDirectory.file("native/macos-arm64-generated.sha256")
   val expectedManifestSha256 = providers.gradleProperty("nome.nativeManifestSha256")
   inputs.dir(nativeResources)
+  inputs.file(generatedLibApp)
   inputs.file(nativeManifest)
   inputs.property("expectedManifestSha256", expectedManifestSha256.orElse("missing"))
+  outputs.dir(appResourcesLink)
+  outputs.file(generatedLibAppEvidence)
   doLast {
+    val generatedLibAppPath = generatedLibApp.get().asFile.toPath()
     check(isMacArm64PackagingHost) {
       "Nome macOS packages can only be produced on an Apple-Silicon macOS host"
     }
@@ -267,6 +274,9 @@ val prepareMacArm64AppResources by tasks.registering {
     }
     check(Files.isRegularFile(nativeManifest, LinkOption.NOFOLLOW_LINKS)) {
       "Missing reviewed native manifest: $nativeManifest"
+    }
+    check(Files.isRegularFile(generatedLibAppPath, LinkOption.NOFOLLOW_LINKS)) {
+      "Missing generated macOS JNI bridge: $generatedLibAppPath"
     }
 
     fun sha256(path: java.nio.file.Path): String {
@@ -290,6 +300,31 @@ val prepareMacArm64AppResources by tasks.registering {
       val machO = ByteBuffer.wrap(header).order(ByteOrder.LITTLE_ENDIAN)
       check(machO.int == 0xfeedfacf.toInt() && machO.int == 0x0100000c) {
         "Non-arm64 or unsupported Mach-O dylib in macOS ARM64 resources: $relativeName"
+      }
+    }
+
+    fun verifyNoAbsoluteRpaths(path: Path, relativeName: String) {
+      val process = ProcessBuilder("/usr/bin/otool", "-l", path.toString())
+        .redirectErrorStream(true)
+        .start()
+      val output = process.inputStream.bufferedReader().use { it.readText() }
+      check(process.waitFor() == 0) { "otool failed for $relativeName: $output" }
+
+      var insideRpath = false
+      val absoluteRpaths = buildList {
+        output.lineSequence().forEach { rawLine ->
+          val line = rawLine.trim()
+          if (line == "cmd LC_RPATH") {
+            insideRpath = true
+          } else if (insideRpath && line.startsWith("path ")) {
+            val rpath = line.removePrefix("path ").substringBefore(" (offset ")
+            if (Path.of(rpath).isAbsolute) add(rpath)
+            insideRpath = false
+          }
+        }
+      }
+      check(absoluteRpaths.isEmpty()) {
+        "$relativeName contains absolute LC_RPATH entries: ${absoluteRpaths.joinToString()}"
       }
     }
 
@@ -322,8 +357,9 @@ val prepareMacArm64AppResources by tasks.registering {
         "Duplicate native manifest entry: $relativeName"
       }
     }
-    check("libsimplex.dylib" in expectedFiles && "libapp-lib.dylib" in expectedFiles) {
-      "Native manifest must cover libsimplex.dylib and libapp-lib.dylib"
+    val generatedLibAppName = "libapp-lib.dylib"
+    check("libsimplex.dylib" in expectedFiles && generatedLibAppName !in expectedFiles) {
+      "Native manifest must cover libsimplex.dylib and exclude generated $generatedLibAppName"
     }
     val resourcePaths = Files.walk(nativeResources).use { paths -> paths.toList() }
     check(resourcePaths.none { Files.isSymbolicLink(it) }) {
@@ -333,8 +369,9 @@ val prepareMacArm64AppResources by tasks.registering {
       .filter { Files.isRegularFile(it, LinkOption.NOFOLLOW_LINKS) }
       .map { nativeResources.relativize(it).toString() }
       .toSet()
-    check(actualFiles == expectedFiles.keys) {
-      "Native manifest/resource set mismatch; missing=${expectedFiles.keys - actualFiles}, unexpected=${actualFiles - expectedFiles.keys}"
+    val staticFiles = actualFiles - generatedLibAppName
+    check(staticFiles == expectedFiles.keys && actualFiles.all { it in expectedFiles || it == generatedLibAppName }) {
+      "Native manifest/resource set mismatch; missing=${expectedFiles.keys - staticFiles}, unexpected=${staticFiles - expectedFiles.keys}"
     }
     expectedFiles.forEach { (relativeName, expectedHash) ->
       val resource = nativeResources.resolve(relativeName)
@@ -348,6 +385,14 @@ val prepareMacArm64AppResources by tasks.registering {
         verifyArm64Dylib(resource, relativeName)
       }
     }
+    verifyArm64Dylib(generatedLibAppPath, generatedLibAppName)
+    verifyNoAbsoluteRpaths(generatedLibAppPath, generatedLibAppName)
+    val generatedLibAppHash = sha256(generatedLibAppPath)
+    val generatedEvidencePath = generatedLibAppEvidence.get().asFile.toPath()
+    Files.createDirectories(generatedEvidencePath.parent)
+    Files.writeString(generatedEvidencePath, "$generatedLibAppHash  $generatedLibAppName\n")
+    logger.lifecycle("Generated $generatedLibAppName SHA-256: $generatedLibAppHash")
+
     Files.createDirectories(appResourcesLink.parent)
     Files.copy(
       nativeManifest,
@@ -360,13 +405,20 @@ val prepareMacArm64AppResources by tasks.registering {
     Files.createDirectories(appResourcesLink)
     resourcePaths.forEach { source ->
       if (source == nativeResources) return@forEach
-      val target = appResourcesLink.resolve(nativeResources.relativize(source).toString())
+      val relativeName = nativeResources.relativize(source).toString()
+      if (relativeName == generatedLibAppName) return@forEach
+      val target = appResourcesLink.resolve(relativeName)
       if (Files.isDirectory(source, LinkOption.NOFOLLOW_LINKS)) {
         Files.createDirectories(target)
       } else {
         Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING)
       }
     }
+    Files.copy(
+      generatedLibAppPath,
+      appResourcesLink.resolve(generatedLibAppName),
+      StandardCopyOption.REPLACE_EXISTING,
+    )
 
     // Package only the verified build-owned snapshot. Re-run every integrity and architecture
     // check after copying so source changes after the gate cannot race the packager.
@@ -378,8 +430,9 @@ val prepareMacArm64AppResources by tasks.registering {
       .filter { Files.isRegularFile(it, LinkOption.NOFOLLOW_LINKS) }
       .map { appResourcesLink.relativize(it).toString() }
       .toSet()
-    check(stagedFiles == expectedFiles.keys) {
-      "Staged native resource set mismatch; missing=${expectedFiles.keys - stagedFiles}, unexpected=${stagedFiles - expectedFiles.keys}"
+    val expectedStagedFiles = expectedFiles.keys + generatedLibAppName
+    check(stagedFiles == expectedStagedFiles) {
+      "Staged native resource set mismatch; missing=${expectedStagedFiles - stagedFiles}, unexpected=${stagedFiles - expectedStagedFiles}"
     }
     expectedFiles.forEach { (relativeName, expectedHash) ->
       val staged = appResourcesLink.resolve(relativeName)
@@ -388,6 +441,12 @@ val prepareMacArm64AppResources by tasks.registering {
       }
       if (relativeName.endsWith(".dylib")) verifyArm64Dylib(staged, relativeName)
     }
+    val stagedLibApp = appResourcesLink.resolve(generatedLibAppName)
+    check(sha256(stagedLibApp) == generatedLibAppHash) {
+      "Staged $generatedLibAppName differs from the generated JNI bridge"
+    }
+    verifyArm64Dylib(stagedLibApp, generatedLibAppName)
+    verifyNoAbsoluteRpaths(stagedLibApp, generatedLibAppName)
   }
 }
 
@@ -517,16 +576,8 @@ afterEvaluate {
         includeEmptyDirs = false
         duplicatesStrategy = DuplicatesStrategy.INCLUDE
       }
-      copy {
-        from("${project(":desktop").buildDir}/cmake/main/mac-aarch64")
-        into("$cppPath/desktop/libs/mac-aarch64")
-        include("*.dylib")
-        eachFile {
-          path = name
-        }
-        includeEmptyDirs = false
-        duplicatesStrategy = DuplicatesStrategy.INCLUDE
-      }
+      // macOS ARM64 packaging consumes libapp-lib.dylib directly from the CMake build output.
+      // Do not copy this generated file into the reviewed prebuilt native dependency tree.
     }
   }
 }

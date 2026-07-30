@@ -2,6 +2,11 @@
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd -P)"
+RPATH_PATCH_SCRIPT="$REPO_ROOT/apps/multiplatform/common/src/commonMain/cpp/desktop/patch-libapp-mac.sh"
+cd "$REPO_ROOT"
+
 OS=mac
 ARCH="${1:-$(uname -m)}"
 COMPOSE_ARCH=$ARCH
@@ -134,21 +139,9 @@ if [[ "$DATABASE_BACKEND" == "sqlite" ]]; then
     fi
 fi
 
-for lib in $(find . -type f -name "*.$LIB_EXT"); do
-    RPATHS=`otool -l $lib | grep -E "path /Users/|path /usr/local|path /opt/" | cut -d' ' -f11`
-    for RPATH in $RPATHS; do
-        install_name_tool -delete_rpath $RPATH $lib
-    done
-done
-
-LOCAL_DIRS=`for lib in $(find . -type f -name "*.$LIB_EXT"); do otool -l $lib | grep -E "/Users|/opt/|/usr/local" && echo $lib || true; done`
-if [ -n "$LOCAL_DIRS" ]; then
-    echo These libs still point to local directories:
-    echo $LOCAL_DIRS
-    if [[ "$DATABASE_BACKEND" == "sqlite" ]]; then
-        exit 1
-    fi
-fi
+while IFS= read -r -d '' lib; do
+    "$RPATH_PATCH_SCRIPT" "$lib"
+done < <(find . -type f -name "*.$LIB_EXT" -print0)
 
 cd -
 scripts/desktop/prepare-vlc-mac.sh

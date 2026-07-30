@@ -8,6 +8,7 @@ readonly REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd -P)"
 readonly LOCAL_PROPERTIES="$REPO_ROOT/apps/multiplatform/local.properties"
 readonly NATIVE_MANIFEST="$REPO_ROOT/apps/multiplatform/desktop/native/macos-arm64-native.sha256"
 readonly NATIVE_RESOURCES="$REPO_ROOT/apps/multiplatform/common/src/commonMain/cpp/desktop/libs/mac-aarch64"
+readonly GENERATED_LIBAPP="$REPO_ROOT/apps/multiplatform/desktop/build/cmake/main/mac-aarch64/libapp-lib.dylib"
 readonly TEMP_ROOT="${RUNNER_TEMP:-${TMPDIR:-/tmp}}"
 
 die() {
@@ -199,6 +200,7 @@ readonly DMG_PATH="${dmg_candidates[0]}"
 bash "$REPO_ROOT/scripts/ci/verify-desktop-mac-package.sh" \
   --app "$APP_PATH" \
   --source-resources "$NATIVE_RESOURCES" \
+  --generated-libapp "$GENERATED_LIBAPP" \
   --manifest "$NATIVE_MANIFEST" \
   --manifest-sha256 "$REVIEWED_MANIFEST_SHA256" \
   --team-id "$NOME_MACOS_TEAM_ID"
@@ -208,6 +210,7 @@ bash "$REPO_ROOT/scripts/ci/verify-desktop-mac-package.sh" \
 bash "$REPO_ROOT/scripts/ci/verify-desktop-mac-package.sh" \
   --dmg "$DMG_PATH" \
   --source-resources "$NATIVE_RESOURCES" \
+  --generated-libapp "$GENERATED_LIBAPP" \
   --manifest "$NATIVE_MANIFEST" \
   --manifest-sha256 "$REVIEWED_MANIFEST_SHA256" \
   --team-id "$NOME_MACOS_TEAM_ID"
