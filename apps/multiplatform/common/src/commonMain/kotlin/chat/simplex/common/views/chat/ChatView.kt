@@ -2004,11 +2004,6 @@ fun BoxScope.ChatItemsList(
       chatsCtx.secondaryContextFilter == null &&
       chatInfo is ChatInfo.Group &&
       chatInfo.groupInfo.useRelays
-  val nomeChannelFeed =
-    appPlatform.isAndroid &&
-      chatsCtx.secondaryContextFilter == null &&
-      chatInfo is ChatInfo.Group &&
-      chatInfo.groupInfo.useRelays
   val nomeDirectE2EEBannerHeight =
     nomeDirectE2EEBannerHeight(
       LocalDensity.current.fontScale,
@@ -2039,11 +2034,8 @@ fun BoxScope.ChatItemsList(
   }
   val highlightedItems = remember { mutableStateOf(setOf<Long>()) }
   val hoveredItemId = remember { mutableStateOf(null as Long?) }
-  val listState = rememberUpdatedState(rememberSaveable(chatInfo.id, searchValueIsEmpty.value, resetListState.value, nomeChannelFeed, saver = LazyListState.Saver) {
+  val listState = rememberUpdatedState(rememberSaveable(chatInfo.id, searchValueIsEmpty.value, resetListState.value, saver = LazyListState.Saver) {
     val openAroundItemId = chatModel.openAroundItemId.value
-    if (nomeChannelFeed && openAroundItemId == null) {
-      return@rememberSaveable LazyListState(0, 0)
-    }
     val index = mergedItems.value.indexInParentItems[openAroundItemId] ?: run {
       // scroll to first unread after last viewed item (items reversed: 0 = newest)
       val viewedIdx = mergedItems.value.items.indexOfFirst { !it.hasUnread() }
@@ -2064,10 +2056,6 @@ fun BoxScope.ChatItemsList(
     if (reportsState != null) {
       reportsListState = null
       reportsState
-    } else if (nomeChannelFeed) {
-      val (initialIndex, initialOffset) =
-        nomeChannelInitialListPosition(openAroundItemId, index)
-      LazyListState(initialIndex, initialOffset)
     } else if (index <= 0 || !searchValueIsEmpty.value) {
       LazyListState(0, 0)
     } else {
@@ -2643,19 +2631,13 @@ fun BoxScope.ChatItemsList(
   val modifier = if (appPlatform.isDesktop && manager != null) SelectionHandler(manager, listState, mergedItems, revealedItems, linkMode) else Modifier
 
   LazyColumnWithScrollBar(
-    modifier.align(
-      if (nomeChannelFeed) {
-        Alignment.TopCenter
-      } else {
-        Alignment.BottomCenter
-      },
-    ),
+    modifier.align(Alignment.BottomCenter),
     state = listState.value,
     contentPadding = PaddingValues(
       top = topPaddingToContent,
       bottom = composeViewHeight.value
     ),
-    reverseLayout = !nomeChannelFeed,
+    reverseLayout = true,
     additionalBarOffset = composeViewHeight,
     additionalTopBar = rememberUpdatedState(chatsCtx.secondaryContextFilter == null && (reportsCount > 0 || supportUnreadCount > 0)),
     chatBottomBar = remember { appPrefs.chatBottomBar.state }
@@ -2705,19 +2687,13 @@ fun BoxScope.ChatItemsList(
           itemSeparation = getItemSeparation(item, null)
           prevItemSeparationLargeGap = false
         }
-        val presentedItemSeparation =
-          if (nomeChannelFeed) {
-            itemSeparation.copy(date = null)
-          } else {
-            itemSeparation
-          }
         CompositionLocalProvider(LocalItemContext provides ItemContext(selectionIndex = index)) {
-          ChatViewListItem(index == 0, rememberUpdatedState(range), showAvatar, item, presentedItemSeparation, prevItemSeparationLargeGap, isRevealed) {
+          ChatViewListItem(index == 0, rememberUpdatedState(range), showAvatar, item, itemSeparation, prevItemSeparationLargeGap, isRevealed) {
             if (merged is MergedItem.Grouped) merged.reveal(it, revealedItems)
           }
         }
 
-        if (last != null && !nomeChannelFeed) {
+        if (last != null) {
           // no using separate item(){} block in order to have total number of items in LazyColumn match number of merged items
           DateSeparator(last.meta.itemTs)
         }

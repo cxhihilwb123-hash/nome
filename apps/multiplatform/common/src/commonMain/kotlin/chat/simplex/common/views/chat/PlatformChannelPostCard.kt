@@ -45,21 +45,6 @@ internal fun nomeChannelUsesOfficialFileRenderer(
 ): Boolean =
   msgContent is MsgContent.MCFile
 
-/**
- * Nome public-channel feeds use forward layout, so their initial position cannot reuse the
- * negative offset used by the legacy reversed conversation. A normal open starts at the newest
- * item (index 0); an explicit open-around request starts on the real merged-item index.
- */
-internal fun nomeChannelInitialListPosition(
-  openAroundItemId: Long?,
-  targetIndex: Int,
-): Pair<Int, Int> =
-  if (openAroundItemId == null) {
-    0 to 0
-  } else {
-    targetIndex.coerceAtLeast(0) to 0
-  }
-
 @Composable
 internal expect fun PlatformChannelPostCard(
   visible: Boolean,

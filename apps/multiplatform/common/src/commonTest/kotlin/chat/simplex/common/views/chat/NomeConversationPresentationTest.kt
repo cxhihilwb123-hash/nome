@@ -124,29 +124,4 @@ class NomeConversationPresentationTest {
     )
   }
 
-  @Test
-  fun channelOpenAroundKeepsTargetIndexInForwardLayout() {
-    assertEquals(
-      0 to 0,
-      nomeChannelInitialListPosition(
-        openAroundItemId = null,
-        targetIndex = 17,
-      ),
-    )
-    assertEquals(
-      17 to 0,
-      nomeChannelInitialListPosition(
-        openAroundItemId = 99L,
-        targetIndex = 17,
-      ),
-    )
-    assertEquals(
-      0 to 0,
-      nomeChannelInitialListPosition(
-        openAroundItemId = 99L,
-        targetIndex = -1,
-      ),
-    )
-  }
-
 }
