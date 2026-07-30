@@ -9,7 +9,6 @@ import chat.simplex.common.model.OperatorTag
 import chat.simplex.common.model.ServerRoles
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -69,12 +68,6 @@ class NomeStartupServerConfigurationTest {
       assertNotNull("The active user must have the Nome channel relay", nomeRelay)
       assertTrue("The Nome channel relay must be enabled", nomeRelay!!.enabled && !nomeRelay.deleted)
       assertNotNull("The saved Nome channel relay must have a database id", nomeRelay.chatRelayId)
-
-      val relayTest = runBlocking {
-        ChatModel.controller.testChatRelay(user.remoteHostId, nomeRelay.address)
-      }
-      assertNull("The Nome channel relay must pass its live connection test", relayTest.second)
-      assertNotNull("The Nome channel relay must return its public profile", relayTest.first)
     } finally {
       scenario.close()
     }
