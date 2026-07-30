@@ -12,8 +12,10 @@ class NomeServerConfigurationTest {
   fun officialRoutingUsesNomeDomainsAndTreatsTencentIpAsLegacyOnly() {
     assertEquals("smp.nome.im", NomeServerConfiguration.smpHostname)
     assertEquals("xftp.nome.im", NomeServerConfiguration.xftpHostname)
+    assertEquals("relay.nome.im", NomeServerConfiguration.chatRelayHostname)
     assertTrue(NomeServerConfiguration.smpServer.endsWith("@smp.nome.im:5223"))
     assertTrue(NomeServerConfiguration.xftpServer.endsWith("@xftp.nome.im"))
+    assertTrue(NomeServerConfiguration.chatRelayAddress.startsWith("https://relay.nome.im/r#"))
     assertTrue(NomeServerConfiguration.legacySmpServer.endsWith("@124.223.71.168:5223"))
     assertTrue(NomeServerConfiguration.legacyXftpServer.endsWith("@124.223.71.168:5224"))
   }
@@ -100,6 +102,87 @@ class NomeServerConfigurationTest {
     assertTrue(first.changed)
     assertFalse(second.changed)
     assertEquals(first.userServers, second.userServers)
+  }
+
+  @Test
+  fun firstSeedAddsEnabledNomeRelayToNomeOperator() {
+    val nome = operatorGroup(
+      smp = userServer(NomeServerConfiguration.smpServer, preset = true),
+      xftp = userServer(NomeServerConfiguration.xftpServer, preset = true),
+    )
+
+    val migration = NomeServerConfiguration.migrate(listOf(nome), seedDefaultChatRelay = true)
+
+    assertTrue(migration.changed)
+    val relay = migration.userServers.single().chatRelays.single()
+    assertEquals(NomeServerConfiguration.chatRelayAddress, relay.address)
+    assertEquals(NomeServerConfiguration.chatRelayName, relay.displayName)
+    assertEquals(listOf(NomeServerConfiguration.chatRelayDomain), relay.domains)
+    assertFalse(relay.preset)
+    assertTrue(relay.enabled)
+    assertFalse(relay.deleted)
+  }
+
+  @Test
+  fun firstSeedUsesCompatibilityGroupWhenNomeOperatorIsUnavailable() {
+    val upstream = operatorGroup(
+      operator = ServerOperator.sampleData1.copy(operatorTag = OperatorTag.SimpleX),
+      smp = userServer("smp://legacy@smp.example.invalid", preset = true),
+      xftp = userServer("xftp://legacy@xftp.example.invalid", preset = true),
+    )
+
+    val migration = NomeServerConfiguration.migrate(listOf(upstream), seedDefaultChatRelay = true)
+
+    assertTrue(migration.userServers.single { it.operator == null }.chatRelays.single().enabled)
+    assertTrue(migration.userServers.single { it.operator != null }.chatRelays.isEmpty())
+  }
+
+  @Test
+  fun existingDisabledNomeRelayIsNeverReenabledOrDuplicated() {
+    val disabledRelay = UserChatRelay(
+      chatRelayId = 42,
+      address = NomeServerConfiguration.chatRelayAddress,
+      relayProfile = RelayProfile(displayName = NomeServerConfiguration.chatRelayName, fullName = ""),
+      domains = listOf(NomeServerConfiguration.chatRelayDomain),
+      preset = false,
+      tested = true,
+      enabled = false,
+      deleted = true,
+    )
+    val nome = operatorGroup(
+      smp = userServer(NomeServerConfiguration.smpServer, preset = true),
+      xftp = userServer(NomeServerConfiguration.xftpServer, preset = true),
+    ).copy(chatRelays = listOf(disabledRelay))
+
+    val first = NomeServerConfiguration.migrate(listOf(nome), seedDefaultChatRelay = true)
+    val later = NomeServerConfiguration.migrate(first.userServers, seedDefaultChatRelay = false)
+
+    assertEquals(listOf(disabledRelay), first.userServers.single().chatRelays)
+    assertEquals(listOf(disabledRelay), later.userServers.single().chatRelays)
+  }
+
+  @Test
+  fun customRelayIsPreservedBesideFirstNomeRelaySeed() {
+    val customRelay = UserChatRelay(
+      chatRelayId = 7,
+      address = "https://relay.example.test/r#custom",
+      relayProfile = RelayProfile(displayName = "Private relay", fullName = ""),
+      domains = listOf("example.test"),
+      preset = false,
+      tested = true,
+      enabled = true,
+      deleted = false,
+    )
+    val nome = operatorGroup(
+      smp = userServer(NomeServerConfiguration.smpServer, preset = true),
+      xftp = userServer(NomeServerConfiguration.xftpServer, preset = true),
+    ).copy(chatRelays = listOf(customRelay))
+
+    val migration = NomeServerConfiguration.migrate(listOf(nome), seedDefaultChatRelay = true)
+
+    val relays = migration.userServers.single().chatRelays
+    assertEquals(customRelay, relays.first())
+    assertEquals(NomeServerConfiguration.chatRelayAddress, relays.last().address)
   }
 
   @Test

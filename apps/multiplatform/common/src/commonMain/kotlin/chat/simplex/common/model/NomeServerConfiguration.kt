@@ -10,17 +10,23 @@ import kotlinx.coroutines.sync.withLock
  * Nome-managed messaging and file server policy.
  *
  * The full addresses are required by the chat core, but callers and read-only UI must only expose
- * [smpHostname] and [xftpHostname]. User-created server entries are never removed or rewritten.
+ * [smpHostname], [xftpHostname] and [chatRelayHostname]. User-created server entries are never
+ * removed or rewritten.
  */
 internal object NomeServerConfiguration {
   internal const val smpHostname = "smp.nome.im"
   internal const val xftpHostname = "xftp.nome.im"
+  internal const val chatRelayHostname = "relay.nome.im"
+  internal const val chatRelayName = "Nome Relay"
+  internal const val chatRelayDomain = "nome.im"
 
   private const val smpServerHostOnly =
     "smp://RVzf_goDl1uPbeXQu7Mpi-gck_By0QhEGobrwPwULY8=:e0eabd5e5b046bd7e7082ad9d68e133c213281e9a9109c84@smp.nome.im"
   internal const val smpServer = smpServerHostOnly + ":5223"
   internal const val xftpServer =
     "xftp://y00AWTizJH88sHCMioQ1m-d_xXWlwolHAek_Mc4MhYM=:accbd90c5c813d90facea657d3da87e022eae9ce07005b53@xftp.nome.im"
+  internal const val chatRelayAddress =
+    "https://relay.nome.im/r#N_ynoTxBs6bAWXuroZ-l5_r4lbibC3mm0MRunZqukOA?p=5223&c=RVzf_goDl1uPbeXQu7Mpi-gck_By0QhEGobrwPwULY8"
 
   internal const val legacySmpServer =
     "smp://30U1zE40SnyLHHyelf2vJxB_kva4eFXWO-2fTHCDcg8=@124.223.71.168:5223"
@@ -40,7 +46,10 @@ internal object NomeServerConfiguration {
     val changed: Boolean,
   )
 
-  internal fun migrate(userServers: List<UserOperatorServers>): Migration {
+  internal fun migrate(
+    userServers: List<UserOperatorServers>,
+    seedDefaultChatRelay: Boolean = false,
+  ): Migration {
     var changed = false
     val currentSmpServer = if (appPlatform.isAndroid) smpServerHostOnly else smpServer
     val managedServerPreset = !appPlatform.isAndroid
@@ -125,6 +134,23 @@ internal object NomeServerConfiguration {
       migrated[customIndex] = updatedCustom
     }
 
+    if (seedDefaultChatRelay && migrated.none { group -> group.chatRelays.any(::isNomeChatRelay) }) {
+      val targetIndex = migrated.indexOfFirst { it.operator?.operatorTag == OperatorTag.Nome }
+        .takeIf { it >= 0 }
+        ?: migrated.indexOfFirst { it.operator == null }.takeIf { it >= 0 }
+        ?: run {
+          migrated += UserOperatorServers(
+            operator = null,
+            smpServers = emptyList(),
+            xftpServers = emptyList(),
+          )
+          migrated.lastIndex
+        }
+      val target = migrated[targetIndex]
+      migrated[targetIndex] = target.copy(chatRelays = target.chatRelays + defaultChatRelay())
+      changed = true
+    }
+
     return Migration(migrated, changed)
   }
 
@@ -135,8 +161,14 @@ internal object NomeServerConfiguration {
       val success = runWithRetry {
         val rh = user.remoteHostId
         val existing = controller.getUserServers(rh) ?: return@runWithRetry false
-        val migration = migrate(existing)
-        if (!migration.changed) return@runWithRetry true
+        val relaySeedKey = relaySeedKey(user)
+        val shouldSeedDefaultChatRelay = controller.appPrefs.nomeDefaultChatRelaySeededUsers
+          .get()[relaySeedKey] != true
+        val migration = migrate(existing, seedDefaultChatRelay = shouldSeedDefaultChatRelay)
+        if (!migration.changed) {
+          if (shouldSeedDefaultChatRelay) markDefaultChatRelaySeeded(controller, relaySeedKey)
+          return@runWithRetry true
+        }
 
         val validation = controller.validateServers(rh, migration.userServers)
           ?: return@runWithRetry false
@@ -147,9 +179,10 @@ internal object NomeServerConfiguration {
         if (!controller.setUserServers(rh, migration.userServers, showError = false)) {
           return@runWithRetry false
         }
+        if (shouldSeedDefaultChatRelay) markDefaultChatRelaySeeded(controller, relaySeedKey)
         changed = true
         controller.getServerOperators(rh)?.let { controller.chatModel.conditions.value = it }
-        Log.i(LOG_TAG, "Nome servers active: $smpHostname, $xftpHostname")
+        Log.i(LOG_TAG, "Nome servers active: $smpHostname, $xftpHostname, $chatRelayHostname")
         true
       }
       ApplyResult(success = success, changed = changed)
@@ -240,6 +273,29 @@ internal object NomeServerConfiguration {
       ServerProtocol.XFTP -> legacyXftpServer
     }
     return server.preset || address == currentAddress || address == knownLegacyAddress
+  }
+
+  private fun defaultChatRelay(): UserChatRelay = UserChatRelay(
+    chatRelayId = null,
+    address = chatRelayAddress,
+    relayProfile = RelayProfile(displayName = chatRelayName, fullName = ""),
+    domains = listOf(chatRelayDomain),
+    preset = false,
+    tested = null,
+    enabled = true,
+    deleted = false,
+  )
+
+  private fun isNomeChatRelay(relay: UserChatRelay): Boolean =
+    relay.address.trim() == chatRelayAddress ||
+      (relay.displayName == chatRelayName && chatRelayDomain in relay.domains)
+
+  private fun relaySeedKey(user: User): String = "${user.remoteHostId ?: "local"}:${user.userId}"
+
+  private fun markDefaultChatRelaySeeded(controller: ChatController, relaySeedKey: String) {
+    val preference = controller.appPrefs.nomeDefaultChatRelaySeededUsers
+    val seededUsers = preference.get()
+    if (seededUsers[relaySeedKey] != true) preference.set(seededUsers + (relaySeedKey to true))
   }
 
   private data class Endpoint(val protocol: ServerProtocol, val hostname: String)

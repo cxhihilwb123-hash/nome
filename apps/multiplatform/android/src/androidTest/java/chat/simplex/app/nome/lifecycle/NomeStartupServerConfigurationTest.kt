@@ -9,6 +9,7 @@ import chat.simplex.common.model.OperatorTag
 import chat.simplex.common.model.ServerRoles
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -61,6 +62,19 @@ class NomeStartupServerConfigurationTest {
             group.xftpServers.none { it.enabled }
         },
       )
+
+      val nomeRelay = userServers.flatMap { it.chatRelays }.singleOrNull {
+        relayHostname(it.address) == CHAT_RELAY_HOSTNAME
+      }
+      assertNotNull("The active user must have the Nome channel relay", nomeRelay)
+      assertTrue("The Nome channel relay must be enabled", nomeRelay!!.enabled && !nomeRelay.deleted)
+      assertNotNull("The saved Nome channel relay must have a database id", nomeRelay.chatRelayId)
+
+      val relayTest = runBlocking {
+        ChatModel.controller.testChatRelay(user.remoteHostId, nomeRelay.address)
+      }
+      assertNull("The Nome channel relay must pass its live connection test", relayTest.second)
+      assertNotNull("The Nome channel relay must return its public profile", relayTest.first)
     } finally {
       scenario.close()
     }
@@ -77,9 +91,13 @@ class NomeStartupServerConfigurationTest {
   private fun hostname(address: String): String =
     address.trim().substringAfterLast('@').substringBefore(',').substringBefore(':').lowercase()
 
+  private fun relayHostname(address: String): String =
+    address.trim().substringAfter("://").substringBefore('/').substringBefore(':').lowercase()
+
   private companion object {
     const val SMP_HOSTNAME = "smp.nome.im"
     const val XFTP_HOSTNAME = "xftp.nome.im"
+    const val CHAT_RELAY_HOSTNAME = "relay.nome.im"
     const val TIMEOUT_MILLIS = 30_000L
     const val POLL_MILLIS = 250L
   }
