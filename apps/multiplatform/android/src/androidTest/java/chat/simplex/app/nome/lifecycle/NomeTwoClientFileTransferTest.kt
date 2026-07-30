@@ -42,21 +42,20 @@ class NomeTwoClientFileTransferTest {
         ?: return
     val marker =
       requireMarkerArgument(arguments)
+    val fileKind =
+      requireFileKindArgument(arguments)
     val fileName =
-      requireFileNameArgument(arguments)
+      requireFileNameArgument(
+        arguments = arguments,
+        fileKind = fileKind,
+      )
     val port =
       bridgePortArgument(arguments)
     val instrumentation =
       InstrumentationRegistry.getInstrumentation()
     val payload =
-      controlledPngPayload()
-    val scenario =
-      ActivityScenario.launch<MainActivity>(
-        Intent().setClassName(
-          instrumentation.targetContext.packageName,
-          MainActivity::class.java.name,
-        ),
-      )
+      controlledPayload(fileKind)
+    val scenario = launchControlledMainActivity()
     var senderFixture: File? = null
     try {
       waitUntil(READY_TIMEOUT_MILLIS) {
@@ -150,6 +149,7 @@ class NomeTwoClientFileTransferTest {
           verifyOpenAndTemporaryCleanup(
             instrumentation = instrumentation,
             file = completed,
+            mimeType = fileKind.mimeType,
           )
           val downloaded =
             File(
@@ -191,7 +191,7 @@ class NomeTwoClientFileTransferTest {
           )
         }
       }
-      scenario.close()
+      scenario?.close()
     }
   }
 
@@ -261,6 +261,7 @@ class NomeTwoClientFileTransferTest {
   private fun verifyOpenAndTemporaryCleanup(
     instrumentation: android.app.Instrumentation,
     file: CIFile,
+    mimeType: String,
   ) {
     val source =
       requireNotNull(
@@ -278,7 +279,7 @@ class NomeTwoClientFileTransferTest {
           android.content.Intent(
             android.content.Intent.ACTION_VIEW,
           ).apply {
-            type = "image/png"
+            type = mimeType
           },
           0,
         ).isNotEmpty(),
@@ -368,7 +369,7 @@ class NomeTwoClientFileTransferTest {
       soTimeout = FILE_TIMEOUT_MILLIS.toInt()
       connect(
         InetSocketAddress(
-          BRIDGE_HOST,
+          controlledBridgeHost(),
           port,
         ),
         BRIDGE_CONNECT_TIMEOUT_MILLIS,
@@ -394,9 +395,14 @@ class NomeTwoClientFileTransferTest {
     )
   }
 
-  private fun controlledPngPayload(): ByteArray =
+  private fun controlledPayload(
+    fileKind: ControlledFileKind,
+  ): ByteArray =
     Base64.decode(
-      PNG_FIXTURE_BASE64,
+      when (fileKind) {
+        ControlledFileKind.Image -> PNG_FIXTURE_BASE64
+        ControlledFileKind.Pdf -> PDF_FIXTURE_BASE64
+      },
       Base64.DEFAULT,
     )
 
@@ -462,8 +468,25 @@ class NomeTwoClientFileTransferTest {
     )
   }
 
+  private fun requireFileKindArgument(
+    arguments: android.os.Bundle,
+  ): ControlledFileKind {
+    val rawKind =
+      arguments.getString(
+        FILE_KIND_ARGUMENT,
+      ) ?: ControlledFileKind.Image.argument
+    return ControlledFileKind.entries
+      .firstOrNull {
+        it.argument == rawKind
+      }
+      ?: error(
+        "Invalid $FILE_KIND_ARGUMENT=$rawKind",
+      )
+  }
+
   private fun requireFileNameArgument(
     arguments: android.os.Bundle,
+    fileKind: ControlledFileKind,
   ): String {
     val fileName =
       arguments.getString(
@@ -473,7 +496,7 @@ class NomeTwoClientFileTransferTest {
       )
     if (
       fileName.startsWith(FILE_NAME_PREFIX) &&
-      fileName.endsWith(FILE_NAME_SUFFIX) &&
+      fileName.endsWith(fileKind.fileNameSuffix) &&
       '/' !in fileName &&
       '\\' !in fileName &&
       fileName.length <= MAX_FILE_NAME_LENGTH
@@ -483,6 +506,15 @@ class NomeTwoClientFileTransferTest {
     error(
       "Invalid $FILE_NAME_ARGUMENT=$fileName",
     )
+  }
+
+  private enum class ControlledFileKind(
+    val argument: String,
+    val fileNameSuffix: String,
+    val mimeType: String,
+  ) {
+    Image("image", ".png", "image/png"),
+    Pdf("pdf", ".pdf", "application/pdf"),
   }
 
   private fun bridgePortArgument(
@@ -510,12 +542,12 @@ class NomeTwoClientFileTransferTest {
       "nomeFileMarker"
     const val FILE_NAME_ARGUMENT =
       "nomeFileName"
+    const val FILE_KIND_ARGUMENT =
+      "nomeFileKind"
     const val MESSAGE_MARKER_PREFIX =
       "NomePeerFile-"
     const val FILE_NAME_PREFIX =
       "nome-controlled-"
-    const val FILE_NAME_SUFFIX =
-      ".png"
     const val BRIDGE_HOST = "10.0.2.2"
     const val DEFAULT_BRIDGE_PORT = 27210
     const val BRIDGE_ACK = 1
@@ -530,5 +562,19 @@ class NomeTwoClientFileTransferTest {
     const val PNG_FIXTURE_BASE64 =
       "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwC" +
         "AAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+    const val PDF_FIXTURE_BASE64 =
+      "JVBERi0xLjQKJeLjz9MKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMg" +
+        "MiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFsz" +
+        "IDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2Ug" +
+        "L1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2Vz" +
+        "IDw8IC9Gb250IDw8IC9GMSA1IDAgUiA+PiA+PiAvQ29udGVudHMgNCAwIFIgPj4K" +
+        "ZW5kb2JqCjQgMCBvYmoKPDwgL0xlbmd0aCA0OCA+PgpzdHJlYW0KQlQgL0YxIDE4" +
+        "IFRmIDcyIDcyMCBUZCAoTm9tZSBjb2RlMzczIFBERikgVGogRVQKZW5kc3RyZWFt" +
+        "CmVuZG9iago1IDAgb2JqCjw8IC9UeXBlIC9Gb250IC9TdWJ0eXBlIC9UeXBlMSAv" +
+        "QmFzZUZvbnQgL0hlbHZldGljYSA+PgplbmRvYmoKeHJlZgowIDYKMDAwMDAwMDAw" +
+        "MCA2NTUzNSBmIAowMDAwMDAwMDE1IDAwMDAwIG4gCjAwMDAwMDAwNjQgMDAwMDAg" +
+        "biAKMDAwMDAwMDEyMSAwMDAwMCBuIAowMDAwMDAwMjQ3IDAwMDAwIG4gCjAwMDAw" +
+        "MDAzNDQgMDAwMDAgbiAKdHJhaWxlcgo8PCAvU2l6ZSA2IC9Sb290IDEgMCBSID4+" +
+        "CnN0YXJ0eHJlZgo0MTQKJSVFT0YK"
   }
 }

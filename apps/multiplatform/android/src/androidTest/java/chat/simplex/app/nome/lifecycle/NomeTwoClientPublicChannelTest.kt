@@ -46,13 +46,7 @@ class NomeTwoClientPublicChannelTest {
         ?: return
     val port =
       bridgePortArgument(arguments)
-    val scenario =
-      ActivityScenario.launch<MainActivity>(
-        Intent().setClassName(
-          InstrumentationRegistry.getInstrumentation().targetContext.packageName,
-          MainActivity::class.java.name,
-        ),
-      )
+    val scenario = launchControlledMainActivity()
     try {
       waitUntil(READY_TIMEOUT_MILLIS) {
         ChatModel.currentUser.value != null &&
@@ -73,12 +67,12 @@ class NomeTwoClientPublicChannelTest {
           )
       }
     } finally {
-      scenario.onActivity {
+      scenario?.onActivity {
         it.window.addFlags(
           WindowManager.LayoutParams.FLAG_SECURE,
         )
       }
-      scenario.close()
+      scenario?.close()
     }
   }
 
@@ -89,6 +83,11 @@ class NomeTwoClientPublicChannelTest {
     val arguments =
       InstrumentationRegistry
         .getArguments()
+    waitUntil(READY_TIMEOUT_MILLIS) {
+      controlledChannel(
+        fixtureNonce,
+      ) != null
+    }
     val channel =
       requireNotNull(
         controlledChannel(
@@ -198,7 +197,7 @@ class NomeTwoClientPublicChannelTest {
   }
 
   private fun runTarget(
-    scenario: ActivityScenario<MainActivity>,
+    scenario: ActivityScenario<MainActivity>?,
     port: Int,
   ) {
     removeDisposablePendingGroupLinkConnections()
@@ -278,7 +277,8 @@ class NomeTwoClientPublicChannelTest {
         "plannedRelayTestFailures=$relayTestFailures",
     )
     assertEquals(
-      "Every relay in the official group-link plan must pass its official test before joining",
+      "Every relay in the official group-link plan must pass its official test before joining; " +
+        "stateCounts=$relayTestSummary failures=$relayTestFailures",
       0,
       relayTestFailures,
     )
@@ -413,7 +413,7 @@ class NomeTwoClientPublicChannelTest {
     waitUntil(UI_TIMEOUT_MILLIS) {
       ChatModel.chatId.value == info.id
     }
-    scenario.onActivity {
+    scenario?.onActivity {
       it.window.clearFlags(
         WindowManager.LayoutParams.FLAG_SECURE,
       )
@@ -541,7 +541,8 @@ class NomeTwoClientPublicChannelTest {
         record.remoteHostId ==
         user.remoteHostId,
     )
-    return ChatModel.chats.value
+    val loadedChannel =
+      ChatModel.chats.value
       .singleOrNull { chat ->
         val info =
           chat.chatInfo as? ChatInfo.Group
@@ -550,6 +551,31 @@ class NomeTwoClientPublicChannelTest {
           info.groupInfo.groupId ==
           record.groupId
       }
+    if (loadedChannel != null) {
+      return loadedChannel
+    }
+    return when (
+      val result =
+        runBlocking {
+          ChatModel.controller.apiGetChatsResult(
+            user.remoteHostId,
+          )
+        }
+    ) {
+      is ChatListLoadResult.Success ->
+        result.chats.singleOrNull { chat ->
+          val info =
+            chat.chatInfo as? ChatInfo.Group
+          info?.groupInfo?.isChannel == true &&
+            info.groupInfo.useRelays &&
+            info.groupInfo.groupId ==
+            record.groupId
+        }
+
+      is ChatListLoadResult.Failure,
+      is ChatListLoadResult.NoCurrentUser,
+      -> null
+    }
   }
 
   private fun fixtureRecordFile(): File =
@@ -840,7 +866,7 @@ class NomeTwoClientPublicChannelTest {
         CHANNEL_TIMEOUT_MILLIS.toInt()
       connect(
         InetSocketAddress(
-          BRIDGE_HOST,
+          controlledBridgeHost(),
           port,
         ),
         BRIDGE_CONNECT_TIMEOUT_MILLIS,

@@ -1,6 +1,5 @@
 package chat.simplex.app.nome.lifecycle
 
-import android.content.Intent
 import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
@@ -72,13 +71,7 @@ class NomePublicChannelProducerTest {
     if (action.usesControlledFixtureRecord) {
       requireFixtureNonce()
     }
-    val scenario =
-      ActivityScenario.launch<MainActivity>(
-        Intent().setClassName(
-          InstrumentationRegistry.getInstrumentation().targetContext.packageName,
-          MainActivity::class.java.name,
-        ),
-      )
+    val scenario = launchControlledMainActivity()
     try {
       waitUntil(READY_TIMEOUT_MILLIS) {
         ChatModel.currentUser.value != null &&
@@ -90,7 +83,12 @@ class NomePublicChannelProducerTest {
         ProducerAction.Rename -> renameChannelForVisualAcceptance()
         ProducerAction.Populate -> populateChannel()
         ProducerAction.Attach -> attachRealControlledFile()
-        ProducerAction.Open -> openChannel(scenario)
+        ProducerAction.Open ->
+          openChannel(
+            requireNotNull(scenario) {
+              "Opening the controlled channel requires an ActivityScenario host"
+            },
+          )
         ProducerAction.Delete -> deleteChannel()
         ProducerAction.Status -> reportControlledChannelStatus()
         ProducerAction.Members -> reportControlledMemberStates()
@@ -100,12 +98,16 @@ class NomePublicChannelProducerTest {
           createChannel()
           populateChannel()
           attachRealControlledFile()
-          openChannel(scenario)
+          openChannel(
+            requireNotNull(scenario) {
+              "Capturing the controlled channel lifecycle requires an ActivityScenario host"
+            },
+          )
           deleteChannel()
         }
       }
     } finally {
-      scenario.close()
+      scenario?.close()
     }
   }
 

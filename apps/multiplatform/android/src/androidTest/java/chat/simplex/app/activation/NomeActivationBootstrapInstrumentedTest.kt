@@ -46,7 +46,9 @@ class NomeActivationBootstrapInstrumentedTest {
       "Accessibility ACTION_SET_TEXT failed",
       field.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments),
     )
-    if (field.text?.toString() != value) error("Activation input mismatch")
+    waitForNode(automation = automation, timeoutMs = 5_000) {
+      it.className?.toString() == "android.widget.EditText" && it.text?.toString() == value
+    } ?: error("Activation input mismatch")
 
     val activate = waitForNode(automation = automation, timeoutMs = 5_000) {
       it.text?.toString() == "激活"

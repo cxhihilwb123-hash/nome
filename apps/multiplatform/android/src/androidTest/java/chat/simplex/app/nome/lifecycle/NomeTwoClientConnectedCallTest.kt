@@ -25,7 +25,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class NomeTwoClientConnectedCallTest {
   @Test
-  fun realControlledAudioCallConnectsOnBothPeersAndEndsCleanly() {
+  fun realControlledCallConnectsOnBothPeersAndEndsCleanly() {
     val arguments =
       InstrumentationRegistry.getArguments()
     val role =
@@ -34,15 +34,11 @@ class NomeTwoClientConnectedCallTest {
       ) ?: return
     val port =
       bridgePortArgument(arguments)
+    val media =
+      callMediaArgument(arguments)
     val instrumentation =
       InstrumentationRegistry.getInstrumentation()
-    val scenario =
-      ActivityScenario.launch<MainActivity>(
-        Intent().setClassName(
-          instrumentation.targetContext.packageName,
-          MainActivity::class.java.name,
-        ),
-      )
+    val scenario = launchControlledMainActivity()
     var receivedInvitation: RcvCallInvitation? = null
     try {
       waitUntil(READY_TIMEOUT_MILLIS) {
@@ -62,7 +58,7 @@ class NomeTwoClientConnectedCallTest {
           startChatCall(
             remoteHostId = direct.remoteHostId,
             chatInfo = info,
-            media = CallMediaType.Audio,
+            media = media.callMediaType,
           )
           waitUntil(CALL_TIMEOUT_MILLIS) {
             ChatModel.activeCall.value
@@ -149,7 +145,8 @@ class NomeTwoClientConnectedCallTest {
       }
       Log.i(
         TAG,
-        "role=${role.argument} connectedCall=true cleanEnd=true",
+        "role=${role.argument} media=${media.argument} " +
+          "connectedCall=true cleanEnd=true",
       )
     } finally {
       ChatModel.activeCall.value?.let { call ->
@@ -166,7 +163,7 @@ class NomeTwoClientConnectedCallTest {
             invitation.contact.id,
           )
       }
-      scenario.close()
+      scenario?.close()
     }
   }
 
@@ -206,7 +203,7 @@ class NomeTwoClientConnectedCallTest {
         CALL_TIMEOUT_MILLIS.toInt()
       connect(
         InetSocketAddress(
-          BRIDGE_HOST,
+          controlledBridgeHost(),
           port,
         ),
         BRIDGE_CONNECT_TIMEOUT_MILLIS,
@@ -280,6 +277,31 @@ class NomeTwoClientConnectedCallTest {
       )
   }
 
+  private fun callMediaArgument(
+    arguments: android.os.Bundle,
+  ): ControlledCallMedia {
+    val rawMedia =
+      arguments.getString(
+        CALL_MEDIA_ARGUMENT,
+      ) ?: ControlledCallMedia.Audio.argument
+    return ControlledCallMedia.entries
+      .firstOrNull {
+        it.argument == rawMedia
+      }
+      ?: error(
+        "Invalid $CALL_MEDIA_ARGUMENT=$rawMedia",
+      )
+  }
+
+  private enum class ControlledCallMedia(
+    val argument: String,
+    val callMediaType: CallMediaType,
+  ) {
+    Audio("audio", CallMediaType.Audio),
+    Video("video", CallMediaType.Video),
+    ;
+  }
+
   private companion object {
     const val TAG =
       "NomeTwoClientCall"
@@ -289,6 +311,8 @@ class NomeTwoClientConnectedCallTest {
       "nomeProducerRole"
     const val PRODUCER_PORT_ARGUMENT =
       "nomeProducerPort"
+    const val CALL_MEDIA_ARGUMENT =
+      "nomeCallMedia"
     const val BRIDGE_HOST =
       "10.0.2.2"
     const val DEFAULT_BRIDGE_PORT =

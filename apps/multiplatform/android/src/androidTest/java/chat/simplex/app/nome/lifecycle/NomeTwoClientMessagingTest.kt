@@ -34,13 +34,7 @@ class NomeTwoClientMessagingTest {
     val port =
       bridgePortArgument(arguments)
 
-    val scenario =
-      ActivityScenario.launch<MainActivity>(
-        Intent().setClassName(
-          InstrumentationRegistry.getInstrumentation().targetContext.packageName,
-          MainActivity::class.java.name,
-        ),
-      )
+    val scenario = launchControlledMainActivity()
     try {
       waitUntil(READY_TIMEOUT_MILLIS) {
         ChatModel.currentUser.value != null &&
@@ -110,7 +104,7 @@ class NomeTwoClientMessagingTest {
         "role=${role.argument} peerObservedDirectMessage=true",
       )
     } finally {
-      scenario.close()
+      scenario?.close()
     }
   }
 
@@ -151,7 +145,7 @@ class NomeTwoClientMessagingTest {
       soTimeout = MESSAGE_TIMEOUT_MILLIS.toInt()
       connect(
         InetSocketAddress(
-          BRIDGE_HOST,
+          controlledBridgeHost(),
           port,
         ),
         BRIDGE_CONNECT_TIMEOUT_MILLIS,

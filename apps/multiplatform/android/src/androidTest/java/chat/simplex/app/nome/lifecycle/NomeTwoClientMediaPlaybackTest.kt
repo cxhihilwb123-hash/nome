@@ -61,13 +61,7 @@ class NomeTwoClientMediaPlaybackTest {
       bridgePortArgument(arguments)
     val instrumentation =
       InstrumentationRegistry.getInstrumentation()
-    val scenario =
-      ActivityScenario.launch<MainActivity>(
-        Intent().setClassName(
-          instrumentation.targetContext.packageName,
-          MainActivity::class.java.name,
-        ),
-      )
+    val scenario = launchControlledMainActivity()
     val sourceFixture =
       File(
         instrumentation.targetContext.cacheDir,
@@ -200,7 +194,7 @@ class NomeTwoClientMediaPlaybackTest {
           sourceFixture.delete(),
         )
       }
-      scenario.close()
+      scenario?.close()
     }
   }
 
@@ -576,7 +570,7 @@ class NomeTwoClientMediaPlaybackTest {
         FILE_TIMEOUT_MILLIS.toInt()
       connect(
         InetSocketAddress(
-          BRIDGE_HOST,
+          controlledBridgeHost(),
           port,
         ),
         BRIDGE_CONNECT_TIMEOUT_MILLIS,

@@ -1,9 +1,7 @@
 package chat.simplex.app.nome.lifecycle
 
 import android.os.SystemClock
-import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import chat.simplex.app.MainActivity
 import chat.simplex.common.model.ChatModel
 import chat.simplex.common.model.OperatorTag
 import chat.simplex.common.model.ServerRoles
@@ -17,7 +15,7 @@ import org.junit.runner.RunWith
 class NomeStartupServerConfigurationTest {
   @Test
   fun createdUserHasNomeServersBeforeNormalAppUse() {
-    val scenario = ActivityScenario.launch(MainActivity::class.java)
+    val scenario = launchControlledMainActivity()
     try {
       waitUntil {
         ChatModel.currentUser.value != null && ChatModel.chatRunning.value == true
@@ -69,7 +67,7 @@ class NomeStartupServerConfigurationTest {
       assertTrue("The Nome channel relay must be enabled", nomeRelay!!.enabled && !nomeRelay.deleted)
       assertNotNull("The saved Nome channel relay must have a database id", nomeRelay.chatRelayId)
     } finally {
-      scenario.close()
+      scenario?.close()
     }
   }
 

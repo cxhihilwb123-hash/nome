@@ -87,13 +87,7 @@ class NomeTwoClientContactRequestTest {
         ),
       )
 
-    val scenario =
-      ActivityScenario.launch<MainActivity>(
-        Intent().setClassName(
-          InstrumentationRegistry.getInstrumentation().targetContext.packageName,
-          MainActivity::class.java.name,
-        ),
-      )
+    val scenario = launchControlledMainActivity()
     try {
       waitUntil(READY_TIMEOUT_MILLIS) {
         ChatModel.currentUser.value != null &&
@@ -253,7 +247,7 @@ class NomeTwoClientContactRequestTest {
         "role=${role.argument} contactRequestProducerComplete=true",
       )
     } finally {
-      scenario.close()
+      scenario?.close()
     }
   }
 
@@ -342,7 +336,7 @@ class NomeTwoClientContactRequestTest {
       soTimeout = REQUEST_TIMEOUT_MILLIS.toInt()
       connect(
         InetSocketAddress(
-          BRIDGE_HOST,
+          controlledBridgeHost(),
           port,
         ),
         BRIDGE_CONNECT_TIMEOUT_MILLIS,

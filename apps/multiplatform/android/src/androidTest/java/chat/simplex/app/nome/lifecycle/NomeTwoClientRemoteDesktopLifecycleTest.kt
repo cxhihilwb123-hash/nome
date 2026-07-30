@@ -45,13 +45,7 @@ class NomeTwoClientRemoteDesktopLifecycleTest {
       remotePortArgument(arguments)
     val instrumentation =
       InstrumentationRegistry.getInstrumentation()
-    val scenario =
-      ActivityScenario.launch<MainActivity>(
-        Intent().setClassName(
-          instrumentation.targetContext.packageName,
-          MainActivity::class.java.name,
-        ),
-      )
+    val scenario = launchControlledMainActivity()
     var controlledRemoteHostId: Long? =
       null
     var controlledRemoteCtrlId: Long? =
@@ -193,7 +187,7 @@ class NomeTwoClientRemoteDesktopLifecycleTest {
         null
       ChatModel.remoteCtrlSession.value =
         null
-      scenario.close()
+      scenario?.close()
     }
   }
 
@@ -575,7 +569,7 @@ class NomeTwoClientRemoteDesktopLifecycleTest {
           .toInt()
       connect(
         InetSocketAddress(
-          BRIDGE_HOST,
+          controlledBridgeHost(),
           port,
         ),
         BRIDGE_CONNECT_TIMEOUT_MILLIS,

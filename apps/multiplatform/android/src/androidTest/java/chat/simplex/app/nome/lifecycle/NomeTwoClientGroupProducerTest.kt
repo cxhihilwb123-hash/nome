@@ -45,6 +45,8 @@ class NomeTwoClientGroupProducerTest {
       requireGroupNameArgument(arguments)
     val marker =
       requireMarkerArgument(arguments)
+    val ownerMarker =
+      optionalOwnerMarkerArgument(arguments)
     val port =
       bridgePortArgument(arguments)
     val captureInvitation =
@@ -63,13 +65,7 @@ class NomeTwoClientGroupProducerTest {
         argumentName = INVITATION_ONLY_ARGUMENT,
       )
 
-    val scenario =
-      ActivityScenario.launch<MainActivity>(
-        Intent().setClassName(
-          InstrumentationRegistry.getInstrumentation().targetContext.packageName,
-          MainActivity::class.java.name,
-        ),
-      )
+    val scenario = launchControlledMainActivity()
     try {
       waitUntil(READY_TIMEOUT_MILLIS) {
         ChatModel.currentUser.value != null &&
@@ -134,38 +130,53 @@ class NomeTwoClientGroupProducerTest {
                 marker = marker,
               )
             }
+            ownerMarker?.let {
+              sendGroupMessage(
+                group = requireNotNull(readyGroup(groupName)),
+                marker = it,
+                assertionMessage =
+                  "The controlled group owner must create a sender-side group item",
+              )
+            }
           }
         }
 
         ProducerRole.Target -> {
-          waitUntil(GROUP_TIMEOUT_MILLIS) {
-            invitedGroup(groupName) != null
-          }
           val invitation =
-            requireNotNull(
-              invitedGroup(groupName),
-            )
+            if (reuseExistingGroup) {
+              null
+            } else {
+              waitUntil(GROUP_TIMEOUT_MILLIS) {
+                invitedGroup(groupName) != null
+              }
+              requireNotNull(
+                invitedGroup(groupName),
+              )
+            }
           if (captureInvitation) {
             captureProductionInvitationPage(
-              scenario = scenario,
-              invitation = invitation,
+              scenario = requireNotNull(scenario),
+              invitation = requireNotNull(invitation),
             )
           }
           if (!invitationOnly) {
-            val result =
-              runBlocking {
-                ChatModel.controller.apiJoinGroupResult(
-                  rh = invitation.remoteHostId,
-                  groupId =
-                    (invitation.chatInfo as ChatInfo.Group)
-                      .groupInfo
-                      .groupId,
-                )
-              }
-            assertTrue(
-              "The official group join must accept the controlled invitation",
-              result is APIJoinGroupResult.Accepted,
-            )
+            if (!reuseExistingGroup) {
+              val invited = requireNotNull(invitation)
+              val result =
+                runBlocking {
+                  ChatModel.controller.apiJoinGroupResult(
+                    rh = invited.remoteHostId,
+                    groupId =
+                      (invited.chatInfo as ChatInfo.Group)
+                        .groupInfo
+                        .groupId,
+                  )
+                }
+              assertTrue(
+                "The official group join must accept the controlled invitation",
+                result is APIJoinGroupResult.Accepted,
+              )
+            }
             waitUntil(GROUP_TIMEOUT_MILLIS) {
               readyGroup(groupName) != null
             }
@@ -173,31 +184,20 @@ class NomeTwoClientGroupProducerTest {
               requireNotNull(
                 readyGroup(groupName),
               )
-            val info =
-              joined.chatInfo as ChatInfo.Group
-            val sent =
-              runBlocking {
-                ChatModel.controller.apiSendMessages(
-                  rh = joined.remoteHostId,
-                  type = info.chatType,
-                  id = info.apiId,
-                  scope = info.groupChatScope(),
-                  sendAsGroup = info.sendAsGroup,
-                  composedMessages =
-                    listOf(
-                      ComposedMessage(
-                        fileSource = null,
-                        quotedItemId = null,
-                        msgContent = MsgContent.MCText(marker),
-                        mentions = emptyMap(),
-                      ),
-                    ),
+            sendGroupMessage(
+              group = joined,
+              marker = marker,
+              assertionMessage =
+                "The joined controlled member must create a sender-side group item",
+            )
+            ownerMarker?.let {
+              waitUntil(GROUP_TIMEOUT_MILLIS) {
+                groupContainsMarker(
+                  groupName = groupName,
+                  marker = it,
                 )
               }
-            assertTrue(
-              "The joined controlled member must create a sender-side group item",
-              !sent.isNullOrEmpty(),
-            )
+            }
           }
         }
       }
@@ -215,7 +215,7 @@ class NomeTwoClientGroupProducerTest {
         },
       )
     } finally {
-      scenario.close()
+      scenario?.close()
     }
   }
 
@@ -271,6 +271,38 @@ class NomeTwoClientGroupProducerTest {
         it.text == marker
       } == true
     }
+  }
+
+  private fun sendGroupMessage(
+    group: Chat,
+    marker: String,
+    assertionMessage: String,
+  ) {
+    val info =
+      group.chatInfo as ChatInfo.Group
+    val sent =
+      runBlocking {
+        ChatModel.controller.apiSendMessages(
+          rh = group.remoteHostId,
+          type = info.chatType,
+          id = info.apiId,
+          scope = info.groupChatScope(),
+          sendAsGroup = info.sendAsGroup,
+          composedMessages =
+            listOf(
+              ComposedMessage(
+                fileSource = null,
+                quotedItemId = null,
+                msgContent = MsgContent.MCText(marker),
+                mentions = emptyMap(),
+              ),
+            ),
+        )
+      }
+    assertTrue(
+      assertionMessage,
+      !sent.isNullOrEmpty(),
+    )
   }
 
   private fun captureProductionInvitationPage(
@@ -378,7 +410,7 @@ class NomeTwoClientGroupProducerTest {
       soTimeout = GROUP_TIMEOUT_MILLIS.toInt()
       connect(
         InetSocketAddress(
-          BRIDGE_HOST,
+          controlledBridgeHost(),
           port,
         ),
         BRIDGE_CONNECT_TIMEOUT_MILLIS,
@@ -481,6 +513,26 @@ class NomeTwoClientGroupProducerTest {
     )
   }
 
+  private fun optionalOwnerMarkerArgument(
+    arguments: android.os.Bundle,
+  ): String? {
+    val marker =
+      arguments.getString(
+        OWNER_MESSAGE_MARKER_ARGUMENT,
+      ) ?: return null
+    if (
+      marker.startsWith(
+        MESSAGE_MARKER_PREFIX,
+      ) &&
+      marker.length <= MAX_MARKER_LENGTH
+    ) {
+      return marker
+    }
+    error(
+      "Invalid $OWNER_MESSAGE_MARKER_ARGUMENT=$marker",
+    )
+  }
+
   private fun bridgePortArgument(
     arguments: android.os.Bundle,
   ): Int {
@@ -519,6 +571,8 @@ class NomeTwoClientGroupProducerTest {
       "nomeGroupName"
     const val MESSAGE_MARKER_ARGUMENT =
       "nomeMessageMarker"
+    const val OWNER_MESSAGE_MARKER_ARGUMENT =
+      "nomeOwnerMessageMarker"
     const val CAPTURE_INVITATION_ARGUMENT =
       "nomeCaptureInvitation"
     const val REUSE_EXISTING_GROUP_ARGUMENT =

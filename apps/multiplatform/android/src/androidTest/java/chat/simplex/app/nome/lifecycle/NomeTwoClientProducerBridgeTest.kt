@@ -63,13 +63,7 @@ class NomeTwoClientProducerBridgeTest {
           "Missing or invalid $PRODUCER_PORT_ARGUMENT: $portArgument",
         )
 
-    val scenario =
-      ActivityScenario.launch<MainActivity>(
-        Intent().setClassName(
-          InstrumentationRegistry.getInstrumentation().targetContext.packageName,
-          MainActivity::class.java.name,
-        ),
-      )
+    val scenario = launchControlledMainActivity()
     try {
       waitUntil(READY_TIMEOUT_MILLIS) {
         ChatModel.currentUser.value != null &&
@@ -145,7 +139,7 @@ class NomeTwoClientProducerBridgeTest {
         "role=${role.argument} newReadyDirectContact=true",
       )
     } finally {
-      scenario.close()
+      scenario?.close()
     }
   }
 
@@ -212,7 +206,7 @@ class NomeTwoClientProducerBridgeTest {
       soTimeout = CONNECTION_TIMEOUT_MILLIS.toInt()
       connect(
         InetSocketAddress(
-          BRIDGE_HOST,
+          controlledBridgeHost(),
           port,
         ),
         BRIDGE_CONNECT_TIMEOUT_MILLIS,
