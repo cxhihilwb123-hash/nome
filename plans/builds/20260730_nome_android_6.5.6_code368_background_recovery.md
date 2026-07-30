@@ -1,11 +1,23 @@
 # Nome Android 6.5.6 code 368 background recovery and two-device acceptance
 
+> **SUPERSEDED — FALSE POSITIVE (2026-07-30 15:40 CST).** Subsequent
+> no-restart testing reproduced the user's failure on code 368: both devices
+> retained ESTABLISHED TCP sockets to the SMP server, but messages and video
+> invitations remained queued until both chat cores were cold-started. The
+> guarded logical `NONE -> current network` reconstruction returned successful
+> Core responses but did not recover the already-stale transport. The durable
+> root cause was the missing Nome private-SMP heartbeat configuration after the
+> package migration: code 368 used the 1200-second / 3-ping defaults instead of
+> the previously proven 120-second / 1-ping values with TCP keepalive. See
+> `20260730_nome_android_6.5.6_code369_smp_heartbeat_reliability.md` for the
+> corrective build and final evidence. Historical observations below are
+> retained as evidence, not as a current acceptance verdict.
+
 ## Verdict
 
 - Date/time and timezone: 2026-07-30 15:03 CST (+0800)
-- Result: **PASS for the code 368 Android transport, messaging, media, call,
-  lifecycle, and preserved-data upgrade scope exercised below on two physical
-  Android devices**.
+- Result: **SUPERSEDED / FALSE POSITIVE.** The earlier short-window acceptance
+  did not cover the repeatable 5–6 minute stale-channel window.
 - The user-reported regression was reproduced before the fix: a message could
   appear locally on the sender while the peer received nothing, then flush only
   after the sender was cold-started. Code 367's same-value foreground network
