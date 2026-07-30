@@ -3,8 +3,20 @@
 ## Verdict
 
 - Date/time and timezone: 2026-07-30 13:04:49 CST (+0800)
-- Result: **PASS for the code 367 transport/lifecycle regression scope on two
-  physical Android devices**.
+- Result: **SUPERSEDED / FALSE POSITIVE**. Do not use the historical PASS
+  statements below as current Android acceptance evidence.
+- A later user-grade two-device reproduction showed that code 367 could still
+  leave an online sender on a stale Core transport session after backgrounding:
+  the message appeared locally but did not reach the peer until the sender was
+  cold-started. Replaying the same current network value was therefore not a
+  sufficient recovery mechanism when the native disconnect event was lost or
+  delayed.
+- This record is retained as historical evidence of what was tested and why the
+  earlier verdict was wrong. It is superseded by code 368 and
+  `20260730_nome_android_6.5.6_code368_background_recovery.md`, which adds a
+  guarded logical network reconstruction and repeats text, voice-message,
+  encrypted-call, group, offline-queue, screen-off, and long-background gates
+  on both physical devices.
 - The two code 366 runtime blockers are closed in this build:
   1. Encrypted audio-call invitations reached the remote device in both
      directions and rejection synchronized back to the caller.
