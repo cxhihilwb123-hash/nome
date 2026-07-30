@@ -100,6 +100,8 @@ internal actual fun PlatformNewChatRoute(
   invitation: CreatedConnLink,
   invitationCreating: Boolean,
   currentProfileName: String,
+  hostDeviceName: String?,
+  hostDeviceIsRemote: Boolean,
   onOpenProfile: (() -> Unit)?,
   pastedLink: MutableState<String>,
   showQRCodeScanner: MutableState<Boolean>,
@@ -108,7 +110,6 @@ internal actual fun PlatformNewChatRoute(
   onSubmitPastedLink: (String) -> Unit,
   onScannedLink: suspend (String) -> Boolean,
   onClose: () -> Unit,
-  legacyContent: @Composable () -> Unit,
 ) {
   val darkTheme =
     !CurrentColors.collectAsState().value.colors.isLight

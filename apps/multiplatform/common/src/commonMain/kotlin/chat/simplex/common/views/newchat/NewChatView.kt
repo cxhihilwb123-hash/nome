@@ -10,8 +10,6 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -98,15 +96,6 @@ fun ModalData.NewChatView(rh: RemoteHostInfo?, selection: NewChatOption, showQRC
       }
     }
   }
-  val tabTitles = NewChatOption.values().map {
-    when(it) {
-      NewChatOption.INVITE ->
-        stringResource(MR.strings.one_time_link_short)
-      NewChatOption.CONNECT ->
-        stringResource(MR.strings.connect_via_link)
-    }
-  }
-
   if (onboarding) {
     ColumnWithScrollBar {
       Spacer(Modifier.height(DEFAULT_PADDING))
@@ -168,6 +157,8 @@ fun ModalData.NewChatView(rh: RemoteHostInfo?, selection: NewChatOption, showQRC
           currentUser?.chatViewName
             ?: stringResource(MR.strings.current_user)
         },
+      hostDeviceName = hostDevice(rh?.remoteHostId)?.second,
+      hostDeviceIsRemote = rh != null,
       onOpenProfile = openProfile,
       pastedLink = pastedLink,
       showQRCodeScanner = showQRCodeScanner,
@@ -213,66 +204,7 @@ fun ModalData.NewChatView(rh: RemoteHostInfo?, selection: NewChatOption, showQRC
         )
       },
       onClose = close,
-    ) {
-      BoxWithConstraints {
-        ColumnWithScrollBar {
-          AppBarTitle(stringResource(MR.strings.new_chat), hostDevice(rh?.remoteHostId), bottomPadding = DEFAULT_PADDING)
-          val scope = rememberCoroutineScope()
-          val pagerState = rememberPagerState(
-            initialPage = selection.value.ordinal,
-            initialPageOffsetFraction = 0f
-          ) { NewChatOption.values().size }
-          KeyChangeEffect(pagerState.currentPage) {
-            selection.value = NewChatOption.values()[pagerState.currentPage]
-          }
-          TabRow(
-            selectedTabIndex = pagerState.currentPage,
-            backgroundColor = Color.Transparent,
-            contentColor = MaterialTheme.colors.primary,
-          ) {
-            tabTitles.forEachIndexed { index, it ->
-              LeadingIconTab(
-                selected = pagerState.currentPage == index,
-                onClick = {
-                  scope.launch {
-                    pagerState.animateScrollToPage(index)
-                  }
-                },
-                text = { Text(it, fontSize = 13.sp) },
-                icon = {
-                  Icon(
-                    if (NewChatOption.INVITE.ordinal == index) painterResource(MR.images.ic_repeat_one) else painterResource(MR.images.ic_qr_code),
-                    it
-                  )
-                },
-                selectedContentColor = MaterialTheme.colors.primary,
-                unselectedContentColor = MaterialTheme.colors.secondary,
-              )
-            }
-          }
-
-          HorizontalPager(state = pagerState, Modifier, pageNestedScrollConnection = LocalAppBarHandler.current!!.connection, verticalAlignment = Alignment.Top, userScrollEnabled = appPlatform.isAndroid) { index ->
-            Column(
-              Modifier
-                .fillMaxWidth()
-                .heightIn(min = this@BoxWithConstraints.maxHeight - 150.dp),
-              verticalArrangement = if (index == NewChatOption.INVITE.ordinal && connLinkInvitation.connFullLink.isEmpty()) Arrangement.Center else Arrangement.Top
-            ) {
-              Spacer(Modifier.height(DEFAULT_PADDING))
-              when (index) {
-                NewChatOption.INVITE.ordinal -> {
-                  PrepareAndInviteView(rh?.remoteHostId, contactConnection, connLinkInvitation, creatingConnReq)
-                }
-                NewChatOption.CONNECT.ordinal -> {
-                  ConnectView(rh?.remoteHostId, showQRCodeScanner, pastedLink, close)
-                }
-              }
-              SectionBottomSpacer()
-            }
-          }
-        }
-      }
-    }
+    )
   }
 }
 

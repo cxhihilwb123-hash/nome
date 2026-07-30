@@ -5,11 +5,10 @@ import androidx.compose.runtime.MutableState
 import chat.simplex.common.model.CreatedConnLink
 
 /**
- * Platform presentation seam for the official one-time invitation and scan/paste route.
+ * Platform presentation seam for the official one-time invitation and paste/scan route.
  *
  * [NewChatView] retains link creation, pending-connection disposal, parsing, planning, and
- * navigation ownership. Android renders the Nome P11/P12 presentation. Desktop delegates
- * [legacyContent] unchanged.
+ * navigation ownership. Each platform renders its Nome presentation around those callbacks.
  */
 @Composable
 internal expect fun PlatformNewChatRoute(
@@ -17,6 +16,8 @@ internal expect fun PlatformNewChatRoute(
   invitation: CreatedConnLink,
   invitationCreating: Boolean,
   currentProfileName: String,
+  hostDeviceName: String?,
+  hostDeviceIsRemote: Boolean,
   onOpenProfile: (() -> Unit)?,
   pastedLink: MutableState<String>,
   showQRCodeScanner: MutableState<Boolean>,
@@ -25,5 +26,4 @@ internal expect fun PlatformNewChatRoute(
   onSubmitPastedLink: (String) -> Unit,
   onScannedLink: suspend (String) -> Boolean,
   onClose: () -> Unit,
-  legacyContent: @Composable () -> Unit,
 )
