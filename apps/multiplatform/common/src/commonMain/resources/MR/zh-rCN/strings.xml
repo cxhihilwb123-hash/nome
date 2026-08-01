@@ -316,6 +316,8 @@
     <string name="nome_desktop_new_connection_group_body">把信任的联系人加入同一个加密会话。</string>
     <string name="nome_desktop_new_connection_channel_title">创建频道</string>
     <string name="nome_desktop_new_connection_channel_body">向主动关注的人发布更新。</string>
+    <string name="nome_desktop_chat_badge_group">群组</string>
+    <string name="nome_desktop_chat_badge_channel">频道</string>
     <string name="nome_desktop_new_connection_privacy">当前身份：%1$s。邀请只会展示你选择分享的资料。</string>
     <string name="nome_desktop_invitation_tab_create">创建邀请</string>
     <string name="nome_desktop_invitation_tab_open">打开邀请</string>

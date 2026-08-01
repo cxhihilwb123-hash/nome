@@ -37,6 +37,14 @@ import chat.simplex.res.MR
 import dev.icerock.moko.resources.ImageResource
 
 // Spec: spec/client/chat-list.md#ChatPreviewView
+internal enum class NomeDesktopGroupBadge {
+  Group,
+  Channel,
+}
+
+internal fun nomeDesktopGroupBadge(isDesktop: Boolean, useRelays: Boolean): NomeDesktopGroupBadge? =
+  if (!isDesktop) null else if (useRelays) NomeDesktopGroupBadge.Channel else NomeDesktopGroupBadge.Group
+
 @Composable
 fun ChatPreviewView(
   chat: Chat,
@@ -82,9 +90,10 @@ fun ChatPreviewView(
   }
 
   @Composable
-  fun chatPreviewTitleText(color: Color = Color.Unspecified) {
+  fun chatPreviewTitleText(color: Color = Color.Unspecified, modifier: Modifier = Modifier) {
     Text(
       cInfo.chatViewName,
+      modifier = modifier,
       maxLines = 1,
       overflow = TextOverflow.Ellipsis,
       style = MaterialTheme.typography.h3,
@@ -173,7 +182,32 @@ fun ChatPreviewView(
             else -> if (cInfo.groupInfo.nextConnectPrepared) MaterialTheme.colors.primary else Color.Unspecified
           }
         }
-        chatPreviewTitleText(color = color)
+        val badge = nomeDesktopGroupBadge(appPlatform.isDesktop, cInfo.groupInfo.useRelays)
+        if (badge == null) {
+          chatPreviewTitleText(color = color)
+        } else {
+          Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            chatPreviewTitleText(color = color, modifier = Modifier.weight(1f, fill = false))
+            Spacer(Modifier.width(6.dp))
+            val isChannel = badge == NomeDesktopGroupBadge.Channel
+            val badgeColor = if (isChannel) MaterialTheme.colors.primary else MaterialTheme.colors.secondary
+            Text(
+              text = stringResource(
+                if (isChannel) MR.strings.nome_desktop_chat_badge_channel
+                else MR.strings.nome_desktop_chat_badge_group
+              ),
+              modifier = Modifier
+                .clip(RoundedCornerShape(4.dp))
+                .background(badgeColor.copy(alpha = 0.14f))
+                .padding(horizontal = 5.dp, vertical = 1.dp),
+              color = badgeColor,
+              fontSize = 10.sp,
+              lineHeight = 12.sp,
+              fontWeight = FontWeight.SemiBold,
+              maxLines = 1,
+            )
+          }
+        }
       }
       else -> chatPreviewTitleText()
     }

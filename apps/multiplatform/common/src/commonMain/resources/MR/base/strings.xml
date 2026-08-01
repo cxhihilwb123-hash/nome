@@ -1606,6 +1606,8 @@
   <string name="nome_desktop_new_connection_group_body">Bring trusted contacts into one encrypted conversation.</string>
   <string name="nome_desktop_new_connection_channel_title">Create a channel</string>
   <string name="nome_desktop_new_connection_channel_body">Publish updates to people who choose to follow.</string>
+  <string name="nome_desktop_chat_badge_group">Group</string>
+  <string name="nome_desktop_chat_badge_channel">Channel</string>
   <string name="nome_desktop_new_connection_privacy">Connecting as %1$s. Invitations reveal only the profile you choose to share.</string>
   <string name="nome_desktop_invitation_tab_create">Create invitation</string>
   <string name="nome_desktop_invitation_tab_open">Open invitation</string>
