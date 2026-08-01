@@ -1,0 +1,5 @@
+b16d3e4fee8c0b0ccbe8946e80eba98a30b9eaa0174c6730dfed59b972481344  apps/multiplatform/common/src/commonMain/kotlin/chat/simplex/common/views/chatlist/ChatPreviewView.kt
+c3383ec310302d99419b4ab80efd5df0a75d6c0441352d893ef9808ddecd1d39  apps/multiplatform/common/src/commonMain/resources/MR/base/strings.xml
+e78b7947b7a05f770bffe64197b3504e7174b8144fd6f75dde554f9cd5ab0bd7  apps/multiplatform/common/src/commonMain/resources/MR/zh-rCN/strings.xml
+484e2f231c36f03000a4e57b8e9c06562675bb6f4b85a15897585c7e05239831  apps/multiplatform/common/src/commonTest/kotlin/chat/simplex/common/views/chatlist/NomeDesktopGroupBadgeTest.kt
+c89bfcf955361998702cbc069a125651d0437fabc3436cd9d8ceddd0dc0ade8a  Nome-macOS-6.5.6-build148-20260801-ChannelRelayBadgeFix-Diagnostic.dmg
