@@ -2866,9 +2866,15 @@ object ChatController {
     data class CreationFailed(val addRelayResults: List<AddRelayResult>): PublicGroupCreationResult()
   }
 
-  suspend fun apiNewPublicGroup(rh: Long?, incognito: Boolean, relayIds: List<Long>, groupProfile: GroupProfile): PublicGroupCreationResult? {
+  suspend fun apiNewPublicGroup(
+    rh: Long?,
+    incognito: Boolean,
+    relayIds: List<Long>,
+    groupProfile: GroupProfile,
+    fullShortLink: Boolean = false,
+  ): PublicGroupCreationResult? {
     val userId = kotlin.runCatching { currentUserId("apiNewPublicGroup") }.getOrElse { return null }
-    val r = sendCmdWithRetry(rh, CC.ApiNewPublicGroup(userId, incognito, relayIds, groupProfile))
+    val r = sendCmdWithRetry(rh, CC.ApiNewPublicGroup(userId, incognito, relayIds, groupProfile, fullShortLink))
     if (r is API.Result && r.res is CR.PublicGroupCreated) return PublicGroupCreationResult.Created(r.res.groupInfo, r.res.groupLink, r.res.groupRelays)
     if (r is API.Result && r.res is CR.PublicGroupCreationFailed) return PublicGroupCreationResult.CreationFailed(r.res.addRelayResults)
     if (r != null) throw Exception("${r.responseType}: ${r.details}")
@@ -4432,7 +4438,13 @@ sealed class CC {
   class ApiForwardChatItems(val toChatType: ChatType, val toChatId: Long, val toScope: GroupChatScope?, val sendAsGroup: Boolean, val fromChatType: ChatType, val fromChatId: Long, val fromScope: GroupChatScope?, val itemIds: List<Long>, val ttl: Int?): CC()
   class ApiShareChatMsgContent(val shareChatType: ChatType, val shareChatId: Long, val toChatType: ChatType, val toChatId: Long, val toScope: GroupChatScope?, val sendAsGroup: Boolean): CC()
   class ApiNewGroup(val userId: Long, val incognito: Boolean, val groupProfile: GroupProfile): CC()
-  class ApiNewPublicGroup(val userId: Long, val incognito: Boolean, val relayIds: List<Long>, val groupProfile: GroupProfile): CC()
+  class ApiNewPublicGroup(
+    val userId: Long,
+    val incognito: Boolean,
+    val relayIds: List<Long>,
+    val groupProfile: GroupProfile,
+    val fullShortLink: Boolean = false,
+  ): CC()
   class ApiGetGroupRelays(val groupId: Long): CC()
   class ApiAddGroupRelays(val groupId: Long, val relayIds: List<Long>): CC()
   class ApiAddMember(val groupId: Long, val contactId: Long, val memberRole: GroupMemberRole): CC()
@@ -4637,7 +4649,10 @@ sealed class CC {
       "/_forward plan ${chatRef(fromChatType, fromChatId, fromScope)} ${chatItemIds.joinToString(",")}"
     }
     is ApiNewGroup -> "/_group $userId incognito=${onOff(incognito)} ${json.encodeToString(groupProfile)}"
-    is ApiNewPublicGroup -> "/_public group $userId incognito=${onOff(incognito)} ${relayIds.joinToString(",")} ${json.encodeToString(groupProfile)}"
+    is ApiNewPublicGroup -> {
+      val fullShortLinkOption = if (fullShortLink) " full_link=on" else ""
+      "/_public group $userId incognito=${onOff(incognito)}$fullShortLinkOption ${relayIds.joinToString(",")} ${json.encodeToString(groupProfile)}"
+    }
     is ApiGetGroupRelays -> "/_get relays #$groupId"
     is ApiAddGroupRelays -> "/_add relays #$groupId ${relayIds.joinToString(",")}"
     is ApiAddMember -> "/_add #$groupId $contactId ${memberRole.memberRole}"

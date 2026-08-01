@@ -169,7 +169,10 @@ fun AddChannelView(
               rh = null,
               incognito = false,
               relayIds = relayIds,
-              groupProfile = profile
+              groupProfile = profile,
+              // Older mobile cores cannot restore Nome's server identity from a host-only channel
+              // link. Only Desktop requests an explicit server identity from Core at creation time.
+              fullShortLink = appPlatform.isDesktop,
             )
             when (result) {
               is ChatController.PublicGroupCreationResult.Created -> {

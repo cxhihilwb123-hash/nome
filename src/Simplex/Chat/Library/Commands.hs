@@ -2477,7 +2477,7 @@ processChatCommand cxt nm = \case
     pure $ CRGroupCreated user gInfo
   NewGroup incognito gProfile -> withUser $ \User {userId} ->
     processChatCommand cxt nm $ APINewGroup userId incognito gProfile
-  APINewPublicGroup userId incognito relayIds groupProfile -> withUserId userId $ \user -> do
+  APINewPublicGroup userId incognito fullShortLink relayIds groupProfile -> withUserId userId $ \user -> do
     (gProfile', memberId, groupKeys, setupLink) <- prepareGroupLink user
     gInfo <- newGroup user incognito gProfile' True memberId (Just groupKeys) (Just 1)
     (gLink, results) <- setupLink gInfo `catchAllErrors` \e -> do
@@ -2513,7 +2513,7 @@ processChatCommand cxt nm = \case
             crClientData = encodeJSON $ CRDataGroup groupLinkId
         -- prepare link with entityId as linkEntityId (no server request)
         (ccLink, preparedParams) <- withAgent $ \a -> prepareConnectionLink a (aUserId user) rootKey entityId True (Just crClientData)
-        ccLink' <- setShortLinkType CCTChannel <$> shortenCreatedLink ccLink
+        ccLink' <- setShortLinkType CCTChannel <$> if fullShortLink then pure ccLink else shortenCreatedLink ccLink
         sLnk <- case connShortLink' ccLink' of
           Just sl -> pure sl
           Nothing -> throwChatError $ CEException "failed to create relayed group link: no short link"
@@ -2536,7 +2536,7 @@ processChatCommand cxt nm = \case
               pure (gLink, results)
         pure (groupProfile', memberId, groupKeys, setupLink)
   NewPublicGroup incognito relayIds gProfile -> withUser $ \User {userId} ->
-    processChatCommand cxt nm $ APINewPublicGroup userId incognito relayIds gProfile
+    processChatCommand cxt nm $ APINewPublicGroup userId incognito False relayIds gProfile
   APIGetGroupRelays groupId -> withUser $ \user -> do
     (gInfo, relays) <- withFastStore $ \db -> do
       gInfo <- getGroupInfo db cxt user groupId
@@ -5158,7 +5158,7 @@ chatCommandP =
       ("/group" <|> "/g") *> (NewGroup <$> incognitoP <* A.space <* char_ '#' <*> groupProfile),
       "/_group " *> (APINewGroup <$> A.decimal <*> incognitoOnOffP <* A.space <*> jsonP),
       ("/public group" <|> "/pg") *> (NewPublicGroup <$> incognitoP <* " relays=" <*> strP <* A.space <* char_ '#' <*> channelProfile),
-      "/_public group " *> (APINewPublicGroup <$> A.decimal <*> incognitoOnOffP <*> _strP <* A.space <*> jsonP),
+      "/_public group " *> (APINewPublicGroup <$> A.decimal <*> incognitoOnOffP <*> (" full_link=on" $> True <|> pure False) <*> _strP <* A.space <*> jsonP),
       "/_get relays #" *> (APIGetGroupRelays <$> A.decimal),
       "/_add relays #" *> (APIAddGroupRelays <$> A.decimal <*> _strP),
       ("/add " <|> "/a ") *> char_ '#' *> (AddMember <$> displayNameP <* A.space <* char_ '@' <*> displayNameP <*> (memberRole <|> pure GRMember)),

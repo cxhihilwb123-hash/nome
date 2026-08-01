@@ -532,7 +532,13 @@ data ChatCommand
   | APINewGroup {userId :: UserId, incognito :: IncognitoEnabled, groupProfile :: GroupProfile}
   | NewGroup IncognitoEnabled GroupProfile
   -- TODO [relays] starting role should be communicated in protocol from owner to relays (see channelSubscriberRole config)
-  | APINewPublicGroup {userId :: UserId, incognito :: IncognitoEnabled, relayIds :: NonEmpty Int64, groupProfile :: GroupProfile}
+  | APINewPublicGroup
+      { userId :: UserId,
+        incognito :: IncognitoEnabled,
+        fullShortLink :: Bool,
+        relayIds :: NonEmpty Int64,
+        groupProfile :: GroupProfile
+      }
   | APIGetGroupRelays {groupId :: GroupId}
   | APIAddGroupRelays {groupId :: GroupId, relayIds :: NonEmpty Int64}
   | NewPublicGroup IncognitoEnabled (NonEmpty Int64) GroupProfile
