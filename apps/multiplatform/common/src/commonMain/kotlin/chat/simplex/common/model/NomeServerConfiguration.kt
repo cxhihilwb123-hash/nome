@@ -46,6 +46,32 @@ internal object NomeServerConfiguration {
     val changed: Boolean,
   )
 
+  /**
+   * Nome SMP is intentionally exposed on the standard port 5223 while public 443 serves hosted
+   * invitation and channel pages. On Desktop only, migrate the inherited upstream `Preset`
+   * policy once without overriding an explicit `All` or `Off` user choice.
+   */
+  internal fun applyDesktopStandardSmpPortMigration(appPrefs: AppPreferences): Boolean {
+    if (!appPlatform.isDesktop) return false
+    val current = appPrefs.networkSMPWebPortServers.get()
+    val migrated = migrateDesktopStandardSmpPortPreference(
+      current = current,
+      alreadyApplied = appPrefs.nomeDesktopStandardSmpPortMigrationApplied.get(),
+    ) ?: return false
+    if (migrated != current) appPrefs.networkSMPWebPortServers.set(migrated)
+    appPrefs.nomeDesktopStandardSmpPortMigrationApplied.set(true)
+    return migrated != current
+  }
+
+  internal fun migrateDesktopStandardSmpPortPreference(
+    current: SMPWebPortServers,
+    alreadyApplied: Boolean,
+  ): SMPWebPortServers? = when {
+    alreadyApplied -> null
+    current == SMPWebPortServers.Preset -> SMPWebPortServers.Off
+    else -> current
+  }
+
   internal fun migrate(
     userServers: List<UserOperatorServers>,
     seedDefaultChatRelay: Boolean = false,

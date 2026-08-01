@@ -9,6 +9,38 @@ import kotlin.test.assertTrue
 
 class NomeServerConfigurationTest {
   @Test
+  fun desktopStandardSmpPortMigrationMovesOnlyInheritedPresetTo5223Mode() {
+    assertEquals(
+      SMPWebPortServers.Off,
+      NomeServerConfiguration.migrateDesktopStandardSmpPortPreference(
+        SMPWebPortServers.Preset,
+        alreadyApplied = false,
+      ),
+    )
+    assertEquals(
+      SMPWebPortServers.All,
+      NomeServerConfiguration.migrateDesktopStandardSmpPortPreference(
+        SMPWebPortServers.All,
+        alreadyApplied = false,
+      ),
+    )
+    assertEquals(
+      SMPWebPortServers.Off,
+      NomeServerConfiguration.migrateDesktopStandardSmpPortPreference(
+        SMPWebPortServers.Off,
+        alreadyApplied = false,
+      ),
+    )
+    assertEquals(
+      null,
+      NomeServerConfiguration.migrateDesktopStandardSmpPortPreference(
+        SMPWebPortServers.Preset,
+        alreadyApplied = true,
+      ),
+    )
+  }
+
+  @Test
   fun officialRoutingUsesNomeDomainsAndTreatsTencentIpAsLegacyOnly() {
     assertEquals("smp.nome.im", NomeServerConfiguration.smpHostname)
     assertEquals("xftp.nome.im", NomeServerConfiguration.xftpHostname)

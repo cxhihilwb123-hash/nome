@@ -452,6 +452,10 @@ class AppPreferences {
 
   val whatsNewVersion = mkStrPreference(SHARED_PREFS_WHATS_NEW_VERSION, null)
   val lastMigratedVersionCode = mkIntPreference(SHARED_PREFS_LAST_MIGRATED_VERSION_CODE, 0)
+  val nomeDesktopStandardSmpPortMigrationApplied = mkBoolPreference(
+    SHARED_PREFS_NOME_DESKTOP_STANDARD_SMP_PORT_MIGRATION_APPLIED,
+    false,
+  )
   val nomeDefaultChatRelaySeededUsers: SharedPreference<Map<String, Boolean>> = mkMapPreference(
     SHARED_PREFS_NOME_DEFAULT_CHAT_RELAY_SEEDED_USERS,
     mapOf(),
@@ -705,6 +709,7 @@ class AppPreferences {
     private const val SHARED_PREFS_IN_APP_BARS_ALPHA = "InAppBarsAlpha"
     private const val SHARED_PREFS_WHATS_NEW_VERSION = "WhatsNewVersion"
     private const val SHARED_PREFS_LAST_MIGRATED_VERSION_CODE = "LastMigratedVersionCode"
+    private const val SHARED_PREFS_NOME_DESKTOP_STANDARD_SMP_PORT_MIGRATION_APPLIED = "NomeDesktopStandardSMPPortMigrationApplied"
     private const val SHARED_PREFS_NOME_DEFAULT_CHAT_RELAY_SEEDED_USERS = "NomeDefaultChatRelaySeededUsers"
     private const val SHARED_PREFS_CUSTOM_DISAPPEARING_MESSAGE_TIME = "CustomDisappearingMessageTime"
     private const val SHARED_PREFS_DEVICE_NAME_FOR_REMOTE_ACCESS = "DeviceNameForRemoteAccess"
@@ -874,6 +879,9 @@ object ChatController {
           )
         },
         configureWhileStopped = {
+          if (appPlatform.isDesktop) {
+            NomeServerConfiguration.applyDesktopStandardSmpPortMigration(appPrefs)
+          }
           check(apiSetNetworkConfig(getNetCfg())) {
             "Native network configuration was rejected before the Nome server gate"
           }
