@@ -22,4 +22,15 @@ class NomeChannelLinkManifestTest {
     assertNotNull("Nome must accept its own public channel links", resolved)
     assertEquals(MainActivity::class.java.name, resolved!!.activityInfo.name)
   }
+
+  @Test
+  fun nomeFullConnectionLinkOpensMainActivity() {
+    val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://nome.im/contact#opaque"))
+      .setPackage(context.packageName)
+    val resolved = context.packageManager.resolveActivity(intent, 0)
+
+    assertNotNull("Nome must accept full Nome connection links", resolved)
+    assertEquals(MainActivity::class.java.name, resolved!!.activityInfo.name)
+  }
 }

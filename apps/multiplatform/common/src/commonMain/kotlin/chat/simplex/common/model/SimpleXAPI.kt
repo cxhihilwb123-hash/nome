@@ -7859,6 +7859,7 @@ private const val SIMPLEX_INTERNAL_LINK_PREFIX = "simplex:/"
 
 private val nomeChatLinkPathSegments = setOf(
   "a",
+  "c",
   "call",
   "channel",
   "chat",
@@ -7869,10 +7870,10 @@ private val nomeChatLinkPathSegments = setOf(
   "invitation",
   "r",
 )
-private val hostedShortLinkPathSegments = setOf("a", "g", "i", "r")
+private val hostedShortLinkPathSegments = setOf("a", "c", "g", "i", "r")
 
 private val legacyHostedShortLink =
-  Regex("""(?i)^https://(?:smp(?:\d+)?\.simplex\.im|smp\.nome\.im)/((?:a|g|i|r)#.*)$""")
+  Regex("""(?i)^https://(?:smp(?:\d+)?\.simplex\.im|smp\.nome\.im)/((?:a|c|g|i|r)#.*)$""")
 
 private fun isHostedShortLinkSuffix(suffix: String): Boolean =
   suffix.substringBefore('#').substringBefore('?') in hostedShortLinkPathSegments

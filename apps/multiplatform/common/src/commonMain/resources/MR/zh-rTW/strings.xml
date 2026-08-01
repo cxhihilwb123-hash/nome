@@ -1396,6 +1396,8 @@
     <string name="app_check_for_updates_installed_successfully_title">安裝成功</string>
     <string name="create_address_button">建立</string>
     <string name="unable_to_open_browser_title">打開瀏覽器出錯</string>
+    <string name="call_bridge_unavailable_title">無法啟動通話</string>
+    <string name="call_bridge_unavailable_desc">Nome 無法連線用於通話的本機安全橋接服務。本次通話已結束，請重試；若問題持續，請重新啟動 Nome 和瀏覽器。</string>
     <string name="receipts_contacts_enable_keep_overrides">啟用（保留覆蓋）</string>
     <string name="receipts_groups_disable_keep_overrides">禁用（保留組覆蓋）</string>
     <string name="receipts_groups_title_enable">為群組啟用回執？</string>

@@ -5,7 +5,7 @@ import kotlin.test.assertEquals
 
 class CallBridgeHandshakeValidationTest {
   private val expectedPath = "/simplex/call/ws/test-token"
-  private val expectedOrigin = "http://127.0.0.1:50395"
+  private val expectedOrigin = "http://localhost:50395"
 
   @Test
   fun acceptsLoopbackOriginAndUnpredictableWebSocketPath() {
@@ -40,7 +40,7 @@ class CallBridgeHandshakeValidationTest {
       CallBridgeHandshakeValidation.INVALID_ORIGIN,
       validate(
         headers = mapOf(
-          "origin" to "http://localhost:50395",
+          "origin" to "http://127.0.0.1:50395",
         ),
         path = expectedPath,
       )

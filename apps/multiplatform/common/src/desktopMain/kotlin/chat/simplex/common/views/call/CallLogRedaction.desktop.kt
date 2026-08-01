@@ -80,7 +80,9 @@ internal fun activeCallLogSummary(call: Call): String =
     "remoteHost=${if (call.remoteHostId == null) "none" else "present"}"
 
 internal enum class CallBridgeLogEvent {
+  SERVER_START_FAILED,
   OPEN_BROWSER_FAILED,
+  WEBSOCKET_CONNECTION_TIMEOUT,
   SEND_COMMAND_FAILED,
   PARSE_BROWSER_MESSAGE_FAILED,
   WEBSOCKET_EXCEPTION,

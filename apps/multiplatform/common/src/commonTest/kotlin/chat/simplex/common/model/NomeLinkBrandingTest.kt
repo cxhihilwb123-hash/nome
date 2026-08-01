@@ -16,6 +16,10 @@ class NomeLinkBrandingTest {
       "https://nome.im/file#opaque",
       simplexChatLink("simplex:/file#opaque"),
     )
+    assertEquals(
+      "https://smp.nome.im/c#opaque",
+      simplexChatLink("simplex:/c#opaque"),
+    )
   }
 
   @Test
@@ -60,12 +64,17 @@ class NomeLinkBrandingTest {
       "https://smp.nome.im/i#hosted",
       normalizeNomeChatLink("https://nome.im/i#hosted"),
     )
+    assertEquals(
+      "https://smp.nome.im/c#channel",
+      normalizeNomeChatLink("https://smp.nome.im/c#channel"),
+    )
   }
 
   @Test
   fun onlyKnownNomeChatPathsAreIntercepted() {
     assertTrue(isNomePublicChatLink("https://nome.im/contact#opaque"))
     assertTrue(isNomePublicChatLink("https://nome.im/file#opaque"))
+    assertTrue(isNomePublicChatLink("https://nome.im/c#opaque"))
     assertFalse(isNomePublicChatLink("https://nome.im/docs/guide.html"))
     assertFalse(isNomePublicChatLink("https://nome.im/fileevil#opaque"))
     assertFalse(isNomePublicChatLink("https://nome.im/contact/foo"))
@@ -78,6 +87,7 @@ class NomeLinkBrandingTest {
     assertTrue(isRecognizedPublicChatLink("https://simplex.chat/contact#opaque"))
     assertTrue(isRecognizedPublicChatLink("http://simplex.chat/file#opaque"))
     assertTrue(isRecognizedPublicChatLink("https://smp6.simplex.im/a#opaque"))
+    assertTrue(isRecognizedPublicChatLink("https://smp.nome.im/c#opaque"))
     assertFalse(isRecognizedPublicChatLink("https://simplex.chat/docs/guide.html"))
     assertFalse(isRecognizedPublicChatLink("https://nome.im/contact/foo"))
 

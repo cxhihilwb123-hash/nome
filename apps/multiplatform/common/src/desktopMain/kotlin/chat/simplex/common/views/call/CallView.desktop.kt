@@ -9,6 +9,7 @@ import chat.simplex.common.views.helpers.*
 import chat.simplex.res.MR
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.datetime.Clock
 import kotlinx.serialization.encodeToString
 import org.nanohttpd.protocols.http.IHTTPSession
@@ -25,9 +26,12 @@ import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.Base64
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.TimeoutException
 
-private const val SERVER_HOST = "127.0.0.1"
+private const val SERVER_BIND_HOST = "127.0.0.1"
+private const val CALL_BRIDGE_ORIGIN_HOST = "localhost"
 private const val SERVER_PORT = 50395
+private const val CALL_BRIDGE_CONNECTION_TIMEOUT_MS = 15_000L
 private const val CALL_BRIDGE_PAGE_PATH = "/simplex/call/"
 private const val CALL_BRIDGE_BOOTSTRAP_PARAM = "bootstrap"
 private const val CALL_BRIDGE_WS_PATH_PREFIX = "/simplex/call/ws/"
@@ -129,7 +133,7 @@ internal fun buildCallBridgeBootstrapUri(port: Int, bootstrapNonce: String): Str
   URI(
     "http",
     null,
-    SERVER_HOST,
+    CALL_BRIDGE_ORIGIN_HOST,
     port,
     CALL_BRIDGE_PAGE_PATH,
     "$CALL_BRIDGE_BOOTSTRAP_PARAM=$bootstrapNonce",
@@ -325,20 +329,40 @@ fun WebRTCController(callCommand: SnapshotStateList<WCallCommand>, onResponse: (
     if (call != null) withBGApi { chatModel.callManager.endCall(call) }
   }
   val bootstrapNonce = remember { generateCallBridgeToken() }
-  val server = remember {
-    startServer(onResponse, bootstrapNonce = bootstrapNonce).apply {
+  val serverResult: Result<NanoWSD> = remember {
+    try {
+      Result.success(startServer(onResponse, bootstrapNonce = bootstrapNonce))
+    } catch (e: Exception) {
+      Result.failure(e)
+    }
+  }
+  val server = serverResult.getOrNull()
+  LaunchedEffect(server) {
+    if (server == null) {
+      val failure = requireNotNull(serverResult.exceptionOrNull())
+      Log.e(TAG, callBridgeFailureLogSummary(CallBridgeLogEvent.SERVER_START_FAILED, failure))
+      AlertManager.shared.showAlertMsg(
+        title = generalGetString(MR.strings.call_bridge_unavailable_title),
+        text = generalGetString(MR.strings.call_bridge_unavailable_desc)
+      )
+      connections.clear()
+      endCall()
+    } else {
       try {
-        uriHandler.openUri(buildCallBridgeBootstrapUri(listeningPort, bootstrapNonce))
+        uriHandler.openUri(buildCallBridgeBootstrapUri(server.listeningPort, bootstrapNonce))
       } catch (e: Exception) {
         Log.e(TAG, callBridgeFailureLogSummary(CallBridgeLogEvent.OPEN_BROWSER_FAILED, e))
         AlertManager.shared.showAlertMsg(
           title = generalGetString(MR.strings.unable_to_open_browser_title),
           text = generalGetString(MR.strings.unable_to_open_browser_desc)
         )
+        server.stop()
+        connections.clear()
         endCall()
       }
     }
   }
+  if (server == null) return
   fun processCommand(cmd: WCallCommand) {
     val apiCall = WVAPICall(command = cmd)
     for (connection in connections.toList()) {
@@ -369,8 +393,26 @@ fun WebRTCController(callCommand: SnapshotStateList<WCallCommand>, onResponse: (
       .distinctUntilChanged()
       .filterNotNull()
       .collect {
-        while (connections.isEmpty()) {
-          delay(100)
+        val connected = withTimeoutOrNull(CALL_BRIDGE_CONNECTION_TIMEOUT_MS) {
+          while (connections.isEmpty()) {
+            delay(100)
+          }
+          true
+        } ?: false
+        if (!connected) {
+          Log.e(
+            TAG,
+            callBridgeFailureLogSummary(
+              CallBridgeLogEvent.WEBSOCKET_CONNECTION_TIMEOUT,
+              TimeoutException("Browser did not connect to the call bridge"),
+            ),
+          )
+          AlertManager.shared.showAlertMsg(
+            title = generalGetString(MR.strings.call_bridge_unavailable_title),
+            text = generalGetString(MR.strings.call_bridge_unavailable_desc)
+          )
+          endCall()
+          return@collect
         }
         while (callCommand.isNotEmpty()) {
           val cmd = callCommand.removeFirstOrNull()
@@ -388,7 +430,7 @@ fun startServer(
   port: Int = SERVER_PORT,
   bootstrapNonce: String = generateCallBridgeToken(),
 ): NanoWSD {
-  val server = object: NanoWSD(SERVER_HOST, port) {
+  val server = object: NanoWSD(SERVER_BIND_HOST, port) {
     private val authToken = generateCallBridgeToken()
     private val authorizedWebSocketPath = "$CALL_BRIDGE_WS_PATH_PREFIX$authToken"
     private val bootstrapGate = CallBridgeBootstrapGate(bootstrapNonce)
@@ -401,7 +443,7 @@ fun startServer(
       val validation = validateCallBridgeHandshake(
         request = CallBridgeHandshakeRequest(session.headers, session.remoteIpAddress, session.uri),
         expectedWebSocketPath = authorizedWebSocketPath,
-        expectedOrigin = "http://$SERVER_HOST:$listeningPort"
+        expectedOrigin = "http://$CALL_BRIDGE_ORIGIN_HOST:$listeningPort"
       )
       if (validation != CallBridgeHandshakeValidation.ACCEPTED) {
         return when (validation) {

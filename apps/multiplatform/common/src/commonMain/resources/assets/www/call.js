@@ -298,7 +298,20 @@ const processCommand = (function () {
                         endCall();
                     let localStream = null;
                     try {
-                        localStream = await getLocalMediaStream(true, command.media == CallMediaType.Video && (await browserHasCamera()), VideoCamera.User);
+                        localStream = await getLocalMediaStream(true, false, VideoCamera.User);
+                        if (command.media == CallMediaType.Video && (await browserHasCamera())) {
+                            try {
+                                const cameraStream = await getLocalMediaStream(false, true, VideoCamera.User);
+                                for (const track of cameraStream.getVideoTracks()) {
+                                    localStream.addTrack(track);
+                                    cameraStream.removeTrack(track);
+                                }
+                            }
+                            catch (e) {
+                                console.log("Camera permission unavailable; continuing the call with audio", e);
+                                desktopShowPermissionsAlert(CallMediaType.Video);
+                            }
+                        }
                         const videos = getVideoElements();
                         if (videos) {
                             setupLocalVideoRatio(videos.local);
@@ -474,8 +487,9 @@ const processCommand = (function () {
                         resp = { type: "error", message: "media: cannot enable camera since the peer has an old version" };
                     }
                     else if (!activeCall.cameraTrackWasSetBefore && command.source == CallMediaSource.Camera && command.enable) {
-                        await startSendingCamera(activeCall, activeCall.localCamera);
-                        resp = { type: "ok" };
+                        resp = (await startSendingCamera(activeCall, activeCall.localCamera))
+                            ? { type: "ok" }
+                            : { type: "error", message: "media: cannot start camera" };
                     }
                     else if ((command.source == CallMediaSource.Mic && activeCall.localStream.getAudioTracks().length > 0) ||
                         (command.source == CallMediaSource.Camera && activeCall.localStream.getVideoTracks().length > 0)) {
@@ -750,12 +764,12 @@ const processCommand = (function () {
         const tc = pc.getTransceivers().find((tc) => tc.receiver.track.kind == "video" && tc.direction == "sendrecv");
         if (!tc) {
             console.log("No camera transceiver. Probably, calling to an old version");
-            return;
+            return false;
         }
         console.log(pc.getTransceivers().map((elem) => { var _a, _b; return "" + ((_a = elem.sender.track) === null || _a === void 0 ? void 0 : _a.kind) + " " + ((_b = elem.receiver.track) === null || _b === void 0 ? void 0 : _b.kind) + " " + elem.direction; }));
         let localStream;
         try {
-            localStream = await getLocalMediaStream(call.localMediaSources.mic, true, camera);
+            localStream = await getLocalMediaStream(false, true, camera);
             for (const t of localStream.getVideoTracks()) {
                 call.localStream.addTrack(t);
                 tc === null || tc === void 0 ? void 0 : tc.sender.replaceTrack(t);
@@ -769,10 +783,11 @@ const processCommand = (function () {
         catch (e) {
             console.log("Start sending camera error", e);
             desktopShowPermissionsAlert(CallMediaType.Video);
-            return;
+            return false;
         }
         // Without doing it manually Firefox shows black screen but video can be played in Picture-in-Picture
         videos.local.play().catch((e) => console.log(e));
+        return true;
     }
     toggleScreenShare = async function () {
         const call = activeCall;

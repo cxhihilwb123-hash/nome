@@ -82,6 +82,7 @@
 
         <data android:scheme="http" />
         <data android:scheme="https" />
+        <data android:host="nome.im" />
         <data android:host="simplex.chat" />
         <data android:host="smp.nome.im" />
         <data android:host="smp4.simplex.im" />

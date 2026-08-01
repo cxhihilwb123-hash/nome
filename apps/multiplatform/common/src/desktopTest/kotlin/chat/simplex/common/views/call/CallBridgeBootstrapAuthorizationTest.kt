@@ -8,6 +8,14 @@ class CallBridgeBootstrapAuthorizationTest {
   private val nonce = "test-bootstrap-nonce"
 
   @Test
+  fun bootstrapUsesStableLocalhostPermissionOrigin() {
+    assertEquals(
+      "http://localhost:50395/simplex/call/?bootstrap=$nonce",
+      buildCallBridgeBootstrapUri(50395, nonce),
+    )
+  }
+
+  @Test
   fun ordinaryPageGetNeverIssuesAuthorization() {
     val gate = CallBridgeBootstrapGate(nonce)
 

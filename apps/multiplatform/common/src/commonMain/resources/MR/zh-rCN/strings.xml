@@ -1756,6 +1756,8 @@
     <string name="call_service_notification_end_call">结束通话</string>
     <string name="unable_to_open_browser_title">打开浏览器出错</string>
     <string name="unable_to_open_browser_desc">没有默认网络浏览器无法使用通话功能。请在系统中配置默认浏览器并和开发者分享更多信息。</string>
+    <string name="call_bridge_unavailable_title">无法启动通话</string>
+    <string name="call_bridge_unavailable_desc">Nome 无法连接用于通话的本地安全桥接服务。本次通话已结束，请重试；若问题持续，请重新启动 Nome 和浏览器。</string>
     <string name="e2ee_info_pq_short">此聊天受抗量子的端到端加密保护。</string>
     <string name="e2ee_info_no_pq_short">此聊天受端到端加密保护。</string>
     <string name="nome_message_actions">消息操作</string>

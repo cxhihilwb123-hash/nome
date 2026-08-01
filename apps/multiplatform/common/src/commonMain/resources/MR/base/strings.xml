@@ -1291,6 +1291,8 @@
   <!-- CallView -->
   <string name="unable_to_open_browser_title">Error opening browser</string>
   <string name="unable_to_open_browser_desc">The default web browser is required for calls. Please configure the default browser in the system, and share more information with the developers.</string>
+  <string name="call_bridge_unavailable_title">Unable to start call</string>
+  <string name="call_bridge_unavailable_desc">Nome could not connect the browser to its secure local call bridge. The call was ended. Try again; if the problem continues, restart Nome and your browser.</string>
   <string name="permissions_required">Grant permissions</string>
   <string name="permissions_record_audio">Microphone</string>
   <string name="permissions_camera">Camera</string>
