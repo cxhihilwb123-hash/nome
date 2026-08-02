@@ -193,8 +193,8 @@ fun ChatPreviewView(
             val badgeColor = if (isChannel) MaterialTheme.colors.primary else MaterialTheme.colors.secondary
             Text(
               text = stringResource(
-                if (isChannel) MR.strings.nome_desktop_chat_badge_channel
-                else MR.strings.nome_desktop_chat_badge_group
+                if (isChannel) MR.strings.chat_banner_channel
+                else MR.strings.chat_banner_group
               ),
               modifier = Modifier
                 .clip(RoundedCornerShape(4.dp))

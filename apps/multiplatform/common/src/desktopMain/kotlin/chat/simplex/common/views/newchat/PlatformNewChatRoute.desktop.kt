@@ -221,7 +221,7 @@ private fun NomeDesktopRouteTabs(
   ) {
     Row(Modifier.padding(4.dp)) {
       NomeDesktopRouteTab(
-        text = stringResource(MR.strings.nome_desktop_invitation_tab_create),
+        text = stringResource(MR.strings.share_one_time_link),
         icon = MR.images.ic_add_link,
         selected = selection == NewChatOption.INVITE,
         modifier = Modifier.weight(1f),
@@ -229,7 +229,7 @@ private fun NomeDesktopRouteTabs(
       )
       Spacer(Modifier.width(4.dp))
       NomeDesktopRouteTab(
-        text = stringResource(MR.strings.nome_desktop_invitation_tab_open),
+        text = stringResource(MR.strings.connect_via_link),
         icon = MR.images.ic_content_paste,
         selected = selection == NewChatOption.CONNECT,
         modifier = Modifier.weight(1f),
@@ -304,7 +304,7 @@ private fun NomeDesktopInvitationPage(
   onInvitationLocalAction: () -> Unit,
 ) {
   Text(
-    text = stringResource(MR.strings.nome_desktop_invitation_title),
+    text = stringResource(MR.strings.share_one_time_link),
     color = NomeDesktopNewChatColors.Text,
     fontSize = 30.sp,
     lineHeight = 37.sp,
@@ -312,7 +312,7 @@ private fun NomeDesktopInvitationPage(
     modifier = Modifier.semantics { heading() },
   )
   Text(
-    text = stringResource(MR.strings.nome_desktop_invitation_body),
+    text = stringResource(MR.strings.onboarding_send_1_time_link),
     color = NomeDesktopNewChatColors.TextMuted,
     fontSize = 14.sp,
     lineHeight = 21.sp,
@@ -328,7 +328,7 @@ private fun NomeDesktopInvitationPage(
   ) {
     DesktopInvitationPhase.Creating ->
       NomeDesktopInvitationPending(
-        title = stringResource(MR.strings.nome_desktop_invitation_creating),
+        title = stringResource(MR.strings.creating_link),
       )
     DesktopInvitationPhase.Retry ->
       NomeDesktopInvitationRetry(onRetryInvitation)
@@ -389,13 +389,13 @@ private fun NomeDesktopInvitationRetry(onRetryInvitation: () -> Unit) {
       verticalArrangement = Arrangement.Center,
     ) {
       Text(
-        text = stringResource(MR.strings.nome_desktop_invitation_create_failed),
+        text = stringResource(MR.strings.error_creating_address),
         color = NomeDesktopNewChatColors.TextMuted,
         fontSize = 14.sp,
       )
       Spacer(Modifier.height(14.dp))
       NomeDesktopPrimaryButton(
-        text = stringResource(MR.strings.nome_desktop_invitation_retry),
+        text = stringResource(MR.strings.retry_verb),
         onClick = onRetryInvitation,
       )
     }
@@ -480,7 +480,7 @@ private fun NomeDesktopQrPanel(
       )
     }
     Text(
-      text = stringResource(MR.strings.nome_desktop_invitation_qr_hint),
+      text = stringResource(MR.strings.onboarding_or_show_qr_code),
       color = NomeDesktopNewChatColors.TextMuted,
       fontSize = 12.sp,
       lineHeight = 17.sp,
@@ -497,13 +497,13 @@ private fun NomeDesktopInvitationDetails(
   onCopyLink: () -> Unit,
 ) {
   Text(
-    text = stringResource(MR.strings.nome_desktop_invitation_single_use),
+    text = stringResource(MR.strings.one_time_link),
     color = NomeDesktopNewChatColors.Text,
     fontSize = 17.sp,
     fontWeight = FontWeight.SemiBold,
   )
   Text(
-    text = stringResource(MR.strings.nome_desktop_invitation_single_use_body),
+    text = stringResource(MR.strings.a_link_for_one_person),
     color = NomeDesktopNewChatColors.TextMuted,
     fontSize = 13.sp,
     lineHeight = 19.sp,
@@ -511,7 +511,7 @@ private fun NomeDesktopInvitationDetails(
   )
   Spacer(Modifier.height(18.dp))
   Text(
-    text = stringResource(MR.strings.nome_desktop_invitation_link_label),
+    text = stringResource(MR.strings.simplex_link_mode_full),
     color = NomeDesktopNewChatColors.TextMuted,
     fontSize = 12.sp,
     fontWeight = FontWeight.SemiBold,
@@ -538,7 +538,7 @@ private fun NomeDesktopInvitationDetails(
   }
   Spacer(Modifier.height(12.dp))
   NomeDesktopPrimaryButton(
-    text = stringResource(MR.strings.nome_desktop_invitation_copy),
+    text = stringResource(MR.strings.copy_verb),
     onClick = onCopyLink,
     icon = MR.images.ic_content_copy,
   )
@@ -595,7 +595,7 @@ private fun NomeDesktopProfileRow(
         overflow = TextOverflow.Ellipsis,
       )
       Text(
-        text = stringResource(MR.strings.nome_desktop_invitation_profile_body),
+        text = stringResource(MR.strings.profile_will_be_sent_to_contact_sending_link),
         color = NomeDesktopNewChatColors.TextMuted,
         fontSize = 12.sp,
       )
@@ -620,7 +620,7 @@ private fun NomeDesktopPasteInvitationPage(
   val submitEnabled = desktopConnectionSubmitEnabled(pastedLink.value)
 
   Text(
-    text = stringResource(MR.strings.nome_desktop_open_invitation_title),
+    text = stringResource(MR.strings.simplex_link_invitation),
     color = NomeDesktopNewChatColors.Text,
     fontSize = 30.sp,
     lineHeight = 37.sp,
@@ -628,7 +628,7 @@ private fun NomeDesktopPasteInvitationPage(
     modifier = Modifier.semantics { heading() },
   )
   Text(
-    text = stringResource(MR.strings.nome_desktop_open_invitation_body),
+    text = stringResource(MR.strings.paste_the_link_you_received),
     color = NomeDesktopNewChatColors.TextMuted,
     fontSize = 14.sp,
     lineHeight = 21.sp,
@@ -645,7 +645,7 @@ private fun NomeDesktopPasteInvitationPage(
   ) {
     Column(Modifier.padding(24.dp)) {
       Text(
-        text = stringResource(MR.strings.nome_desktop_open_invitation_link_label),
+        text = stringResource(MR.strings.one_time_link),
         color = NomeDesktopNewChatColors.Text,
         fontSize = 13.sp,
         fontWeight = FontWeight.SemiBold,
@@ -656,7 +656,7 @@ private fun NomeDesktopPasteInvitationPage(
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
         placeholder = {
           Text(
-            text = stringResource(MR.strings.nome_desktop_open_invitation_placeholder),
+            text = stringResource(MR.strings.search_or_paste_simplex_link),
             color = NomeDesktopNewChatColors.TextSubtle,
           )
         },
@@ -707,11 +707,11 @@ private fun NomeDesktopPasteInvitationPage(
             modifier = Modifier.size(18.dp),
           )
           Spacer(Modifier.width(8.dp))
-          Text(stringResource(MR.strings.nome_desktop_open_invitation_paste))
+          Text(stringResource(MR.strings.paste_button))
         }
         Box(Modifier.weight(1f)) {
           NomeDesktopPrimaryButton(
-            text = stringResource(MR.strings.nome_desktop_open_invitation_continue),
+            text = stringResource(MR.strings.connect_via_link_verb),
             onClick = { onSubmitPastedLink(pastedLink.value) },
             enabled = submitEnabled,
             icon = MR.images.ic_arrow_forward,
