@@ -96,7 +96,9 @@ struct NewChatView: View {
     var onboarding: Bool = false
     @State private var invitationUsed: Bool = false
     @State private var connLinkInvitation: CreatedConnLink = CreatedConnLink(connFullLink: "", connShortLink: nil)
-    @State private var showShortLink = true
+    // Full invitation links are the interoperable default for Android QR scanning.
+    // The developer-only toggle still allows switching to the hosted short link.
+    @State private var showShortLink = false
     @State private var creatingConnReq = false
     @State private var invitationError: String? = nil
     @State var choosingProfile = false
@@ -233,8 +235,7 @@ struct NewChatView: View {
             invitationError = nil
             creatingConnReq = true
             Task {
-                _ = try? await Task.sleep(nanoseconds: 250_000000)
-                let (r, apiAlert) = await apiAddContact(incognito: incognitoGroupDefault.get())
+                let (r, apiAlert) = await apiAddContactForInvitation(incognito: incognitoGroupDefault.get())
                 if let (connLink, pcc) = r {
                     await MainActor.run {
                         m.updateContactConnection(pcc)

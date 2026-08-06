@@ -150,6 +150,26 @@ func chatApiSendCmdWithRetry<R: ChatAPIResult>(_ cmd: ChatCommand, bgTask: Bool 
     }
 }
 
+// Invitation creation needs a short, automatic recovery path because it creates a new SMP queue.
+// Existing message subscriptions can still be active while this queue-creation request races a
+// reconnect. Keep the user-facing retry alert for ordinary commands, but make this one bounded and
+// silent so a transient reconnect does not look like a permanent invitation failure.
+func chatApiSendCmdWithAutomaticRetry<R: ChatAPIResult>(_ cmd: ChatCommand, bgTask: Bool = true, bgDelay: Double? = nil, maxAttempts: Int32 = 3) async -> APIResult<R> {
+    var attempt: Int32 = 0
+    while true {
+        let r: APIResult<R> = await chatApiSendCmd(cmd, bgTask: bgTask, bgDelay: bgDelay, retryNum: attempt)
+        guard attempt + 1 < maxAttempts,
+              case let .error(e) = r,
+              retryableNetworkErrorAlert(e) != nil else {
+            return r
+        }
+
+        attempt += 1
+        try? await reconnectAllServers()
+        try? await Task.sleep(nanoseconds: UInt64(attempt) * 500_000_000)
+    }
+}
+
 @inline(__always)
 func showRetryAlert(_ alert: (title: String, message: String), onCancel: @escaping (UIAlertAction) -> Void, onRetry: @escaping () async -> Void) {
     DispatchQueue.main.async {
@@ -769,6 +789,36 @@ func testProtoServer(server: String) async throws -> Result<(), ProtocolTestFail
     throw r.unexpected
 }
 
+private func waitForNomeSMPReady(maxAttempts: Int32 = 3) async -> Alert? {
+    guard let smpServer = NomeServerConfiguration.smpServer else { return nil }
+
+    var attempt: Int32 = 0
+    while true {
+        do {
+            switch try await testProtoServer(server: smpServer) {
+            case .success:
+                return nil
+            case let .failure(failure):
+                let error = ChatError.errorAgent(agentError: failure.testError)
+                let alert = Alert(title: Text("Connection error"), message: Text(failure.localizedDescription))
+                guard attempt + 1 < maxAttempts, retryableNetworkErrorAlert(error) != nil else {
+                    return alert
+                }
+            }
+        } catch let error {
+            let alert = Alert(title: Text("Connection error"), message: Text(responseError(error)))
+            let retryable = (error as? ChatError).flatMap { retryableNetworkErrorAlert($0) } != nil
+            guard attempt + 1 < maxAttempts, retryable else {
+                return alert
+            }
+        }
+
+        attempt += 1
+        try? await reconnectAllServers()
+        try? await Task.sleep(nanoseconds: UInt64(attempt) * 500_000_000)
+    }
+}
+
 func testChatRelay(address: String) async throws -> (RelayProfile?, RelayTestFailure?) {
     let userId = try currentUserId("testChatRelay")
     let r: ChatResponse0 = try await chatSendCmd(.apiTestChatRelay(userId: userId, address: address))
@@ -1362,6 +1412,25 @@ func apiAddContact(incognito: Bool) async -> ((CreatedConnLink, PendingContactCo
     if case let .result(.invitation(_, connLinkInv, connection)) = r { return ((connLinkInv, connection), nil) }
     let alert: Alert? = if let r { connectionErrorAlert(r) } else { nil }
     return (nil, alert)
+}
+
+func apiAddContactForInvitation(incognito: Bool) async -> ((CreatedConnLink, PendingContactConnection)?, Alert?) {
+    guard let userId = ChatModel.shared.currentUser?.userId else {
+        return await apiAddContact(incognito: incognito)
+    }
+
+    if let readinessAlert = await waitForNomeSMPReady() {
+        return (nil, readinessAlert)
+    }
+
+    let r: APIResult<ChatResponse1> = await chatApiSendCmdWithAutomaticRetry(
+        .apiAddContact(userId: userId, incognito: incognito),
+        bgTask: false
+    )
+    if case let .result(.invitation(_, connLinkInv, connection)) = r {
+        return ((connLinkInv, connection), nil)
+    }
+    return (nil, connectionErrorAlert(r))
 }
 
 func apiSetConnectionIncognito(connId: Int64, incognito: Bool) async throws -> PendingContactConnection? {
