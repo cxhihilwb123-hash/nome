@@ -44,16 +44,18 @@ future tasks are maintained in
   8.9.1, Kotlin 2.2.10, Android assemble/unit/lint and shared Desktop tests
   passed. Isolated Android 16 fresh-install, onboarding, notification,
   background-service, cold-relaunch, same-signed API 35 to API 36
-  preserved-data upgrade and reboot-recovery gates also passed. The branch is
-  not merged, pushed, tagged or published; two-client messaging, channels and
-  calls were not run.
+  preserved-data upgrade and reboot-recovery gates also passed. The short-lived
+  branch was accepted into local unified via merge commit
+  `60cb74fc401bfd4cc839e9ae472a7595626c007d`; the merged unified branch is not
+  pushed, tagged or published, and two-client messaging, channels and calls
+  were not run.
 
 ## Unified authority and retained recovery lines
 
 | Scope | Worktree / repository | Branch | Recorded local source state |
 |---|---|---|---|
-| Client unified authority (Core/Android/iOS/Desktop) | shared client Git repository; authority ref is not currently checked out while the temporary migration below is active | `codex/nome-v656-unified` | release foundation accepted through `7e94b5512c8dd6c1362a5c79e9deb6b6b11b5ea7`; GitHub and LAN were read back at the same commit |
-| Android API 36 temporary migration | `/Users/forkman03/project/nome/nome-client-publish-20260802` | `codex/nome-android-api36-20260807` | based on unified authority `7e94b5512c8dd6c1362a5c79e9deb6b6b11b5ea7`; implementation source `ae23430762157cf38945e4ca3b0ab24c5ea06933`; local build and isolated Android 16 runtime/upgrade/reboot gates PASS; not merged or pushed |
+| Client unified authority (Core/Android/iOS/Desktop) | `/Users/forkman03/project/nome/nome-client-publish-20260802` | `codex/nome-v656-unified` | Android API 36 accepted locally via merge `60cb74fc401bfd4cc839e9ae472a7595626c007d`; GitHub and LAN remain at the previously read-back `7e94b5512c8dd6c1362a5c79e9deb6b6b11b5ea7` pending separate push authorization |
+| Android API 36 temporary migration | branch retained in the shared client Git repository | `codex/nome-android-api36-20260807` | implementation source `ae23430762157cf38945e4ca3b0ab24c5ea06933`; build and isolated Android 16 runtime/upgrade/reboot gates PASS; source head `9c5ae7afb82424ad86f68d2a823c6fa6580d359a` merged locally via `60cb74fc401bfd4cc839e9ae472a7595626c007d`; not pushed |
 | Website/control plane authority | `/Users/forkman03/project/nome/website` repository | `main` | local `main`, GitHub `origin/main` and LAN `lan/main` were read back at `0f889e9ea13e018f5180081dbe729492b7dde5bf`; the primary Website worktree remains on the isolated Square branch |
 | Shared Git administrative/dirty evidence worktree | `/Users/forkman03/project/nome/simplex-chat` | `codex/nome-android-v656` | `33b97d66155c80dd01956a438b483b13660f331e`; retained because it owns the shared `.git` directory and is dirty |
 | Retained iOS recovery source | `/Users/forkman03/project/nome/simplex-chat-ios-consolidated` | `codex/nome-v656-consolidated-ios` | `fb4a81780aa7518735f5d1a3c245808bd3b81f0b`; retained while live Xcode services use it as cwd |
@@ -84,6 +86,7 @@ worktrees are recovery/evidence sources, not parallel development authorities.
 - Authorized worktree/cache cleanup addendum: [`consolidation/20260729_authorized_worktree_cache_cleanup_record.md`](./consolidation/20260729_authorized_worktree_cache_cleanup_record.md)
 - Unified client acceptance: [`consolidation/20260729_unified_client_execution_record.md`](./consolidation/20260729_unified_client_execution_record.md)
 - Local release-foundation merge: [`consolidation/20260807_release_foundation_local_merge_record.md`](./consolidation/20260807_release_foundation_local_merge_record.md)
+- Android API 36 local unified merge: [`consolidation/20260807_android_api36_local_merge_record.md`](./consolidation/20260807_android_api36_local_merge_record.md)
 - Latest directly installed Android artifact: [`builds/20260730_nome_android_6.5.6_code372_channel_timeline_order_e2e.md`](./builds/20260730_nome_android_6.5.6_code372_channel_timeline_order_e2e.md), internal Debug arm64 APK that retains the default Nome channel relay and invitation-link routing while restoring normal conversation order: old messages above, newest messages at the bottom. Common/Android gates, preserved-data upgrades, real A-to-B channel delivery, read-only subscriber policy, and two-device UI-coordinate order checks PASS. The formal clean-source gate remains blocked by preserved unrelated iOS dirty paths, so this is not a public-release claim.
 - Latest local release-foundation Android build: [`builds/20260807_nome_android_6.5.6_code373_release_foundation_debug.md`](./builds/20260807_nome_android_6.5.6_code373_release_foundation_debug.md), clean-commit Debug APKs for arm64-v8a and armeabi-v7a. Compile, unit, lint, desktop and APK assembly gates pass; no device installation, production signing, upload or public release was performed.
 - Latest Android API 36 toolchain validation: [`builds/20260807_nome_android_6.5.6_code373_api36_debug.md`](./builds/20260807_nome_android_6.5.6_code373_api36_debug.md), clean-commit Debug APKs for arm64-v8a and armeabi-v7a with compile/target SDK 36, AGP 8.9.1 and Kotlin 2.2.10. Android assemble, unit, lint, Desktop regression, APK metadata and Debug signature gates pass. Isolated Android 16 fresh-install, onboarding, notification, foreground-service, cold-relaunch, same-signed API 35 to API 36 preserved-data upgrade and reboot-recovery gates pass; two-client messaging, channels and calls were not run, and no production signing, upload or public release was performed.
