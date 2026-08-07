@@ -38,6 +38,8 @@ With SDK 35 restored, these gates passed on this branch:
 - `:common:compileDebugKotlinAndroid`
 - `:android:testDebugUnitTest`
 - `:android:lintDebug`
+- `:android:assembleDebug`, after the four ignored native inputs were copied
+  from the unified authority and matched their checked-in provenance hashes
 - `:common:desktopTest`
 - partial release-signing configuration negative gate
 
@@ -47,8 +49,8 @@ With SDK 35 restored, these gates passed on this branch:
    version that supports API 36.
 2. Upgrade Kotlin, Compose and AGP together in a separate temporary migration
    branch from the unified authority.
-3. Restore or build the exact native `libsimplex.so` inputs from their recorded
-   provenance; do not copy an unverified library from a recovery worktree.
+3. Reuse or rebuild the exact native inputs from their recorded provenance; do
+   not copy an unverified library from a recovery worktree.
 4. Run Android compile, unit, lint, bundle, signed APK/AAB and preserved-data
    upgrade gates.
 5. Merge the verified migration into the unified authority before creating the
