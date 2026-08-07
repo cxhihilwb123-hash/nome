@@ -59,6 +59,13 @@ Website/control-plane packages use the independent Website repository, its own
 source gate, and its own build record. Website results are not client-repository
 build results.
 
+For a coordinated version, link every platform build record from one durable
+release record under [`../releases/`](../releases/README.md). The release record
+survives after its temporary `release/nome-v<version>` branch is retired and is
+the index for platform source tags, artifact hashes and publication readback.
+Platform build records remain separate because their build numbers, signing,
+tests, artifacts and store states are independent.
+
 A formal release requires `Controlled dirty patch: no` and separate explicit
 Phase 7 authorization for distribution, deployment, store action, or public
 release.

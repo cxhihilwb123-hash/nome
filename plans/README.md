@@ -1,6 +1,6 @@
 # Nome project authority index
 
-Updated: 2026-07-29 (Asia/Shanghai)
+Updated: 2026-08-07 (Asia/Shanghai)
 
 This is the first document to read for current Nome repository status. Older plans and handoffs remain historical evidence; they do not override this index.
 
@@ -33,7 +33,7 @@ future tasks are maintained in
 
 | Scope | Worktree / repository | Branch | Recorded local source state |
 |---|---|---|---|
-| Client authority (Core/Android/iOS/Desktop) | `/Users/forkman03/project/nome/nome-client` | `codex/nome-v656-unified` | accepted merge `124863fe607eb84c177f8ccce7c76793f1ceeb55`; parents `6cd16da945bc45683eab23f82dc58ba996109960` and `fb4a81780aa7518735f5d1a3c245808bd3b81f0b`; remote branch protected through Phase 7 commit `cad37e62ef183c3d929496b054b64b45a29bd863` |
+| Client authority (Core/Android/iOS/Desktop) | `/Users/forkman03/project/nome/nome-client` | `codex/nome-v656-unified` | accepted merge `124863fe607eb84c177f8ccce7c76793f1ceeb55`; current unified tip `ad88fb829b5a55c33558aad16158fed4217e464f`, read back from GitHub and LAN before the local release-foundation work |
 | Website/control plane authority | `/Users/forkman03/project/nome/website` | `main` | local, personal GitHub, and LAN tip `568d47dde9d81465cad1139f3b9c90c0f1c9f041` |
 | Shared Git administrative/dirty evidence worktree | `/Users/forkman03/project/nome/simplex-chat` | `codex/nome-android-v656` | `33b97d66155c80dd01956a438b483b13660f331e`; retained because it owns the shared `.git` directory and is dirty |
 | Retained iOS recovery source | `/Users/forkman03/project/nome/simplex-chat-ios-consolidated` | `codex/nome-v656-consolidated-ios` | `fb4a81780aa7518735f5d1a3c245808bd3b81f0b`; retained while live Xcode services use it as cwd |
@@ -68,6 +68,10 @@ worktrees are recovery/evidence sources, not parallel development authorities.
 - Latest consolidated Simulator artifact: [`builds/20260729_nome_ios_6.5.6_build349_consolidated.md`](./builds/20260729_nome_ios_6.5.6_build349_consolidated.md), internal Simulator diagnostic only.
 - Website acceptance: `/Users/forkman03/project/nome/website/docs/consolidation/20260729_phase3_website_execution_record.md`.
 - Build record rules/template: [`builds/README.md`](./builds/README.md) and [`builds/TEMPLATE.md`](./builds/TEMPLATE.md).
+- Coordinated release rules/template: [`releases/README.md`](./releases/README.md)
+  and [`releases/TEMPLATE.md`](./releases/TEMPLATE.md). A release uses one
+  temporary unified client branch and separate per-platform build evidence; the
+  records and exact source tags remain after the branch is retired.
 
 ## Historical entry
 
