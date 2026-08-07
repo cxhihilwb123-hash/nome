@@ -46,15 +46,16 @@ future tasks are maintained in
   background-service, cold-relaunch, same-signed API 35 to API 36
   preserved-data upgrade and reboot-recovery gates also passed. The short-lived
   branch was accepted into local unified via merge commit
-  `60cb74fc401bfd4cc839e9ae472a7595626c007d`; the merged unified branch is not
-  pushed, tagged or published, and two-client messaging, channels and calls
-  were not run.
+  `60cb74fc401bfd4cc839e9ae472a7595626c007d`. After separate authorization,
+  the merged unified branch was pushed to GitHub and LAN and both were read
+  back at `769e4058ba5df86fdb9bd36f2f002eca65626e5c`; it was not tagged or
+  published, and two-client messaging, channels and calls were not run.
 
 ## Unified authority and retained recovery lines
 
 | Scope | Worktree / repository | Branch | Recorded local source state |
 |---|---|---|---|
-| Client unified authority (Core/Android/iOS/Desktop) | `/Users/forkman03/project/nome/nome-client-publish-20260802` | `codex/nome-v656-unified` | Android API 36 accepted locally via merge `60cb74fc401bfd4cc839e9ae472a7595626c007d`; GitHub and LAN remain at the previously read-back `7e94b5512c8dd6c1362a5c79e9deb6b6b11b5ea7` pending separate push authorization |
+| Client unified authority (Core/Android/iOS/Desktop) | `/Users/forkman03/project/nome/nome-client-publish-20260802` | `codex/nome-v656-unified` | Android API 36 accepted locally via merge `60cb74fc401bfd4cc839e9ae472a7595626c007d`; the merge, runtime evidence and local-merge closure were pushed to GitHub and LAN and read back at `769e4058ba5df86fdb9bd36f2f002eca65626e5c`; this authority-index publication closure follows that readback |
 | Android API 36 temporary migration | branch retained in the shared client Git repository | `codex/nome-android-api36-20260807` | implementation source `ae23430762157cf38945e4ca3b0ab24c5ea06933`; build and isolated Android 16 runtime/upgrade/reboot gates PASS; source head `9c5ae7afb82424ad86f68d2a823c6fa6580d359a` merged locally via `60cb74fc401bfd4cc839e9ae472a7595626c007d`; not pushed |
 | Website/control plane authority | `/Users/forkman03/project/nome/website` repository | `main` | local `main`, GitHub `origin/main` and LAN `lan/main` were read back at `0f889e9ea13e018f5180081dbe729492b7dde5bf`; the primary Website worktree remains on the isolated Square branch |
 | Shared Git administrative/dirty evidence worktree | `/Users/forkman03/project/nome/simplex-chat` | `codex/nome-android-v656` | `33b97d66155c80dd01956a438b483b13660f331e`; retained because it owns the shared `.git` directory and is dirty |

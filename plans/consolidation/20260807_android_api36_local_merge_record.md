@@ -66,9 +66,26 @@ crash, ANR, native abort, link error, SQLite exception or migration failure.
 - Camera/microphone permission and calls: NOT RUN
 - Backup import and reinstall recovery: NOT RUN
 - Production signing and release assembly: NOT RUN
-- GitHub/LAN push of the merged unified branch: not performed
+- GitHub/LAN push of the merged unified branch: completed after separate
+  explicit authorization; both remotes read back at
+  `769e4058ba5df86fdb9bd36f2f002eca65626e5c`
 - Tag, deployment, store upload and public release: not performed
 
 Existing SDK XML, resource-format, deprecated API, unresolved opt-in marker,
 Manifest and native C pointer-type warnings remain follow-up cleanup work; none
 failed the accepted build or runtime gates.
+
+## Authorized publication addendum
+
+After the local merge and documentation closure, the user separately
+authorized remote synchronization. The exact unified ref
+`codex/nome-v656-unified` was ordinarily fast-forwarded from
+`7e94b5512c8dd6c1362a5c79e9deb6b6b11b5ea7` to
+`769e4058ba5df86fdb9bd36f2f002eca65626e5c` on both:
+
+- GitHub: `https://github.com/cxhihilwb123-hash/nome.git`
+- LAN Gitea: `gitea-lan:forkman/nome.git`
+
+Both remote refs were read back at the expected commit after the push. The
+short-lived migration branch, tags and artifacts were not pushed, and the
+official SimpleX `origin` remote was not changed.
