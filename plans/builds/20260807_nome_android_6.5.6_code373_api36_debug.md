@@ -31,6 +31,8 @@ This branch and its artifacts are not a formal `release/nome-v*` release.
 - JDK: Android Studio bundled JBR 21.0.10
 - Android Build Tools: 36.0.0
 - NDK: 23.1.7779620
+- Runtime device: isolated `Nome_API_36` Pixel 8 AVD, Android 16 / API 36,
+  Google APIs ARM64 system image revision 7, emulator 36.6.11.0
 - Compatibility basis: Android's official tool matrix lists AGP 8.9.1 as the
   minimum version for API 36. Kotlin 2.2.10 keeps AGP 8.9.1 and Gradle 8.12
   within Kotlin's documented supported ranges.
@@ -73,18 +75,31 @@ Ignored native inputs matched the existing checked-in provenance record:
 | Shared Android Kotlin compile | PASS | `:common:compileDebugKotlinAndroid` via the Android build graph |
 | Shared Desktop regression | PASS | `:common:desktopTest` |
 | APK metadata and signature inspection | PASS | Build Tools 36 `aapt` and `apksigner` |
-| Activation/invitation policy runtime | NOT RUN | No device installation in this validation |
-| Messaging | NOT RUN | No device installation in this validation |
-| Channel create/join/presentation | NOT RUN | No device installation in this validation |
-| Calls | NOT RUN | No device installation in this validation |
-| Preserved-data upgrade | NOT RUN | Debug artifacts were not installed |
-| Reinstall/recovery | NOT RUN | Debug artifacts were not installed |
+| Fresh install and onboarding | PASS | API 36 arm64 APK installed on `emulator-5554`; local identity, agent/chat databases and home UI initialized |
+| Android 16 notification permission | PASS | System permission flow completed; `POST_NOTIFICATIONS` read back as granted |
+| Background service | PASS | `SimplexService` remained foreground with ongoing notification after Home; battery exemption granted |
+| Cold relaunch | PASS | Force-stop followed by cold launch restored identity, private notes and foreground service without a crash |
+| Preserved-data upgrade | PASS | Same-signed API 35 build 373 baseline was replaced with API 36 build 373 using `adb install -r`; identity `NomeUpgrade35`, databases, preferences, notification permission and service state were preserved |
+| Device reboot recovery | PASS | After Android 16 reboot, the foreground service and notification recovered before manual launch; the upgraded identity and home UI remained intact |
+| Invitation creation | NOT RUN | No external invitation was created during this toolchain validation |
+| Messaging | NOT RUN | A second isolated client was not provisioned |
+| Channel create/join/presentation | NOT RUN | A second isolated client was not provisioned |
+| Calls | NOT RUN | Camera/microphone permission and two-client call flow were not exercised |
+| Reinstall/recovery | NOT RUN | No backup import or recovery workflow was exercised |
 
 The first combined Android/Desktop compilation attempt exhausted the previous
 2 GB Kotlin daemon heap. The final Android and Desktop passes ran separately
 with a 4 GB one-shot Kotlin daemon setting and exited zero. Existing SDK XML,
 resource-format, deprecated API, unresolved opt-in marker, Manifest and native
 C pointer-type warnings remain; none failed assemble, tests or lint.
+
+Runtime UI state was read with Android UI Automator because the application
+sets `FLAG_SECURE` at launch and Android correctly returned black screenshots.
+The fresh install, onboarding, background retention, cold relaunch, API 35 to
+API 36 preserved-data replacement, and reboot checks produced no application
+crash, ANR, native abort, link error, SQLite exception or migration failure in
+the inspected logs. The runtime checks do not establish public server health,
+two-client messaging, channels, calls or store-release readiness.
 
 ## Distribution boundary
 
