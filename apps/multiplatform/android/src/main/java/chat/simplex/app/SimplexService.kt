@@ -264,6 +264,7 @@ class SimplexService: Service() {
   // restart on reboot
   class StartReceiver: BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+      if (intent.action != Intent.ACTION_BOOT_COMPLETED) return
       Log.d(TAG, "StartReceiver: onReceive called")
       scheduleStart(context)
     }
@@ -291,6 +292,7 @@ class SimplexService: Service() {
   // restart on app update
   class AppUpdateReceiver: BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+      if (intent.action != Intent.ACTION_MY_PACKAGE_REPLACED) return
       // If notification service is enabled and battery optimization is disabled, restart the service on app update
       if (SimplexApp.context.allowToStartServiceAfterAppExit()) {
         Log.d(TAG, "AppUpdateReceiver: onReceive called")

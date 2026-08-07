@@ -31,7 +31,7 @@ actual fun SaveContentItemAction(cItem: ChatItem, saveFileLauncher: FileChooserL
   ItemAction(stringResource(MR.strings.save_verb), painterResource(MR.images.ic_download), onClick = {
     when (cItem.content.msgContent) {
       is MsgContent.MCImage -> {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R || writePermissionState.status == PermissionStatus.Granted) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q || writePermissionState.status == PermissionStatus.Granted) {
           saveImage(cItem.file)
         } else {
           writePermissionState.launchPermissionRequest()

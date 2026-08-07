@@ -35,6 +35,7 @@ class NomeDatabaseRootComposeTest {
   @Test
   fun randomKeyFailureHasNoManualEntryAndOnlyBoundedRecovery() {
     val target = InstrumentationRegistry.getInstrumentation().targetContext
+    val passphrase = mutableStateOf("")
     composeRule.setContent {
       NomeAndroidTheme(darkTheme = false) {
         NomeDatabaseRootRoute(
@@ -42,7 +43,7 @@ class NomeDatabaseRootComposeTest {
             submitting = false,
             matchedBackupAvailable = true,
           ),
-          passphrase = mutableStateOf(""),
+          passphrase = passphrase,
           actions = actions(),
         )
       }
@@ -121,11 +122,12 @@ class NomeDatabaseRootComposeTest {
     val state = mutableStateOf<NomeDatabaseRootState>(
       NomeDatabaseRootState.Opening(submitting = false),
     )
+    val passphrase = mutableStateOf("")
     composeRule.setContent {
       NomeAndroidTheme(darkTheme = false) {
         NomeDatabaseRootRoute(
           state = state.value,
-          passphrase = mutableStateOf(""),
+          passphrase = passphrase,
           actions = actions(),
         )
       }

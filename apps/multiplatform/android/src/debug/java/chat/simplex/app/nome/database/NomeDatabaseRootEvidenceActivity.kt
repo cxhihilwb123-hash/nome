@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -85,7 +86,7 @@ class NomeDatabaseRootEvidenceActivity : ComponentActivity() {
             Box(modifier = Modifier.weight(1f)) {
               NomeDatabaseRootRoute(
                 state = spec.state.fixture(),
-                passphrase = mutableStateOf(""),
+                passphrase = remember { mutableStateOf("") },
                 actions = noOpActions,
               )
             }

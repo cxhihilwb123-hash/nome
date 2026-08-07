@@ -22,5 +22,12 @@ release
 /.nome-local/
 /Screenshot_*.png
 
+# Release signing material must stay outside the repository.
+**/*.jks
+**/*.keystore
+**/*.p12
+**/*.pfx
+**/release-signing.properties
+
 # Generated SimpleX assets
 common/src/commonMain/resources/assets/simplex/

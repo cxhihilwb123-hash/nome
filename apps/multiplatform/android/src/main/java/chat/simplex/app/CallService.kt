@@ -19,6 +19,8 @@ import chat.simplex.common.views.helpers.*
 import chat.simplex.res.MR
 import kotlinx.datetime.Instant
 
+private const val CALL_WAKE_LOCK_TIMEOUT_MS = 2 * 60 * 60 * 1000L
+
 class CallService: Service() {
   private var wakeLock: PowerManager.WakeLock? = null
   private var notificationManager: NotificationManager? = null
@@ -65,7 +67,7 @@ class CallService: Service() {
     if (wakeLock != null) return
     wakeLock = (getSystemService(Context.POWER_SERVICE) as PowerManager).run {
       newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_TAG).apply {
-        acquire()
+        acquire(CALL_WAKE_LOCK_TIMEOUT_MS)
       }
     }
   }

@@ -9,6 +9,25 @@ plugins {
 }
 
 val nomeApplicationId = rootProject.extra["application_id"] as String
+val nomeReleaseStoreFile = providers.gradleProperty("nomeReleaseStoreFile").orNull
+val nomeReleaseStorePassword = providers.gradleProperty("nomeReleaseStorePassword").orNull
+val nomeReleaseKeyAlias = providers.gradleProperty("nomeReleaseKeyAlias").orNull
+val nomeReleaseKeyPassword = providers.gradleProperty("nomeReleaseKeyPassword").orNull
+val nomeReleaseSigningValues = listOf(
+    nomeReleaseStoreFile,
+    nomeReleaseStorePassword,
+    nomeReleaseKeyAlias,
+    nomeReleaseKeyPassword
+)
+val nomeReleaseSigningValueCount = nomeReleaseSigningValues.count { !it.isNullOrBlank() }
+if (nomeReleaseSigningValueCount in 1 until nomeReleaseSigningValues.size) {
+    throw GradleException(
+        "Nome release signing is only partially configured. Provide all four " +
+            "nomeReleaseStoreFile, nomeReleaseStorePassword, nomeReleaseKeyAlias, and " +
+            "nomeReleaseKeyPassword properties, or provide none of them."
+    )
+}
+val nomeReleaseSigningConfigured = nomeReleaseSigningValueCount == nomeReleaseSigningValues.size
 
 android {
     compileSdk = 35
@@ -37,6 +56,17 @@ android {
         manifestPlaceholders["extract_native_libs"] = rootProject.extra["compression.level"] as Int != 0
     }
 
+    signingConfigs {
+        if (nomeReleaseSigningConfigured) {
+            create("nomeRelease") {
+                storeFile = file(nomeReleaseStoreFile!!)
+                storePassword = nomeReleaseStorePassword
+                keyAlias = nomeReleaseKeyAlias
+                keyPassword = nomeReleaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix = rootProject.extra["application_id.suffix"] as String
@@ -47,6 +77,9 @@ android {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            if (nomeReleaseSigningConfigured) {
+                signingConfig = signingConfigs.getByName("nomeRelease")
+            }
         }
     }
     kotlinOptions {
@@ -174,14 +207,20 @@ tasks {
             val keyPassword: String
             val storeFile: String
             val storePassword: String
-            if (project.properties["android.injected.signing.key.alias"] != null) {
+            val hasInjectedSigning = project.properties["android.injected.signing.key.alias"] != null
+            if (hasInjectedSigning) {
                 keyAlias = project.properties["android.injected.signing.key.alias"] as String
                 keyPassword = project.properties["android.injected.signing.key.password"] as String
                 storeFile = project.properties["android.injected.signing.store.file"] as String
                 storePassword = project.properties["android.injected.signing.store.password"] as String
             } else {
                 try {
-                    val gradleConfig = android.signingConfigs.getByName(buildType)
+                    val signingConfigName = if (buildType == "release" && nomeReleaseSigningConfigured) {
+                        "nomeRelease"
+                    } else {
+                        buildType
+                    }
+                    val gradleConfig = android.signingConfigs.getByName(signingConfigName)
                     keyAlias = gradleConfig.keyAlias!!
                     keyPassword = gradleConfig.keyPassword!!
                     storeFile = gradleConfig.storeFile!!.absolutePath
@@ -214,7 +253,7 @@ tasks {
                 )
             }
 
-            if (project.properties["android.injected.signing.key.alias"] != null && buildType == "release") {
+            if (hasInjectedSigning && buildType == "release") {
                 File(outputDir, "android-release.apk").renameTo(File(outputDir, "simplex.apk"))
                 File(outputDir, "android-armeabi-v7a-release.apk").renameTo(File(outputDir, "simplex-armv7a.apk"))
                 File(outputDir, "android-arm64-v8a-release.apk").renameTo(File(outputDir, "simplex.apk"))
