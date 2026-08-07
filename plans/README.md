@@ -33,13 +33,28 @@ future tasks are maintained in
   advanced to `0f889e9ea13e018f5180081dbe729492b7dde5bf`. The existing local SDK 36
   patch and Square work remain uncommitted and excluded. No remote push, tag,
   deployment or store action was performed.
+- 2026-08-07 authorized remote synchronization: PASS; client unified
+  `codex/nome-v656-unified` was fast-forwarded and read back from GitHub and
+  LAN at `7e94b5512c8dd6c1362a5c79e9deb6b6b11b5ea7`, and Website `main` was
+  fast-forwarded and read back from both remotes at
+  `0f889e9ea13e018f5180081dbe729492b7dde5bf`. No tag, deployment, store action
+  or official SimpleX remote mutation was performed.
+- 2026-08-07 Android API 36 migration branch: local build gates PASS at source
+  commit `ae23430762157cf38945e4ca3b0ab24c5ea06933`; compile/target SDK 36, AGP
+  8.9.1, Kotlin 2.2.10, Android assemble/unit/lint and shared Desktop tests
+  passed. Isolated Android 16 fresh-install, onboarding, notification,
+  background-service, cold-relaunch, same-signed API 35 to API 36
+  preserved-data upgrade and reboot-recovery gates also passed. The branch is
+  not merged, pushed, tagged or published; two-client messaging, channels and
+  calls were not run.
 
 ## Unified authority and retained recovery lines
 
 | Scope | Worktree / repository | Branch | Recorded local source state |
 |---|---|---|---|
-| Client authority (Core/Android/iOS/Desktop) | `/Users/forkman03/project/nome/nome-client-publish-20260802` | `codex/nome-v656-unified` | local release foundation accepted through `7dd58dfe80569bd9ca3d533738ba6b65d299ec15`; this authority-index closure is local only; GitHub/LAN tracking refs remain `ad88fb829b5a55c33558aad16158fed4217e464f`; the pre-existing SDK 36 two-line working-tree patch remains uncommitted |
-| Website/control plane authority | `/Users/forkman03/project/nome/website` repository | `main` | local `main` ref `0f889e9ea13e018f5180081dbe729492b7dde5bf`; GitHub `origin/main` and LAN `lan/main` tracking refs remain `568d47dde9d81465cad1139f3b9c90c0f1c9f041`; the primary Website worktree remains on the isolated Square branch |
+| Client unified authority (Core/Android/iOS/Desktop) | shared client Git repository; authority ref is not currently checked out while the temporary migration below is active | `codex/nome-v656-unified` | release foundation accepted through `7e94b5512c8dd6c1362a5c79e9deb6b6b11b5ea7`; GitHub and LAN were read back at the same commit |
+| Android API 36 temporary migration | `/Users/forkman03/project/nome/nome-client-publish-20260802` | `codex/nome-android-api36-20260807` | based on unified authority `7e94b5512c8dd6c1362a5c79e9deb6b6b11b5ea7`; implementation source `ae23430762157cf38945e4ca3b0ab24c5ea06933`; local build and isolated Android 16 runtime/upgrade/reboot gates PASS; not merged or pushed |
+| Website/control plane authority | `/Users/forkman03/project/nome/website` repository | `main` | local `main`, GitHub `origin/main` and LAN `lan/main` were read back at `0f889e9ea13e018f5180081dbe729492b7dde5bf`; the primary Website worktree remains on the isolated Square branch |
 | Shared Git administrative/dirty evidence worktree | `/Users/forkman03/project/nome/simplex-chat` | `codex/nome-android-v656` | `33b97d66155c80dd01956a438b483b13660f331e`; retained because it owns the shared `.git` directory and is dirty |
 | Retained iOS recovery source | `/Users/forkman03/project/nome/simplex-chat-ios-consolidated` | `codex/nome-v656-consolidated-ios` | `fb4a81780aa7518735f5d1a3c245808bd3b81f0b`; retained while live Xcode services use it as cwd |
 | Retained iOS dirty evidence source | `/Users/forkman03/project/nome/simplex-chat-ios-integration` | `codex/nome-ios-v656-integration` | `e50f32fcec027029c95d4556cceaf600f8a83edb`; retained with tracked and untracked changes |
@@ -71,6 +86,7 @@ worktrees are recovery/evidence sources, not parallel development authorities.
 - Local release-foundation merge: [`consolidation/20260807_release_foundation_local_merge_record.md`](./consolidation/20260807_release_foundation_local_merge_record.md)
 - Latest directly installed Android artifact: [`builds/20260730_nome_android_6.5.6_code372_channel_timeline_order_e2e.md`](./builds/20260730_nome_android_6.5.6_code372_channel_timeline_order_e2e.md), internal Debug arm64 APK that retains the default Nome channel relay and invitation-link routing while restoring normal conversation order: old messages above, newest messages at the bottom. Common/Android gates, preserved-data upgrades, real A-to-B channel delivery, read-only subscriber policy, and two-device UI-coordinate order checks PASS. The formal clean-source gate remains blocked by preserved unrelated iOS dirty paths, so this is not a public-release claim.
 - Latest local release-foundation Android build: [`builds/20260807_nome_android_6.5.6_code373_release_foundation_debug.md`](./builds/20260807_nome_android_6.5.6_code373_release_foundation_debug.md), clean-commit Debug APKs for arm64-v8a and armeabi-v7a. Compile, unit, lint, desktop and APK assembly gates pass; no device installation, production signing, upload or public release was performed.
+- Latest Android API 36 toolchain validation: [`builds/20260807_nome_android_6.5.6_code373_api36_debug.md`](./builds/20260807_nome_android_6.5.6_code373_api36_debug.md), clean-commit Debug APKs for arm64-v8a and armeabi-v7a with compile/target SDK 36, AGP 8.9.1 and Kotlin 2.2.10. Android assemble, unit, lint, Desktop regression, APK metadata and Debug signature gates pass. Isolated Android 16 fresh-install, onboarding, notification, foreground-service, cold-relaunch, same-signed API 35 to API 36 preserved-data upgrade and reboot-recovery gates pass; two-client messaging, channels and calls were not run, and no production signing, upload or public release was performed.
 - Latest directly installed iOS device artifact: [`builds/20260729_nome_ios_6.5.6_build375_cryhandsome.md`](./builds/20260729_nome_ios_6.5.6_build375_cryhandsome.md), Personal Team internal build from the unified source plus a recorded temporary signing patch; installation PASS, automatic launch BLOCKED only because the phone was locked.
 - Latest consolidated Simulator artifact: [`builds/20260729_nome_ios_6.5.6_build349_consolidated.md`](./builds/20260729_nome_ios_6.5.6_build349_consolidated.md), internal Simulator diagnostic only.
 - Website acceptance: `/Users/forkman03/project/nome/website/docs/consolidation/20260729_phase3_website_execution_record.md`.

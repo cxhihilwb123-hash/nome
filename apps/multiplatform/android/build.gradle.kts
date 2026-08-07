@@ -8,6 +8,21 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+kotlin {
+    compilerOptions {
+        optIn.addAll(
+            "kotlinx.coroutines.DelicateCoroutinesApi",
+            "androidx.compose.foundation.ExperimentalFoundationApi",
+            "androidx.compose.ui.text.ExperimentalTextApi",
+            "androidx.compose.material.ExperimentalMaterialApi",
+            "com.google.accompanist.insets.ExperimentalAnimatedInsets",
+            "com.google.accompanist.permissions.ExperimentalPermissionsApi",
+            "kotlinx.serialization.InternalSerializationApi",
+            "kotlinx.serialization.ExperimentalSerializationApi"
+        )
+    }
+}
+
 val nomeApplicationId = rootProject.extra["application_id"] as String
 val nomeReleaseStoreFile = providers.gradleProperty("nomeReleaseStoreFile").orNull
 val nomeReleaseStorePassword = providers.gradleProperty("nomeReleaseStorePassword").orNull
@@ -30,13 +45,13 @@ if (nomeReleaseSigningValueCount in 1 until nomeReleaseSigningValues.size) {
 val nomeReleaseSigningConfigured = nomeReleaseSigningValueCount == nomeReleaseSigningValues.size
 
 android {
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = nomeApplicationId
         namespace = "chat.simplex.app"
         minSdk = 28
-        targetSdk = 35
+        targetSdk = 36
         // !!!
         // skip version code after release to F-Droid, as it uses two version codes
         versionCode = (extra["android.version_code"] as String).toInt()
@@ -81,16 +96,6 @@ android {
                 signingConfig = signingConfigs.getByName("nomeRelease")
             }
         }
-    }
-    kotlinOptions {
-        freeCompilerArgs += "-opt-in=kotlinx.coroutines.DelicateCoroutinesApi"
-        freeCompilerArgs += "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi"
-        freeCompilerArgs += "-opt-in=androidx.compose.ui.text.ExperimentalTextApi"
-        freeCompilerArgs += "-opt-in=androidx.compose.material.ExperimentalMaterialApi"
-        freeCompilerArgs += "-opt-in=com.google.accompanist.insets.ExperimentalAnimatedInsets"
-        freeCompilerArgs += "-opt-in=com.google.accompanist.permissions.ExperimentalPermissionsApi"
-        freeCompilerArgs += "-opt-in=kotlinx.serialization.InternalSerializationApi"
-        freeCompilerArgs += "-opt-in=kotlinx.serialization.ExperimentalSerializationApi"
     }
     externalNativeBuild {
         cmake {

@@ -104,10 +104,12 @@ configure(subprojects) {
         }
     }
 
-    // Apply kotlinOptions.jvmTarget to subprojects
-    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-        kotlinOptions {
-            if (jvmVersion.isPresent) jvmTarget = jvmVersion.get()
+    // Apply compilerOptions.jvmTarget to JVM compilation tasks in subprojects.
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEach {
+        compilerOptions {
+            if (jvmVersion.isPresent) {
+                jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.fromTarget(jvmVersion.get()))
+            }
         }
     }
 }
