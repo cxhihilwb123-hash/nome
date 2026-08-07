@@ -694,7 +694,7 @@ private fun SingleOperatorUsageConditionsView(
   }
 }
 
-val defaultConditionsLink = "https://github.com/simplex-chat/simplex-chat/blob/stable/PRIVACY.md"
+val defaultConditionsLink = "https://nome.im/privacy"
 
 @Composable
 fun ConditionsTextView(

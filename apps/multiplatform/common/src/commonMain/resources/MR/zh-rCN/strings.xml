@@ -392,6 +392,10 @@
     <string name="nome_usage_information_local_data_body">你的资料、数据库和消息历史保存在这台设备上。请妥善保管数据库密码和备份。</string>
     <string name="nome_usage_information_connections_title">可信邀请</string>
     <string name="nome_usage_information_connections_body">Nome 不验证对方的真实身份。请只接受来源可识别或可信任的邀请。</string>
+    <string name="nome_usage_information_privacy_title">Nome 隐私政策</string>
+    <string name="nome_usage_information_privacy_body">打开当前 Nome 隐私政策，查看应用及网络服务处理的数据。</string>
+    <string name="nome_usage_information_terms_title">Nome 使用条款</string>
+    <string name="nome_usage_information_terms_body">打开当前 Nome 使用条款，查看公开站、邀请码申请和联网功能的使用边界。</string>
     <string name="nome_client_notice_title">暂时无法创建地址</string>
     <string name="nome_client_notice_managed_server">受管理的</string>
     <string name="nome_client_notice_configured_server">已配置的</string>
@@ -2503,7 +2507,7 @@
     <string name="unblock_members_for_all_question">为所有其他成员解封这些成员吗？</string>
     <string name="feature_roles_moderators">协管</string>
     <string name="members_will_be_removed_from_chat_cannot_be_undone">将从聊天中移除这些成员 — 此操作无法撤销！</string>
-    <string name="onboarding_conditions_privacy_policy_and_conditions_of_use">网络与隐私说明</string>
+    <string name="onboarding_conditions_privacy_policy_and_conditions_of_use">Nome 隐私政策与使用条款</string>
     <string name="onboarding_conditions_accept">确认</string>
     <string name="onboarding_conditions_by_using_you_agree">您承诺：\n- 在公开群中只发送合法内容\n- 尊重其他用户—无垃圾信息</string>
     <string name="onboarding_conditions_private_chats_not_accessible">运营者承诺：\n- 独立\n- 最小化元数据使用\n- 运行经验证的开源代码</string>

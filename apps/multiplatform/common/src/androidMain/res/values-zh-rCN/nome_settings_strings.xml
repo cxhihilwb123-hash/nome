@@ -42,12 +42,12 @@
   <string name="nome_about_logo_description">Nome 标志</string>
   <string name="nome_about_product_name">Nome Android 客户端</string>
   <string name="nome_about_version">应用版本 %1$s（%2$d）</string>
-  <string name="nome_about_foundation">此本地 Nome 构建保留 SimpleX Chat v6.5.6 的官方路由、数据、交互与协议行为。</string>
+  <string name="nome_about_foundation">此 Nome 构建采用开源 SimpleX 协议基础，并使用 Nome 的产品、激活与路由配置。</string>
   <string name="nome_about_project_section">项目信息</string>
   <string name="nome_about_version_title">应用与核心版本</string>
   <string name="nome_about_version_body">读取当前客户端真实报告的版本信息。</string>
   <string name="nome_about_source_title">源代码</string>
-  <string name="nome_about_source_body">打开 SimpleX Chat 官方源代码仓库。</string>
+  <string name="nome_about_source_body">打开作为 Nome 开源通信基础的上游 SimpleX Chat 源代码仓库。</string>
   <string name="nome_about_license_title">开源许可</string>
   <string name="nome_about_license_body">GNU Affero 通用公共许可证第 3 版。</string>
   <string name="nome_brand_chat_lock">Nome 锁定</string>

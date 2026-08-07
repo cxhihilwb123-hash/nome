@@ -42,12 +42,12 @@
   <string name="nome_about_logo_description">Nome logo</string>
   <string name="nome_about_product_name">Nome for Android</string>
   <string name="nome_about_version">App version %1$s (%2$d)</string>
-  <string name="nome_about_foundation">This local Nome build keeps the official SimpleX Chat v6.5.6 routes, data, interactions, and protocol behavior.</string>
+  <string name="nome_about_foundation">This Nome build uses the open-source SimpleX protocol foundation with Nome product, activation, and routing configuration.</string>
   <string name="nome_about_project_section">Project information</string>
   <string name="nome_about_version_title">App and core versions</string>
   <string name="nome_about_version_body">Read the live version values reported by this client.</string>
   <string name="nome_about_source_title">Source code</string>
-  <string name="nome_about_source_body">Open the official SimpleX Chat source repository.</string>
+  <string name="nome_about_source_body">Open the upstream SimpleX Chat source repository used as the Nome open-source communication foundation.</string>
   <string name="nome_about_license_title">Open-source license</string>
   <string name="nome_about_license_body">GNU Affero General Public License v3.</string>
   <string name="nome_brand_chat_lock">Nome Lock</string>

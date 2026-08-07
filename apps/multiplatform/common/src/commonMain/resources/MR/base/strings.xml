@@ -1374,7 +1374,7 @@
   <!-- ChooseServerOperators.kt -->
   <string name="onboarding_conditions_private_chats_not_accessible">Operators commit to:\n- Be independent\n- Minimize metadata usage\n- Run verified open-source code</string>
   <string name="onboarding_conditions_by_using_you_agree">You commit to:\n- Only legal content in public groups\n- Respect other users — no spam</string>
-  <string name="onboarding_conditions_privacy_policy_and_conditions_of_use">Network and privacy information</string>
+  <string name="onboarding_conditions_privacy_policy_and_conditions_of_use">Nome privacy policy and terms of use</string>
   <string name="onboarding_conditions_accept">Confirm</string>
   <string name="onboarding_choose_server_operators">Server operators</string>
   <string name="onboarding_network_operators">Network operators</string>
@@ -1683,6 +1683,10 @@
   <string name="nome_usage_information_local_data_body">Your profile, database and message history remain on this device. Keep your database passphrase and backups safe.</string>
   <string name="nome_usage_information_connections_title">Trusted invitations</string>
   <string name="nome_usage_information_connections_body">Nome does not verify another person’s identity. Connect only when you recognize or trust the invitation source.</string>
+  <string name="nome_usage_information_privacy_title">Nome privacy policy</string>
+  <string name="nome_usage_information_privacy_body">Open the current Nome privacy policy for the data handled by the app and its network services.</string>
+  <string name="nome_usage_information_terms_title">Nome terms of use</string>
+  <string name="nome_usage_information_terms_body">Open the current Nome terms for the public site, invite flow, and networked features.</string>
   <string name="nome_client_notice_title">Address creation temporarily unavailable</string>
   <string name="nome_client_notice_managed_server">managed</string>
   <string name="nome_client_notice_configured_server">configured</string>

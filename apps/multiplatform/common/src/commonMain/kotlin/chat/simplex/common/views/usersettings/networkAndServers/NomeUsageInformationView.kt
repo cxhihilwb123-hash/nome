@@ -16,6 +16,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import chat.simplex.common.model.ConditionsAcceptance
@@ -26,6 +27,7 @@ import chat.simplex.common.platform.AppPlatform
 import chat.simplex.common.platform.ColumnWithScrollBar
 import chat.simplex.common.ui.theme.DEFAULT_PADDING
 import chat.simplex.common.views.helpers.AppBarTitle
+import chat.simplex.common.views.helpers.openExternalLink
 import chat.simplex.res.MR
 import dev.icerock.moko.resources.compose.painterResource
 import dev.icerock.moko.resources.compose.stringResource
@@ -100,11 +102,13 @@ internal fun operatorEnableDestination(
 }
 
 /**
- * Local operational guidance for this Nome build. This view intentionally does not load, accept,
- * or link to any third-party terms or privacy policy.
+ * Local operational guidance for this Nome build. This view intentionally does not load or accept
+ * third-party terms. It links to the current Nome public privacy policy and terms for the legal
+ * documents themselves.
  */
 @Composable
 fun NomeUsageInformationView() {
+  val uriHandler = LocalUriHandler.current
   ColumnWithScrollBar(modifier = Modifier.fillMaxSize()) {
     AppBarTitle(
       stringResource(MR.strings.nome_usage_information_title),
@@ -139,6 +143,18 @@ fun NomeUsageInformationView() {
         title = stringResource(MR.strings.nome_usage_information_connections_title),
         body = stringResource(MR.strings.nome_usage_information_connections_body),
       )
+      NomeUsageInformationRow(
+        icon = painterResource(MR.images.ic_security),
+        title = stringResource(MR.strings.nome_usage_information_privacy_title),
+        body = stringResource(MR.strings.nome_usage_information_privacy_body),
+        onClick = { uriHandler.openExternalLink(nomePrivacyPolicyUrl) },
+      )
+      NomeUsageInformationRow(
+        icon = painterResource(MR.images.ic_draft),
+        title = stringResource(MR.strings.nome_usage_information_terms_title),
+        body = stringResource(MR.strings.nome_usage_information_terms_body),
+        onClick = { uriHandler.openExternalLink(nomeTermsOfUseUrl) },
+      )
     }
     SectionBottomSpacer()
   }
@@ -149,8 +165,9 @@ private fun NomeUsageInformationRow(
   icon: Painter,
   title: String,
   body: String,
+  onClick: (() -> Unit)? = null,
 ) {
-  SectionItemView {
+  SectionItemView(click = onClick) {
     Icon(
       painter = icon,
       contentDescription = null,
@@ -174,3 +191,6 @@ private fun NomeUsageInformationRow(
     }
   }
 }
+
+private const val nomePrivacyPolicyUrl = "https://nome.im/privacy"
+private const val nomeTermsOfUseUrl = "https://nome.im/terms"
